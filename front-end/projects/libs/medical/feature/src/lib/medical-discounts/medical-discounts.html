@@ -1,0 +1,75 @@
+<div class="p-8 bg-slate-50 min-h-screen">
+  <div class="flex justify-between items-center mb-8">
+    <div>
+      <h1 class="text-3xl font-black text-slate-900">Discount Library</h1>
+      <p class="text-slate-500 italic text-sm">
+        Automated premium reductions based on system rules.
+      </p>
+    </div>
+    <button
+      mat-flat-button
+      color="primary"
+      class="rounded-xl py-6 px-6 shadow-lg"
+      (click)="openDialog()"
+    >
+      <mat-icon class="mr-2">percent</mat-icon> New Discount Card
+    </button>
+  </div>
+
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    @for (card of store.discounts(); track card.id) {
+    <div
+      class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm hover:border-blue-300 transition-all"
+    >
+      <div class="flex justify-between items-start mb-4">
+        <span
+          class="text-[10px] font-mono bg-blue-50 text-blue-600 px-2 py-1 rounded font-bold uppercase"
+        >
+          {{ card.code }}
+        </span>
+        <div class="text-right">
+          <div class="text-2xl font-black text-slate-900">
+            {{ card.type === 'percentage' ? card.value + '%' : 'K' + card.value }}
+          </div>
+          <span class="text-[10px] text-slate-400 font-bold uppercase">Reduction</span>
+        </div>
+      </div>
+
+      <h3 class="text-lg font-bold text-slate-800 mb-1">{{ card.name }}</h3>
+      <p class="text-xs text-blue-600 font-semibold mb-4">
+        {{ card.plan_id ? 'Applies to: ' + card.plan?.name : 'Global Discount' }}
+      </p>
+
+      <div class="p-3 bg-slate-50 rounded-xl border border-slate-100 flex items-center gap-3">
+        <div
+          class="w-8 h-8 rounded-full bg-white flex items-center justify-center border shadow-sm"
+        >
+          <mat-icon class="text-blue-500 text-sm">rule</mat-icon>
+        </div>
+        <div class="text-xs">
+          <span class="text-slate-400 block">Trigger:</span>
+          <span class="font-bold text-slate-700">
+            {{ card.trigger_rule.field }} {{ card.trigger_rule.operator }} '{{
+              card.trigger_rule.value
+            }}'
+          </span>
+        </div>
+      </div>
+
+      <div class="flex justify-between items-center mt-6 pt-4 border-t border-slate-50">
+        <span class="text-[10px] text-slate-400 uppercase font-bold">
+          Valid: {{ card.valid_from | date : 'shortDate' }}
+        </span>
+        <div class="flex gap-1">
+          <button mat-icon-button (click)="openDialog(card)">
+            <mat-icon class="text-slate-400">edit</mat-icon>
+          </button>
+          <button mat-icon-button (click)="delete(card.id!)">
+            <mat-icon class="text-red-300">delete</mat-icon>
+          </button>
+        </div>
+      </div>
+    </div>
+    }
+  </div>
+</div>

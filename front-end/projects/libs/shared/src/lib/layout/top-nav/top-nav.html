@@ -1,0 +1,93 @@
+<header
+  class="sticky top-0 z-20 flex h-16 items-center shadow-sm border-b border-divider/60 bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60"
+>
+  <div class="flex w-full items-center justify-between px-4 lg:px-6">
+    <!-- Left section - Mobile menu + Sidebar toggle -->
+    <div class="flex items-center gap-3">
+      <!-- Mobile menu button - visible on small screens -->
+      <button
+        mat-icon-button
+        aria-label="Toggle mobile menu"
+        class="md:!hidden !text-foreground-600 hover:!bg-content2/60"
+        (click)="toggleSidebar.emit()"
+      >
+        <mat-icon>menu</mat-icon>
+      </button>
+
+      <!-- Desktop sidebar expand button - only when collapsed -->
+      <button
+        *ngIf="sidebarCollapsed"
+        mat-icon-button
+        aria-label="Expand sidebar"
+        class="!hidden md:!flex !text-foreground-600 hover:!bg-content2/60"
+        (click)="toggleSidebar.emit()"
+      >
+        <mat-icon class="!h-4 !w-4 !text-base">chevron_right</mat-icon>
+      </button>
+    </div>
+
+    <!-- Right section - Notifications + User menu -->
+    <div class="flex items-center gap-2">
+      <!-- Notifications -->
+      <div class="hidden md:block">
+        <button
+          mat-icon-button
+          aria-label="Notifications"
+          class="!text-foreground-600 hover:!text-foreground hover:!bg-content2/60"
+          [matBadge]="3"
+          matBadgeColor="warn"
+          matBadgeSize="small"
+        >
+          <mat-icon>notifications</mat-icon>
+        </button>
+      </div>
+
+      <!-- User menu -->
+      <button
+        mat-button
+        [matMenuTriggerFor]="userMenu"
+        class="!h-auto !min-w-0 !gap-2 !p-1 hover:!bg-content2/60"
+      >
+        <div class="flex items-center gap-2">
+          <div
+            class="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-medium"
+          >
+            MK
+          </div>
+          <div class="hidden sm:flex sm:flex-col sm:items-start">
+            <span class="text-sm font-medium text-foreground">Michael</span>
+            <span class="text-xs text-foreground-500">Super Admin</span>
+          </div>
+        </div>
+      </button>
+
+      <mat-menu #userMenu="matMenu" class="!p-1">
+        <button mat-menu-item class="!gap-2">
+          <div class="flex flex-col">
+            <span class="text-sm font-medium">Profile Settings</span>
+            <span class="text-xs text-foreground-500">View and edit profile</span>
+          </div>
+        </button>
+        <button mat-menu-item class="!gap-2">
+          <div class="flex flex-col">
+            <span class="text-sm font-medium">Billing & Plans</span>
+            <span class="text-xs text-foreground-500">Manage subscription</span>
+          </div>
+        </button>
+        <button mat-menu-item class="!gap-2">
+          <div class="flex flex-col">
+            <span class="text-sm font-medium">Team Settings</span>
+            <span class="text-xs text-foreground-500">Manage team members</span>
+          </div>
+        </button>
+        <mat-divider class="!my-1"></mat-divider>
+        <button mat-menu-item class="!gap-2 !text-red-600">
+          <div class="flex flex-col">
+            <span class="text-sm font-medium">Log Out</span>
+            <span class="text-xs text-red-400">Sign out of your account</span>
+          </div>
+        </button>
+      </mat-menu>
+    </div>
+  </div>
+</header>

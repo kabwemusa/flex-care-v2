@@ -1,0 +1,91 @@
+/* To learn more about Typescript configuration file: https://www.typescriptlang.org/docs/handbook/tsconfig-json.html. */
+/* To learn more about Angular compiler options: https://angular.dev/reference/configs/angular-compiler-options. */
+{
+  "compileOnSave": false,
+  "compilerOptions": {
+    "paths": {
+      "core-auth": ["./dist/core-auth"],
+      "core-config": ["./dist/core-config"],
+      "core-guards": ["./dist/core-guards"],
+      "core-http": ["./dist/core-http"],
+      "medical-data": ["./projects/libs/medical/data/src/public-api.ts"],
+      "medical-feature": ["./projects/libs/medical/feature/src/public-api.ts"],
+      "medical-ui": ["./projects/libs/medical/ui/src/public-api.ts"],
+      "shared": ["./projects/libs/shared/src/public-api.ts"]
+    },
+    "strict": true,
+    "noImplicitOverride": true,
+    "noPropertyAccessFromIndexSignature": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "skipLibCheck": true,
+    "isolatedModules": true,
+    "experimentalDecorators": true,
+    "importHelpers": true,
+    "target": "ES2022",
+    "module": "preserve"
+  },
+  "angularCompilerOptions": {
+    "enableI18nLegacyMessageIdFormat": false,
+    "strictInjectionParameters": true,
+    "strictInputAccessModifiers": true,
+    "strictTemplates": true
+  },
+  "files": [],
+  "references": [
+    {
+      "path": "./projects/admin/tsconfig.app.json"
+    },
+    {
+      "path": "./projects/admin/tsconfig.spec.json"
+    },
+    {
+      "path": "./projects/libs/core/auth/tsconfig.lib.json"
+    },
+    {
+      "path": "./projects/libs/core/auth/tsconfig.spec.json"
+    },
+    {
+      "path": "./projects/libs/core/http/tsconfig.lib.json"
+    },
+    {
+      "path": "./projects/libs/core/http/tsconfig.spec.json"
+    },
+    {
+      "path": "./projects/libs/core/guards/tsconfig.lib.json"
+    },
+    {
+      "path": "./projects/libs/core/guards/tsconfig.spec.json"
+    },
+    {
+      "path": "./projects/libs/core/config/tsconfig.lib.json"
+    },
+    {
+      "path": "./projects/libs/core/config/tsconfig.spec.json"
+    },
+    {
+      "path": "./projects/libs/shared/tsconfig.lib.json"
+    },
+    {
+      "path": "./projects/libs/shared/tsconfig.spec.json"
+    },
+    {
+      "path": "./projects/libs/medical/feature/tsconfig.lib.json"
+    },
+    {
+      "path": "./projects/libs/medical/feature/tsconfig.spec.json"
+    },
+    {
+      "path": "./projects/libs/medical/data/tsconfig.lib.json"
+    },
+    {
+      "path": "./projects/libs/medical/data/tsconfig.spec.json"
+    },
+    {
+      "path": "./projects/libs/medical/ui/tsconfig.lib.json"
+    },
+    {
+      "path": "./projects/libs/medical/ui/tsconfig.spec.json"
+    }
+  ]
+}

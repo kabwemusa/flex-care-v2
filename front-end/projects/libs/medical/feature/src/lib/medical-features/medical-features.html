@@ -1,0 +1,69 @@
+<div class="p-4 sm:p-8 bg-slate-50 min-h-screen">
+  <div class="flex flex-col sm:flex-row justify-between items-start mb-8 gap-4">
+    <div>
+      <h1 class="text-3xl font-bold text-slate-900">Benefit Library</h1>
+      <p class="text-slate-500">Manage global medical features for insurance configuration.</p>
+    </div>
+    <button mat-flat-button color="primary" class="rounded-xl py-6" (click)="openDialog()">
+      <mat-icon class="mr-2">add_box</mat-icon> Add New Benefit
+    </button>
+  </div>
+
+  <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+    @if (store.isLoading()) {
+    <div class="p-6 space-y-4">
+      @for (i of [1,2,3,4]; track i) { <lib-skeleton classes="h-12 w-full rounded" /> }
+    </div>
+    } @else {
+    <table mat-table [dataSource]="store.features()" class="w-full">
+      <ng-container matColumnDef="code">
+        <th mat-header-cell *matHeaderCellDef class="bg-slate-50 font-bold px-6">ID Code</th>
+        <td mat-cell *matCellDef="let f" class="px-6">
+          <code class="text-xs bg-slate-100 text-indigo-600 px-2 py-1 rounded font-mono">{{
+            f.code
+          }}</code>
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="name">
+        <th mat-header-cell *matHeaderCellDef class="bg-slate-50 font-bold">Benefit Name</th>
+        <td mat-cell *matCellDef="let f" class="font-medium text-slate-800">{{ f.name }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="category">
+        <th mat-header-cell *matHeaderCellDef class="bg-slate-50 font-bold">Category</th>
+        <td mat-cell *matCellDef="let f">
+          <span
+            class="text-[10px] font-bold uppercase tracking-wider text-slate-500 border border-slate-200 px-2 py-1 rounded"
+          >
+            {{ f.category }}
+          </span>
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="actions">
+        <th mat-header-cell *matHeaderCellDef class="bg-slate-50 text-right pr-6"></th>
+        <td mat-cell *matCellDef="let f" class="text-right pr-6">
+          <button mat-icon-button [matMenuTriggerFor]="menu"><mat-icon>more_vert</mat-icon></button>
+          <mat-menu #menu="matMenu">
+            <button mat-menu-item (click)="openDialog(f)"><mat-icon>edit</mat-icon> Edit</button>
+            <button mat-menu-item class="text-red-600" (click)="deleteFeature(f.id)">
+              <mat-icon class="text-red-600">delete</mat-icon> Delete
+            </button>
+          </mat-menu>
+        </td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+      <tr
+        mat-row
+        *matRowDef="let row; columns: displayedColumns"
+        class="hover:bg-slate-50 transition-colors"
+      ></tr>
+    </table>
+
+    @if (store.features().length === 0) {
+    <div class="p-20 text-center text-slate-400">The benefit library is currently empty.</div>
+    } }
+  </div>
+</div>

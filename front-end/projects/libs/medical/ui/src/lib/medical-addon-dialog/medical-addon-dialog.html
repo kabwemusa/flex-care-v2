@@ -1,0 +1,42 @@
+<div class="p-6">
+  <h2 class="text-2xl font-bold text-slate-800 mb-6">
+    {{ data ? 'Edit' : 'New' }} Optional Add-on
+  </h2>
+
+  <form [formGroup]="addonForm" (ngSubmit)="save()" class="space-y-4">
+    <mat-form-field appearance="fill" class="w-full">
+      <mat-label>Add-on Name</mat-label>
+      <input matInput formControlName="name" placeholder="e.g. Wellness Plus" />
+    </mat-form-field>
+
+    <mat-form-field appearance="fill" class="w-full">
+      <mat-label>Base Monthly Premium</mat-label>
+      <input matInput type="number" formControlName="price" />
+      <span matPrefix class="px-2 font-bold text-slate-400">K</span>
+    </mat-form-field>
+
+    <mat-form-field appearance="fill" class="w-full">
+      <mat-label>Benefit Description</mat-label>
+      <textarea matInput formControlName="description" rows="3"></textarea>
+    </mat-form-field>
+
+    <div
+      class="flex items-center justify-between p-4 bg-slate-50 rounded-xl border border-slate-200"
+    >
+      <span class="text-sm font-semibold text-slate-700">Available for Enrollment</span>
+      <mat-slide-toggle formControlName="is_mandatory" color="primary"></mat-slide-toggle>
+    </div>
+
+    <div class="flex justify-end gap-3 pt-6 border-t">
+      <button type="button" mat-button (click)="ref.close()">Cancel</button>
+      <button
+        mat-flat-button
+        color="primary"
+        [disabled]="addonForm.invalid"
+        class="rounded-lg px-8"
+      >
+        {{ data ? 'Update' : 'Create' }} Add-on
+      </button>
+    </div>
+  </form>
+</div>

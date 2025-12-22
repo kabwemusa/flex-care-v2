@@ -1,0 +1,78 @@
+<div class="p-6">
+  <h2 class="text-2xl font-black text-slate-800 mb-6">Discount Card Setup</h2>
+
+  <form [formGroup]="discountForm" (ngSubmit)="save()" class="space-y-4">
+    <div class="grid grid-cols-2 gap-4">
+      <mat-form-field appearance="outline">
+        <mat-label>Discount Name</mat-label>
+        <input matInput formControlName="name" />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Promo Code</mat-label>
+        <input matInput formControlName="code" placeholder="e.g. ANNUAL5" />
+      </mat-form-field>
+    </div>
+
+    <mat-form-field appearance="outline" class="w-full">
+      <mat-label>Applicable Plan (Optional: Blank for Global)</mat-label>
+      <mat-select formControlName="plan_id">
+        <mat-option [value]="null">All Plans (Global)</mat-option>
+        @for (plan of planStore.plans(); track plan.id) {
+        <mat-option [value]="plan.id">{{ plan.name }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
+    <div class="p-4 bg-slate-50 rounded-xl border border-slate-200" formGroupName="trigger_rule">
+      <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 block"
+        >Eligibility Rule</label
+      >
+      <div class="flex gap-2">
+        <mat-form-field appearance="fill" class="flex-1">
+          <mat-select formControlName="field">
+            <mat-option value="frequency">Payment Frequency</mat-option>
+            <mat-option value="age">Member Age</mat-option>
+            <mat-option value="group_size">Group Size</mat-option>
+          </mat-select>
+        </mat-form-field>
+        <mat-form-field appearance="fill" class="w-20">
+          <mat-select formControlName="operator">
+            <mat-option value="=">=</mat-option>
+            <mat-option value=">">></mat-option>
+            <mat-option value="IN">IN</mat-option>
+          </mat-select>
+        </mat-form-field>
+        <mat-form-field appearance="fill" class="flex-1">
+          <input matInput formControlName="value" placeholder="Rule Value" />
+        </mat-form-field>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-2 gap-4">
+      <mat-form-field appearance="outline">
+        <mat-label>Type</mat-label>
+        <mat-select formControlName="type">
+          <mat-option value="percentage">Percentage (%)</mat-option>
+          <mat-option value="fixed">Fixed Amount</mat-option>
+        </mat-select>
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>Value</mat-label>
+        <input matInput type="number" formControlName="value" />
+      </mat-form-field>
+    </div>
+
+    <div class="flex justify-end gap-3 pt-6 border-t">
+      <button type="button" mat-button (click)="ref.close()">Cancel</button>
+      <button
+        mat-flat-button
+        color="primary"
+        class="rounded-lg px-8"
+        [disabled]="discountForm.invalid"
+      >
+        Save Discount Card
+      </button>
+    </div>
+  </form>
+</div>
