@@ -1,0 +1,445 @@
+<!-- libs/medical/ui/src/lib/loading-rules/medical-loading-rule-list.html -->
+
+<mat-sidenav-container class="h-full">
+  <!-- Detail Drawer -->
+  <mat-sidenav #drawer mode="over" position="end" class="!w-[550px] !max-w-[90vw]">
+    @if (selectedRule(); as rule) {
+    <div class="flex h-full flex-col">
+      <!-- Drawer Header -->
+      <div class="flex items-center justify-between border-b border-slate-100 px-6 py-4">
+        <div class="flex items-center gap-3">
+          <div
+            class="flex h-10 w-10 items-center justify-center rounded-full bg-orange-100 text-orange-600"
+          >
+            <mat-icon fontSet="material-symbols-rounded">health_and_safety</mat-icon>
+          </div>
+          <div>
+            <h3 class="font-semibold text-slate-900">{{ rule.condition_name }}</h3>
+            <p class="text-xs text-slate-500">{{ rule.code }}</p>
+          </div>
+        </div>
+        <button mat-icon-button (click)="closeDrawer()">
+          <mat-icon fontSet="material-symbols-rounded">close</mat-icon>
+        </button>
+      </div>
+
+      <!-- Drawer Content -->
+      <div class="flex-1 overflow-y-auto p-6 space-y-6">
+        <!-- Status & Category -->
+        <div class="flex items-center gap-2 flex-wrap">
+          <span
+            [class]="rule.is_active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'"
+            class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium"
+          >
+            {{ rule.is_active ? 'Active' : 'Inactive' }}
+          </span>
+          <span
+            [class]="getCategoryClass(rule.condition_category)"
+            class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium"
+          >
+            {{ getCategoryLabel(rule.condition_category) }}
+          </span>
+        </div>
+
+        <!-- ICD Code -->
+        @if (rule.icd10_code) {
+        <div class="rounded-lg bg-slate-50 border border-slate-200 p-4">
+          <p class="text-xs text-slate-500 mb-1">ICD-10 Code</p>
+          <p class="font-mono font-medium text-slate-900">{{ rule.icd10_code }}</p>
+          @if (rule.related_icd_codes?.length) {
+          <p class="text-xs text-slate-500 mt-2">
+            Related: {{ rule.related_icd_codes?.join(', ') }}
+          </p>
+          }
+        </div>
+        }
+
+        <!-- Loading Value -->
+        <div class="rounded-xl bg-orange-50 border border-orange-100 p-4">
+          <p class="text-xs text-orange-600 mb-1">Loading</p>
+          <p class="text-2xl font-bold text-orange-700">
+            {{
+              rule.formatted_loading_value ||
+                (rule.loading_type === 'exclusion'
+                  ? 'Exclusion'
+                  : rule.loading_value + (rule.loading_type === 'percentage' ? '%' : ' ZMW'))
+            }}
+          </p>
+          <p class="text-xs text-orange-600 mt-1">{{ getLoadingTypeLabel(rule.loading_type) }}</p>
+        </div>
+
+        <!-- Min/Max Loading -->
+        @if (rule.min_loading || rule.max_loading) {
+        <div class="grid grid-cols-2 gap-4">
+          @if (rule.min_loading) {
+          <div class="rounded-lg border border-slate-200 bg-white p-3">
+            <p class="text-xs text-slate-500 mb-1">Minimum</p>
+            <p class="text-sm font-medium text-slate-900">
+              {{
+                rule.loading_type === 'percentage'
+                  ? rule.min_loading + '%'
+                  : 'ZMW ' + rule.min_loading
+              }}
+            </p>
+          </div>
+          } @if (rule.max_loading) {
+          <div class="rounded-lg border border-slate-200 bg-white p-3">
+            <p class="text-xs text-slate-500 mb-1">Maximum</p>
+            <p class="text-sm font-medium text-slate-900">
+              {{
+                rule.loading_type === 'percentage'
+                  ? rule.max_loading + '%'
+                  : 'ZMW ' + rule.max_loading
+              }}
+            </p>
+          </div>
+          }
+        </div>
+        }
+
+        <!-- Duration -->
+        <div class="rounded-lg border border-slate-200 bg-white p-4">
+          <p class="text-xs text-slate-500 mb-2">Duration</p>
+          <div class="flex items-center gap-2">
+            <mat-icon fontSet="material-symbols-rounded" class="!text-slate-400">schedule</mat-icon>
+            <span class="font-medium text-slate-900">{{ getDurationLabel(rule) }}</span>
+          </div>
+        </div>
+
+        <!-- Exclusion Option -->
+        @if (rule.exclusion_available) {
+        <div class="rounded-lg bg-blue-50 border border-blue-100 p-4">
+          <div class="flex items-start gap-3">
+            <mat-icon fontSet="material-symbols-rounded" class="!text-blue-500">info</mat-icon>
+            <div>
+              <p class="text-sm font-medium text-blue-900">Exclusion Option Available</p>
+              @if (rule.exclusion_terms) {
+              <p class="text-xs text-blue-700 mt-1">{{ rule.exclusion_terms }}</p>
+              }
+            </div>
+          </div>
+        </div>
+        }
+
+        <!-- Required Documents -->
+        @if (rule.required_documents?.length) {
+        <div>
+          <p class="text-xs text-slate-500 mb-2">Required Documents</p>
+          <div class="space-y-2">
+            @for (doc of rule.required_documents; track doc) {
+            <div class="flex items-center gap-2 text-sm text-slate-700">
+              <mat-icon fontSet="material-symbols-rounded" class="!text-slate-400 !text-[16px]"
+                >description</mat-icon
+              >
+              {{ doc }}
+            </div>
+            }
+          </div>
+        </div>
+        }
+
+        <!-- Underwriting Notes -->
+        @if (rule.underwriting_notes) {
+        <div>
+          <p class="text-xs text-slate-500 mb-2">Underwriting Notes</p>
+          <div class="rounded-lg border border-slate-200 bg-white p-3">
+            <p class="text-sm text-slate-700 whitespace-pre-wrap">{{ rule.underwriting_notes }}</p>
+          </div>
+        </div>
+        }
+      </div>
+
+      <!-- Drawer Actions -->
+      <div class="border-t border-slate-100 px-6 py-4 flex items-center justify-between">
+        <button mat-button class="!text-red-600" (click)="deleteRule(rule)">
+          <mat-icon fontSet="material-symbols-rounded">delete</mat-icon>
+          Delete
+        </button>
+        <div class="flex items-center gap-2">
+          <button mat-stroked-button (click)="toggleRuleStatus(rule)">
+            {{ rule.is_active ? 'Deactivate' : 'Activate' }}
+          </button>
+          <button mat-flat-button color="primary" (click)="openRuleDialog(rule)">
+            <mat-icon fontSet="material-symbols-rounded">edit</mat-icon>
+            Edit
+          </button>
+        </div>
+      </div>
+    </div>
+    }
+  </mat-sidenav>
+
+  <!-- Main Content -->
+  <mat-sidenav-content>
+    <div class="p-6 md:p-10 space-y-6">
+      <!-- Header -->
+      <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 class="text-2xl font-bold tracking-tight text-slate-900">Loading Rules</h1>
+          <p class="mt-1 text-sm text-slate-500">
+            Medical underwriting loading rules for pre-existing conditions
+          </p>
+        </div>
+        <button mat-flat-button color="primary" (click)="openRuleDialog()">
+          <mat-icon fontSet="material-symbols-rounded">add</mat-icon>
+          New Loading Rule
+        </button>
+      </div>
+
+      <!-- Stats Cards -->
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div class="rounded-xl border border-slate-200 bg-white p-4">
+          <div class="flex items-center gap-3">
+            <div class="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100">
+              <mat-icon fontSet="material-symbols-rounded" class="!text-blue-600"
+                >receipt_long</mat-icon
+              >
+            </div>
+            <div>
+              <p class="text-2xl font-bold text-slate-900">{{ totalRules() }}</p>
+              <p class="text-xs text-slate-500">Total Rules</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="rounded-xl border border-slate-200 bg-white p-4">
+          <div class="flex items-center gap-3">
+            <div class="flex h-10 w-10 items-center justify-center rounded-full bg-green-100">
+              <mat-icon fontSet="material-symbols-rounded" class="!text-green-600"
+                >check_circle</mat-icon
+              >
+            </div>
+            <div>
+              <p class="text-2xl font-bold text-slate-900">{{ activeRules() }}</p>
+              <p class="text-xs text-slate-500">Active</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="rounded-xl border border-slate-200 bg-white p-4">
+          <div class="flex items-center gap-3">
+            <div class="flex h-10 w-10 items-center justify-center rounded-full bg-red-100">
+              <mat-icon fontSet="material-symbols-rounded" class="!text-red-600">favorite</mat-icon>
+            </div>
+            <div>
+              <p class="text-2xl font-bold text-slate-900">{{ chronicRules() }}</p>
+              <p class="text-xs text-slate-500">Chronic</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="rounded-xl border border-slate-200 bg-white p-4">
+          <div class="flex items-center gap-3">
+            <div class="flex h-10 w-10 items-center justify-center rounded-full bg-amber-100">
+              <mat-icon fontSet="material-symbols-rounded" class="!text-amber-600"
+                >history</mat-icon
+              >
+            </div>
+            <div>
+              <p class="text-2xl font-bold text-slate-900">{{ preExistingRules() }}</p>
+              <p class="text-xs text-slate-500">Pre-existing</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Filters -->
+      <div class="flex flex-wrap items-center gap-3">
+        <mat-form-field appearance="outline" class="!w-64" subscriptSizing="dynamic">
+          <mat-icon matPrefix fontSet="material-symbols-rounded" class="!text-slate-400"
+            >search</mat-icon
+          >
+          <input
+            matInput
+            placeholder="Search conditions, ICD codes..."
+            [ngModel]="searchQuery()"
+            (ngModelChange)="searchQuery.set($event); applyFilters()"
+          />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="!w-44" subscriptSizing="dynamic">
+          <mat-select
+            placeholder="Category"
+            [ngModel]="categoryFilter()"
+            (ngModelChange)="categoryFilter.set($event); applyFilters()"
+          >
+            <mat-option [value]="''">All Categories</mat-option>
+            @for (cat of categories; track cat.value) {
+            <mat-option [value]="cat.value">{{ cat.label }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="!w-40" subscriptSizing="dynamic">
+          <mat-select
+            placeholder="Loading Type"
+            [ngModel]="loadingTypeFilter()"
+            (ngModelChange)="loadingTypeFilter.set($event); applyFilters()"
+          >
+            <mat-option [value]="''">All Types</mat-option>
+            @for (type of loadingTypes; track type.value) {
+            <mat-option [value]="type.value">{{ type.label }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        @if (searchQuery() || categoryFilter() || loadingTypeFilter()) {
+        <button mat-button (click)="clearFilters()" class="!text-slate-500">
+          <mat-icon fontSet="material-symbols-rounded">close</mat-icon>
+          Clear
+        </button>
+        }
+      </div>
+
+      <!-- Table -->
+      @if (store.isLoading()) {
+      <div class="flex items-center justify-center py-12">
+        <mat-spinner diameter="32"></mat-spinner>
+      </div>
+      } @else if (dataSource.data.length > 0) {
+      <div class="rounded-xl border border-slate-200 overflow-hidden">
+        <table mat-table [dataSource]="dataSource" matSort class="w-full">
+          <!-- Condition Name Column -->
+          <ng-container matColumnDef="condition_name">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header class="!bg-slate-50 !px-6 !py-3">
+              Condition
+            </th>
+            <td mat-cell *matCellDef="let rule" class="!px-6 !py-4">
+              <div class="flex items-center gap-3 cursor-pointer" (click)="openDrawer(rule)">
+                <div class="flex h-9 w-9 items-center justify-center rounded-full bg-orange-100">
+                  <mat-icon fontSet="material-symbols-rounded" class="!text-orange-600 !text-[18px]"
+                    >health_and_safety</mat-icon
+                  >
+                </div>
+                <div>
+                  <p class="font-medium text-slate-900">{{ rule.condition_name }}</p>
+                  <p class="text-xs text-slate-500">
+                    {{ rule.code }}
+                    @if (rule.icd10_code) { • {{ rule.icd10_code }}
+                    }
+                  </p>
+                </div>
+              </div>
+            </td>
+          </ng-container>
+
+          <!-- Category Column -->
+          <ng-container matColumnDef="category">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header class="!bg-slate-50 !px-6 !py-3">
+              Category
+            </th>
+            <td mat-cell *matCellDef="let rule" class="!px-6 !py-4">
+              <span
+                [class]="getCategoryClass(rule.condition_category)"
+                class="rounded-full px-2.5 py-0.5 text-xs font-medium"
+              >
+                {{ getCategoryLabel(rule.condition_category) }}
+              </span>
+            </td>
+          </ng-container>
+
+          <!-- Loading Column -->
+          <ng-container matColumnDef="loading">
+            <th mat-header-cell *matHeaderCellDef class="!bg-slate-50 !px-6 !py-3">Loading</th>
+            <td mat-cell *matCellDef="let rule" class="!px-6 !py-4">
+              <span class="font-medium text-orange-600">
+                {{
+                  rule.formatted_loading_value ||
+                    (rule.loading_type === 'exclusion'
+                      ? 'Exclusion'
+                      : rule.loading_value + (rule.loading_type === 'percentage' ? '%' : ' ZMW'))
+                }}
+              </span>
+            </td>
+          </ng-container>
+
+          <!-- Duration Column -->
+          <ng-container matColumnDef="duration">
+            <th mat-header-cell *matHeaderCellDef class="!bg-slate-50 !px-6 !py-3">Duration</th>
+            <td mat-cell *matCellDef="let rule" class="!px-6 !py-4">
+              <span class="text-sm text-slate-600">{{ getDurationLabel(rule) }}</span>
+            </td>
+          </ng-container>
+
+          <!-- Status Column -->
+          <ng-container matColumnDef="status">
+            <th mat-header-cell *matHeaderCellDef class="!bg-slate-50 !px-6 !py-3">Status</th>
+            <td mat-cell *matCellDef="let rule" class="!px-6 !py-4">
+              <span
+                [class]="
+                  rule.is_active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'
+                "
+                class="rounded-full px-2.5 py-0.5 text-xs font-medium"
+              >
+                {{ rule.is_active ? 'Active' : 'Inactive' }}
+              </span>
+            </td>
+          </ng-container>
+
+          <!-- Actions Column -->
+          <ng-container matColumnDef="actions">
+            <th mat-header-cell *matHeaderCellDef class="!bg-slate-50 !w-16"></th>
+            <td mat-cell *matCellDef="let rule" class="!px-4 !py-4">
+              <button mat-icon-button [matMenuTriggerFor]="ruleMenu" class="!text-slate-400">
+                <mat-icon fontSet="material-symbols-rounded">more_vert</mat-icon>
+              </button>
+              <mat-menu #ruleMenu="matMenu">
+                <button mat-menu-item (click)="openDrawer(rule)">
+                  <mat-icon fontSet="material-symbols-rounded" class="!text-slate-500"
+                    >visibility</mat-icon
+                  >
+                  <span>View Details</span>
+                </button>
+                <button mat-menu-item (click)="openRuleDialog(rule)">
+                  <mat-icon fontSet="material-symbols-rounded" class="!text-slate-500"
+                    >edit</mat-icon
+                  >
+                  <span>Edit</span>
+                </button>
+                <button mat-menu-item (click)="toggleRuleStatus(rule)">
+                  <mat-icon fontSet="material-symbols-rounded" class="!text-slate-500">
+                    {{ rule.is_active ? 'block' : 'check_circle' }}
+                  </mat-icon>
+                  <span>{{ rule.is_active ? 'Deactivate' : 'Activate' }}</span>
+                </button>
+                <mat-divider></mat-divider>
+                <button mat-menu-item class="!text-red-600" (click)="deleteRule(rule)">
+                  <mat-icon fontSet="material-symbols-rounded" class="!text-red-500"
+                    >delete</mat-icon
+                  >
+                  <span>Delete</span>
+                </button>
+              </mat-menu>
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="displayColumns"></tr>
+          <tr mat-row *matRowDef="let row; columns: displayColumns" class="hover:bg-slate-50"></tr>
+        </table>
+
+        <mat-paginator
+          [pageSizeOptions]="[10, 25, 50]"
+          showFirstLastButtons
+          class="!border-t !border-slate-100"
+        ></mat-paginator>
+      </div>
+      } @else {
+      <div class="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-8 text-center">
+        <div
+          class="flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 mx-auto mb-4"
+        >
+          <mat-icon fontSet="material-symbols-rounded" class="!text-slate-400"
+            >health_and_safety</mat-icon
+          >
+        </div>
+        <h4 class="text-sm font-medium text-slate-900">No Loading Rules Found</h4>
+        <p class="mt-1 text-sm text-slate-500">Create loading rules for medical underwriting.</p>
+        <button mat-flat-button color="primary" class="mt-4" (click)="openRuleDialog()">
+          <mat-icon fontSet="material-symbols-rounded">add</mat-icon>
+          Create Loading Rule
+        </button>
+      </div>
+      }
+    </div>
+  </mat-sidenav-content>
+</mat-sidenav-container>

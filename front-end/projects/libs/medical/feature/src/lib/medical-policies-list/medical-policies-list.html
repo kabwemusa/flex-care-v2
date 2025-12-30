@@ -1,0 +1,708 @@
+<!-- libs/medical/feature/src/lib/policies/medical-policies-list.html -->
+<!-- Medical Policies List Template - Aligned with Plans/Schemes patterns -->
+
+<mat-drawer-container class="h-full">
+  <mat-drawer-content>
+    <div class="bg-white p-6 md:p-10 min-h-[80vh] shadow-sm">
+      <!-- Page Header -->
+      <lib-page-header
+        title="Policy Administration"
+        subtitle="Manage insurance policies, coverage and renewals"
+      >
+        <div class="flex items-center gap-2">
+          <button
+            mat-stroked-button
+            (click)="exportToCsv()"
+            matTooltip="Export to CSV"
+            class="!border-slate-200"
+          >
+            <mat-icon fontSet="material-symbols-rounded">download</mat-icon>
+            Export
+          </button>
+          <button mat-flat-button color="primary" (click)="openDialog()">
+            <mat-icon fontSet="material-symbols-rounded">add</mat-icon>
+            New Policy
+          </button>
+        </div>
+      </lib-page-header>
+
+      <!-- KPI Cards -->
+      <div class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
+        <!-- Total Policies -->
+        <div class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm text-slate-500">Total Policies</p>
+              <p class="text-2xl font-semibold text-slate-900">{{ store.policies().length }}</p>
+            </div>
+            <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-slate-100">
+              <mat-icon fontSet="material-symbols-rounded" class="!text-slate-600"
+                >description</mat-icon
+              >
+            </div>
+          </div>
+        </div>
+
+        <!-- Active Policies -->
+        <div class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm text-slate-500">Active</p>
+              <p class="text-2xl font-semibold text-green-600">
+                {{ store.activePolicies().length }}
+              </p>
+            </div>
+            <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-green-100">
+              <mat-icon fontSet="material-symbols-rounded" class="!text-green-600"
+                >check_circle</mat-icon
+              >
+            </div>
+          </div>
+        </div>
+
+        <!-- Pending Payment -->
+        <div class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm text-slate-500">Pending Payment</p>
+              <p class="text-2xl font-semibold text-amber-600">
+                {{ store.pendingPayment().length }}
+              </p>
+            </div>
+            <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-amber-100">
+              <mat-icon fontSet="material-symbols-rounded" class="!text-amber-600"
+                >hourglass_empty</mat-icon
+              >
+            </div>
+          </div>
+        </div>
+
+        <!-- Expiring Soon -->
+        <div class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm text-slate-500">Expiring Soon</p>
+              <p class="text-2xl font-semibold text-orange-600">
+                {{ store.expiringPolicies().length }}
+              </p>
+            </div>
+            <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-orange-100">
+              <mat-icon fontSet="material-symbols-rounded" class="!text-orange-600"
+                >schedule</mat-icon
+              >
+            </div>
+          </div>
+        </div>
+
+        <!-- Total Premium -->
+        <div class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm text-slate-500">Total Premium</p>
+              <p class="text-xl font-semibold text-purple-600">
+                {{ formatCurrency(store.totalPremium()) }}
+              </p>
+            </div>
+            <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-purple-100">
+              <mat-icon fontSet="material-symbols-rounded" class="!text-purple-600"
+                >payments</mat-icon
+              >
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Filters -->
+      <div class="rounded-xl border border-slate-200 bg-white p-4 mb-6 shadow-sm">
+        <div class="flex flex-wrap gap-4 items-end">
+          <!-- Search -->
+          <mat-form-field
+            appearance="outline"
+            subscriptSizing="dynamic"
+            class="flex-1 min-w-[300px]"
+          >
+            <!-- <mat-label>Search policies</mat-label> -->
+            <mat-icon fontSet="material-symbols-rounded" matPrefix class="!text-slate-400"
+              >search</mat-icon
+            >
+            <input
+              matInput
+              [ngModel]="searchTerm()"
+              (ngModelChange)="onSearchChange($event)"
+              placeholder="Search by policy number, holder name, plan..."
+            />
+            @if (searchTerm()) {
+            <button matSuffix mat-icon-button (click)="clearSearch()">
+              <mat-icon fontSet="material-symbols-rounded">close</mat-icon>
+            </button>
+            }
+          </mat-form-field>
+
+          <!-- Status Filter -->
+          <mat-form-field appearance="outline" subscriptSizing="dynamic" class="w-48">
+            <!-- <mat-label>Status</mat-label> -->
+            <mat-select [ngModel]="statusFilter()" (ngModelChange)="onStatusChange($event)">
+              <mat-option value="">All Statuses</mat-option>
+              @for (status of POLICY_STATUSES; track status.value) {
+              <mat-option [value]="status.value">
+                <span class="flex items-center gap-2">
+                  <mat-icon fontSet="material-symbols-rounded" class="!text-[18px]">{{
+                    status.icon
+                  }}</mat-icon>
+                  {{ status.label }}
+                </span>
+              </mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+
+          <!-- Type Filter -->
+          <mat-form-field appearance="outline" subscriptSizing="dynamic" class="w-44">
+            <!-- <mat-label>Policy Type</mat-label> -->
+            <mat-select [ngModel]="typeFilter()" (ngModelChange)="onTypeChange($event)">
+              <mat-option value="">All Types</mat-option>
+              @for (type of POLICY_TYPES; track type.value) {
+              <mat-option [value]="type.value">
+                <span class="flex items-center gap-2">
+                  <mat-icon fontSet="material-symbols-rounded" class="!text-[18px]">{{
+                    type.icon
+                  }}</mat-icon>
+                  {{ type.label }}
+                </span>
+              </mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+
+          @if (hasActiveFilters()) {
+          <button mat-stroked-button (click)="clearFilters()" class="!border-slate-200">
+            <mat-icon fontSet="material-symbols-rounded">filter_alt_off</mat-icon>
+            Clear
+          </button>
+          }
+        </div>
+      </div>
+
+      <!-- Table -->
+      <div class="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+        @if (store.isLoading()) {
+        <div class="flex items-center justify-center h-64">
+          <mat-spinner diameter="40"></mat-spinner>
+        </div>
+        } @else {
+        <table mat-table [dataSource]="dataSource" matSort class="w-full">
+          <!-- Status Column -->
+          <ng-container matColumnDef="status">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header class="!pl-6 w-32">Status</th>
+            <td mat-cell *matCellDef="let row" class="!pl-6">
+              <span
+                class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium"
+                [class]="getStatusClasses(row.status)"
+              >
+                <span
+                  class="h-1.5 w-1.5 rounded-full"
+                  [class]="getStatusDotColor(row.status)"
+                ></span>
+                {{ getLabelByValue(POLICY_STATUSES, row.status) }}
+              </span>
+            </td>
+          </ng-container>
+
+          <!-- Policy Number Column -->
+          <ng-container matColumnDef="policy_number">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Policy #</th>
+            <td mat-cell *matCellDef="let row">
+              <button
+                class="text-left font-mono text-sm text-slate-700 hover:text-blue-600 transition-colors"
+                (click)="viewDetails(row); $event.stopPropagation()"
+              >
+                {{ row.policy_number }}
+              </button>
+            </td>
+          </ng-container>
+
+          <!-- Type Column -->
+          <ng-container matColumnDef="type">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header class="w-28">Type</th>
+            <td mat-cell *matCellDef="let row">
+              <span class="flex items-center gap-1.5 text-sm text-slate-600">
+                <mat-icon fontSet="material-symbols-rounded" class="!text-slate-400 !text-[18px]">{{
+                  getTypeIcon(row.policy_type)
+                }}</mat-icon>
+                {{ getLabelByValue(POLICY_TYPES, row.policy_type) }}
+              </span>
+            </td>
+          </ng-container>
+
+          <!-- Plan Column -->
+          <ng-container matColumnDef="plan">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Plan</th>
+            <td mat-cell *matCellDef="let row">
+              @if (row.plan) {
+              <div class="text-sm font-medium text-slate-900">{{ row.plan.name }}</div>
+              } @else {
+              <span class="text-slate-400">-</span>
+              }
+            </td>
+          </ng-container>
+
+          <!-- Holder Column -->
+          <ng-container matColumnDef="holder">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Policy Holder</th>
+            <td mat-cell *matCellDef="let row">
+              <div class="font-medium text-slate-900">{{ row.policy_holder_name || '-' }}</div>
+              @if (row.group) {
+              <div class="text-xs text-slate-500">{{ row.group.name }}</div>
+              }
+            </td>
+          </ng-container>
+
+          <!-- Members Column -->
+          <ng-container matColumnDef="members">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header class="text-center w-24">
+              Members
+            </th>
+            <td mat-cell *matCellDef="let row" class="text-center">
+              <span
+                class="inline-flex items-center justify-center px-2.5 py-1 bg-purple-50 text-purple-700 rounded-full text-sm font-medium min-w-[36px]"
+              >
+                {{ row.members_count || 0 }}
+              </span>
+            </td>
+          </ng-container>
+
+          <!-- Premium Column -->
+          <ng-container matColumnDef="premium">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header class="text-right">Premium</th>
+            <td mat-cell *matCellDef="let row" class="text-right font-medium text-slate-900">
+              {{ formatCurrency(row.net_premium) }}
+            </td>
+          </ng-container>
+
+          <!-- Expiry Column -->
+          <ng-container matColumnDef="expiry">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Expiry</th>
+            <td mat-cell *matCellDef="let row">
+              <span class="text-sm" [class]="getDaysToExpiry(row).class">
+                {{ row.expiry_date | date : 'mediumDate' }}
+                @if (getDaysToExpiry(row).days > 0 && getDaysToExpiry(row).days <= 60) {
+                <span class="text-xs">({{ getDaysToExpiry(row).days }}d)</span>
+                }
+              </span>
+            </td>
+          </ng-container>
+
+          <!-- Actions Column -->
+          <ng-container matColumnDef="actions">
+            <th mat-header-cell *matHeaderCellDef class="w-16 !pr-4"></th>
+            <td mat-cell *matCellDef="let row" class="!pr-4">
+              <button
+                mat-icon-button
+                [matMenuTriggerFor]="rowMenu"
+                (click)="$event.stopPropagation()"
+              >
+                <mat-icon fontSet="material-symbols-rounded">more_vert</mat-icon>
+              </button>
+              <mat-menu #rowMenu="matMenu">
+                <button mat-menu-item (click)="viewDetails(row)">
+                  <mat-icon fontSet="material-symbols-rounded" class="!text-slate-500"
+                    >visibility</mat-icon
+                  >
+                  <span>View Details</span>
+                </button>
+                <button mat-menu-item (click)="openDialog(row)">
+                  <mat-icon fontSet="material-symbols-rounded" class="!text-slate-500"
+                    >edit</mat-icon
+                  >
+                  <span>Edit</span>
+                </button>
+                <button
+                  mat-menu-item
+                  (click)="downloadCertificate(row, $event)"
+                  [disabled]="row.status !== 'active'"
+                >
+                  <mat-icon fontSet="material-symbols-rounded" class="!text-slate-500"
+                    >picture_as_pdf</mat-icon
+                  >
+                  <span>Certificate</span>
+                </button>
+                <mat-divider></mat-divider>
+
+                <!-- Status Actions -->
+                @if (row.status === 'pending_payment' || row.status === 'suspended') {
+                <button mat-menu-item (click)="activatePolicy(row, $event)">
+                  <mat-icon fontSet="material-symbols-rounded" class="!text-green-500"
+                    >play_arrow</mat-icon
+                  >
+                  <span>Activate</span>
+                </button>
+                } @if (row.status === 'active') {
+                <button mat-menu-item (click)="suspendPolicy(row, $event)">
+                  <mat-icon fontSet="material-symbols-rounded" class="!text-amber-500"
+                    >pause</mat-icon
+                  >
+                  <span>Suspend</span>
+                </button>
+                } @if (row.is_expiring_soon || row.status === 'expired') {
+                <button mat-menu-item (click)="renewPolicy(row, $event)">
+                  <mat-icon fontSet="material-symbols-rounded" class="!text-blue-500"
+                    >autorenew</mat-icon
+                  >
+                  <span>Renew</span>
+                </button>
+                }
+                <button
+                  mat-menu-item
+                  (click)="cancelPolicy(row, $event)"
+                  class="!text-red-600 hover:!bg-red-50"
+                >
+                  <mat-icon fontSet="material-symbols-rounded" class="!text-red-600"
+                    >cancel</mat-icon
+                  >
+                  <span>Cancel Policy</span>
+                </button>
+              </mat-menu>
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="displayedColumns" class="!bg-slate-50"></tr>
+          <tr
+            mat-row
+            *matRowDef="let row; columns: displayedColumns"
+            class="group border-b border-slate-100 last:border-0 hover:bg-slate-50 transition-colors cursor-pointer"
+            (click)="viewDetails(row)"
+          ></tr>
+
+          <!-- No Data -->
+          <tr class="mat-row" *matNoDataRow>
+            <td class="mat-cell text-center py-16" [attr.colspan]="displayedColumns.length">
+              <div class="flex flex-col items-center">
+                <div
+                  class="flex h-16 w-16 items-center justify-center rounded-full bg-slate-100 mb-4"
+                >
+                  <mat-icon fontSet="material-symbols-rounded" class="!text-[32px] !text-slate-400"
+                    >description</mat-icon
+                  >
+                </div>
+                @if (hasActiveFilters()) {
+                <p class="text-slate-600 font-medium mb-1">No policies match your filters</p>
+                <p class="text-sm text-slate-500 mb-4">
+                  Try adjusting your search or filter criteria
+                </p>
+                <button mat-stroked-button (click)="clearFilters()" class="!border-slate-200">
+                  <mat-icon fontSet="material-symbols-rounded">filter_alt_off</mat-icon>
+                  Clear Filters
+                </button>
+                } @else {
+                <p class="text-slate-600 font-medium mb-1">No policies created yet</p>
+                <p class="text-sm text-slate-500 mb-4">Create your first policy to get started</p>
+                <button mat-flat-button color="primary" (click)="openDialog()">
+                  <mat-icon fontSet="material-symbols-rounded">add</mat-icon>
+                  Create First Policy
+                </button>
+                }
+              </div>
+            </td>
+          </tr>
+        </table>
+
+        <mat-paginator
+          [pageSizeOptions]="[10, 25, 50, 100]"
+          [pageSize]="25"
+          showFirstLastButtons
+          class="!border-t !border-slate-100 !bg-white"
+        ></mat-paginator>
+        }
+      </div>
+    </div>
+  </mat-drawer-content>
+
+  <!-- Detail Drawer -->
+  <mat-drawer #detailDrawer mode="over" position="end" class="!w-[520px]">
+    @if (selectedPolicy(); as policy) {
+    <div class="h-full flex flex-col">
+      <!-- Drawer Header -->
+      <div
+        class="px-6 py-4 border-b border-slate-100 bg-slate-50 flex items-center justify-between sticky top-0 z-10"
+      >
+        <div class="flex items-center gap-3">
+          <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-100">
+            <mat-icon fontSet="material-symbols-rounded" class="!text-blue-600">{{
+              getTypeIcon(policy.policy_type)
+            }}</mat-icon>
+          </div>
+          <div>
+            <h3 class="font-semibold text-slate-900 font-mono">{{ policy.policy_number }}</h3>
+            <p class="text-sm text-slate-500">
+              {{ getLabelByValue(POLICY_TYPES, policy.policy_type) }}
+            </p>
+          </div>
+        </div>
+        <button
+          mat-icon-button
+          (click)="closeDrawer()"
+          class="!text-slate-400 hover:!text-slate-600"
+        >
+          <mat-icon fontSet="material-symbols-rounded">close</mat-icon>
+        </button>
+      </div>
+
+      <!-- Drawer Content -->
+      <div class="flex-1 overflow-y-auto p-6 space-y-5">
+        <!-- Status & Badges -->
+        <div class="flex items-center gap-2 flex-wrap">
+          <span
+            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium"
+            [class]="getStatusClasses(policy.status)"
+          >
+            <span
+              class="h-1.5 w-1.5 rounded-full"
+              [class]="getStatusDotColor(policy.status)"
+            ></span>
+            {{ getLabelByValue(POLICY_STATUSES, policy.status) }}
+          </span>
+          @if (policy.is_expiring_soon) {
+          <span
+            class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-orange-100 text-orange-700 rounded-full text-sm"
+          >
+            <mat-icon fontSet="material-symbols-rounded" class="!text-[16px]">schedule</mat-icon>
+            Expiring Soon
+          </span>
+          }
+        </div>
+
+        <!-- Policy Holder -->
+        <div class="rounded-lg border border-slate-200 bg-slate-50 p-4 space-y-3">
+          <h4 class="font-medium text-slate-900 flex items-center gap-2">
+            <mat-icon fontSet="material-symbols-rounded" class="!text-slate-400 !text-[20px]"
+              >person</mat-icon
+            >
+            Policy Holder
+          </h4>
+
+          <div class="grid grid-cols-3 gap-2 text-sm">
+            <span class="text-slate-500">Name</span>
+            <span class="col-span-2 font-medium text-slate-900">{{
+              policy.policy_holder_name || 'N/A'
+            }}</span>
+          </div>
+
+          @if (policy.group) {
+          <div class="grid grid-cols-3 gap-2 text-sm">
+            <span class="text-slate-500">Corporate</span>
+            <span class="col-span-2 text-slate-900">{{ policy.group.name }}</span>
+          </div>
+          }
+        </div>
+
+        <!-- Coverage Details -->
+        <div class="rounded-lg border border-blue-200 bg-blue-50 p-4 space-y-3">
+          <h4 class="font-medium text-blue-900 flex items-center gap-2">
+            <mat-icon fontSet="material-symbols-rounded" class="!text-blue-600 !text-[20px]"
+              >local_hospital</mat-icon
+            >
+            Coverage Details
+          </h4>
+
+          @if (policy.scheme) {
+          <div class="grid grid-cols-3 gap-2 text-sm">
+            <span class="text-blue-700">Scheme</span>
+            <span class="col-span-2 text-blue-900">{{ policy.scheme.name }}</span>
+          </div>
+          } @if (policy.plan) {
+          <div class="grid grid-cols-3 gap-2 text-sm">
+            <span class="text-blue-700">Plan</span>
+            <span class="col-span-2 font-medium text-blue-900">{{ policy.plan.name }}</span>
+          </div>
+          }
+
+          <div class="grid grid-cols-3 gap-2 text-sm">
+            <span class="text-blue-700">Term</span>
+            <span class="col-span-2 text-blue-900">{{ policy.policy_term_months }} Months</span>
+          </div>
+        </div>
+
+        <!-- Policy Period -->
+        <div class="rounded-lg border border-slate-200 bg-slate-50 p-4 space-y-3">
+          <h4 class="font-medium text-slate-900 flex items-center gap-2">
+            <mat-icon fontSet="material-symbols-rounded" class="!text-slate-400 !text-[20px]"
+              >calendar_today</mat-icon
+            >
+            Policy Period
+          </h4>
+
+          <div class="grid grid-cols-3 gap-2 text-sm">
+            <span class="text-slate-500">Inception</span>
+            <span class="col-span-2 text-slate-900">{{
+              policy.inception_date | date : 'mediumDate'
+            }}</span>
+          </div>
+
+          <div class="grid grid-cols-3 gap-2 text-sm">
+            <span class="text-slate-500">Expiry</span>
+            <span class="col-span-2" [class]="getDaysToExpiry(policy).class">
+              {{ policy.expiry_date | date : 'mediumDate' }}
+              @if (getDaysToExpiry(policy).days > 0) {
+              <span class="text-slate-400">({{ getDaysToExpiry(policy).days }} days)</span>
+              } @else {
+              <span class="text-red-600">(Expired)</span>
+              }
+            </span>
+          </div>
+
+          <div class="grid grid-cols-3 gap-2 text-sm">
+            <span class="text-slate-500">Auto Renew</span>
+            <span class="col-span-2 flex items-center gap-1">
+              @if (policy.is_auto_renew) {
+              <mat-icon fontSet="material-symbols-rounded" class="!text-green-600 !text-[18px]"
+                >check_circle</mat-icon
+              >
+              <span class="text-green-600">Yes</span>
+              } @else {
+              <mat-icon fontSet="material-symbols-rounded" class="!text-slate-400 !text-[18px]"
+                >cancel</mat-icon
+              >
+              <span class="text-slate-500">No</span>
+              }
+            </span>
+          </div>
+        </div>
+
+        <!-- Premium Details -->
+        <div class="rounded-lg border border-green-200 bg-green-50 p-4 space-y-3">
+          <h4 class="font-medium text-green-900 flex items-center gap-2">
+            <mat-icon fontSet="material-symbols-rounded" class="!text-green-600 !text-[20px]"
+              >payments</mat-icon
+            >
+            Premium Details
+          </h4>
+
+          <div class="grid grid-cols-3 gap-2 text-sm">
+            <span class="text-green-700">Base Premium</span>
+            <span class="col-span-2 text-green-900">{{ formatCurrency(policy.base_premium) }}</span>
+          </div>
+
+          @if (policy.total_loadings && policy.total_loadings > 0) {
+          <div class="grid grid-cols-3 gap-2 text-sm">
+            <span class="text-green-700">Loadings</span>
+            <span class="col-span-2 text-red-600"
+              >+{{ formatCurrency(policy.total_loadings) }}</span
+            >
+          </div>
+          } @if (policy.total_discounts && policy.total_discounts > 0) {
+          <div class="grid grid-cols-3 gap-2 text-sm">
+            <span class="text-green-700">Discounts</span>
+            <span class="col-span-2 text-green-600"
+              >-{{ formatCurrency(policy.total_discounts) }}</span
+            >
+          </div>
+          }
+
+          <mat-divider></mat-divider>
+
+          <div class="grid grid-cols-3 gap-2 text-sm">
+            <span class="text-green-700 font-medium">Net Premium</span>
+            <span class="col-span-2 font-semibold text-lg text-green-900">{{
+              formatCurrency(policy.net_premium)
+            }}</span>
+          </div>
+
+          <div class="grid grid-cols-3 gap-2 text-sm">
+            <span class="text-green-700">Billing</span>
+            <span class="col-span-2 text-green-900">{{
+              getLabelByValue(BILLING_FREQUENCIES, policy.billing_frequency)
+            }}</span>
+          </div>
+
+          @if (policy.promo_code) {
+          <div class="grid grid-cols-3 gap-2 text-sm">
+            <span class="text-green-700">Promo Code</span>
+            <span class="col-span-2">
+              <span class="px-2 py-1 bg-green-200 text-green-800 rounded text-xs font-mono">
+                {{ policy.promo_code }}
+              </span>
+            </span>
+          </div>
+          }
+        </div>
+
+        <!-- Members Summary -->
+        <div class="grid grid-cols-2 gap-4">
+          <div class="rounded-lg border border-purple-200 bg-purple-50 p-4 text-center">
+            <p class="text-2xl font-semibold text-purple-700">{{ policy.members_count || 0 }}</p>
+            <p class="text-sm text-purple-600">Total Members</p>
+          </div>
+          <div class="rounded-lg border border-amber-200 bg-amber-50 p-4 text-center">
+            <p class="text-2xl font-semibold text-amber-700">{{ policy.dependents_count || 0 }}</p>
+            <p class="text-sm text-amber-600">Dependents</p>
+          </div>
+        </div>
+
+        <!-- Addons -->
+        @if (policy.addons_count && policy.addons_count > 0) {
+        <div class="rounded-lg border border-slate-200 bg-slate-50 p-4">
+          <h4 class="font-medium text-slate-900 mb-2 flex items-center gap-2">
+            <mat-icon fontSet="material-symbols-rounded" class="!text-slate-500 !text-[20px]"
+              >add_circle</mat-icon
+            >
+            Active Addons
+          </h4>
+          <p class="text-sm text-slate-600">
+            {{ policy.addons_count }} addon(s) attached to this policy
+          </p>
+        </div>
+        }
+      </div>
+
+      <!-- Drawer Footer -->
+      <div
+        class="px-6 py-4 border-t border-slate-100 bg-slate-50 flex items-center justify-between"
+      >
+        <div class="flex items-center gap-2">
+          <button
+            mat-stroked-button
+            matTooltip="Download Certificate"
+            (click)="downloadCertificate(policy, $event)"
+            [disabled]="policy.status !== 'active'"
+            class="!border-slate-200"
+          >
+            <mat-icon fontSet="material-symbols-rounded">picture_as_pdf</mat-icon>
+            Certificate
+          </button>
+          <a
+            mat-stroked-button
+            [routerLink]="['/policies', policy.id]"
+            (click)="closeDrawer()"
+            class="!border-slate-200"
+          >
+            <mat-icon fontSet="material-symbols-rounded">open_in_new</mat-icon>
+            Full Details
+          </a>
+        </div>
+        <div class="flex items-center gap-2">
+          @if (policy.status === 'active') {
+          <button mat-stroked-button color="warn" (click)="suspendPolicy(policy, $event)">
+            <mat-icon fontSet="material-symbols-rounded">pause</mat-icon>
+            Suspend
+          </button>
+          } @if (policy.status === 'suspended' || policy.status === 'pending_payment') {
+          <button mat-stroked-button color="primary" (click)="activatePolicy(policy, $event)">
+            <mat-icon fontSet="material-symbols-rounded">play_arrow</mat-icon>
+            Activate
+          </button>
+          } @if (policy.is_expiring_soon || policy.status === 'expired') {
+          <button mat-flat-button color="primary" (click)="renewPolicy(policy, $event)">
+            <mat-icon fontSet="material-symbols-rounded">autorenew</mat-icon>
+            Renew
+          </button>
+          }
+          <button mat-flat-button color="primary" (click)="openDialog(policy)">
+            <mat-icon fontSet="material-symbols-rounded">edit</mat-icon>
+            Edit
+          </button>
+        </div>
+      </div>
+    </div>
+    }
+  </mat-drawer>
+</mat-drawer-container>

@@ -14,7 +14,7 @@ class FeatureRequest extends FormRequest
     {
         return [
             'name'     => 'required|string|max:255|unique:med_features,name,' . $this->route('feature'),
-            'category' => 'required|string|in:Clinical,In-Patient,Out-Patient,Specialist,Dental,Optical',
+            'category' => 'required|string|in:Clinical,In-Patient,Out-Patient,Specialist,Dental,Optical, Maternity',
         ];
     }
 

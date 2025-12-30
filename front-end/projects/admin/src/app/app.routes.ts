@@ -7,27 +7,55 @@ export const routes: Routes = [
     children: [
       {
         path: 'schemes',
-        loadComponent: () => import('medical-feature').then((m) => m.MedicalSchemes),
+        loadComponent: () => import('medical-feature').then((m) => m.MedicalSchemesList),
       },
       {
         path: 'plans',
-        loadComponent: () => import('medical-feature').then((m) => m.MedicalPlans),
+        loadComponent: () => import('medical-feature').then((m) => m.MedicalPlanList),
       },
       {
-        path: 'features',
-        loadComponent: () => import('medical-feature').then((m) => m.MedicalFeatures),
+        path: 'plans/:id',
+        loadComponent: () => import('medical-feature').then((m) => m.MedicalPlanDetail),
+      },
+      {
+        path: 'benefits',
+        loadComponent: () => import('medical-feature').then((m) => m.MedicalBenefitsCatalog),
+      },
+      {
+        path: 'benefits-config',
+        loadComponent: () => import('medical-feature').then((m) => m.MedicalPlanBenefitsConfig),
       },
       {
         path: 'addons',
-        loadComponent: () => import('medical-feature').then((m) => m.MedicalAddons),
+        loadComponent: () => import('medical-feature').then((m) => m.MedicalAddonsCatalog),
       },
       {
         path: 'rate-cards',
-        loadComponent: () => import('medical-feature').then((m) => m.MedicalRateCards),
+        loadComponent: () => import('medical-feature').then((m) => m.MedicalRateCardsList),
+      },
+      {
+        path: 'rate-cards/:id',
+        loadComponent: () => import('medical-feature').then((m) => m.MedicalRateCardDetail),
       },
       {
         path: 'discounts',
-        loadComponent: () => import('medical-feature').then((m) => m.MedicalDiscounts),
+        loadComponent: () => import('medical-feature').then((m) => m.MedicalDiscountList),
+      },
+      {
+        path: 'loading-rule',
+        loadComponent: () => import('medical-feature').then((m) => m.MedicalLoadingRuleList),
+      },
+      {
+        path: 'groups',
+        loadComponent: () => import('medical-feature').then((m) => m.MedicalGroupsList),
+      },
+      {
+        path: 'policies',
+        loadComponent: () => import('medical-feature').then((m) => m.MedicalPoliciesList),
+      },
+      {
+        path: 'members',
+        loadComponent: () => import('medical-feature').then((m) => m.MedicalMembersList),
       },
     ],
   },

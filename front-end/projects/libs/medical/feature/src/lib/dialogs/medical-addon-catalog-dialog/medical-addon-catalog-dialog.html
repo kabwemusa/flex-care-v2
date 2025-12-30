@@ -1,0 +1,283 @@
+<!-- libs/medical/ui/src/lib/dialogs/addon-dialog/addon-dialog.html -->
+
+<div class="flex max-h-[90vh] w-full flex-col overflow-hidden bg-white sm:w-[600px]">
+  <!-- Header -->
+  <div class="flex items-center justify-between border-b border-slate-100 px-6 py-4">
+    <div class="flex items-center gap-3">
+      <div
+        class="flex h-10 w-10 items-center justify-center rounded-full bg-purple-100 text-purple-600"
+      >
+        <mat-icon fontSet="material-symbols-rounded">extension</mat-icon>
+      </div>
+      <div>
+        <h2 class="text-lg font-semibold tracking-tight text-slate-900">
+          {{ isEditMode ? 'Edit Addon' : 'New Addon' }}
+        </h2>
+        <p class="text-xs text-slate-500">Create riders, top-ups, or standalone products</p>
+      </div>
+    </div>
+
+    <button
+      mat-icon-button
+      (click)="dialogRef.close()"
+      class="!text-slate-400 hover:!text-slate-700"
+    >
+      <mat-icon fontSet="material-symbols-rounded">close</mat-icon>
+    </button>
+  </div>
+
+  <!-- Stepper Content -->
+  <div class="flex-1 overflow-y-auto">
+    <mat-stepper
+      #stepper
+      [linear]="false"
+      [selectedIndex]="currentStep()"
+      (selectionChange)="onStepChange($event.selectedIndex)"
+      class="!bg-transparent"
+    >
+      <!-- Step 1: Basic Info -->
+      <mat-step [stepControl]="basicForm" label="Basic Info">
+        <form [formGroup]="basicForm" class="p-6 space-y-5">
+          <p class="text-sm text-slate-500 mb-4">Enter the basic information for this addon.</p>
+
+          <!-- Name -->
+          <div class="flex flex-col gap-1.5">
+            <label class="text-sm font-medium text-slate-700">
+              Name <span class="text-red-500">*</span>
+            </label>
+            <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+              <input matInput formControlName="name" placeholder="e.g. Dental Plus Rider" />
+              @if (basicForm.get('name')?.hasError('required')) {
+              <mat-error>Name is required</mat-error>
+              }
+            </mat-form-field>
+          </div>
+
+          <!-- Code -->
+          <div class="flex flex-col gap-1.5">
+            <label class="text-sm font-medium text-slate-700">Code</label>
+            <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+              <input matInput formControlName="code" placeholder="Auto-generated if empty" />
+            </mat-form-field>
+            <p class="text-xs text-slate-400">Leave empty to auto-generate</p>
+          </div>
+
+          <!-- Addon Type -->
+          <div class="flex flex-col gap-1.5">
+            <label class="text-sm font-medium text-slate-700">
+              Addon Type <span class="text-red-500">*</span>
+            </label>
+            <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+              <mat-select formControlName="addon_type">
+                <mat-select-trigger>
+                  @if (basicForm.get('addon_type')?.value; as type) {
+                  <span class="flex items-center gap-2">
+                    <mat-icon fontSet="material-symbols-rounded" class="!text-[18px]">{{
+                      getAddonTypeIcon(type)
+                    }}</mat-icon>
+                    <span>{{ getAddonTypeLabel(type) }}</span>
+                  </span>
+                  }
+                </mat-select-trigger>
+                @for (type of addonTypes; track type.value) {
+                <mat-option [value]="type.value">
+                  <div class="flex items-center gap-2">
+                    <mat-icon fontSet="material-symbols-rounded" class="!text-[18px]">{{
+                      getAddonTypeIcon(type.value)
+                    }}</mat-icon>
+                    <div class="flex flex-col">
+                      <span>{{ type.label }}</span>
+                      <span class="text-xs text-slate-400">{{ type.description }}</span>
+                    </div>
+                  </div>
+                </mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+          </div>
+
+          <!-- Description -->
+          <div class="flex flex-col gap-1.5">
+            <label class="text-sm font-medium text-slate-700">Description</label>
+            <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+              <textarea
+                matInput
+                formControlName="description"
+                rows="3"
+                placeholder="Brief description of this addon..."
+                class="!resize-none"
+              ></textarea>
+            </mat-form-field>
+          </div>
+        </form>
+      </mat-step>
+
+      <!-- Step 2: Default Pricing -->
+      <mat-step [stepControl]="pricingForm" label="Pricing" [optional]="true">
+        <form [formGroup]="pricingForm" class="p-6 space-y-5">
+          <p class="text-sm text-slate-500 mb-4">
+            Configure default pricing for this addon. You can set specific rates per plan later.
+          </p>
+
+          <div class="rounded-lg bg-blue-50 border border-blue-100 p-4 mb-6">
+            <div class="flex gap-3">
+              <mat-icon fontSet="material-symbols-rounded" class="!text-blue-500">info</mat-icon>
+              <div>
+                <p class="text-sm font-medium text-blue-900">Pricing Note</p>
+                <p class="text-xs text-blue-700 mt-1">
+                  Detailed rates (per plan, age-rated, etc.) can be configured after creating the
+                  addon.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Default Pricing Type -->
+          <div class="flex flex-col gap-1.5">
+            <label class="text-sm font-medium text-slate-700">Default Pricing Type</label>
+            <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+              <mat-select formControlName="default_pricing_type">
+                <mat-select-trigger>
+                  @if (pricingForm.get('default_pricing_type')?.value; as pt) {
+                  <span>{{ getPricingTypeLabel(pt) }}</span>
+                  }
+                </mat-select-trigger>
+                @for (pt of pricingTypes; track pt.value) {
+                <mat-option [value]="pt.value">{{ pt.label }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+          </div>
+
+          <!-- Conditional Amount/Percentage -->
+          @if (pricingForm.get('default_pricing_type')?.value === 'fixed' ||
+          pricingForm.get('default_pricing_type')?.value === 'per_member') {
+          <div class="flex flex-col gap-1.5">
+            <label class="text-sm font-medium text-slate-700">Default Amount</label>
+            <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+              <span matTextPrefix class="text-slate-400 mr-1">ZMW</span>
+              <input
+                matInput
+                type="number"
+                formControlName="default_amount"
+                min="0"
+                placeholder="e.g. 150"
+              />
+            </mat-form-field>
+          </div>
+          } @if (pricingForm.get('default_pricing_type')?.value === 'percentage') {
+          <div class="flex flex-col gap-1.5">
+            <label class="text-sm font-medium text-slate-700">Default Percentage</label>
+            <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+              <input
+                matInput
+                type="number"
+                formControlName="default_percentage"
+                min="0"
+                max="100"
+                placeholder="e.g. 10"
+              />
+              <span matTextSuffix class="text-slate-400">%</span>
+            </mat-form-field>
+            <p class="text-xs text-slate-400">Percentage of base premium</p>
+          </div>
+          }
+        </form>
+      </mat-step>
+
+      <!-- Step 3: Settings -->
+      <mat-step [stepControl]="settingsForm" label="Settings" [optional]="true">
+        <form [formGroup]="settingsForm" class="p-6 space-y-5">
+          <p class="text-sm text-slate-500 mb-4">Configure additional settings for this addon.</p>
+
+          <!-- Effective Dates -->
+          <div class="grid grid-cols-2 gap-4">
+            <div class="flex flex-col gap-1.5">
+              <label class="text-sm font-medium text-slate-700">Effective From</label>
+              <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+                <input matInput [matDatepicker]="fromPicker" formControlName="effective_from" />
+                <mat-datepicker-toggle matIconSuffix [for]="fromPicker"></mat-datepicker-toggle>
+                <mat-datepicker #fromPicker></mat-datepicker>
+              </mat-form-field>
+            </div>
+
+            <div class="flex flex-col gap-1.5">
+              <label class="text-sm font-medium text-slate-700">Effective To</label>
+              <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+                <input matInput [matDatepicker]="toPicker" formControlName="effective_to" />
+                <mat-datepicker-toggle matIconSuffix [for]="toPicker"></mat-datepicker-toggle>
+                <mat-datepicker #toPicker></mat-datepicker>
+              </mat-form-field>
+            </div>
+          </div>
+
+          <!-- Sort Order -->
+          <div class="flex flex-col gap-1.5">
+            <label class="text-sm font-medium text-slate-700">Sort Order</label>
+            <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+              <input matInput type="number" formControlName="sort_order" min="0" placeholder="0" />
+            </mat-form-field>
+            <p class="text-xs text-slate-400">Lower numbers appear first in lists</p>
+          </div>
+
+          <!-- Active Toggle -->
+          <div
+            class="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50/50 p-4"
+          >
+            <div class="flex flex-col">
+              <span class="text-sm font-semibold text-slate-900">Active</span>
+              <span class="text-xs text-slate-500"
+                >Make this addon available for configuration</span
+              >
+            </div>
+            <mat-slide-toggle formControlName="is_active" color="primary"></mat-slide-toggle>
+          </div>
+        </form>
+      </mat-step>
+    </mat-stepper>
+  </div>
+
+  <!-- Footer with Navigation -->
+  <div class="flex items-center justify-between border-t border-slate-100 bg-slate-50 px-6 py-4">
+    <div class="text-xs text-slate-500">Step {{ currentStep() + 1 }} of 3</div>
+
+    <div class="flex items-center gap-3">
+      <button mat-button (click)="dialogRef.close()" class="!text-slate-600 hover:!bg-slate-200">
+        Cancel
+      </button>
+
+      <!-- Back Button -->
+      @if (!isFirstStep) {
+      <button mat-stroked-button (click)="prevStep()" class="!border-slate-300">
+        <mat-icon fontSet="material-symbols-rounded">arrow_back</mat-icon>
+        Back
+      </button>
+      }
+
+      <!-- Next Button -->
+      @if (!isLastStep) {
+      <button
+        mat-flat-button
+        color="primary"
+        [disabled]="!canGoNext"
+        (click)="nextStep()"
+        class="!px-6 !rounded-lg"
+      >
+        Next
+        <mat-icon fontSet="material-symbols-rounded">arrow_forward</mat-icon>
+      </button>
+      } @else {
+      <!-- Save Button (only on last step) -->
+      <button
+        mat-flat-button
+        color="primary"
+        [disabled]="!isFormValid"
+        (click)="save()"
+        class="!px-6 !rounded-lg"
+      >
+        {{ isEditMode ? 'Update Addon' : 'Create Addon' }}
+      </button>
+      }
+    </div>
+  </div>
+</div>

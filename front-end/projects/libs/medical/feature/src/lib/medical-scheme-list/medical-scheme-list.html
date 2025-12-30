@@ -1,0 +1,560 @@
+<!-- libs/medical/ui/src/lib/schemes/medical-schemes.component.html -->
+
+<mat-drawer-container class="h-full">
+  <!-- Main Content -->
+  <mat-drawer-content>
+    <div class="bg-white p-6 md:p-10 min-h-[80vh] shadow-sm">
+      <lib-page-header
+        title="Medical Schemes"
+        subtitle="Manage umbrella products, organizational tiers, and scheme rules."
+      >
+        <div actions class="flex gap-2">
+          <button
+            mat-button
+            (click)="exportToCsv()"
+            class="!border-divider !text-foreground-600 hover:!bg-content2 hidden sm:flex"
+          >
+            <mat-icon fontSet="material-symbols-rounded">download</mat-icon>
+            Export
+          </button>
+
+          <button mat-flat-button color="primary" class="!rounded-lg" (click)="openCreateDialog()">
+            <mat-icon fontSet="material-symbols-rounded">add</mat-icon>
+            New Scheme
+          </button>
+        </div>
+      </lib-page-header>
+
+      <!-- KPI Cards -->
+      <div class="grid grid-cols-1 gap-4 sm:grid-cols-3 mb-6">
+        <div class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+          <div class="flex items-center justify-between">
+            <div>
+              <div class="text-sm font-medium text-slate-500">Total Schemes</div>
+              <div class="mt-2 text-2xl font-bold tracking-tight text-slate-900">
+                {{ totalSchemes() }}
+              </div>
+            </div>
+            <div class="flex h-10 w-10 items-center justify-center rounded-full bg-slate-100">
+              <mat-icon fontSet="material-symbols-rounded" class="!text-slate-500"
+                >category</mat-icon
+              >
+            </div>
+          </div>
+        </div>
+
+        <div class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+          <div class="flex items-center justify-between">
+            <div>
+              <div class="text-sm font-medium text-slate-500">Active Schemes</div>
+              <div class="mt-2 text-2xl font-bold tracking-tight text-green-600">
+                {{ activeSchemes() }}
+              </div>
+            </div>
+            <div class="flex h-10 w-10 items-center justify-center rounded-full bg-green-100">
+              <mat-icon fontSet="material-symbols-rounded" class="!text-green-600"
+                >check_circle</mat-icon
+              >
+            </div>
+          </div>
+        </div>
+
+        <div class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+          <div class="flex items-center justify-between">
+            <div>
+              <div class="text-sm font-medium text-slate-500">Total Plans</div>
+              <div class="mt-2 text-2xl font-bold tracking-tight text-blue-600">
+                {{ totalPlans() }}
+              </div>
+            </div>
+            <div class="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100">
+              <mat-icon fontSet="material-symbols-rounded" class="!text-blue-600"
+                >medical_services</mat-icon
+              >
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Table Container -->
+      <div
+        class="flex flex-col rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden"
+      >
+        <!-- Filters Bar -->
+        <div
+          class="flex flex-col gap-4 border-b border-slate-100 p-4 sm:flex-row sm:items-center sm:justify-between"
+        >
+          <!-- Search -->
+          <div class="relative w-full sm:w-72">
+            <mat-icon
+              fontSet="material-symbols-rounded"
+              class="absolute left-3 top-1/2 -translate-y-1/2 !text-[20px] text-slate-400"
+              >search</mat-icon
+            >
+            <input
+              type="text"
+              placeholder="Search schemes..."
+              class="h-10 w-full rounded-lg border border-slate-200 bg-slate-50 pl-10 pr-4 text-sm text-slate-900 outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all placeholder:text-slate-400"
+              (input)="applyFilter($event)"
+              [value]="searchQuery()"
+            />
+          </div>
+
+          <!-- Filter Dropdowns -->
+          <div class="flex items-center gap-2 flex-wrap">
+            <mat-form-field appearance="outline" subscriptSizing="dynamic" class="!w-44">
+              <mat-select
+                placeholder="All Segments"
+                [value]="selectedSegment()"
+                (selectionChange)="filterBySegment($event.value)"
+              >
+                <mat-option value="">All Segments</mat-option>
+                @for (segment of marketSegments; track segment.value) {
+                <mat-option [value]="segment.value">
+                  <div class="flex items-center gap-2">
+                    <mat-icon fontSet="material-symbols-rounded" class="!text-[18px]">{{
+                      segment.icon
+                    }}</mat-icon>
+                    <span>{{ segment.label }}</span>
+                  </div>
+                </mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+
+            @if (selectedSegment() || searchQuery()) {
+            <button
+              mat-stroked-button
+              class="!border-slate-200 !text-slate-600"
+              (click)="clearFilters()"
+            >
+              <mat-icon fontSet="material-symbols-rounded">clear</mat-icon>
+              Clear
+            </button>
+            }
+          </div>
+        </div>
+
+        <!-- Loading State -->
+        @if (store.isLoading()) {
+        <div class="divide-y divide-slate-100">
+          @for (i of [1,2,3,4,5]; track i) {
+          <div class="flex items-center gap-4 p-4 animate-pulse">
+            <div class="h-10 w-10 shrink-0 rounded-full bg-slate-100"></div>
+            <div class="flex-1 space-y-2">
+              <div class="h-4 w-1/3 rounded bg-slate-100"></div>
+              <div class="h-3 w-1/4 rounded bg-slate-50"></div>
+            </div>
+            <div class="h-8 w-24 rounded bg-slate-100"></div>
+          </div>
+          }
+        </div>
+        } @else {
+        <!-- Table -->
+        <div class="overflow-x-auto">
+          <table mat-table [dataSource]="dataSource" matSort class="w-full">
+            <!-- Status Column -->
+            <ng-container matColumnDef="status">
+              <th
+                mat-header-cell
+                *matHeaderCellDef
+                mat-sort-header
+                class="!bg-slate-50 !px-6 !py-3 text-xs font-semibold uppercase tracking-wider text-slate-500 !w-28"
+              >
+                Status
+              </th>
+              <td mat-cell *matCellDef="let scheme" class="!px-6 !py-4">
+                <span
+                  [class]="
+                    scheme.is_active
+                      ? 'bg-green-50 text-green-700 border-green-200'
+                      : 'bg-gray-100 text-gray-600 border-gray-200'
+                  "
+                  class="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium"
+                >
+                  {{ scheme.is_active ? 'Active' : 'Inactive' }}
+                </span>
+              </td>
+            </ng-container>
+
+            <!-- Name Column -->
+            <ng-container matColumnDef="name">
+              <th
+                mat-header-cell
+                *matHeaderCellDef
+                mat-sort-header
+                class="!bg-slate-50 !px-6 !py-3 text-xs font-semibold uppercase tracking-wider text-slate-500"
+              >
+                Scheme Name
+              </th>
+              <td mat-cell *matCellDef="let scheme" class="!px-6 !py-4">
+                <div class="flex flex-col">
+                  <button
+                    (click)="viewDetails(scheme)"
+                    class="text-left font-medium text-slate-900 hover:text-primary transition-colors"
+                  >
+                    {{ scheme.name }}
+                  </button>
+                  <span class="text-xs text-slate-500">{{ scheme.code }}</span>
+                </div>
+              </td>
+            </ng-container>
+
+            <!-- Segment Column -->
+            <ng-container matColumnDef="segment">
+              <th
+                mat-header-cell
+                *matHeaderCellDef
+                mat-sort-header
+                class="!bg-slate-50 !px-6 !py-3 text-xs font-semibold uppercase tracking-wider text-slate-500"
+              >
+                Segment
+              </th>
+              <td mat-cell *matCellDef="let scheme" class="!px-6 !py-4">
+                <span
+                  [class]="getSegmentClass(scheme.market_segment)"
+                  class="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium"
+                >
+                  <mat-icon fontSet="material-symbols-rounded" class="!text-[14px]">
+                    {{ getSegmentIcon(scheme.market_segment) }}
+                  </mat-icon>
+                  {{ getSegmentLabel(scheme.market_segment) }}
+                </span>
+              </td>
+            </ng-container>
+
+            <!-- Plans Column -->
+            <ng-container matColumnDef="plans">
+              <th
+                mat-header-cell
+                *matHeaderCellDef
+                class="!bg-slate-50 !px-6 !py-3 text-xs font-semibold uppercase tracking-wider text-slate-500 !w-32"
+              >
+                Plans
+              </th>
+              <td mat-cell *matCellDef="let scheme" class="!px-6 !py-4">
+                <div class="flex items-center gap-2">
+                  <span
+                    class="flex h-6 w-6 items-center justify-center rounded-md bg-blue-50 text-xs font-medium text-blue-700"
+                  >
+                    {{ scheme.plans_count || 0 }}
+                  </span>
+                  <span class="text-xs text-slate-500">Plans</span>
+                </div>
+              </td>
+            </ng-container>
+
+            <!-- Effective Column -->
+            <ng-container matColumnDef="effective">
+              <th
+                mat-header-cell
+                *matHeaderCellDef
+                mat-sort-header
+                class="!bg-slate-50 !px-6 !py-3 text-xs font-semibold uppercase tracking-wider text-slate-500"
+              >
+                Effective
+              </th>
+              <td mat-cell *matCellDef="let scheme" class="!px-6 !py-4">
+                <div class="flex flex-col text-sm">
+                  <span class="text-slate-700">{{
+                    scheme.effective_from | date : 'mediumDate'
+                  }}</span>
+                  @if (scheme.effective_to) {
+                  <span class="text-xs text-slate-400"
+                    >to {{ scheme.effective_to | date : 'mediumDate' }}</span
+                  >
+                  }
+                </div>
+              </td>
+            </ng-container>
+
+            <!-- Actions Column -->
+            <ng-container matColumnDef="actions">
+              <th mat-header-cell *matHeaderCellDef class="!bg-slate-50 !w-16"></th>
+              <td mat-cell *matCellDef="let scheme" class="!px-4 !py-4 text-right">
+                <button
+                  mat-icon-button
+                  [matMenuTriggerFor]="menu"
+                  class="!text-slate-400 hover:!bg-slate-100 hover:!text-slate-900"
+                >
+                  <mat-icon fontSet="material-symbols-rounded">more_vert</mat-icon>
+                </button>
+
+                <mat-menu
+                  #menu="matMenu"
+                  class="!rounded-xl !border !border-slate-200 !shadow-lg !bg-white"
+                >
+                  <button mat-menu-item (click)="viewDetails(scheme)">
+                    <mat-icon fontSet="material-symbols-rounded" class="!text-slate-500"
+                      >visibility</mat-icon
+                    >
+                    <span>View Details</span>
+                  </button>
+                  <button mat-menu-item (click)="openCreateDialog(scheme)">
+                    <mat-icon fontSet="material-symbols-rounded" class="!text-slate-500"
+                      >edit</mat-icon
+                    >
+                    <span>Edit Scheme</span>
+                  </button>
+                  <button mat-menu-item (click)="toggleStatus(scheme)">
+                    <mat-icon fontSet="material-symbols-rounded" class="!text-slate-500">
+                      {{ scheme.is_active ? 'block' : 'check_circle' }}
+                    </mat-icon>
+                    <span>{{ scheme.is_active ? 'Deactivate' : 'Activate' }}</span>
+                  </button>
+                  <mat-divider class="!my-1 opacity-50"></mat-divider>
+                  <button
+                    mat-menu-item
+                    class="!text-red-600 hover:!bg-red-50"
+                    (click)="deleteScheme(scheme)"
+                  >
+                    <mat-icon fontSet="material-symbols-rounded" class="!text-red-500"
+                      >delete</mat-icon
+                    >
+                    <span>Delete Scheme</span>
+                  </button>
+                </mat-menu>
+              </td>
+            </ng-container>
+
+            <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+            <tr
+              mat-row
+              *matRowDef="let row; columns: displayedColumns"
+              class="group border-b border-slate-100 last:border-0 hover:bg-slate-50 transition-colors cursor-pointer"
+              (click)="viewDetails(row)"
+            ></tr>
+          </table>
+
+          <!-- Empty State -->
+          @if (store.schemes().length === 0) {
+          <div class="flex flex-col items-center justify-center py-16 text-center">
+            <div class="flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 mb-4">
+              <mat-icon fontSet="material-symbols-rounded" class="!text-slate-400"
+                >inventory_2</mat-icon
+              >
+            </div>
+            <h3 class="text-sm font-medium text-slate-900">No schemes found</h3>
+            <p class="mt-1 text-sm text-slate-500 max-w-xs">
+              Get started by creating a new medical scheme for your organization.
+            </p>
+            <button mat-stroked-button color="primary" class="mt-4" (click)="openCreateDialog()">
+              Create First Scheme
+            </button>
+          </div>
+          }
+        </div>
+
+        <!-- Paginator -->
+        <mat-paginator
+          [pageSizeOptions]="[10, 20, 50]"
+          showFirstLastButtons
+          class="!border-t !border-slate-100 !bg-white"
+        ></mat-paginator>
+        }
+      </div>
+    </div>
+  </mat-drawer-content>
+
+  <!-- Detail Drawer -->
+  <mat-drawer #detailDrawer mode="over" position="end" class="!w-full sm:!w-[100vh] !bg-white">
+    @if (selectedScheme(); as scheme) {
+    <div class="flex flex-col h-full">
+      <!-- Drawer Header -->
+      <div class="flex items-center justify-between border-b border-slate-100 px-6 py-4">
+        <div class="flex items-center gap-3">
+          <div
+            [class]="getSegmentClass(scheme.market_segment)"
+            class="flex h-10 w-10 items-center justify-center rounded-full"
+          >
+            <mat-icon fontSet="material-symbols-rounded">
+              {{ getSegmentIcon(scheme.market_segment) }}
+            </mat-icon>
+          </div>
+          <div>
+            <h2 class="text-lg font-semibold text-slate-900">{{ scheme.name }}</h2>
+            <p class="text-xs text-slate-500">{{ scheme.code }}</p>
+          </div>
+        </div>
+
+        <button
+          mat-icon-button
+          (click)="closeDrawer()"
+          class="!text-slate-400 hover:!text-slate-700"
+        >
+          <mat-icon fontSet="material-symbols-rounded">close</mat-icon>
+        </button>
+      </div>
+
+      <!-- Drawer Content -->
+      <div class="flex-1 overflow-y-auto p-6 space-y-6">
+        <!-- Status Badge -->
+        <div class="flex items-center gap-2">
+          <span
+            [class]="
+              scheme.is_active
+                ? 'bg-green-50 text-green-700 border-green-200'
+                : 'bg-gray-100 text-gray-600 border-gray-200'
+            "
+            class="inline-flex items-center rounded-full border px-3 py-1 text-sm font-medium"
+          >
+            <span
+              [class]="scheme.is_active ? 'bg-green-500' : 'bg-gray-400'"
+              class="mr-2 h-2 w-2 rounded-full"
+            ></span>
+            {{ scheme.is_active ? 'Active' : 'Inactive' }}
+          </span>
+
+          <span
+            [class]="getSegmentClass(scheme.market_segment)"
+            class="inline-flex items-center gap-1 rounded-full border px-3 py-1 text-sm font-medium"
+          >
+            {{ getSegmentLabel(scheme.market_segment) }}
+          </span>
+        </div>
+
+        <!-- Description -->
+        @if (scheme.description) {
+        <div>
+          <h3 class="text-sm font-medium text-slate-500 mb-2">Description</h3>
+          <p class="text-sm text-slate-700">{{ scheme.description }}</p>
+        </div>
+        }
+
+        <!-- Effective Period -->
+        <div class="rounded-lg border border-slate-200 p-4">
+          <h3 class="text-sm font-medium text-slate-500 mb-3">Effective Period</h3>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <p class="text-xs text-slate-400">From</p>
+              <p class="text-sm font-medium text-slate-900">
+                {{ scheme.effective_from | date : 'longDate' }}
+              </p>
+            </div>
+            <div>
+              <p class="text-xs text-slate-400">To</p>
+              <p class="text-sm font-medium text-slate-900">
+                {{
+                  scheme.effective_to ? (scheme.effective_to | date : 'longDate') : 'No end date'
+                }}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Linked Plans -->
+        <div class="rounded-lg border border-slate-200 p-4">
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="text-sm font-medium text-slate-500">Linked Plans</h3>
+            <span class="text-2xl font-bold text-blue-600">{{ scheme.plans_count || 0 }}</span>
+          </div>
+          @if (scheme.plans && scheme.plans.length > 0) {
+          <div class="space-y-2">
+            @for (plan of scheme.plans.slice(0, 5); track plan.id) {
+            <div
+              class="flex items-center justify-between py-2 border-b border-slate-100 last:border-0"
+            >
+              <div>
+                <p class="text-sm font-medium text-slate-700">{{ plan.name }}</p>
+                <p class="text-xs text-slate-400">{{ plan.code }}</p>
+              </div>
+              <span [class]="plan.is_active ? 'text-green-600' : 'text-slate-400'" class="text-xs">
+                {{ plan.is_active ? 'Active' : 'Inactive' }}
+              </span>
+            </div>
+            } @if (scheme.plans.length > 5) {
+            <a
+              [routerLink]="['/medical/plans']"
+              [queryParams]="{ scheme_id: scheme.id }"
+              class="text-sm text-primary hover:underline"
+            >
+              View all {{ scheme.plans.length }} plans →
+            </a>
+            }
+          </div>
+          } @else {
+          <p class="text-sm text-slate-400">No plans linked to this scheme yet.</p>
+          }
+        </div>
+
+        <!-- Eligibility Rules -->
+        @if (scheme.eligibility_rules) {
+        <div class="rounded-lg border border-slate-200 p-4">
+          <h3 class="text-sm font-medium text-slate-500 mb-3">Eligibility Rules</h3>
+          <div class="space-y-2">
+            @if (scheme.eligibility_rules.min_age || scheme.eligibility_rules.max_age) {
+            <div class="flex items-center justify-between text-sm">
+              <span class="text-slate-500">Age Range</span>
+              <span class="text-slate-900">
+                {{ scheme.eligibility_rules.min_age || 0 }} -
+                {{ scheme.eligibility_rules.max_age || 99 }} years
+              </span>
+            </div>
+            } @if (scheme.eligibility_rules.min_group_size) {
+            <div class="flex items-center justify-between text-sm">
+              <span class="text-slate-500">Min. Group Size</span>
+              <span class="text-slate-900"
+                >{{ scheme.eligibility_rules.min_group_size }} members</span
+              >
+            </div>
+            } @if (scheme.eligibility_rules.max_group_size) {
+            <div class="flex items-center justify-between text-sm">
+              <span class="text-slate-500">Max. Group Size</span>
+              <span class="text-slate-900"
+                >{{ scheme.eligibility_rules.max_group_size }} members</span
+              >
+            </div>
+            }
+          </div>
+        </div>
+        }
+
+        <!-- Underwriting Rules -->
+        @if (scheme.underwriting_rules) {
+        <div class="rounded-lg border border-slate-200 p-4">
+          <h3 class="text-sm font-medium text-slate-500 mb-3">Underwriting Rules</h3>
+          <div class="space-y-2">
+            <div class="flex items-center justify-between text-sm">
+              <span class="text-slate-500">Medical Exam Required</span>
+              <span class="text-slate-900">
+                {{ scheme.underwriting_rules.require_medical_exam ? 'Yes' : 'No' }}
+              </span>
+            </div>
+            @if (scheme.underwriting_rules.medical_exam_age_threshold) {
+            <div class="flex items-center justify-between text-sm">
+              <span class="text-slate-500">Exam Age Threshold</span>
+              <span class="text-slate-900"
+                >{{ scheme.underwriting_rules.medical_exam_age_threshold }}+ years</span
+              >
+            </div>
+            }
+            <div class="flex items-center justify-between text-sm">
+              <span class="text-slate-500">Declaration Required</span>
+              <span class="text-slate-900">
+                {{ scheme.underwriting_rules.require_declaration ? 'Yes' : 'No' }}
+              </span>
+            </div>
+          </div>
+        </div>
+        }
+      </div>
+
+      <!-- Drawer Footer -->
+      <div
+        class="flex items-center justify-end gap-3 border-t border-slate-100 px-6 py-4 bg-slate-50"
+      >
+        <button mat-stroked-button (click)="toggleStatus(scheme)" class="!border-slate-200">
+          <mat-icon fontSet="material-symbols-rounded">
+            {{ scheme.is_active ? 'block' : 'check_circle' }}
+          </mat-icon>
+          {{ scheme.is_active ? 'Deactivate' : 'Activate' }}
+        </button>
+        <button mat-flat-button color="primary" (click)="openCreateDialog(scheme)">
+          <mat-icon fontSet="material-symbols-rounded">edit</mat-icon>
+          Edit Scheme
+        </button>
+      </div>
+    </div>
+    }
+  </mat-drawer>
+</mat-drawer-container>

@@ -1,0 +1,131 @@
+<div class="flex max-h-[90vh] w-full flex-col overflow-hidden bg-white sm:w-[600px]">
+  <!-- Header -->
+  <div class="flex items-center justify-between border-b border-slate-100 px-6 py-4">
+    <div class="flex items-center gap-3">
+      <div
+        class="flex h-10 w-10 items-center justify-center rounded-full bg-purple-100 text-purple-600"
+      >
+        <mat-icon fontSet="material-symbols-rounded">extension</mat-icon>
+      </div>
+      <div>
+        <h2 class="text-lg font-semibold tracking-tight text-slate-900">Add Addons to Plan</h2>
+        <p class="text-xs text-slate-500">Select addons to make available</p>
+      </div>
+    </div>
+
+    <button
+      mat-icon-button
+      (click)="dialogRef.close()"
+      class="!text-slate-400 hover:!text-slate-700"
+    >
+      <mat-icon fontSet="material-symbols-rounded">close</mat-icon>
+    </button>
+  </div>
+
+  <!-- Content -->
+  <div class="flex-1 overflow-y-auto p-6">
+    <!-- Search & Filter -->
+    <div class="flex gap-3 mb-4">
+      <div class="relative flex-1">
+        <mat-icon
+          fontSet="material-symbols-rounded"
+          class="absolute left-3 top-1/2 -translate-y-1/2 !text-[20px] text-slate-400"
+        >
+          search
+        </mat-icon>
+        <input
+          type="text"
+          placeholder="Search addons..."
+          class="h-10 w-full rounded-lg border border-slate-200 bg-slate-50 pl-10 pr-4 text-sm"
+          [value]="searchQuery()"
+          (input)="onSearchInput($event)"
+        />
+      </div>
+      <mat-form-field appearance="outline" subscriptSizing="dynamic" class="!w-40">
+        <mat-select [value]="selectedType()" (selectionChange)="selectedType.set($event.value)">
+          <mat-option value="">All Types</mat-option>
+          @for (type of addonTypes; track type.value) {
+          <mat-option [value]="type.value">{{ type.label }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+    </div>
+
+    <!-- Loading -->
+    @if (isLoading()) {
+    <div class="flex items-center justify-center py-12">
+      <mat-spinner diameter="32"></mat-spinner>
+    </div>
+    } @else {
+    <!-- Addons List -->
+    @if (filteredAddons().length > 0) {
+    <div class="space-y-2">
+      @for (addon of filteredAddons(); track addon.id) {
+      <div
+        class="rounded-lg border p-3 cursor-pointer transition-all"
+        [class]="
+          isSelected(addon.id)
+            ? 'border-primary bg-primary/5'
+            : 'border-slate-200 hover:border-slate-300'
+        "
+        (click)="toggleSelection(addon.id)"
+      >
+        <div class="flex items-center gap-3">
+          <mat-checkbox
+            [checked]="isSelected(addon.id)"
+            (change)="toggleSelection(addon.id)"
+            (click)="$event.stopPropagation()"
+            color="primary"
+          ></mat-checkbox>
+
+          <div
+            [class]="getAddonTypeClass(addon.addon_type)"
+            class="flex h-9 w-9 items-center justify-center rounded-full"
+          >
+            <mat-icon fontSet="material-symbols-rounded" class="!text-[18px]">
+              {{ getAddonTypeIcon(addon.addon_type) }}
+            </mat-icon>
+          </div>
+
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center gap-2">
+              <span class="font-medium text-slate-900">{{ addon.name }}</span>
+              <span class="rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-600">
+                {{ getAddonTypeLabel(addon.addon_type) }}
+              </span>
+            </div>
+            <p class="text-xs text-slate-500 truncate">{{ addon.description || addon.code }}</p>
+          </div>
+        </div>
+      </div>
+      }
+    </div>
+    } @else {
+    <div class="text-center py-8">
+      <mat-icon fontSet="material-symbols-rounded" class="!text-slate-300 !text-[48px]"
+        >search_off</mat-icon
+      >
+      <p class="text-sm text-slate-500 mt-2">No addons available to add</p>
+    </div>
+    } }
+  </div>
+
+  <!-- Footer -->
+  <div class="flex items-center justify-between border-t border-slate-100 bg-slate-50 px-6 py-4">
+    <span class="text-sm text-slate-500">{{ selectedCount() }} selected</span>
+
+    <div class="flex items-center gap-3">
+      <button mat-button (click)="dialogRef.close()" class="!text-slate-600">Cancel</button>
+      <button
+        mat-flat-button
+        color="primary"
+        [disabled]="selectedCount() === 0 || isSaving()"
+        (click)="addSelected()"
+      >
+        @if (isSaving()) {
+        <mat-spinner diameter="20" class="!mr-2"></mat-spinner>
+        } Add {{ selectedCount() }} Addon{{ selectedCount() !== 1 ? 's' : '' }}
+      </button>
+    </div>
+  </div>
+</div>

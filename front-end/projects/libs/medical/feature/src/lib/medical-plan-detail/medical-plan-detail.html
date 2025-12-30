@@ -1,0 +1,342 @@
+<!-- libs/medical/ui/src/lib/plans/medical-plan-detail.html -->
+
+<div class="bg-white min-h-[80vh]">
+  <!-- Loading State -->
+  @if (isLoading()) {
+  <div class="flex items-center justify-center py-24">
+    <mat-spinner diameter="40"></mat-spinner>
+  </div>
+  } @else if (plan(); as plan) {
+  <!-- Header Section -->
+  <div class="border-b border-slate-200 bg-white px-6 py-6 md:px-10">
+    <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+      <!-- Back & Title -->
+      <div class="flex items-start gap-4">
+        <button mat-icon-button (click)="goBack()" class="!bg-slate-100 hover:!bg-slate-200 !mt-1">
+          <mat-icon fontSet="material-symbols-rounded">arrow_back</mat-icon>
+        </button>
+
+        <div>
+          <div class="flex items-center gap-3 mb-1 flex-wrap">
+            <h1 class="text-2xl font-bold tracking-tight text-slate-900">
+              {{ plan.name }}
+            </h1>
+            <span
+              [class]="
+                plan.is_active
+                  ? 'bg-green-50 text-green-700 border-green-200'
+                  : 'bg-gray-100 text-gray-600 border-gray-200'
+              "
+              class="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium"
+            >
+              {{ plan.is_active ? 'Active' : 'Inactive' }}
+            </span>
+            <span
+              [class]="getTierBadgeClass(plan.tier_level || 0)"
+              class="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium"
+            >
+              {{ getTierLabel(plan.tier_level || 0) }}
+            </span>
+          </div>
+          <p class="text-sm text-slate-500">
+            {{ plan.code }} • {{ plan.scheme?.name || 'No Scheme' }}
+          </p>
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <div class="flex items-center gap-2">
+        <button mat-stroked-button [matMenuTriggerFor]="actionsMenu" class="!border-slate-200">
+          <mat-icon fontSet="material-symbols-rounded">more_horiz</mat-icon>
+          Actions
+        </button>
+
+        <mat-menu #actionsMenu="matMenu">
+          <button mat-menu-item (click)="toggleStatus()">
+            <mat-icon fontSet="material-symbols-rounded" class="!text-slate-500">
+              {{ plan.is_active ? 'block' : 'check_circle' }}
+            </mat-icon>
+            <span>{{ plan.is_active ? 'Deactivate' : 'Activate' }}</span>
+          </button>
+          <button mat-menu-item (click)="clonePlan()">
+            <mat-icon fontSet="material-symbols-rounded" class="!text-slate-500"
+              >content_copy</mat-icon
+            >
+            <span>Clone Plan</span>
+          </button>
+        </mat-menu>
+
+        <button mat-flat-button color="primary" (click)="openEditDialog()">
+          <mat-icon fontSet="material-symbols-rounded">edit</mat-icon>
+          Edit Plan
+        </button>
+      </div>
+    </div>
+
+    <!-- Quick Info Cards -->
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-6">
+      <!-- Plan Type -->
+      <div class="rounded-lg border border-slate-200 bg-slate-50 p-3">
+        <p class="text-xs text-slate-500 mb-1">Plan Type</p>
+        <p class="text-sm font-medium text-slate-900">{{ getPlanTypeLabel(plan.plan_type) }}</p>
+      </div>
+
+      <!-- Network -->
+      <div class="rounded-lg border border-slate-200 bg-slate-50 p-3">
+        <p class="text-xs text-slate-500 mb-1">Network</p>
+        <p class="text-sm font-medium text-slate-900">
+          {{ getNetworkTypeLabel(plan.network_type || '') }}
+        </p>
+      </div>
+
+      <!-- Benefits Count -->
+      <div class="rounded-lg border border-slate-200 bg-slate-50 p-3">
+        <p class="text-xs text-slate-500 mb-1">Benefits</p>
+        <p class="text-sm font-medium text-blue-600">
+          {{ plan.plan_benefits_count || 0 }} configured
+        </p>
+      </div>
+
+      <!-- Max Dependents -->
+      <div class="rounded-lg border border-slate-200 bg-slate-50 p-3">
+        <p class="text-xs text-slate-500 mb-1">Max Dependents</p>
+        <p class="text-sm font-medium text-slate-900">
+          {{ plan.member_config?.max_dependents ?? 'Unlimited' }}
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tabs Section -->
+  <div class="px-6 md:px-10">
+    <mat-tab-group
+      [selectedIndex]="activeTabIndex()"
+      (selectedIndexChange)="onTabChange($event)"
+      class="plan-detail-tabs"
+    >
+      <!-- Overview Tab -->
+      <mat-tab>
+        <ng-template mat-tab-label>
+          <mat-icon fontSet="material-symbols-rounded" class="!mr-2 !text-[20px]">info</mat-icon>
+          Overview
+        </ng-template>
+        <div class="py-6">
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- Description -->
+            <div class="rounded-xl border border-slate-200 p-6">
+              <h3 class="text-sm font-semibold text-slate-900 mb-3">Description</h3>
+              <p class="text-sm text-slate-600">
+                {{ plan.description || 'No description provided.' }}
+              </p>
+            </div>
+
+            <!-- Member Configuration -->
+            <div class="rounded-xl border border-slate-200 p-6">
+              <h3 class="text-sm font-semibold text-slate-900 mb-3">Member Configuration</h3>
+              @if (plan.member_config) {
+              <div class="space-y-3">
+                <div class="flex justify-between text-sm">
+                  <span class="text-slate-500">Max Dependents</span>
+                  <span class="text-slate-900 font-medium">{{
+                    plan.member_config.max_dependents ?? 'Unlimited'
+                  }}</span>
+                </div>
+                <div class="flex justify-between text-sm">
+                  <span class="text-slate-500">Child Age Limit</span>
+                  <span class="text-slate-900 font-medium"
+                    >{{ plan.member_config.child_age_limit || 18 }} years</span
+                  >
+                </div>
+                <div class="flex justify-between text-sm">
+                  <span class="text-slate-500">Student Age Limit</span>
+                  <span class="text-slate-900 font-medium"
+                    >{{ plan.member_config.child_student_age_limit || 25 }} years</span
+                  >
+                </div>
+                @if (plan.member_config.allowed_member_types) {
+                <div class="pt-2 border-t border-slate-100">
+                  <p class="text-xs text-slate-500 mb-2">Allowed Member Types</p>
+                  <div class="flex flex-wrap gap-1">
+                    @for (type of plan.member_config.allowed_member_types; track type) {
+                    <span class="rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-700">
+                      {{ getMemberTypeLabel(type) }}
+                    </span>
+                    }
+                  </div>
+                </div>
+                }
+              </div>
+              } @else {
+              <p class="text-sm text-slate-400">Not configured</p>
+              }
+            </div>
+
+            <!-- Waiting Periods -->
+            <div class="rounded-xl border border-slate-200 p-6">
+              <h3 class="text-sm font-semibold text-slate-900 mb-3">Default Waiting Periods</h3>
+              @if (plan.default_waiting_periods) {
+              <div class="grid grid-cols-2 gap-3">
+                <div class="text-sm">
+                  <span class="text-slate-500">General</span>
+                  <p class="font-medium text-slate-900">
+                    {{ plan.default_waiting_periods.general || 0 }} days
+                  </p>
+                </div>
+                <div class="text-sm">
+                  <span class="text-slate-500">Maternity</span>
+                  <p class="font-medium text-slate-900">
+                    {{ plan.default_waiting_periods.maternity || 0 }} days
+                  </p>
+                </div>
+                <div class="text-sm">
+                  <span class="text-slate-500">Pre-existing</span>
+                  <p class="font-medium text-slate-900">
+                    {{ plan.default_waiting_periods.pre_existing || 0 }} days
+                  </p>
+                </div>
+                <div class="text-sm">
+                  <span class="text-slate-500">Chronic</span>
+                  <p class="font-medium text-slate-900">
+                    {{ plan.default_waiting_periods.chronic || 0 }} days
+                  </p>
+                </div>
+                <div class="text-sm">
+                  <span class="text-slate-500">Dental</span>
+                  <p class="font-medium text-slate-900">
+                    {{ plan.default_waiting_periods.dental || 0 }} days
+                  </p>
+                </div>
+                <div class="text-sm">
+                  <span class="text-slate-500">Optical</span>
+                  <p class="font-medium text-slate-900">
+                    {{ plan.default_waiting_periods.optical || 0 }} days
+                  </p>
+                </div>
+              </div>
+              } @else {
+              <p class="text-sm text-slate-400">No waiting periods configured</p>
+              }
+            </div>
+
+            <!-- Cost Sharing -->
+            <div class="rounded-xl border border-slate-200 p-6">
+              <h3 class="text-sm font-semibold text-slate-900 mb-3">Default Cost Sharing</h3>
+              @if (plan.default_cost_sharing) {
+              <div class="space-y-3">
+                <div class="flex justify-between text-sm">
+                  <span class="text-slate-500">Copay</span>
+                  <span class="text-slate-900 font-medium">
+                    @if (plan.default_cost_sharing.copay_type === 'fixed') { ZMW
+                    {{ plan.default_cost_sharing.copay_amount | number }}
+                    } @else {
+                    {{ plan.default_cost_sharing.copay_percentage }}% }
+                  </span>
+                </div>
+                <div class="flex justify-between text-sm">
+                  <span class="text-slate-500">Deductible</span>
+                  <span class="text-slate-900 font-medium">
+                    ZMW {{ plan.default_cost_sharing.deductible | number }}
+                  </span>
+                </div>
+                <div class="flex justify-between text-sm">
+                  <span class="text-slate-500">Out-of-Pocket Max</span>
+                  <span class="text-slate-900 font-medium">
+                    @if (plan.default_cost_sharing.out_of_pocket_max) { ZMW
+                    {{ plan.default_cost_sharing.out_of_pocket_max | number }}
+                    } @else { No limit }
+                  </span>
+                </div>
+              </div>
+              } @else {
+              <p class="text-sm text-slate-400">No cost sharing configured</p>
+              }
+            </div>
+          </div>
+        </div>
+      </mat-tab>
+
+      <!-- Benefits Tab -->
+      <mat-tab>
+        <ng-template mat-tab-label>
+          <mat-icon fontSet="material-symbols-rounded" class="!mr-2 !text-[20px]"
+            >medical_services</mat-icon
+          >
+          Benefits
+        </ng-template>
+        <div class="py-6">
+          <lib-plan-benefits-config [planId]="planId()"></lib-plan-benefits-config>
+        </div>
+      </mat-tab>
+
+      <!-- Rate Cards Tab -->
+      <mat-tab>
+        <ng-template mat-tab-label>
+          <mat-icon fontSet="material-symbols-rounded" class="!mr-2 !text-[20px]"
+            >payments</mat-icon
+          >
+          Rate Cards
+        </ng-template>
+        <div class="py-6">
+          <lib-plan-rate-card-config [planId]="planId()"></lib-plan-rate-card-config>
+        </div>
+      </mat-tab>
+
+      <!-- Addons Tab -->
+      <mat-tab>
+        <ng-template mat-tab-label>
+          <mat-icon fontSet="material-symbols-rounded" class="!mr-2 !text-[20px]"
+            >extension</mat-icon
+          >
+          Addons
+        </ng-template>
+        <div class="py-6">
+          <lib-plan-addon-config [planId]="planId()"></lib-plan-addon-config>
+        </div>
+      </mat-tab>
+
+      <!-- Exclusions Tab -->
+      <mat-tab>
+        <ng-template mat-tab-label>
+          <mat-icon fontSet="material-symbols-rounded" class="!mr-2 !text-[20px]">block</mat-icon>
+          Exclusions
+        </ng-template>
+        <div class="py-6">
+          <!-- TODO: Replace with actual component -->
+          <div class="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-8 text-center">
+            <div
+              class="flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 mx-auto mb-4"
+            >
+              <mat-icon fontSet="material-symbols-rounded" class="!text-slate-400">block</mat-icon>
+            </div>
+            <h4 class="text-sm font-medium text-slate-900">Plan Exclusions</h4>
+            <p class="text-sm text-slate-500 mt-1 max-w-sm mx-auto">
+              Define conditions, treatments, or services not covered by this plan.
+            </p>
+            <button mat-flat-button color="primary" class="mt-4">
+              <mat-icon fontSet="material-symbols-rounded">add</mat-icon>
+              Add Exclusion
+            </button>
+          </div>
+        </div>
+      </mat-tab>
+    </mat-tab-group>
+  </div>
+  } @else {
+  <!-- Not Found State -->
+  <div class="flex flex-col items-center justify-center py-24 text-center">
+    <div class="flex h-16 w-16 items-center justify-center rounded-full bg-slate-100 mb-4">
+      <mat-icon fontSet="material-symbols-rounded" class="!text-slate-400 !text-[32px]"
+        >search_off</mat-icon
+      >
+    </div>
+    <h3 class="text-lg font-medium text-slate-900">Plan not found</h3>
+    <p class="mt-1 text-sm text-slate-500 max-w-sm">
+      The plan you're looking for doesn't exist or has been removed.
+    </p>
+    <button mat-flat-button color="primary" class="mt-4" (click)="goBack()">
+      <mat-icon fontSet="material-symbols-rounded">arrow_back</mat-icon>
+      Back to Plans
+    </button>
+  </div>
+  }
+</div>

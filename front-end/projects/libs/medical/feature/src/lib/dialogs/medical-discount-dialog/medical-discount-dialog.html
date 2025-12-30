@@ -1,0 +1,324 @@
+<div class="flex max-h-[90vh] w-full flex-col overflow-hidden bg-white sm:w-[650px]">
+  <!-- Header -->
+  <div class="flex items-center justify-between border-b border-slate-100 px-6 py-4">
+    <div class="flex items-center gap-3">
+      <div
+        class="flex h-10 w-10 items-center justify-center rounded-full bg-green-100 text-green-600"
+      >
+        <mat-icon fontSet="material-symbols-rounded">discount</mat-icon>
+      </div>
+      <div>
+        <h2 class="text-lg font-semibold tracking-tight text-slate-900">
+          {{ isEditMode ? 'Edit Rule' : 'New Discount/Loading Rule' }}
+        </h2>
+        <p class="text-xs text-slate-500">Configure pricing adjustment</p>
+      </div>
+    </div>
+
+    <button mat-icon-button (click)="dialogRef.close()" class="!text-slate-400">
+      <mat-icon fontSet="material-symbols-rounded">close</mat-icon>
+    </button>
+  </div>
+
+  <!-- Stepper Content -->
+  <div class="flex-1 overflow-y-auto">
+    <mat-stepper #stepper linear class="discount-stepper">
+      <!-- Step 1: Basic Info -->
+      <mat-step [stepControl]="basicForm">
+        <ng-template matStepLabel>Basic Info</ng-template>
+        <form [formGroup]="basicForm" class="p-6 space-y-5">
+          <!-- Adjustment Type -->
+          <div class="flex flex-col gap-1.5">
+            <label class="text-sm font-medium text-slate-700"
+              >Type <span class="text-red-500">*</span></label
+            >
+            <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+              <mat-select formControlName="adjustment_type">
+                @for (type of adjustmentTypes; track type.value) {
+                <mat-option [value]="type.value">
+                  <div class="flex items-center gap-2">
+                    <mat-icon fontSet="material-symbols-rounded" class="!text-[18px]">{{
+                      type.icon
+                    }}</mat-icon>
+                    {{ type.label }}
+                  </div>
+                </mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+          </div>
+
+          <!-- Name -->
+          <div class="flex flex-col gap-1.5">
+            <label class="text-sm font-medium text-slate-700"
+              >Name <span class="text-red-500">*</span></label
+            >
+            <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+              <input
+                matInput
+                formControlName="name"
+                placeholder="e.g., Family Discount, Annual Payment Discount"
+              />
+              @if (basicForm.get('name')?.hasError('required')) {
+              <mat-error>Name is required</mat-error>
+              }
+            </mat-form-field>
+          </div>
+
+          <!-- Description -->
+          <div class="flex flex-col gap-1.5">
+            <label class="text-sm font-medium text-slate-700">Description</label>
+            <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+              <textarea
+                matInput
+                formControlName="description"
+                rows="2"
+                placeholder="Optional description"
+              ></textarea>
+            </mat-form-field>
+          </div>
+
+          <!-- Value Type & Value -->
+          <div class="grid grid-cols-2 gap-4">
+            <div class="flex flex-col gap-1.5">
+              <label class="text-sm font-medium text-slate-700"
+                >Value Type <span class="text-red-500">*</span></label
+              >
+              <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+                <mat-select formControlName="value_type">
+                  @for (vt of valueTypes; track vt.value) {
+                  <mat-option [value]="vt.value">{{ vt.label }}</mat-option>
+                  }
+                </mat-select>
+              </mat-form-field>
+            </div>
+
+            <div class="flex flex-col gap-1.5">
+              <label class="text-sm font-medium text-slate-700"
+                >Value <span class="text-red-500">*</span></label
+              >
+              <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+                @if (basicForm.get('value_type')?.value === 'percentage') {
+                <input matInput type="number" formControlName="value" min="0" max="100" />
+                <ng-container>
+                  <span matTextSuffix>%</span>
+                </ng-container>
+
+                } @else {
+                <ng-container>
+                  <span matTextPrefix class="text-slate-400 mr-1">ZMW</span>
+                  <input matInput type="number" formControlName="value" min="0" step="0.01" />
+                </ng-container>
+
+                } @if (basicForm.get('value')?.hasError('required')) {
+                <mat-error>Value is required</mat-error>
+                }
+              </mat-form-field>
+            </div>
+          </div>
+
+          <!-- Application Method -->
+          <div class="flex flex-col gap-1.5">
+            <label class="text-sm font-medium text-slate-700"
+              >Application Method <span class="text-red-500">*</span></label
+            >
+            <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+              <mat-select formControlName="application_method">
+                @for (method of applicationMethods; track method.value) {
+                <mat-option [value]="method.value">
+                  <div class="flex flex-col">
+                    <span>{{ method.label }}</span>
+                    <span class="text-xs text-slate-400">{{ method.description }}</span>
+                  </div>
+                </mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+          </div>
+        </form>
+      </mat-step>
+
+      <!-- Step 2: Scope & Rules -->
+      <mat-step [stepControl]="scopeForm">
+        <ng-template matStepLabel>Scope & Rules</ng-template>
+        <form [formGroup]="scopeForm" class="p-6 space-y-5">
+          <!-- Applies To -->
+          <div class="flex flex-col gap-1.5">
+            <label class="text-sm font-medium text-slate-700">Applies To</label>
+            <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+              <mat-select formControlName="applies_to">
+                @for (opt of appliesToOptions; track opt.value) {
+                <mat-option [value]="opt.value">{{ opt.label }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+          </div>
+
+          <!-- Scheme (Optional) -->
+          <div class="flex flex-col gap-1.5">
+            <label class="text-sm font-medium text-slate-700">Scheme (Optional)</label>
+            <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+              <mat-select
+                formControlName="scheme_id"
+                (selectionChange)="onSchemeChange($event.value)"
+              >
+                <mat-option [value]="null">Global (All Schemes)</mat-option>
+                @for (scheme of schemes(); track scheme.id) {
+                <mat-option [value]="scheme.id">{{ scheme.name }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+          </div>
+
+          <!-- Plan (Optional) -->
+          <div class="flex flex-col gap-1.5">
+            <label class="text-sm font-medium text-slate-700">Plan (Optional)</label>
+            <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+              <mat-select formControlName="plan_id">
+                <mat-option [value]="null">All Plans</mat-option>
+                @for (plan of filteredPlans(); track plan.id) {
+                <mat-option [value]="plan.id">{{ plan.name }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+          </div>
+
+          <!-- Trigger Rules -->
+          <div class="rounded-lg border border-slate-200 p-4 space-y-4">
+            <p class="text-sm font-medium text-slate-700">Trigger Rules (Optional)</p>
+            <p class="text-xs text-slate-500">Define conditions for automatic application</p>
+
+            <div class="grid grid-cols-2 gap-4">
+              <div class="flex flex-col gap-1.5">
+                <label class="text-xs text-slate-500">Min Group Size</label>
+                <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+                  <input matInput type="number" formControlName="min_group_size" min="0" />
+                </mat-form-field>
+              </div>
+
+              <div class="flex flex-col gap-1.5">
+                <label class="text-xs text-slate-500">Min Members</label>
+                <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+                  <input matInput type="number" formControlName="min_members" min="0" />
+                </mat-form-field>
+              </div>
+
+              <div class="flex flex-col gap-1.5">
+                <label class="text-xs text-slate-500">Min Premium (ZMW)</label>
+                <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+                  <input matInput type="number" formControlName="min_premium" min="0" step="0.01" />
+                </mat-form-field>
+              </div>
+
+              <div class="flex flex-col gap-1.5">
+                <label class="text-xs text-slate-500">Billing Frequency</label>
+                <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+                  <mat-select formControlName="billing_frequency">
+                    <mat-option [value]="null">Any</mat-option>
+                    <mat-option value="monthly">Monthly</mat-option>
+                    <mat-option value="quarterly">Quarterly</mat-option>
+                    <mat-option value="annual">Annual</mat-option>
+                  </mat-select>
+                </mat-form-field>
+              </div>
+            </div>
+          </div>
+        </form>
+      </mat-step>
+
+      <!-- Step 3: Options -->
+      <mat-step [stepControl]="optionsForm">
+        <ng-template matStepLabel>Options</ng-template>
+        <form [formGroup]="optionsForm" class="p-6 space-y-5">
+          <!-- Stacking & Priority -->
+          <div class="grid grid-cols-2 gap-4">
+            <div class="flex flex-col gap-1.5">
+              <label class="text-sm font-medium text-slate-700">Priority</label>
+              <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+                <input matInput type="number" formControlName="priority" min="0" />
+              </mat-form-field>
+              <p class="text-xs text-slate-400">Higher priority rules apply first</p>
+            </div>
+
+            <div class="flex items-center h-14">
+              <mat-checkbox formControlName="can_stack">Can Stack with Other Rules</mat-checkbox>
+            </div>
+          </div>
+
+          <!-- Max Discount -->
+          <div class="flex flex-col gap-1.5">
+            <label class="text-sm font-medium text-slate-700">Max Discount Amount (Optional)</label>
+            <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+              <span matTextPrefix class="text-slate-400 mr-1">ZMW</span>
+              <input
+                matInput
+                type="number"
+                formControlName="max_discount_amount"
+                min="0"
+                step="0.01"
+              />
+            </mat-form-field>
+            <p class="text-xs text-slate-400">Cap the maximum discount amount</p>
+          </div>
+
+          <!-- Usage Limit -->
+          <div class="flex flex-col gap-1.5">
+            <label class="text-sm font-medium text-slate-700">Usage Limit (Optional)</label>
+            <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+              <input matInput type="number" formControlName="usage_limit" min="0" />
+            </mat-form-field>
+            <p class="text-xs text-slate-400">Leave empty for unlimited usage</p>
+          </div>
+
+          <!-- Effective Dates -->
+          <div class="grid grid-cols-2 gap-4">
+            <div class="flex flex-col gap-1.5">
+              <label class="text-sm font-medium text-slate-700">Effective From</label>
+              <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+                <input matInput [matDatepicker]="fromPicker" formControlName="effective_from" />
+                <mat-datepicker-toggle matIconSuffix [for]="fromPicker"></mat-datepicker-toggle>
+                <mat-datepicker #fromPicker></mat-datepicker>
+              </mat-form-field>
+            </div>
+
+            <div class="flex flex-col gap-1.5">
+              <label class="text-sm font-medium text-slate-700">Effective To</label>
+              <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+                <input matInput [matDatepicker]="toPicker" formControlName="effective_to" />
+                <mat-datepicker-toggle matIconSuffix [for]="toPicker"></mat-datepicker-toggle>
+                <mat-datepicker #toPicker></mat-datepicker>
+              </mat-form-field>
+            </div>
+          </div>
+
+          <!-- Active Toggle -->
+          <div class="rounded-lg bg-slate-50 p-4">
+            <mat-slide-toggle formControlName="is_active">
+              <span class="text-sm font-medium text-slate-700">Active</span>
+            </mat-slide-toggle>
+            <p class="text-xs text-slate-400 mt-1">Enable this rule for immediate use</p>
+          </div>
+        </form>
+      </mat-step>
+    </mat-stepper>
+  </div>
+
+  <!-- Footer -->
+  <div class="flex items-center justify-between border-t border-slate-100 bg-slate-50 px-6 py-4">
+    <button mat-button (click)="dialogRef.close()" class="!text-slate-600">Cancel</button>
+
+    <div class="flex items-center gap-2">
+      @if (!isFirstStep()) {
+      <button mat-stroked-button (click)="prevStep()">Back</button>
+      } @if (!isLastStep()) {
+      <button mat-flat-button color="primary" (click)="nextStep()" [disabled]="!canGoNext()">
+        Next
+      </button>
+      } @else {
+      <button mat-flat-button color="primary" (click)="save()" [disabled]="!canSave()">
+        {{ isEditMode ? 'Update Rule' : 'Create Rule' }}
+      </button>
+      }
+    </div>
+  </div>
+</div>

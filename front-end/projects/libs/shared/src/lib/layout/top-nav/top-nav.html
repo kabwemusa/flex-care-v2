@@ -1,91 +1,140 @@
 <header
-  class="sticky top-0 z-20 flex h-16 items-center shadow-sm border-b border-divider/60 bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60"
+  class="sticky top-0 z-30 flex h-16 w-full items-center shadow-sm bg-white border-b border-divider/60 bg-background/80 backdrop-blur-md supports-[backdrop-filter]:bg-background/60"
 >
   <div class="flex w-full items-center justify-between px-4 lg:px-6">
-    <!-- Left section - Mobile menu + Sidebar toggle -->
-    <div class="flex items-center gap-3">
-      <!-- Mobile menu button - visible on small screens -->
+    <div class="flex items-center gap-2">
       <button
         mat-icon-button
-        aria-label="Toggle mobile menu"
-        class="md:!hidden !text-foreground-600 hover:!bg-content2/60"
         (click)="toggleSidebar.emit()"
+        class="md:!hidden !text-foreground-500 hover:!text-foreground"
       >
-        <mat-icon>menu</mat-icon>
+        <mat-icon fontSet="material-symbols-rounded">menu</mat-icon>
       </button>
 
-      <!-- Desktop sidebar expand button - only when collapsed -->
+      @if (sidebarCollapsed) {
       <button
-        *ngIf="sidebarCollapsed"
         mat-icon-button
-        aria-label="Expand sidebar"
-        class="!hidden md:!flex !text-foreground-600 hover:!bg-content2/60"
         (click)="toggleSidebar.emit()"
+        class="!hidden md:!flex !text-foreground-500 hover:!text-foreground"
+        matTooltip="Expand Sidebar"
       >
-        <mat-icon class="!h-4 !w-4 !text-base">chevron_right</mat-icon>
+        <mat-icon fontSet="material-symbols-rounded">dock_to_right</mat-icon>
       </button>
+      }
     </div>
 
-    <!-- Right section - Notifications + User menu -->
-    <div class="flex items-center gap-2">
-      <!-- Notifications -->
-      <div class="hidden md:block">
-        <button
-          mat-icon-button
-          aria-label="Notifications"
-          class="!text-foreground-600 hover:!text-foreground hover:!bg-content2/60"
-          [matBadge]="3"
-          matBadgeColor="warn"
-          matBadgeSize="small"
+    <!-- <div class="hidden flex-1 items-center justify-start px-4 md:flex lg:px-8">
+      <button
+        class="group relative flex h-9 w-full max-w-md items-center gap-2 rounded-lg border border-divider/80 bg-surface-50/50 px-3 text-sm text-muted-foreground transition-all hover:border-primary/30 hover:bg-surface-100 hover:text-foreground"
+      >
+        <mat-icon
+          fontSet="material-symbols-rounded"
+          class="!text-[20px] !text-muted-foreground group-hover:!text-primary"
+          >search</mat-icon
         >
-          <mat-icon>notifications</mat-icon>
-        </button>
-      </div>
+        <span>Search policies, claims, or customers...</span>
+        <kbd
+          class="pointer-events-none absolute right-2 hidden h-5 select-none items-center gap-1 rounded border border-divider bg-background px-1.5 font-mono text-[10px] font-medium text-muted-foreground opacity-100 sm:flex"
+        >
+          <span class="text-xs">⌘</span>K
+        </kbd>
+      </button>
+    </div> -->
 
-      <!-- User menu -->
+    <div class="flex items-center gap-1 sm:gap-2">
+      <button
+        mat-icon-button
+        class="group !text-foreground-500 hover:!bg-primary/10 hover:!text-primary transition-colors"
+        [matBadge]="3"
+        matBadgeColor="warn"
+        matBadgeSize="small"
+      >
+        <mat-icon
+          fontSet="material-symbols-rounded"
+          class="group-hover:animate-[swing_1s_ease-in-out_infinite]"
+        >
+          notifications
+        </mat-icon>
+      </button>
+
       <button
         mat-button
         [matMenuTriggerFor]="userMenu"
-        class="!h-auto !min-w-0 !gap-2 !p-1 hover:!bg-content2/60"
+        class="!ml-2 !h-9 !min-w-0 !rounded-full !px-1.5 hover:!bg-content2 transition-all border border-transparent hover:border-divider/50"
       >
-        <div class="flex items-center gap-2">
+        <div class="flex items-center gap-2.5">
           <div
-            class="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-medium"
+            class="relative flex h-7 w-7 items-center justify-center rounded-full bg-primary/10 text-primary ring-2 ring-background"
           >
-            MK
+            <span class="text-xs font-bold">MK</span>
+            <span
+              class="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 border-background bg-green-500"
+            ></span>
           </div>
-          <div class="hidden sm:flex sm:flex-col sm:items-start">
-            <span class="text-sm font-medium text-foreground">Michael</span>
-            <span class="text-xs text-foreground-500">Super Admin</span>
+
+          <div class="hidden flex-col items-start text-left sm:flex">
+            <span class="text-xs font-semibold leading-none text-foreground">Michael K.</span>
+            <span class="text-[10px] font-medium leading-none text-muted-foreground mt-1"
+              >Admin</span
+            >
           </div>
+
+          <mat-icon fontSet="material-symbols-rounded" class="!text-[18px] !text-muted-foreground"
+            >arrow_drop_down</mat-icon
+          >
         </div>
       </button>
 
-      <mat-menu #userMenu="matMenu" class="!p-1">
-        <button mat-menu-item class="!gap-2">
-          <div class="flex flex-col">
-            <span class="text-sm font-medium">Profile Settings</span>
-            <span class="text-xs text-foreground-500">View and edit profile</span>
-          </div>
+      <mat-menu
+        #userMenu="matMenu"
+        xPosition="before"
+        class="!min-w-[200px] !rounded-xl !border !border-divider/50 !bg-background/95 !backdrop-blur-md"
+      >
+        <div class="px-4 py-3 border-b border-divider/50 mb-1">
+          <p class="text-sm font-semibold text-foreground">Michael Kings</p>
+          <p class="text-xs text-muted-foreground truncate">michael&#64;flexcare.com</p>
+        </div>
+
+        <button
+          mat-menu-item
+          class="!h-10 !rounded-md !mx-1 !w-[calc(100%-8px)] hover:!bg-content2"
+        >
+          <mat-icon fontSet="material-symbols-rounded" class="!text-[20px] !text-foreground-500"
+            >person</mat-icon
+          >
+          <span class="text-sm">Profile</span>
         </button>
-        <button mat-menu-item class="!gap-2">
-          <div class="flex flex-col">
-            <span class="text-sm font-medium">Billing & Plans</span>
-            <span class="text-xs text-foreground-500">Manage subscription</span>
-          </div>
+
+        <button
+          mat-menu-item
+          class="!h-10 !rounded-md !mx-1 !w-[calc(100%-8px)] hover:!bg-content2"
+        >
+          <mat-icon fontSet="material-symbols-rounded" class="!text-[20px] !text-foreground-500"
+            >settings</mat-icon
+          >
+          <span class="text-sm">Settings</span>
         </button>
-        <button mat-menu-item class="!gap-2">
-          <div class="flex flex-col">
-            <span class="text-sm font-medium">Team Settings</span>
-            <span class="text-xs text-foreground-500">Manage team members</span>
-          </div>
+
+        <button
+          mat-menu-item
+          class="!h-10 !rounded-md !mx-1 !w-[calc(100%-8px)] hover:!bg-content2"
+        >
+          <mat-icon fontSet="material-symbols-rounded" class="!text-[20px] !text-foreground-500"
+            >credit_card</mat-icon
+          >
+          <span class="text-sm">Billing</span>
         </button>
-        <mat-divider class="!my-1"></mat-divider>
-        <button mat-menu-item class="!gap-2 !text-red-600">
-          <div class="flex flex-col">
-            <span class="text-sm font-medium">Log Out</span>
-            <span class="text-xs text-red-400">Sign out of your account</span>
-          </div>
+
+        <mat-divider class="!my-1 opacity-50"></mat-divider>
+
+        <button
+          mat-menu-item
+          class="!h-10 !rounded-md !mx-1 !w-[calc(100%-8px)] hover:!bg-red-50 !text-red-600"
+        >
+          <mat-icon fontSet="material-symbols-rounded" class="!text-[20px] !text-red-500"
+            >logout</mat-icon
+          >
+          <span class="text-sm">Log out</span>
         </button>
       </mat-menu>
     </div>

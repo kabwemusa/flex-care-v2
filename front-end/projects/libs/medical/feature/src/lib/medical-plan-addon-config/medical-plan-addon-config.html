@@ -1,0 +1,162 @@
+<div class="space-y-4">
+  <!-- Header -->
+  <div class="flex items-center justify-between">
+    <div>
+      <h3 class="text-lg font-semibold text-slate-900">Plan Addons</h3>
+      <p class="text-sm text-slate-500">Optional riders and products available with this plan</p>
+    </div>
+    <button mat-flat-button color="primary" (click)="openAddDialog()">
+      <mat-icon fontSet="material-symbols-rounded">add</mat-icon>
+      Add Addon
+    </button>
+  </div>
+
+  <!-- Loading -->
+  @if (store.isLoading()) {
+  <div class="flex items-center justify-center py-12">
+    <mat-spinner diameter="32"></mat-spinner>
+  </div>
+  } @else {
+  <!-- Grouped by Availability -->
+  @if (planAddons().length > 0) {
+  <!-- Included Addons -->
+  @if (includedAddons().length > 0) {
+  <div class="space-y-2">
+    <h4 class="text-sm font-medium text-slate-700 flex items-center gap-2">
+      <mat-icon fontSet="material-symbols-rounded" class="!text-green-500 !text-[18px]"
+        >check_circle</mat-icon
+      >
+      Included (No Extra Cost)
+    </h4>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+      @for (pa of includedAddons(); track pa.id) {
+      <ng-container *ngTemplateOutlet="addonCard; context: { $implicit: pa }"></ng-container>
+      }
+    </div>
+  </div>
+  }
+
+  <!-- Mandatory Addons -->
+  @if (mandatoryAddons().length > 0) {
+  <div class="space-y-2">
+    <h4 class="text-sm font-medium text-slate-700 flex items-center gap-2">
+      <mat-icon fontSet="material-symbols-rounded" class="!text-blue-500 !text-[18px]"
+        >verified</mat-icon
+      >
+      Mandatory (Required)
+    </h4>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+      @for (pa of mandatoryAddons(); track pa.id) {
+      <ng-container *ngTemplateOutlet="addonCard; context: { $implicit: pa }"></ng-container>
+      }
+    </div>
+  </div>
+  }
+
+  <!-- Optional Addons -->
+  @if (optionalAddons().length > 0) {
+  <div class="space-y-2">
+    <h4 class="text-sm font-medium text-slate-700 flex items-center gap-2">
+      <mat-icon fontSet="material-symbols-rounded" class="!text-purple-500 !text-[18px]"
+        >add_circle</mat-icon
+      >
+      Optional (Member Choice)
+    </h4>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+      @for (pa of optionalAddons(); track pa.id) {
+      <ng-container *ngTemplateOutlet="addonCard; context: { $implicit: pa }"></ng-container>
+      }
+    </div>
+  </div>
+  }
+
+  <!-- Conditional Addons -->
+  @if (conditionalAddons().length > 0) {
+  <div class="space-y-2">
+    <h4 class="text-sm font-medium text-slate-700 flex items-center gap-2">
+      <mat-icon fontSet="material-symbols-rounded" class="!text-amber-500 !text-[18px]"
+        >rule</mat-icon
+      >
+      Conditional (Based on Criteria)
+    </h4>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+      @for (pa of conditionalAddons(); track pa.id) {
+      <ng-container *ngTemplateOutlet="addonCard; context: { $implicit: pa }"></ng-container>
+      }
+    </div>
+  </div>
+  } } @else {
+  <!-- Empty State -->
+  <div class="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-8 text-center">
+    <div class="flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 mx-auto mb-4">
+      <mat-icon fontSet="material-symbols-rounded" class="!text-slate-400">extension</mat-icon>
+    </div>
+    <h4 class="text-sm font-medium text-slate-900">No Addons Configured</h4>
+    <p class="text-sm text-slate-500 mt-1 max-w-sm mx-auto">
+      Add riders, top-ups, or standalone products to make them available with this plan.
+    </p>
+    <button mat-flat-button color="primary" class="mt-4" (click)="openAddDialog()">
+      <mat-icon fontSet="material-symbols-rounded">add</mat-icon>
+      Add First Addon
+    </button>
+  </div>
+  } }
+
+  <!-- Addon Card Template -->
+  <ng-template #addonCard let-pa>
+    <div
+      class="rounded-xl border border-slate-200 bg-white p-4 hover:border-slate-300 transition-colors"
+    >
+      <div class="flex items-start justify-between">
+        <div class="flex items-center gap-3">
+          <div
+            [class]="getAddonTypeClass(pa.addon?.addon_type)"
+            class="flex h-10 w-10 items-center justify-center rounded-full"
+          >
+            <mat-icon fontSet="material-symbols-rounded" class="!text-[20px]">
+              {{ getAddonTypeIcon(pa.addon?.addon_type) }}
+            </mat-icon>
+          </div>
+          <div>
+            <span class="font-medium text-slate-900">{{ pa.addon?.name }}</span>
+            <div class="flex items-center gap-2 mt-0.5">
+              <span class="text-xs text-slate-500">{{ pa.addon?.code }}</span>
+              <span
+                [class]="getAvailabilityClass(pa.availability)"
+                class="rounded-full px-2 py-0.5 text-xs font-medium"
+              >
+                {{ getAvailabilityLabel(pa.availability) }}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <button mat-icon-button [matMenuTriggerFor]="paMenu" class="!text-slate-400">
+          <mat-icon fontSet="material-symbols-rounded">more_vert</mat-icon>
+        </button>
+
+        <mat-menu #paMenu="matMenu">
+          <button mat-menu-item (click)="openConfigDialog(pa)">
+            <mat-icon fontSet="material-symbols-rounded" class="!text-slate-500">tune</mat-icon>
+            <span>Configure</span>
+          </button>
+          <button mat-menu-item (click)="toggleStatus(pa)">
+            <mat-icon fontSet="material-symbols-rounded" class="!text-slate-500">
+              {{ pa.is_active ? 'block' : 'check_circle' }}
+            </mat-icon>
+            <span>{{ pa.is_active ? 'Disable' : 'Enable' }}</span>
+          </button>
+          <mat-divider></mat-divider>
+          <button mat-menu-item class="!text-red-600" (click)="removeAddon(pa)">
+            <mat-icon fontSet="material-symbols-rounded" class="!text-red-500">delete</mat-icon>
+            <span>Remove</span>
+          </button>
+        </mat-menu>
+      </div>
+
+      @if (pa.addon?.description) {
+      <p class="text-xs text-slate-500 mt-2 line-clamp-2">{{ pa.addon.description }}</p>
+      }
+    </div>
+  </ng-template>
+</div>

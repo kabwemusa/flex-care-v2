@@ -1,0 +1,768 @@
+<!-- libs/medical/ui/src/lib/discounts/medical-discount-list.html -->
+
+<mat-sidenav-container class="h-full">
+  <!-- Detail Drawer -->
+  <mat-sidenav #drawer mode="over" position="end" class="!w-[550px] !max-w-[90vw]">
+    @if (selectedRule(); as rule) {
+    <div class="flex h-full flex-col">
+      <!-- Drawer Header -->
+      <div class="flex items-center justify-between border-b border-slate-100 px-6 py-4">
+        <div class="flex items-center gap-3">
+          <div
+            [class]="
+              rule.adjustment_type === 'discount'
+                ? 'bg-green-100 text-green-600'
+                : 'bg-orange-100 text-orange-600'
+            "
+            class="flex h-10 w-10 items-center justify-center rounded-full"
+          >
+            <mat-icon fontSet="material-symbols-rounded">
+              {{ rule.adjustment_type === 'discount' ? 'discount' : 'trending_up' }}
+            </mat-icon>
+          </div>
+          <div>
+            <h3 class="font-semibold text-slate-900">{{ rule.name }}</h3>
+            <p class="text-xs text-slate-500">{{ rule.code }}</p>
+          </div>
+        </div>
+        <button mat-icon-button (click)="closeDrawer()">
+          <mat-icon fontSet="material-symbols-rounded">close</mat-icon>
+        </button>
+      </div>
+
+      <!-- Drawer Content -->
+      <div class="flex-1 overflow-y-auto p-6 space-y-6">
+        <!-- Status & Type -->
+        <div class="flex items-center gap-2 flex-wrap">
+          <span
+            [class]="rule.is_active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'"
+            class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium"
+          >
+            {{ rule.is_active ? 'Active' : 'Inactive' }}
+          </span>
+          <span
+            [class]="
+              rule.adjustment_type === 'discount'
+                ? 'bg-green-50 text-green-700'
+                : 'bg-orange-50 text-orange-700'
+            "
+            class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium"
+          >
+            {{ rule.adjustment_type === 'discount' ? 'Discount' : 'Loading' }}
+          </span>
+          <span
+            class="bg-blue-50 text-blue-700 inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium"
+          >
+            {{ getApplicationLabel(rule.application_method) }}
+          </span>
+        </div>
+
+        <!-- Value -->
+        <div class="rounded-xl bg-slate-50 p-4">
+          <p class="text-xs text-slate-500 mb-1">
+            {{ rule.adjustment_type === 'discount' ? 'Discount' : 'Loading' }} Value
+          </p>
+          <p
+            class="text-2xl font-bold"
+            [class]="rule.adjustment_type === 'discount' ? 'text-green-600' : 'text-orange-600'"
+          >
+            {{ getValueTypeLabel(rule) }}
+          </p>
+        </div>
+
+        <!-- Description -->
+        @if (rule.description) {
+        <div>
+          <p class="text-xs text-slate-500 mb-1">Description</p>
+          <p class="text-sm text-slate-700">{{ rule.description }}</p>
+        </div>
+        }
+
+        <!-- Scope -->
+        <div>
+          <p class="text-xs text-slate-500 mb-2">Applies To</p>
+          <div class="rounded-lg border border-slate-200 bg-white p-3">
+            <p class="text-sm font-medium text-slate-900">{{ getScopeLabel(rule) }}</p>
+            <p class="text-xs text-slate-500">{{ rule.applies_to_label || 'Total Premium' }}</p>
+          </div>
+        </div>
+
+        <!-- Trigger Rules -->
+        @if (rule.trigger_rules) {
+        <div>
+          <p class="text-xs text-slate-500 mb-2">Trigger Rules</p>
+          <div class="rounded-lg border border-slate-200 bg-white p-3 space-y-2">
+            @if (rule.trigger_rules.min_group_size) {
+            <div class="flex justify-between text-sm">
+              <span class="text-slate-500">Min Group Size</span>
+              <span class="font-medium text-slate-900">{{
+                rule.trigger_rules.min_group_size
+              }}</span>
+            </div>
+            } @if (rule.trigger_rules.min_members) {
+            <div class="flex justify-between text-sm">
+              <span class="text-slate-500">Min Members</span>
+              <span class="font-medium text-slate-900">{{ rule.trigger_rules.min_members }}</span>
+            </div>
+            } @if (rule.trigger_rules.min_premium) {
+            <div class="flex justify-between text-sm">
+              <span class="text-slate-500">Min Premium</span>
+              <span class="font-medium text-slate-900"
+                >ZMW {{ rule.trigger_rules.min_premium | number }}</span
+              >
+            </div>
+            } @if (rule.trigger_rules.billing_frequency) {
+            <div class="flex justify-between text-sm">
+              <span class="text-slate-500">Billing Frequency</span>
+              <span class="font-medium text-slate-900">{{
+                rule.trigger_rules.billing_frequency
+              }}</span>
+            </div>
+            }
+          </div>
+        </div>
+        }
+
+        <!-- Stacking & Priority -->
+        <div class="grid grid-cols-2 gap-4">
+          <div class="rounded-lg border border-slate-200 bg-white p-3">
+            <p class="text-xs text-slate-500 mb-1">Can Stack</p>
+            <p
+              class="text-sm font-medium"
+              [class]="rule.can_stack ? 'text-green-600' : 'text-slate-600'"
+            >
+              {{ rule.can_stack ? 'Yes' : 'No' }}
+            </p>
+          </div>
+          <div class="rounded-lg border border-slate-200 bg-white p-3">
+            <p class="text-xs text-slate-500 mb-1">Priority</p>
+            <p class="text-sm font-medium text-slate-900">{{ rule.priority }}</p>
+          </div>
+        </div>
+
+        <!-- Usage -->
+        @if (rule.has_usage_limit) {
+        <div class="rounded-lg border border-slate-200 bg-white p-3">
+          <p class="text-xs text-slate-500 mb-1">Usage</p>
+          <div class="flex items-center gap-2">
+            <div class="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
+              <div
+                class="h-full bg-blue-500 rounded-full"
+                [style.width.%]="((rule.current_uses || 0) / (rule.max_uses || 1)) * 100"
+              ></div>
+            </div>
+            <span class="text-sm font-medium text-slate-700">
+              {{ rule.current_uses || 0 }} / {{ rule.max_uses }}
+            </span>
+          </div>
+        </div>
+        }
+
+        <!-- Promo Codes (if promo_code type) -->
+        @if (rule.application_method === 'promo_code' && rule.promo_codes_count) {
+        <div>
+          <div class="flex items-center justify-between mb-2">
+            <p class="text-xs text-slate-500">Promo Codes</p>
+            <button mat-button class="!text-xs !h-8" (click)="openPromoDialog(undefined, rule.id)">
+              <mat-icon fontSet="material-symbols-rounded" class="!text-[16px]">add</mat-icon>
+              Add Code
+            </button>
+          </div>
+          <div class="space-y-2">
+            @for (promo of rule.promo_codes; track promo.id) {
+            <div
+              class="rounded-lg border border-slate-200 bg-white p-3 flex items-center justify-between"
+            >
+              <div>
+                <p class="font-mono font-medium text-slate-900">{{ promo.code }}</p>
+                <p class="text-xs text-slate-500">
+                  {{ promo.valid_from | date : 'mediumDate' }} -
+                  {{ promo.valid_to | date : 'mediumDate' }}
+                </p>
+              </div>
+              <span
+                [class]="
+                  promo.is_usable ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'
+                "
+                class="rounded-full px-2 py-0.5 text-xs font-medium"
+              >
+                {{ promo.is_usable ? 'Active' : 'Inactive' }}
+              </span>
+            </div>
+            }
+          </div>
+        </div>
+        }
+
+        <!-- Effective Dates -->
+        @if (rule.effective_from || rule.effective_to) {
+        <div>
+          <p class="text-xs text-slate-500 mb-2">Effective Period</p>
+          <div class="rounded-lg border border-slate-200 bg-white p-3">
+            <p class="text-sm text-slate-700">
+              {{ rule.effective_from | date : 'mediumDate' }}
+              @if (rule.effective_to) { - {{ rule.effective_to | date : 'mediumDate' }}
+              } @else { - No end date }
+            </p>
+          </div>
+        </div>
+        }
+      </div>
+
+      <!-- Drawer Actions -->
+      <div class="border-t border-slate-100 px-6 py-4 flex items-center justify-between">
+        <button mat-button class="!text-red-600" (click)="deleteRule(rule)">
+          <mat-icon fontSet="material-symbols-rounded">delete</mat-icon>
+          Delete
+        </button>
+        <div class="flex items-center gap-2">
+          <button mat-stroked-button (click)="toggleRuleStatus(rule)">
+            {{ rule.is_active ? 'Deactivate' : 'Activate' }}
+          </button>
+          <button mat-flat-button color="primary" (click)="openRuleDialog(rule)">
+            <mat-icon fontSet="material-symbols-rounded">edit</mat-icon>
+            Edit
+          </button>
+        </div>
+      </div>
+    </div>
+    }
+  </mat-sidenav>
+
+  <!-- Main Content -->
+  <mat-sidenav-content>
+    <div class="p-6 md:p-10 space-y-6">
+      <!-- Header -->
+      <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 class="text-2xl font-bold tracking-tight text-slate-900">Discounts & Loadings</h1>
+          <p class="mt-1 text-sm text-slate-500">Manage pricing adjustments and promo codes</p>
+        </div>
+        <div class="flex items-center gap-2">
+          @if (activeTabIndex() === 0) {
+          <button mat-flat-button color="primary" (click)="openRuleDialog()">
+            <mat-icon fontSet="material-symbols-rounded">add</mat-icon>
+            New Rule
+          </button>
+          } @else {
+          <button mat-flat-button color="primary" (click)="openPromoDialog()">
+            <mat-icon fontSet="material-symbols-rounded">add</mat-icon>
+            New Promo Code
+          </button>
+          }
+        </div>
+      </div>
+
+      <!-- Stats Cards -->
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div class="rounded-xl border border-slate-200 bg-white p-4">
+          <div class="flex items-center gap-3">
+            <div class="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100">
+              <mat-icon fontSet="material-symbols-rounded" class="!text-blue-600"
+                >receipt_long</mat-icon
+              >
+            </div>
+            <div>
+              <p class="text-2xl font-bold text-slate-900">{{ totalRules() }}</p>
+              <p class="text-xs text-slate-500">Total Rules</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="rounded-xl border border-slate-200 bg-white p-4">
+          <div class="flex items-center gap-3">
+            <div class="flex h-10 w-10 items-center justify-center rounded-full bg-green-100">
+              <mat-icon fontSet="material-symbols-rounded" class="!text-green-600"
+                >discount</mat-icon
+              >
+            </div>
+            <div>
+              <p class="text-2xl font-bold text-slate-900">{{ activeDiscounts() }}</p>
+              <p class="text-xs text-slate-500">Active Discounts</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="rounded-xl border border-slate-200 bg-white p-4">
+          <div class="flex items-center gap-3">
+            <div class="flex h-10 w-10 items-center justify-center rounded-full bg-orange-100">
+              <mat-icon fontSet="material-symbols-rounded" class="!text-orange-600"
+                >trending_up</mat-icon
+              >
+            </div>
+            <div>
+              <p class="text-2xl font-bold text-slate-900">{{ activeLoadings() }}</p>
+              <p class="text-xs text-slate-500">Active Loadings</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="rounded-xl border border-slate-200 bg-white p-4">
+          <div class="flex items-center gap-3">
+            <div class="flex h-10 w-10 items-center justify-center rounded-full bg-purple-100">
+              <mat-icon fontSet="material-symbols-rounded" class="!text-purple-600"
+                >confirmation_number</mat-icon
+              >
+            </div>
+            <div>
+              <p class="text-2xl font-bold text-slate-900">{{ activePromos() }}</p>
+              <p class="text-xs text-slate-500">Active Promos</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Filters -->
+      <div class="flex flex-wrap items-center gap-3">
+        <mat-form-field appearance="outline" class="!w-64" subscriptSizing="dynamic">
+          <mat-icon matPrefix fontSet="material-symbols-rounded" class="!text-slate-400"
+            >search</mat-icon
+          >
+          <input
+            matInput
+            placeholder="Search..."
+            [ngModel]="searchQuery()"
+            (ngModelChange)="searchQuery.set($event); applyFilters()"
+          />
+        </mat-form-field>
+
+        @if (activeTabIndex() === 0) {
+        <mat-form-field appearance="outline" class="!w-40" subscriptSizing="dynamic">
+          <mat-select
+            placeholder="Type"
+            [ngModel]="adjustmentTypeFilter()"
+            (ngModelChange)="adjustmentTypeFilter.set($event); applyFilters()"
+          >
+            <mat-option [value]="''">All Types</mat-option>
+            @for (type of adjustmentTypes; track type.value) {
+            <mat-option [value]="type.value">{{ type.label }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="!w-40" subscriptSizing="dynamic">
+          <mat-select
+            placeholder="Application"
+            [ngModel]="applicationFilter()"
+            (ngModelChange)="applicationFilter.set($event); applyFilters()"
+          >
+            <mat-option [value]="''">All</mat-option>
+            @for (method of applicationMethods; track method.value) {
+            <mat-option [value]="method.value">{{ method.label }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+        } @if (searchQuery() || adjustmentTypeFilter() || applicationFilter()) {
+        <button mat-button (click)="clearFilters()" class="!text-slate-500">
+          <mat-icon fontSet="material-symbols-rounded">close</mat-icon>
+          Clear
+        </button>
+        }
+      </div>
+
+      <!-- Tabs -->
+      <mat-tab-group [selectedIndex]="activeTabIndex()" (selectedIndexChange)="onTabChange($event)">
+        <!-- Rules Tab -->
+        <mat-tab>
+          <ng-template mat-tab-label>
+            <mat-icon fontSet="material-symbols-rounded" class="!mr-2 !text-[20px]"
+              >receipt_long</mat-icon
+            >
+            Rules ({{ rulesDataSource.data.length }})
+          </ng-template>
+
+          <div class="py-4">
+            @if (store.isLoading()) {
+            <div class="flex items-center justify-center py-12">
+              <mat-spinner diameter="32"></mat-spinner>
+            </div>
+            } @else if (rulesDataSource.data.length > 0) {
+            <div class="rounded-xl border border-slate-200 overflow-hidden">
+              <table
+                mat-table
+                [dataSource]="rulesDataSource"
+                matSort
+                #rulesSort="matSort"
+                class="w-full"
+              >
+                <!-- Name Column -->
+                <ng-container matColumnDef="name">
+                  <th
+                    mat-header-cell
+                    *matHeaderCellDef
+                    mat-sort-header
+                    class="!bg-slate-50 !px-6 !py-3"
+                  >
+                    Name
+                  </th>
+                  <td mat-cell *matCellDef="let rule" class="!px-6 !py-4">
+                    <div class="flex items-center gap-3 cursor-pointer" (click)="openDrawer(rule)">
+                      <div
+                        [class]="
+                          rule.adjustment_type === 'discount'
+                            ? 'bg-green-100 text-green-600'
+                            : 'bg-orange-100 text-orange-600'
+                        "
+                        class="flex h-9 w-9 items-center justify-center rounded-full"
+                      >
+                        <mat-icon fontSet="material-symbols-rounded" class="!text-[18px]">
+                          {{ rule.adjustment_type === 'discount' ? 'discount' : 'trending_up' }}
+                        </mat-icon>
+                      </div>
+                      <div>
+                        <p class="font-medium text-slate-900">{{ rule.name }}</p>
+                        <p class="text-xs text-slate-500">{{ rule.code }}</p>
+                      </div>
+                    </div>
+                  </td>
+                </ng-container>
+
+                <!-- Type Column -->
+                <ng-container matColumnDef="type">
+                  <th
+                    mat-header-cell
+                    *matHeaderCellDef
+                    mat-sort-header
+                    class="!bg-slate-50 !px-6 !py-3"
+                  >
+                    Type
+                  </th>
+                  <td mat-cell *matCellDef="let rule" class="!px-6 !py-4">
+                    <span
+                      [class]="
+                        rule.adjustment_type === 'discount'
+                          ? 'bg-green-50 text-green-700'
+                          : 'bg-orange-50 text-orange-700'
+                      "
+                      class="rounded-full px-2.5 py-0.5 text-xs font-medium"
+                    >
+                      {{ rule.adjustment_type === 'discount' ? 'Discount' : 'Loading' }}
+                    </span>
+                  </td>
+                </ng-container>
+
+                <!-- Value Column -->
+                <ng-container matColumnDef="value">
+                  <th mat-header-cell *matHeaderCellDef class="!bg-slate-50 !px-6 !py-3">Value</th>
+                  <td mat-cell *matCellDef="let rule" class="!px-6 !py-4">
+                    <span
+                      class="font-medium"
+                      [class]="
+                        rule.adjustment_type === 'discount' ? 'text-green-600' : 'text-orange-600'
+                      "
+                    >
+                      {{ getValueTypeLabel(rule) }}
+                    </span>
+                  </td>
+                </ng-container>
+
+                <!-- Application Column -->
+                <ng-container matColumnDef="application">
+                  <th mat-header-cell *matHeaderCellDef class="!bg-slate-50 !px-6 !py-3">
+                    Application
+                  </th>
+                  <td mat-cell *matCellDef="let rule" class="!px-6 !py-4">
+                    <span class="text-sm text-slate-600">{{
+                      getApplicationLabel(rule.application_method)
+                    }}</span>
+                  </td>
+                </ng-container>
+
+                <!-- Scope Column -->
+                <ng-container matColumnDef="scope">
+                  <th mat-header-cell *matHeaderCellDef class="!bg-slate-50 !px-6 !py-3">Scope</th>
+                  <td mat-cell *matCellDef="let rule" class="!px-6 !py-4">
+                    <span class="text-sm text-slate-600">{{ getScopeLabel(rule) }}</span>
+                  </td>
+                </ng-container>
+
+                <!-- Status Column -->
+                <ng-container matColumnDef="status">
+                  <th mat-header-cell *matHeaderCellDef class="!bg-slate-50 !px-6 !py-3">Status</th>
+                  <td mat-cell *matCellDef="let rule" class="!px-6 !py-4">
+                    <span
+                      [class]="
+                        rule.is_active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'
+                      "
+                      class="rounded-full px-2.5 py-0.5 text-xs font-medium"
+                    >
+                      {{ rule.is_active ? 'Active' : 'Inactive' }}
+                    </span>
+                  </td>
+                </ng-container>
+
+                <!-- Actions Column -->
+                <ng-container matColumnDef="actions">
+                  <th mat-header-cell *matHeaderCellDef class="!bg-slate-50 !w-16"></th>
+                  <td mat-cell *matCellDef="let rule" class="!px-4 !py-4">
+                    <button mat-icon-button [matMenuTriggerFor]="ruleMenu" class="!text-slate-400">
+                      <mat-icon fontSet="material-symbols-rounded">more_vert</mat-icon>
+                    </button>
+                    <mat-menu #ruleMenu="matMenu">
+                      <button mat-menu-item (click)="openDrawer(rule)">
+                        <mat-icon fontSet="material-symbols-rounded" class="!text-slate-500"
+                          >visibility</mat-icon
+                        >
+                        <span>View Details</span>
+                      </button>
+                      <button mat-menu-item (click)="openRuleDialog(rule)">
+                        <mat-icon fontSet="material-symbols-rounded" class="!text-slate-500"
+                          >edit</mat-icon
+                        >
+                        <span>Edit</span>
+                      </button>
+                      <button mat-menu-item (click)="toggleRuleStatus(rule)">
+                        <mat-icon fontSet="material-symbols-rounded" class="!text-slate-500">
+                          {{ rule.is_active ? 'block' : 'check_circle' }}
+                        </mat-icon>
+                        <span>{{ rule.is_active ? 'Deactivate' : 'Activate' }}</span>
+                      </button>
+                      <mat-divider></mat-divider>
+                      <button mat-menu-item class="!text-red-600" (click)="deleteRule(rule)">
+                        <mat-icon fontSet="material-symbols-rounded" class="!text-red-500"
+                          >delete</mat-icon
+                        >
+                        <span>Delete</span>
+                      </button>
+                    </mat-menu>
+                  </td>
+                </ng-container>
+
+                <tr mat-header-row *matHeaderRowDef="rulesColumns"></tr>
+                <tr
+                  mat-row
+                  *matRowDef="let row; columns: rulesColumns"
+                  class="hover:bg-slate-50"
+                ></tr>
+              </table>
+
+              <mat-paginator
+                #rulesPaginator
+                [pageSizeOptions]="[10, 25, 50]"
+                showFirstLastButtons
+                class="!border-t !border-slate-100"
+              ></mat-paginator>
+            </div>
+            } @else {
+            <div
+              class="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-8 text-center"
+            >
+              <div
+                class="flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 mx-auto mb-4"
+              >
+                <mat-icon fontSet="material-symbols-rounded" class="!text-slate-400"
+                  >receipt_long</mat-icon
+                >
+              </div>
+              <h4 class="text-sm font-medium text-slate-900">No Rules Found</h4>
+              <p class="mt-1 text-sm text-slate-500">
+                Create a discount or loading rule to get started.
+              </p>
+              <button mat-flat-button color="primary" class="mt-4" (click)="openRuleDialog()">
+                <mat-icon fontSet="material-symbols-rounded">add</mat-icon>
+                Create Rule
+              </button>
+            </div>
+            }
+          </div>
+        </mat-tab>
+
+        <!-- Promo Codes Tab -->
+        <mat-tab>
+          <ng-template mat-tab-label>
+            <mat-icon fontSet="material-symbols-rounded" class="!mr-2 !text-[20px]"
+              >confirmation_number</mat-icon
+            >
+            Promo Codes ({{ promosDataSource.data.length }})
+          </ng-template>
+
+          <div class="py-4">
+            @if (store.isLoading()) {
+            <div class="flex items-center justify-center py-12">
+              <mat-spinner diameter="32"></mat-spinner>
+            </div>
+            } @else if (promosDataSource.data.length > 0) {
+            <div class="rounded-xl border border-slate-200 overflow-hidden">
+              <table
+                mat-table
+                [dataSource]="promosDataSource"
+                matSort
+                #promosSort="matSort"
+                class="w-full"
+              >
+                <!-- Code Column -->
+                <ng-container matColumnDef="code">
+                  <th
+                    mat-header-cell
+                    *matHeaderCellDef
+                    mat-sort-header
+                    class="!bg-slate-50 !px-6 !py-3"
+                  >
+                    Code
+                  </th>
+                  <td mat-cell *matCellDef="let promo" class="!px-6 !py-4">
+                    <div class="flex items-center gap-3">
+                      <div
+                        class="flex h-9 w-9 items-center justify-center rounded-full bg-purple-100"
+                      >
+                        <mat-icon
+                          fontSet="material-symbols-rounded"
+                          class="!text-purple-600 !text-[18px]"
+                          >confirmation_number</mat-icon
+                        >
+                      </div>
+                      <div>
+                        <p class="font-mono font-medium text-slate-900">{{ promo.code }}</p>
+                        @if (promo.name) {
+                        <p class="text-xs text-slate-500">{{ promo.name }}</p>
+                        }
+                      </div>
+                    </div>
+                  </td>
+                </ng-container>
+
+                <!-- Discount Column -->
+                <ng-container matColumnDef="discount">
+                  <th mat-header-cell *matHeaderCellDef class="!bg-slate-50 !px-6 !py-3">
+                    Discount Rule
+                  </th>
+                  <td mat-cell *matCellDef="let promo" class="!px-6 !py-4">
+                    <span class="text-sm text-slate-600">{{
+                      promo.discount_rule?.name || '-'
+                    }}</span>
+                  </td>
+                </ng-container>
+
+                <!-- Validity Column -->
+                <ng-container matColumnDef="validity">
+                  <th mat-header-cell *matHeaderCellDef class="!bg-slate-50 !px-6 !py-3">
+                    Validity
+                  </th>
+                  <td mat-cell *matCellDef="let promo" class="!px-6 !py-4">
+                    <p class="text-sm text-slate-600">
+                      {{ promo.valid_from | date : 'mediumDate' }} -
+                      {{ promo.valid_to | date : 'mediumDate' }}
+                    </p>
+                    @if (promo.is_expired) {
+                    <p class="text-xs text-red-500">Expired</p>
+                    } @else if (promo.days_until_expiry !== undefined && promo.days_until_expiry <=
+                    7) {
+                    <p class="text-xs text-amber-500">
+                      Expires in {{ promo.days_until_expiry }} days
+                    </p>
+                    }
+                  </td>
+                </ng-container>
+
+                <!-- Usage Column -->
+                <ng-container matColumnDef="usage">
+                  <th mat-header-cell *matHeaderCellDef class="!bg-slate-50 !px-6 !py-3">Usage</th>
+                  <td mat-cell *matCellDef="let promo" class="!px-6 !py-4">
+                    @if (promo.has_max_uses) {
+                    <span class="text-sm text-slate-600"
+                      >{{ promo.current_uses }} / {{ promo.max_uses }}</span
+                    >
+                    } @else {
+                    <span class="text-sm text-slate-400">Unlimited</span>
+                    }
+                  </td>
+                </ng-container>
+
+                <!-- Status Column -->
+                <ng-container matColumnDef="status">
+                  <th mat-header-cell *matHeaderCellDef class="!bg-slate-50 !px-6 !py-3">Status</th>
+                  <td mat-cell *matCellDef="let promo" class="!px-6 !py-4">
+                    <span
+                      [class]="
+                        promo.is_usable
+                          ? 'bg-green-100 text-green-700'
+                          : 'bg-gray-100 text-gray-600'
+                      "
+                      class="rounded-full px-2.5 py-0.5 text-xs font-medium"
+                    >
+                      {{
+                        promo.is_usable
+                          ? 'Active'
+                          : promo.is_expired
+                          ? 'Expired'
+                          : promo.is_exhausted
+                          ? 'Exhausted'
+                          : 'Inactive'
+                      }}
+                    </span>
+                  </td>
+                </ng-container>
+
+                <!-- Actions Column -->
+                <ng-container matColumnDef="actions">
+                  <th mat-header-cell *matHeaderCellDef class="!bg-slate-50 !w-16"></th>
+                  <td mat-cell *matCellDef="let promo" class="!px-4 !py-4">
+                    <button mat-icon-button [matMenuTriggerFor]="promoMenu" class="!text-slate-400">
+                      <mat-icon fontSet="material-symbols-rounded">more_vert</mat-icon>
+                    </button>
+                    <mat-menu #promoMenu="matMenu">
+                      <button mat-menu-item (click)="openPromoDialog(promo)">
+                        <mat-icon fontSet="material-symbols-rounded" class="!text-slate-500"
+                          >edit</mat-icon
+                        >
+                        <span>Edit</span>
+                      </button>
+                      <button mat-menu-item (click)="togglePromoStatus(promo)">
+                        <mat-icon fontSet="material-symbols-rounded" class="!text-slate-500">
+                          {{ promo.is_active ? 'block' : 'check_circle' }}
+                        </mat-icon>
+                        <span>{{ promo.is_active ? 'Deactivate' : 'Activate' }}</span>
+                      </button>
+                      <mat-divider></mat-divider>
+                      <button mat-menu-item class="!text-red-600" (click)="deletePromo(promo)">
+                        <mat-icon fontSet="material-symbols-rounded" class="!text-red-500"
+                          >delete</mat-icon
+                        >
+                        <span>Delete</span>
+                      </button>
+                    </mat-menu>
+                  </td>
+                </ng-container>
+
+                <tr mat-header-row *matHeaderRowDef="promosColumns"></tr>
+                <tr
+                  mat-row
+                  *matRowDef="let row; columns: promosColumns"
+                  class="hover:bg-slate-50"
+                ></tr>
+              </table>
+
+              <mat-paginator
+                #promosPaginator
+                [pageSizeOptions]="[10, 25, 50]"
+                showFirstLastButtons
+                class="!border-t !border-slate-100"
+              ></mat-paginator>
+            </div>
+            } @else {
+            <div
+              class="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-8 text-center"
+            >
+              <div
+                class="flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 mx-auto mb-4"
+              >
+                <mat-icon fontSet="material-symbols-rounded" class="!text-slate-400"
+                  >confirmation_number</mat-icon
+                >
+              </div>
+              <h4 class="text-sm font-medium text-slate-900">No Promo Codes</h4>
+              <p class="mt-1 text-sm text-slate-500">
+                Create a promo code for marketing campaigns.
+              </p>
+              <button mat-flat-button color="primary" class="mt-4" (click)="openPromoDialog()">
+                <mat-icon fontSet="material-symbols-rounded">add</mat-icon>
+                Create Promo Code
+              </button>
+            </div>
+            }
+          </div>
+        </mat-tab>
+      </mat-tab-group>
+    </div>
+  </mat-sidenav-content>
+</mat-sidenav-container>

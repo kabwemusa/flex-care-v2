@@ -1,0 +1,288 @@
+<div class="flex max-h-[90vh] w-full flex-col overflow-hidden bg-white sm:w-[650px]">
+  <!-- Header -->
+  <div class="flex items-center justify-between border-b border-slate-100 px-6 py-4">
+    <div class="flex items-center gap-3">
+      <div
+        class="flex h-10 w-10 items-center justify-center rounded-full bg-orange-100 text-orange-600"
+      >
+        <mat-icon fontSet="material-symbols-rounded">health_and_safety</mat-icon>
+      </div>
+      <div>
+        <h2 class="text-lg font-semibold tracking-tight text-slate-900">
+          {{ isEditMode ? 'Edit Loading Rule' : 'New Loading Rule' }}
+        </h2>
+        <p class="text-xs text-slate-500">Medical underwriting loading</p>
+      </div>
+    </div>
+
+    <button mat-icon-button (click)="dialogRef.close()" class="!text-slate-400">
+      <mat-icon fontSet="material-symbols-rounded">close</mat-icon>
+    </button>
+  </div>
+
+  <!-- Stepper Content -->
+  <div class="flex-1 overflow-y-auto">
+    <mat-stepper #stepper linear class="loading-stepper">
+      <!-- Step 1: Condition Info -->
+      <mat-step [stepControl]="conditionForm">
+        <ng-template matStepLabel>Condition</ng-template>
+        <form [formGroup]="conditionForm" class="p-6 space-y-5">
+          <!-- Condition Name -->
+          <div class="flex flex-col gap-1.5">
+            <label class="text-sm font-medium text-slate-700"
+              >Condition Name <span class="text-red-500">*</span></label
+            >
+            <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+              <input
+                matInput
+                formControlName="condition_name"
+                placeholder="e.g., Diabetes Mellitus Type 2, Hypertension"
+              />
+              @if (conditionForm.get('condition_name')?.hasError('required')) {
+              <mat-error>Name is required</mat-error>
+              }
+            </mat-form-field>
+          </div>
+
+          <!-- Category -->
+          <div class="flex flex-col gap-1.5">
+            <label class="text-sm font-medium text-slate-700"
+              >Condition Category <span class="text-red-500">*</span></label
+            >
+            <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+              <mat-select formControlName="condition_category">
+                @for (cat of categories; track cat.value) {
+                <mat-option [value]="cat.value">{{ cat.label }}</mat-option>
+                }
+              </mat-select>
+              @if (conditionForm.get('condition_category')?.hasError('required')) {
+              <mat-error>Category is required</mat-error>
+              }
+            </mat-form-field>
+          </div>
+
+          <!-- ICD-10 Code -->
+          <div class="flex flex-col gap-1.5">
+            <label class="text-sm font-medium text-slate-700">ICD-10 Code</label>
+            <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+              <input
+                matInput
+                formControlName="icd10_code"
+                placeholder="e.g., E11, I10"
+                class="!uppercase"
+              />
+            </mat-form-field>
+            <p class="text-xs text-slate-400">Primary ICD-10 diagnosis code</p>
+          </div>
+
+          <!-- Related ICD Codes -->
+          <div class="flex flex-col gap-1.5">
+            <label class="text-sm font-medium text-slate-700">Related ICD Codes</label>
+            <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+              <input
+                matInput
+                formControlName="related_icd_codes_text"
+                placeholder="E11.0, E11.1, E11.2 (comma separated)"
+              />
+            </mat-form-field>
+            <p class="text-xs text-slate-400">Additional related codes (comma separated)</p>
+          </div>
+        </form>
+      </mat-step>
+
+      <!-- Step 2: Loading Config -->
+      <mat-step [stepControl]="loadingForm">
+        <ng-template matStepLabel>Loading</ng-template>
+        <form [formGroup]="loadingForm" class="p-6 space-y-5">
+          <!-- Loading Type -->
+          <div class="flex flex-col gap-1.5">
+            <label class="text-sm font-medium text-slate-700"
+              >Loading Type <span class="text-red-500">*</span></label
+            >
+            <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+              <mat-select formControlName="loading_type">
+                @for (type of loadingTypes; track type.value) {
+                <mat-option [value]="type.value">{{ type.label }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+          </div>
+
+          <!-- Loading Value -->
+          @if (loadingForm.get('loading_type')?.value !== 'exclusion') {
+          <div class="flex flex-col gap-1.5">
+            <label class="text-sm font-medium text-slate-700"
+              >Loading Value <span class="text-red-500">*</span></label
+            >
+            <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+              @if (loadingForm.get('loading_type')?.value === 'percentage') {
+              <ng-container>
+                <input matInput type="number" formControlName="loading_value" min="0" max="500" />
+                <span matTextSuffix>%</span>
+              </ng-container>
+              } @else {
+              <ng-container>
+                <span matTextPrefix class="text-slate-400 mr-1">ZMW</span>
+                <input matInput type="number" formControlName="loading_value" min="0" step="0.01" />
+              </ng-container>
+
+              } @if (loadingForm.get('loading_value')?.hasError('required')) {
+              <mat-error>Value is required</mat-error>
+              }
+            </mat-form-field>
+          </div>
+
+          <!-- Min/Max -->
+          <div class="grid grid-cols-2 gap-4">
+            <div class="flex flex-col gap-1.5">
+              <label class="text-sm font-medium text-slate-700">Minimum Loading</label>
+              <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+                @if (loadingForm.get('loading_type')?.value === 'percentage') {
+                <ng-container>
+                  <input matInput type="number" formControlName="min_loading" min="0" />
+                  <span matTextSuffix>%</span>
+                </ng-container>
+                } @else {
+                <ng-container>
+                  <span matTextPrefix class="text-slate-400 mr-1">ZMW</span>
+                  <input matInput type="number" formControlName="min_loading" min="0" step="0.01" />
+                </ng-container>
+
+                }
+              </mat-form-field>
+            </div>
+
+            <div class="flex flex-col gap-1.5">
+              <label class="text-sm font-medium text-slate-700">Maximum Loading</label>
+              <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+                @if (loadingForm.get('loading_type')?.value === 'percentage') {
+                <ng-container>
+                  <input matInput type="number" formControlName="max_loading" min="0" />
+                  <span matTextSuffix>%</span>
+                </ng-container>
+                } @else {
+                <ng-container>
+                  <span matTextPrefix class="text-slate-400 mr-1">ZMW</span>
+                  <input matInput type="number" formControlName="max_loading" min="0" step="0.01" />
+                </ng-container>
+
+                }
+              </mat-form-field>
+            </div>
+          </div>
+          }
+
+          <!-- Duration Type -->
+          <div class="flex flex-col gap-1.5">
+            <label class="text-sm font-medium text-slate-700"
+              >Duration <span class="text-red-500">*</span></label
+            >
+            <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+              <mat-select formControlName="duration_type">
+                @for (dur of durationTypes; track dur.value) {
+                <mat-option [value]="dur.value">{{ dur.label }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+          </div>
+
+          <!-- Duration Months (if time limited) -->
+          @if (loadingForm.get('duration_type')?.value === 'time_limited') {
+          <div class="flex flex-col gap-1.5">
+            <label class="text-sm font-medium text-slate-700"
+              >Duration (Months) <span class="text-red-500">*</span></label
+            >
+            <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+              <input matInput type="number" formControlName="duration_months" min="1" max="120" />
+              <span matTextSuffix>months</span>
+            </mat-form-field>
+          </div>
+          }
+        </form>
+      </mat-step>
+
+      <!-- Step 3: Options -->
+      <mat-step [stepControl]="optionsForm">
+        <ng-template matStepLabel>Options</ng-template>
+        <form [formGroup]="optionsForm" class="p-6 space-y-5">
+          <!-- Exclusion Option -->
+          <div class="rounded-lg border border-slate-200 p-4 space-y-4">
+            <mat-checkbox formControlName="exclusion_available">
+              <span class="text-sm font-medium text-slate-700">Exclusion Option Available</span>
+            </mat-checkbox>
+            <p class="text-xs text-slate-500 ml-8">
+              Allow members to opt for exclusion instead of loading
+            </p>
+
+            @if (optionsForm.get('exclusion_available')?.value) {
+            <div class="ml-8">
+              <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+                <textarea
+                  matInput
+                  formControlName="exclusion_terms"
+                  rows="2"
+                  placeholder="Exclusion terms and conditions"
+                ></textarea>
+              </mat-form-field>
+            </div>
+            }
+          </div>
+
+          <!-- Underwriting Notes -->
+          <div class="flex flex-col gap-1.5">
+            <label class="text-sm font-medium text-slate-700">Underwriting Notes</label>
+            <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+              <textarea
+                matInput
+                formControlName="underwriting_notes"
+                rows="3"
+                placeholder="Additional notes for underwriters"
+              ></textarea>
+            </mat-form-field>
+          </div>
+
+          <!-- Required Documents -->
+          <div class="flex flex-col gap-1.5">
+            <label class="text-sm font-medium text-slate-700">Required Documents</label>
+            <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+              <textarea
+                matInput
+                formControlName="required_documents_text"
+                rows="2"
+                placeholder="Medical report, Lab results (one per line)"
+              ></textarea>
+            </mat-form-field>
+            <p class="text-xs text-slate-400">One document type per line</p>
+          </div>
+
+          <!-- Active Toggle -->
+          <div class="rounded-lg bg-slate-50 p-4">
+            <mat-slide-toggle formControlName="is_active">
+              <span class="text-sm font-medium text-slate-700">Active</span>
+            </mat-slide-toggle>
+            <p class="text-xs text-slate-400 mt-1">Enable this rule for underwriting</p>
+          </div>
+        </form>
+      </mat-step>
+    </mat-stepper>
+  </div>
+
+  <!-- Footer -->
+  <div class="flex items-center justify-between border-t border-slate-100 bg-slate-50 px-6 py-4">
+    <button mat-button (click)="dialogRef.close()" class="!text-slate-600">Cancel</button>
+
+    <div class="flex items-center gap-2">
+      @if (!isFirstStep()) {
+      <button mat-stroked-button (click)="prevStep()">Back</button>
+      } @if (!isLastStep()) {
+      <button mat-flat-button color="primary" (click)="nextStep()" [disabled]="!canGoNext()">
+        Next
+      </button>
+      } @else {
+      <button mat-flat-button color="primary" (click)="save()" [disabled]="!canSave()">
+        {{ isEditMode ? 'Update Rule' : 'Create Rule' }}
+      </button>
+      }
+    </div>
+  </div>
+</div>

@@ -1,6 +1,7 @@
 import { Component, signal } from '@angular/core';
 import { NavItem, Shell } from 'shared';
 import { RouterModule } from '@angular/router';
+import { space } from 'postcss/lib/list';
 
 @Component({
   selector: 'lib-medical-main',
@@ -14,37 +15,36 @@ export class MedicalMain {
     {
       href: '/',
       label: 'Dashboard',
-      icon: 'dashboard', // More modern than 'home' for enterprise apps
+      icon: 'space_dashboard',
     },
     {
-      href: '/schemes',
-      label: 'Schemes',
-      icon: 'account_balance', // Represents the "Institution" or Umbrella entity
+      label: 'Product Factory',
+      icon: 'inventory_2',
+      children: [
+        { href: '/schemes', label: 'Schemes' },
+        { href: '/plans', label: 'Insurance Plans' }, // Click plan → /plans/:id
+        { href: '/benefits', label: 'Benefits Catalog' }, // Master list
+        { href: '/addons', label: 'Addons Catalog' },
+      ],
     },
     {
-      href: '/plans',
-      label: 'Plans',
-      icon: 'reorder', // Represents the stacked tiers (Gold, Silver, Bronze)
+      label: 'Pricing Engine',
+      icon: 'calculate',
+      children: [
+        { href: '/rate-cards', label: 'Rate Cards' },
+        { href: '/discounts', label: 'Discounts' },
+        { href: '/loading-rule', label: 'Loading Rules' },
+      ],
     },
     {
-      href: '/features',
-      label: 'Features',
-      icon: 'medical_services', // Specifically represents clinical/medical benefits
-    },
-    {
-      href: '/addons',
-      label: 'Addons',
-      icon: 'extension',
-    },
-    {
-      href: '/rate-cards',
-      label: 'Rate Cards',
-      icon: 'request_quote',
-    },
-    {
-      href: '/discounts',
-      label: 'Discounts',
-      icon: 'percent',
+      label: 'Operations',
+      icon: 'groups',
+      children: [
+        { href: '/groups', label: 'Corporate Clients' },
+        { href: '/policies', label: 'Policy Administration' },
+        { href: '/members', label: 'Member Registry' },
+        { href: '/claims', label: 'Claims (Coming Soon)' },
+      ],
     },
   ]);
 }

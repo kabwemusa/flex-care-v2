@@ -1,47 +1,88 @@
-// Include theming for Angular Material with `mat.theme()`.
-// This Sass mixin will define CSS variables that are used for styling Angular Material
-// components according to the Material 3 design spec.
-// Learn more about theming and how to use it for your application's
-// custom components at https://material.angular.dev/guide/theming
 @use 'tailwindcss';
 @use '@angular/material' as mat;
 
+// Define your font stack variable for consistency
+$app-font: 'Inter', sans-serif;
+
 html {
+  // Pass the font family to the typography config
   @include mat.theme(
     (
       color: (
-        primary: mat.$magenta-palette,
+        primary: mat.$azure-palette,
         tertiary: mat.$violet-palette,
       ),
-      typography: Roboto,
+      // 2. CHANGE THIS: Replaces Roboto with Inter globally for Material components
+      typography: $app-font,
       density: 0,
     )
   );
 }
 
 body {
-  // Default the application to a light color theme. This can be changed to
-  // `dark` to enable the dark color theme, or to `light dark` to defer to the
-  // user's system settings.
   color-scheme: light;
-
-  // Set a default background, font and text colors for the application using
-  // Angular Material's system-level CSS variables. Learn more about these
-  // variables at https://material.angular.dev/guide/system-variables
   background-color: var(--mat-sys-surface);
   color: var(--mat-sys-on-surface);
-  font: var(--mat-sys-body-medium);
 
-  // Reset the user agent margin.
+  // 3. CHANGE THIS: Ensure the browser defaults to Inter
+  font: var(--mat-sys-body-medium);
+  font-family: $app-font;
+
   margin: 0;
 }
-/* You can add global styles to this file, and also import other style files */
 
 html,
 body {
   height: 100%;
 }
-body {
-  margin: 0;
-  font-family: Roboto, 'Helvetica Neue', sans-serif;
+
+// --------------------------------------------------------
+// ICON UTILITIES
+// --------------------------------------------------------
+
+.material-symbols-rounded {
+  font-family: 'Material Symbols Rounded';
+  font-weight: normal;
+  font-style: normal;
+  font-size: 24px;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  display: inline-block;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+  /* Thin weight (300) for the modern look */
+  font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24;
+  -webkit-font-smoothing: antialiased;
+}
+
+.active-link .material-symbols-rounded {
+  /* Slightly bolder (400) and filled when active */
+  font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+}
+
+/* Modern Matrix Dialog - Full Screen feel */
+.matrix-dialog-panel .mat-mdc-dialog-container .mat-mdc-dialog-surface {
+  border-radius: 12px !important;
+  background-color: #f8fafc; /* slate-50 background for the huge table */
+}
+
+/* Ensure skeleton loader matches rounded corners */
+lib-skeleton {
+  display: block;
+  border-radius: inherit;
+}
+
+// :root {
+//   @include mat.snack-bar-overrides(
+//     (
+//       button-color: orange,
+//       container-color: red,
+//     )
+//   );
+// }
+
+.error-snackbar {
+  background-color: red;
 }

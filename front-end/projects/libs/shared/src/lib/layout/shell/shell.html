@@ -1,28 +1,26 @@
-<div class="flex h-screen overflow-hidden bg-gradient-to-br from-background to-content1">
-  <!-- Sidebar - Fixed position, full height -->
+<div class="flex h-screen w-full overflow-hidden bg-surface-50 text-foreground">
   <lib-side-nav
+    class="z-40 hidden md:flex"
     [items]="navItems"
     [collapsed]="sidebarCollapsed()"
     (toggle)="handleToggleSidebar()"
   />
 
-  <!-- Main content area -->
-  <div class="flex flex-1 flex-col overflow-hidden">
-    <!-- Top navbar - Fixed at top, adjusts to sidebar width -->
-    <lib-top-nav [sidebarCollapsed]="sidebarCollapsed()" (toggleSidebar)="handleToggleSidebar()" />
+  <div class="relative flex flex-1 flex-col min-w-0 overflow-hidden">
+    <lib-top-nav
+      class="sticky top-0 z-30 w-full border-b border-divider/60 bg-background/80 backdrop-blur-md"
+      [sidebarCollapsed]="sidebarCollapsed()"
+      (toggleSidebar)="handleToggleSidebar()"
+    />
 
-    <!-- Main scrollable content area -->
-    <main class="flex-1 overflow-auto">
-      <div class="p-4 md:p-6">
+    <main class="flex-1 overflow-y-auto scroll-smooth">
+      <div
+        class="mx-auto w-full max-w-screen-2xl p-4 md:p-6 lg:p-8 animate-in fade-in duration-300 slide-in-from-bottom-2"
+      >
         <router-outlet />
       </div>
-      <div class="p-6">
-        <!-- <div
-          class="mx-auto max-w-[90vw] rounded-xl border border-divider bg-content1/90 shadow-sm backdrop-blur supports-[backdrop-filter]:bg-content1/70"
-        >
-        
-        </div> -->
-      </div>
+
+      <div class="h-10 w-full"></div>
     </main>
   </div>
 </div>

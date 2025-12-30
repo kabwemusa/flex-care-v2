@@ -1,0 +1,337 @@
+<!-- libs/medical/ui/src/lib/dialogs/rate-card-dialog/rate-card-dialog.html -->
+
+<div class="flex max-h-[90vh] w-full flex-col overflow-hidden bg-white sm:w-[650px]">
+  <!-- Header -->
+  <div class="flex items-center justify-between border-b border-slate-100 px-6 py-4">
+    <div class="flex items-center gap-3">
+      <div
+        class="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100 text-blue-600"
+      >
+        <mat-icon fontSet="material-symbols-rounded">payments</mat-icon>
+      </div>
+      <div>
+        <h2 class="text-lg font-semibold tracking-tight text-slate-900">
+          {{ isEditMode ? 'Edit Rate Card' : 'New Rate Card' }}
+        </h2>
+        <p class="text-xs text-slate-500">Configure premium rates and member factors</p>
+      </div>
+    </div>
+
+    <button
+      mat-icon-button
+      (click)="dialogRef.close()"
+      class="!text-slate-400 hover:!text-slate-700"
+    >
+      <mat-icon fontSet="material-symbols-rounded">close</mat-icon>
+    </button>
+  </div>
+
+  <!-- Stepper Content -->
+  <div class="flex-1 overflow-y-auto">
+    <mat-stepper
+      #stepper
+      [linear]="false"
+      [selectedIndex]="currentStep()"
+      (selectionChange)="onStepChange($event.selectedIndex)"
+      class="!bg-transparent"
+    >
+      <!-- Step 1: Basic Info -->
+      <mat-step [stepControl]="basicForm" label="Basic Info">
+        <form [formGroup]="basicForm" class="p-6 space-y-5">
+          <p class="text-sm text-slate-500 mb-4">Enter the basic information for this rate card.</p>
+
+          <!-- Plan Selection -->
+          <div class="flex flex-col gap-1.5">
+            <label class="text-sm font-medium text-slate-700">
+              Plan <span class="text-red-500">*</span>
+            </label>
+            <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+              <mat-select formControlName="plan_id">
+                <mat-select-trigger>
+                  @if (basicForm.get('plan_id')?.value; as planId) {
+                  <span>{{ getPlanName(planId) }}</span>
+                  }
+                </mat-select-trigger>
+                @for (plan of planStore.plans(); track plan.id) {
+                <mat-option [value]="plan.id">
+                  <div class="flex flex-col">
+                    <span>{{ plan.name }}</span>
+                    <span class="text-xs text-slate-400">{{ plan.code }}</span>
+                  </div>
+                </mat-option>
+                }
+              </mat-select>
+              @if (basicForm.get('plan_id')?.hasError('required')) {
+              <mat-error>Plan is required</mat-error>
+              }
+            </mat-form-field>
+          </div>
+
+          <!-- Name -->
+          <div class="flex flex-col gap-1.5">
+            <label class="text-sm font-medium text-slate-700">
+              Name <span class="text-red-500">*</span>
+            </label>
+            <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+              <input matInput formControlName="name" placeholder="e.g. Corporate Gold 2025 Rates" />
+              @if (basicForm.get('name')?.hasError('required')) {
+              <mat-error>Name is required</mat-error>
+              }
+            </mat-form-field>
+          </div>
+
+          <!-- Code & Version -->
+          <div class="grid grid-cols-2 gap-4">
+            <div class="flex flex-col gap-1.5">
+              <label class="text-sm font-medium text-slate-700">Code</label>
+              <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+                <input matInput formControlName="code" placeholder="Auto-generated if empty" />
+              </mat-form-field>
+              <p class="text-xs text-slate-400">Leave empty to auto-generate</p>
+            </div>
+
+            <div class="flex flex-col gap-1.5">
+              <label class="text-sm font-medium text-slate-700">
+                Version <span class="text-red-500">*</span>
+              </label>
+              <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+                <input matInput formControlName="version" placeholder="e.g. 1.0" />
+              </mat-form-field>
+            </div>
+          </div>
+
+          <!-- Currency -->
+          <div class="flex flex-col gap-1.5">
+            <label class="text-sm font-medium text-slate-700">
+              Currency <span class="text-red-500">*</span>
+            </label>
+            <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+              <mat-select formControlName="currency">
+                <mat-option value="ZMW">ZMW - Zambian Kwacha</mat-option>
+                <mat-option value="USD">USD - US Dollar</mat-option>
+                <mat-option value="EUR">EUR - Euro</mat-option>
+                <mat-option value="GBP">GBP - British Pound</mat-option>
+              </mat-select>
+            </mat-form-field>
+          </div>
+        </form>
+      </mat-step>
+
+      <!-- Step 2: Configuration -->
+      <mat-step [stepControl]="configForm" label="Configuration">
+        <form [formGroup]="configForm" class="p-6 space-y-5">
+          <p class="text-sm text-slate-500 mb-4">
+            Configure premium frequency, basis, and effective dates.
+          </p>
+
+          <!-- Premium Frequency & Basis -->
+          <div class="grid grid-cols-2 gap-4">
+            <div class="flex flex-col gap-1.5">
+              <label class="text-sm font-medium text-slate-700">Premium Frequency</label>
+              <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+                <mat-select formControlName="premium_frequency">
+                  <mat-select-trigger>
+                    @if (configForm.get('premium_frequency')?.value; as freq) {
+                    <span>{{ getFrequencyLabel(freq) }}</span>
+                    }
+                  </mat-select-trigger>
+                  @for (freq of premiumFrequencies; track freq.value) {
+                  <mat-option [value]="freq.value">{{ freq.label }}</mat-option>
+                  }
+                </mat-select>
+              </mat-form-field>
+            </div>
+
+            <div class="flex flex-col gap-1.5">
+              <label class="text-sm font-medium text-slate-700">Premium Basis</label>
+              <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+                <mat-select formControlName="premium_basis">
+                  <mat-select-trigger>
+                    @if (configForm.get('premium_basis')?.value; as basis) {
+                    <span>{{ getBasisLabel(basis) }}</span>
+                    }
+                  </mat-select-trigger>
+                  @for (basis of premiumBases; track basis.value) {
+                  <mat-option [value]="basis.value">
+                    <div class="flex flex-col">
+                      <span>{{ basis.label }}</span>
+                      <span class="text-xs text-slate-400">{{ basis.description }}</span>
+                    </div>
+                  </mat-option>
+                  }
+                </mat-select>
+              </mat-form-field>
+            </div>
+          </div>
+
+          <!-- Effective Dates -->
+          <div class="grid grid-cols-2 gap-4">
+            <div class="flex flex-col gap-1.5">
+              <label class="text-sm font-medium text-slate-700">
+                Effective From <span class="text-red-500">*</span>
+              </label>
+              <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+                <input matInput [matDatepicker]="fromPicker" formControlName="effective_from" />
+                <mat-datepicker-toggle matIconSuffix [for]="fromPicker"></mat-datepicker-toggle>
+                <mat-datepicker #fromPicker></mat-datepicker>
+              </mat-form-field>
+            </div>
+
+            <div class="flex flex-col gap-1.5">
+              <label class="text-sm font-medium text-slate-700">Effective To</label>
+              <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+                <input matInput [matDatepicker]="toPicker" formControlName="effective_to" />
+                <mat-datepicker-toggle matIconSuffix [for]="toPicker"></mat-datepicker-toggle>
+                <mat-datepicker #toPicker></mat-datepicker>
+              </mat-form-field>
+              <p class="text-xs text-slate-400">Leave empty for no end date</p>
+            </div>
+          </div>
+
+          <!-- Draft Toggle -->
+          <div
+            class="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50/50 p-4"
+          >
+            <div class="flex flex-col">
+              <span class="text-sm font-semibold text-slate-900">Save as Draft</span>
+              <span class="text-xs text-slate-500"
+                >Draft rate cards are not used for premium calculation</span
+              >
+            </div>
+            <mat-slide-toggle formControlName="is_draft" color="primary"></mat-slide-toggle>
+          </div>
+
+          <!-- Notes -->
+          <div class="flex flex-col gap-1.5">
+            <label class="text-sm font-medium text-slate-700">Notes</label>
+            <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+              <textarea
+                matInput
+                formControlName="notes"
+                rows="3"
+                placeholder="Any notes about this rate card..."
+                class="!resize-none"
+              ></textarea>
+            </mat-form-field>
+          </div>
+        </form>
+      </mat-step>
+
+      <!-- Step 3: Member Factors -->
+      <mat-step [stepControl]="factorsForm" label="Member Factors">
+        <form [formGroup]="factorsForm" class="p-6 space-y-5">
+          <p class="text-sm text-slate-500 mb-4">
+            Set premium multipliers for each member type. Base premium × factor = member premium.
+          </p>
+
+          <div class="rounded-lg bg-blue-50 border border-blue-100 p-4 mb-6">
+            <div class="flex gap-3">
+              <mat-icon fontSet="material-symbols-rounded" class="!text-blue-500">info</mat-icon>
+              <div>
+                <p class="text-sm font-medium text-blue-900">How Factors Work</p>
+                <p class="text-xs text-blue-700 mt-1">
+                  A factor of 1.0 means full premium. A factor of 0.5 means half price. A factor of
+                  1.5 means 50% more.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Factor Inputs -->
+          <div class="space-y-4">
+            @for (type of memberTypes; track type.value) {
+            <div class="flex items-center justify-between rounded-xl border border-slate-200 p-4">
+              <div class="flex items-center gap-3">
+                <div class="flex h-10 w-10 items-center justify-center rounded-full bg-slate-100">
+                  <mat-icon fontSet="material-symbols-rounded" class="!text-slate-600">
+                    @switch (type.value) { @case ('principal') { person } @case ('spouse') {
+                    favorite } @case ('child') { child_care } @case ('parent') { elderly } }
+                  </mat-icon>
+                </div>
+                <div>
+                  <span class="text-sm font-medium text-slate-900">{{ type.label }}</span>
+                  <!-- <p class="text-xs text-slate-500">Default: × {{ type.factor }}</p> -->
+                </div>
+              </div>
+              <mat-form-field appearance="outline" class="!w-32" subscriptSizing="dynamic">
+                <span matTextPrefix class="text-slate-400 mr-1">×</span>
+                <input matInput type="number" [formControlName]="type.value" step="0.1" min="0" />
+              </mat-form-field>
+            </div>
+            }
+          </div>
+
+          <!-- Example Calculation -->
+          <div class="rounded-lg border border-slate-200 p-4 mt-6">
+            <h4 class="text-sm font-medium text-slate-700 mb-3">Example Calculation</h4>
+            <div class="text-sm text-slate-600">
+              <p>If base premium is <span class="font-semibold">ZMW 500</span>:</p>
+              <ul class="mt-2 space-y-1">
+                <li>
+                  • Principal: ZMW
+                  {{ 500 * (factorsForm.get('principal')?.value || 1) | number : '1.0-0' }}
+                </li>
+                <li>
+                  • Spouse: ZMW
+                  {{ 500 * (factorsForm.get('spouse')?.value || 1) | number : '1.0-0' }}
+                </li>
+                <li>
+                  • Child: ZMW
+                  {{ 500 * (factorsForm.get('child')?.value || 0.5) | number : '1.0-0' }}
+                </li>
+                <li>
+                  • Parent: ZMW
+                  {{ 500 * (factorsForm.get('parent')?.value || 1.5) | number : '1.0-0' }}
+                </li>
+              </ul>
+            </div>
+          </div>
+        </form>
+      </mat-step>
+    </mat-stepper>
+  </div>
+
+  <!-- Footer with Navigation -->
+  <div class="flex items-center justify-between border-t border-slate-100 bg-slate-50 px-6 py-4">
+    <div class="text-xs text-slate-500">Step {{ currentStep() + 1 }} of 3</div>
+
+    <div class="flex items-center gap-3">
+      <button mat-button (click)="dialogRef.close()" class="!text-slate-600 hover:!bg-slate-200">
+        Cancel
+      </button>
+
+      <!-- Back Button -->
+      @if (!isFirstStep) {
+      <button mat-stroked-button (click)="prevStep()" class="!border-slate-300">
+        <mat-icon fontSet="material-symbols-rounded">arrow_back</mat-icon>
+        Back
+      </button>
+      }
+
+      <!-- Next Button -->
+      @if (!isLastStep) {
+      <button
+        mat-flat-button
+        color="primary"
+        [disabled]="!canGoNext"
+        (click)="nextStep()"
+        class="!px-6 !rounded-lg"
+      >
+        Next
+        <mat-icon fontSet="material-symbols-rounded">arrow_forward</mat-icon>
+      </button>
+      } @else {
+      <!-- Save Button (only on last step) -->
+      <button
+        mat-flat-button
+        color="primary"
+        [disabled]="!isFormValid"
+        (click)="save()"
+        class="!px-6 !rounded-lg"
+      >
+        {{ isEditMode ? 'Update Rate Card' : 'Create Rate Card' }}
+      </button>
+      }
+    </div>
+  </div>
+</div>

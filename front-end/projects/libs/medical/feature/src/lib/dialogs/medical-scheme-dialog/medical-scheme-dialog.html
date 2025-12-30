@@ -1,0 +1,428 @@
+<!-- libs/medical/ui/src/lib/dialogs/medical-scheme-dialog/medical-scheme-dialog.html -->
+
+<div class="flex max-h-[90vh] w-[70vw] min-w-[70vw] flex-col overflow-hidden bg-white">
+  <!-- Header -->
+  <div class="flex items-center justify-between border-b border-slate-100 px-6 py-4">
+    <div class="flex items-center gap-3">
+      <div
+        class="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary"
+      >
+        <mat-icon fontSet="material-symbols-rounded">
+          {{ isEditMode ? 'edit_document' : 'add_circle' }}
+        </mat-icon>
+      </div>
+      <div>
+        <h2 class="text-lg font-semibold tracking-tight text-slate-900">
+          {{ isEditMode ? 'Edit Scheme' : 'Create New Scheme' }}
+        </h2>
+        <p class="text-xs text-slate-500">
+          {{
+            isEditMode
+              ? 'Update scheme configuration'
+              : 'Define a new umbrella product for your plans'
+          }}
+        </p>
+      </div>
+    </div>
+
+    <button
+      mat-icon-button
+      (click)="dialogRef.close()"
+      class="!text-slate-400 hover:!text-slate-700"
+    >
+      <mat-icon fontSet="material-symbols-rounded">close</mat-icon>
+    </button>
+  </div>
+
+  <!-- Stepper Content -->
+  <div class="flex-1 overflow-y-auto">
+    <mat-stepper
+      #stepper
+      [linear]="!isEditMode"
+      [selectedIndex]="currentStep()"
+      (selectionChange)="onStepChange($event.selectedIndex)"
+      class="!bg-transparent"
+    >
+      <!-- Step 1: Basic Information -->
+      <mat-step [stepControl]="basicInfoForm" label="Basic Info">
+        <form [formGroup]="basicInfoForm" class="p-6 space-y-5">
+          <p class="text-sm text-slate-500 mb-4">
+            Define the core attributes of your medical scheme including its market segment and
+            validity period.
+          </p>
+
+          <!-- Scheme Name -->
+          <div class="flex flex-col gap-1.5">
+            <label class="text-sm font-medium text-slate-700">
+              Scheme Name <span class="text-red-500">*</span>
+            </label>
+            <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+              <input matInput formControlName="name" placeholder="e.g. Corporate Gold Plus" />
+              <mat-icon matSuffix fontSet="material-symbols-rounded" class="!text-slate-400"
+                >badge</mat-icon
+              >
+              @if (basicInfoForm.get('name')?.hasError('required')) {
+              <mat-error>Scheme name is required</mat-error>
+              } @if (basicInfoForm.get('name')?.hasError('minlength')) {
+              <mat-error>Name must be at least 3 characters</mat-error>
+              }
+            </mat-form-field>
+          </div>
+
+          <!-- Market Segment (Multi-select with custom trigger) -->
+          <div class="flex flex-col gap-1.5">
+            <label class="text-sm font-medium text-slate-700">
+              Market Segment <span class="text-red-500">*</span>
+            </label>
+            <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+              <mat-select
+                formControlName="market_segments"
+                placeholder="Select target markets"
+                multiple
+              >
+                <mat-select-trigger>
+                  <div class="flex items-center gap-2 flex-wrap">
+                    @for (segment of getSelectedSegments(); track segment.value) {
+                    <span
+                      class="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-700"
+                    >
+                      <mat-icon
+                        fontSet="material-symbols-rounded"
+                        class="!text-[14px] !w-[14px] !h-[14px]"
+                        >{{ segment.icon }}</mat-icon
+                      >
+                      {{ segment.label }}
+                    </span>
+                    }
+                  </div>
+                </mat-select-trigger>
+                @for (segment of marketSegments; track segment.value) {
+                <mat-option [value]="segment.value">
+                  <div class="flex items-center gap-2">
+                    <mat-icon
+                      fontSet="material-symbols-rounded"
+                      class="!text-[18px] !text-slate-500"
+                    >
+                      {{ segment.icon }}
+                    </mat-icon>
+                    <span>{{ segment.label }}</span>
+                  </div>
+                </mat-option>
+                }
+              </mat-select>
+              @if (basicInfoForm.get('market_segments')?.hasError('required')) {
+              <mat-error>Please select at least one market segment</mat-error>
+              }
+            </mat-form-field>
+            <p class="text-xs text-slate-400">Determines the target audience(s) for this scheme</p>
+          </div>
+
+          <!-- Description -->
+          <div class="flex flex-col gap-1.5">
+            <label class="text-sm font-medium text-slate-700">Description</label>
+            <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+              <textarea
+                matInput
+                formControlName="description"
+                rows="3"
+                placeholder="Brief description of the scheme coverage and target market..."
+                class="!resize-none"
+              ></textarea>
+            </mat-form-field>
+            <p class="text-xs text-slate-400">Displayed on scheme cards and reports</p>
+          </div>
+
+          <!-- Effective Period -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div class="flex flex-col gap-1.5">
+              <label class="text-sm font-medium text-slate-700">
+                Effective From <span class="text-red-500">*</span>
+              </label>
+              <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+                <input
+                  matInput
+                  [matDatepicker]="fromPicker"
+                  formControlName="effective_from"
+                  placeholder="Select date"
+                />
+                <mat-datepicker-toggle matIconSuffix [for]="fromPicker"></mat-datepicker-toggle>
+                <mat-datepicker #fromPicker></mat-datepicker>
+              </mat-form-field>
+            </div>
+
+            <div class="flex flex-col gap-1.5">
+              <label class="text-sm font-medium text-slate-700">Effective To</label>
+              <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+                <input
+                  matInput
+                  [matDatepicker]="toPicker"
+                  formControlName="effective_to"
+                  placeholder="No end date"
+                />
+                <mat-datepicker-toggle matIconSuffix [for]="toPicker"></mat-datepicker-toggle>
+                <mat-datepicker #toPicker></mat-datepicker>
+              </mat-form-field>
+              <p class="text-xs text-slate-400">Leave empty for no expiry</p>
+            </div>
+          </div>
+
+          <!-- Active Status -->
+          <div
+            class="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50/50 p-4"
+          >
+            <div class="flex flex-col">
+              <span class="text-sm font-semibold text-slate-900">Active Status</span>
+              <span class="text-xs text-slate-500">Enable for new policy enrollments</span>
+            </div>
+            <mat-slide-toggle formControlName="is_active" color="primary"></mat-slide-toggle>
+          </div>
+
+          @if (!isEditMode) {
+          <div class="rounded-lg bg-amber-50 border border-amber-100 p-4">
+            <div class="flex gap-3">
+              <mat-icon fontSet="material-symbols-rounded" class="!text-amber-500">info</mat-icon>
+              <div>
+                <p class="text-sm font-medium text-amber-900">Tip</p>
+                <p class="text-xs text-amber-700 mt-1">
+                  Keep the scheme inactive until you've configured all plans, benefits, and pricing.
+                  Activate when ready for enrollments.
+                </p>
+              </div>
+            </div>
+          </div>
+          }
+        </form>
+      </mat-step>
+
+      <!-- Step 2: Eligibility Rules -->
+      <mat-step [stepControl]="eligibilityForm" label="Eligibility" [optional]="true">
+        <form [formGroup]="eligibilityForm" class="p-6 space-y-5">
+          <p class="text-sm text-slate-500 mb-4">
+            Define who can enroll in this scheme. These rules apply to all plans under this scheme.
+          </p>
+
+          <!-- Age Range -->
+          <div class="rounded-lg border border-slate-200 p-4">
+            <h4 class="text-sm font-medium text-slate-700 mb-3">Age Requirements</h4>
+            <div class="grid grid-cols-2 gap-4">
+              <div class="flex flex-col gap-1.5">
+                <label class="text-xs text-slate-500">Minimum Age</label>
+                <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+                  <input matInput type="number" formControlName="min_age" min="0" max="100" />
+                  <span matTextSuffix class="text-slate-400 text-sm">years</span>
+                </mat-form-field>
+              </div>
+
+              <div class="flex flex-col gap-1.5">
+                <label class="text-xs text-slate-500">Maximum Age</label>
+                <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+                  <input matInput type="number" formControlName="max_age" min="0" max="120" />
+                  <span matTextSuffix class="text-slate-400 text-sm">years</span>
+                </mat-form-field>
+              </div>
+            </div>
+          </div>
+
+          <!-- Group Size (for Corporate/SME) -->
+          @if (hasGroupSegment()) {
+          <div class="rounded-lg border border-slate-200 p-4">
+            <h4 class="text-sm font-medium text-slate-700 mb-3">Group Size Requirements</h4>
+            <div class="grid grid-cols-2 gap-4">
+              <div class="flex flex-col gap-1.5">
+                <label class="text-xs text-slate-500">Minimum Members</label>
+                <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+                  <input
+                    matInput
+                    type="number"
+                    formControlName="min_group_size"
+                    min="1"
+                    placeholder="e.g. 5"
+                  />
+                </mat-form-field>
+              </div>
+
+              <div class="flex flex-col gap-1.5">
+                <label class="text-xs text-slate-500">Maximum Members</label>
+                <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+                  <input
+                    matInput
+                    type="number"
+                    formControlName="max_group_size"
+                    min="1"
+                    placeholder="No limit"
+                  />
+                </mat-form-field>
+              </div>
+            </div>
+            <p class="text-xs text-slate-400 mt-2">Leave empty for no limit</p>
+          </div>
+          }
+
+          <!-- Required Documents -->
+          <div class="flex flex-col gap-1.5">
+            <label class="text-sm font-medium text-slate-700">Required Documents</label>
+            <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+              <mat-select
+                formControlName="required_documents"
+                multiple
+                placeholder="Select required documents"
+              >
+                @for (doc of requiredDocumentOptions; track doc.value) {
+                <mat-option [value]="doc.value">{{ doc.label }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+            <p class="text-xs text-slate-400">Documents required for enrollment</p>
+          </div>
+        </form>
+      </mat-step>
+
+      <!-- Step 3: Underwriting Rules -->
+      <mat-step [stepControl]="underwritingForm" label="Underwriting" [optional]="true">
+        <form [formGroup]="underwritingForm" class="p-6 space-y-5">
+          <p class="text-sm text-slate-500 mb-4">
+            Configure medical underwriting rules that apply to all plans under this scheme.
+          </p>
+
+          <!-- Medical Declaration -->
+          <div
+            class="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50/50 p-4"
+          >
+            <div class="flex flex-col">
+              <span class="text-sm font-semibold text-slate-900">Require Medical Declaration</span>
+              <span class="text-xs text-slate-500"
+                >Members must complete a health questionnaire</span
+              >
+            </div>
+            <mat-slide-toggle
+              formControlName="require_declaration"
+              color="primary"
+            ></mat-slide-toggle>
+          </div>
+
+          <!-- Medical Exam -->
+          <div class="rounded-lg border border-slate-200 p-4 space-y-4">
+            <div class="flex items-center justify-between">
+              <div class="flex flex-col">
+                <span class="text-sm font-semibold text-slate-900"
+                  >Require Medical Examination</span
+                >
+                <span class="text-xs text-slate-500"
+                  >Physical exam required for certain applicants</span
+                >
+              </div>
+              <mat-slide-toggle
+                formControlName="require_medical_exam"
+                color="primary"
+              ></mat-slide-toggle>
+            </div>
+
+            @if (underwritingForm.get('require_medical_exam')?.value) {
+            <div class="flex flex-col gap-1.5 pt-2 border-t border-slate-100">
+              <label class="text-xs text-slate-500">Age Threshold for Medical Exam</label>
+              <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+                <input
+                  matInput
+                  type="number"
+                  formControlName="medical_exam_age_threshold"
+                  min="0"
+                />
+                <span matTextSuffix class="text-slate-400 text-sm">years+</span>
+              </mat-form-field>
+              <p class="text-xs text-slate-400">Members above this age require a medical exam</p>
+            </div>
+            }
+          </div>
+
+          <!-- Auto Accept -->
+          <div class="flex flex-col gap-1.5">
+            <label class="text-sm font-medium text-slate-700">Auto-Accept Age Limit</label>
+            <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+              <input matInput type="number" formControlName="auto_accept_age_limit" min="0" />
+              <span matTextSuffix class="text-slate-400 text-sm">years</span>
+            </mat-form-field>
+            <p class="text-xs text-slate-400">
+              Members below this age with clean declarations are automatically accepted without
+              underwriter review
+            </p>
+          </div>
+
+          <div class="rounded-lg bg-blue-50 border border-blue-100 p-4">
+            <div class="flex gap-3">
+              <mat-icon fontSet="material-symbols-rounded" class="!text-blue-500">info</mat-icon>
+              <div>
+                <p class="text-sm font-medium text-blue-900">About Underwriting</p>
+                <p class="text-xs text-blue-700 mt-1">
+                  These are scheme-level defaults. Individual plans can have stricter requirements,
+                  but cannot relax these rules.
+                </p>
+              </div>
+            </div>
+          </div>
+        </form>
+      </mat-step>
+    </mat-stepper>
+  </div>
+
+  <!-- Footer with Step Navigation -->
+  <div class="flex items-center justify-between border-t border-slate-100 bg-slate-50 px-6 py-4">
+    <div class="flex items-center gap-2">
+      <div class="text-xs text-slate-500">Step {{ currentStep() + 1 }} of 3</div>
+      <div class="flex gap-1 ml-2">
+        @for (step of [0, 1, 2]; track step) {
+        <div
+          [class]="
+            step === currentStep()
+              ? 'w-6 h-1.5 rounded-full bg-primary'
+              : step < currentStep()
+              ? 'w-1.5 h-1.5 rounded-full bg-primary/60'
+              : 'w-1.5 h-1.5 rounded-full bg-slate-300'
+          "
+        ></div>
+        }
+      </div>
+    </div>
+
+    <div class="flex items-center gap-3">
+      <button mat-button (click)="dialogRef.close()" class="!text-slate-600 hover:!bg-slate-200">
+        Cancel
+      </button>
+
+      <!-- Previous Button -->
+      @if (currentStep() > 0) {
+      <button mat-stroked-button (click)="previousStep()" class="!border-slate-300 !text-slate-700">
+        <mat-icon fontSet="material-symbols-rounded">chevron_left</mat-icon>
+        Previous
+      </button>
+      }
+
+      <!-- Next Button (show when not on last step) -->
+      @if (currentStep() < 2) {
+      <button
+        mat-flat-button
+        color="primary"
+        [disabled]="!canProceedToNextStep()"
+        (click)="nextStep()"
+        class="!px-6 !rounded-lg"
+      >
+        Next
+        <mat-icon fontSet="material-symbols-rounded">chevron_right</mat-icon>
+      </button>
+      }
+
+      <!-- Save Button (show on last step or in edit mode) -->
+      @if (currentStep() === 2 || isEditMode) {
+      <button
+        mat-flat-button
+        color="primary"
+        [disabled]="!isFormValid"
+        (click)="save()"
+        class="!px-6 !rounded-lg"
+      >
+        <mat-icon fontSet="material-symbols-rounded">check</mat-icon>
+        {{ isEditMode ? 'Save Changes' : 'Create Scheme' }}
+      </button>
+      }
+    </div>
+  </div>
+</div>

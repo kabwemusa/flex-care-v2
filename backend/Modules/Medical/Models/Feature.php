@@ -5,7 +5,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
-class Feature extends Model
+class Feature extends BaseModel
 {
     protected $table = 'med_features';
     protected $fillable = ['name', 'category', 'code'];

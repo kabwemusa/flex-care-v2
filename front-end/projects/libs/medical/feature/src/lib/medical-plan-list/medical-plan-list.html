@@ -1,0 +1,690 @@
+<!-- libs/medical/ui/src/lib/plans/medical-plans.component.html -->
+
+<mat-drawer-container class="h-full">
+  <!-- Main Content -->
+  <mat-drawer-content>
+    <div class="bg-white p-6 md:p-10 min-h-[80vh] shadow-sm">
+      <lib-page-header
+        title="Medical Plans"
+        subtitle="Configure plan tiers, benefits, and pricing structures."
+      >
+        <div actions class="flex gap-2">
+          <button
+            mat-button
+            (click)="exportToCsv()"
+            class="!border-divider !text-foreground-600 hover:!bg-content2 hidden sm:flex"
+          >
+            <mat-icon fontSet="material-symbols-rounded">download</mat-icon>
+            Export
+          </button>
+
+          <button mat-flat-button color="primary" class="!rounded-lg" (click)="openCreateDialog()">
+            <mat-icon fontSet="material-symbols-rounded">add</mat-icon>
+            New Plan
+          </button>
+        </div>
+      </lib-page-header>
+
+      <!-- KPI Cards -->
+      <div class="grid grid-cols-1 gap-4 sm:grid-cols-3 mb-6">
+        <div class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+          <div class="flex items-center justify-between">
+            <div>
+              <div class="text-sm font-medium text-slate-500">Total Plans</div>
+              <div class="mt-2 text-2xl font-bold tracking-tight text-slate-900">
+                {{ totalPlans() }}
+              </div>
+            </div>
+            <div class="flex h-10 w-10 items-center justify-center rounded-full bg-slate-100">
+              <mat-icon fontSet="material-symbols-rounded" class="!text-slate-500"
+                >medical_services</mat-icon
+              >
+            </div>
+          </div>
+        </div>
+
+        <div class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+          <div class="flex items-center justify-between">
+            <div>
+              <div class="text-sm font-medium text-slate-500">Active Plans</div>
+              <div class="mt-2 text-2xl font-bold tracking-tight text-green-600">
+                {{ activePlans() }}
+              </div>
+            </div>
+            <div class="flex h-10 w-10 items-center justify-center rounded-full bg-green-100">
+              <mat-icon fontSet="material-symbols-rounded" class="!text-green-600"
+                >check_circle</mat-icon
+              >
+            </div>
+          </div>
+        </div>
+
+        <div class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+          <div class="flex items-center justify-between">
+            <div>
+              <div class="text-sm font-medium text-slate-500">Avg. Benefits/Plan</div>
+              <div class="mt-2 text-2xl font-bold tracking-tight text-blue-600">
+                {{ avgBenefits() }}
+              </div>
+            </div>
+            <div class="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100">
+              <mat-icon fontSet="material-symbols-rounded" class="!text-blue-600"
+                >analytics</mat-icon
+              >
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Table Container -->
+      <div
+        class="flex flex-col rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden"
+      >
+        <!-- Filters Bar -->
+        <div
+          class="flex flex-col gap-4 border-b border-slate-100 p-4 sm:flex-row sm:items-center sm:justify-between"
+        >
+          <!-- Search -->
+          <div class="relative w-full sm:w-72">
+            <mat-icon
+              fontSet="material-symbols-rounded"
+              class="absolute left-3 top-1/2 -translate-y-1/2 !text-[20px] text-slate-400"
+              >search</mat-icon
+            >
+            <input
+              type="text"
+              placeholder="Search plans..."
+              class="h-10 w-full rounded-lg border border-slate-200 bg-slate-50 pl-10 pr-4 text-sm text-slate-900 outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all placeholder:text-slate-400"
+              (input)="applyFilter($event)"
+              [value]="searchQuery()"
+            />
+          </div>
+
+          <!-- Filter Dropdowns -->
+          <div class="flex items-center gap-2 flex-wrap">
+            <mat-form-field appearance="outline" subscriptSizing="dynamic" class="!w-40">
+              <mat-select
+                placeholder="All Schemes"
+                [value]="selectedScheme()"
+                (selectionChange)="filterByScheme($event.value)"
+              >
+                <mat-option value="">All Schemes</mat-option>
+                @for (scheme of schemeStore.schemes(); track scheme.id) {
+                <mat-option [value]="scheme.id">{{ scheme.name }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" subscriptSizing="dynamic" class="!w-40">
+              <mat-select
+                placeholder="All Types"
+                [value]="selectedType()"
+                (selectionChange)="filterByType($event.value)"
+              >
+                <mat-option value="">All Types</mat-option>
+                @for (type of planTypes; track type.value) {
+                <mat-option [value]="type.value">{{ type.label }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+
+            @if (selectedScheme() || selectedType() || searchQuery()) {
+            <button
+              mat-stroked-button
+              class="!border-slate-200 !text-slate-600"
+              (click)="clearFilters()"
+            >
+              <mat-icon fontSet="material-symbols-rounded">clear</mat-icon>
+              Clear
+            </button>
+            }
+          </div>
+        </div>
+
+        <!-- Loading State -->
+        @if (planStore.isLoading()) {
+        <div class="divide-y divide-slate-100">
+          @for (i of [1,2,3,4,5]; track i) {
+          <div class="flex items-center gap-4 p-4 animate-pulse">
+            <div class="h-10 w-10 shrink-0 rounded-full bg-slate-100"></div>
+            <div class="flex-1 space-y-2">
+              <div class="h-4 w-1/3 rounded bg-slate-100"></div>
+              <div class="h-3 w-1/4 rounded bg-slate-50"></div>
+            </div>
+            <div class="h-8 w-24 rounded bg-slate-100"></div>
+          </div>
+          }
+        </div>
+        } @else {
+        <!-- Table -->
+        <div class="overflow-x-auto">
+          <table mat-table [dataSource]="dataSource" matSort class="w-full">
+            <!-- Status Column -->
+            <ng-container matColumnDef="status">
+              <th
+                mat-header-cell
+                *matHeaderCellDef
+                mat-sort-header
+                class="!bg-slate-50 !px-6 !py-3 text-xs font-semibold uppercase tracking-wider text-slate-500 !w-28"
+              >
+                Status
+              </th>
+              <td mat-cell *matCellDef="let plan" class="!px-6 !py-4">
+                <span
+                  [class]="
+                    plan.is_active
+                      ? 'bg-green-50 text-green-700 border-green-200'
+                      : 'bg-gray-100 text-gray-600 border-gray-200'
+                  "
+                  class="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium"
+                >
+                  {{ plan.is_active ? 'Active' : 'Inactive' }}
+                </span>
+              </td>
+            </ng-container>
+
+            <!-- Name Column -->
+            <ng-container matColumnDef="name">
+              <th
+                mat-header-cell
+                *matHeaderCellDef
+                mat-sort-header
+                class="!bg-slate-50 !px-6 !py-3 text-xs font-semibold uppercase tracking-wider text-slate-500"
+              >
+                Plan Name
+              </th>
+              <td mat-cell *matCellDef="let plan" class="!px-6 !py-4">
+                <div class="flex flex-col">
+                  <button
+                    (click)="viewDetails(plan); $event.stopPropagation()"
+                    class="text-left font-medium text-slate-900 hover:text-primary transition-colors"
+                  >
+                    {{ plan.name }}
+                  </button>
+                  <span class="text-xs text-slate-500">{{ plan.code }}</span>
+                </div>
+              </td>
+            </ng-container>
+
+            <!-- Scheme Column -->
+            <ng-container matColumnDef="scheme">
+              <th
+                mat-header-cell
+                *matHeaderCellDef
+                mat-sort-header
+                class="!bg-slate-50 !px-6 !py-3 text-xs font-semibold uppercase tracking-wider text-slate-500"
+              >
+                Scheme
+              </th>
+              <td mat-cell *matCellDef="let plan" class="!px-6 !py-4">
+                <span class="text-sm text-slate-700">{{ plan.scheme?.name || '-' }}</span>
+              </td>
+            </ng-container>
+
+            <!-- Type Column -->
+            <ng-container matColumnDef="type">
+              <th
+                mat-header-cell
+                *matHeaderCellDef
+                mat-sort-header
+                class="!bg-slate-50 !px-6 !py-3 text-xs font-semibold uppercase tracking-wider text-slate-500"
+              >
+                Type
+              </th>
+              <td mat-cell *matCellDef="let plan" class="!px-6 !py-4">
+                <span
+                  class="inline-flex items-center rounded-md bg-slate-100 px-2 py-1 text-xs font-medium text-slate-700"
+                >
+                  {{ getPlanTypeLabel(plan.plan_type) }}
+                </span>
+              </td>
+            </ng-container>
+
+            <!-- Tier Column -->
+            <ng-container matColumnDef="tier">
+              <th
+                mat-header-cell
+                *matHeaderCellDef
+                mat-sort-header
+                class="!bg-slate-50 !px-6 !py-3 text-xs font-semibold uppercase tracking-wider text-slate-500"
+              >
+                Tier
+              </th>
+              <td mat-cell *matCellDef="let plan" class="!px-6 !py-4">
+                <span
+                  [class]="getTierBadgeClass(plan.tier_level)"
+                  class="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium"
+                >
+                  {{ getTierLabel(plan.tier_level) }}
+                </span>
+              </td>
+            </ng-container>
+
+            <!-- Benefits Column -->
+            <ng-container matColumnDef="benefits">
+              <th
+                mat-header-cell
+                *matHeaderCellDef
+                class="!bg-slate-50 !px-6 !py-3 text-xs font-semibold uppercase tracking-wider text-slate-500 !w-32"
+              >
+                Benefits
+              </th>
+              <td mat-cell *matCellDef="let plan" class="!px-6 !py-4">
+                <div class="flex items-center gap-2">
+                  <span
+                    class="flex h-6 w-6 items-center justify-center rounded-md bg-blue-50 text-xs font-medium text-blue-700"
+                  >
+                    {{ plan.plan_benefits_count || 0 }}
+                  </span>
+                  <span class="text-xs text-slate-500">Benefits</span>
+                </div>
+              </td>
+            </ng-container>
+
+            <!-- Actions Column -->
+            <ng-container matColumnDef="actions">
+              <th mat-header-cell *matHeaderCellDef class="!bg-slate-50 !w-16"></th>
+              <td mat-cell *matCellDef="let plan" class="!px-4 !py-4 text-right">
+                <button
+                  mat-icon-button
+                  [matMenuTriggerFor]="menu"
+                  (click)="$event.stopPropagation()"
+                  class="!text-slate-400 hover:!bg-slate-100 hover:!text-slate-900"
+                >
+                  <mat-icon fontSet="material-symbols-rounded">more_vert</mat-icon>
+                </button>
+
+                <mat-menu
+                  #menu="matMenu"
+                  class="!rounded-xl !border !border-slate-200 !shadow-lg !bg-white"
+                >
+                  <button mat-menu-item (click)="viewDetails(plan)">
+                    <mat-icon fontSet="material-symbols-rounded" class="!text-slate-500"
+                      >visibility</mat-icon
+                    >
+                    <span>View Details</span>
+                  </button>
+                  <button mat-menu-item (click)="openCreateDialog(plan)">
+                    <mat-icon fontSet="material-symbols-rounded" class="!text-slate-500"
+                      >edit</mat-icon
+                    >
+                    <span>Edit Plan</span>
+                  </button>
+                  <button mat-menu-item (click)="clonePlan(plan)">
+                    <mat-icon fontSet="material-symbols-rounded" class="!text-slate-500"
+                      >content_copy</mat-icon
+                    >
+                    <span>Clone Plan</span>
+                  </button>
+                  <button mat-menu-item (click)="toggleStatus(plan)">
+                    <mat-icon fontSet="material-symbols-rounded" class="!text-slate-500">
+                      {{ plan.is_active ? 'block' : 'check_circle' }}
+                    </mat-icon>
+                    <span>{{ plan.is_active ? 'Deactivate' : 'Activate' }}</span>
+                  </button>
+                  <mat-divider class="!my-1 opacity-50"></mat-divider>
+                  <button
+                    mat-menu-item
+                    class="!text-red-600 hover:!bg-red-50"
+                    (click)="deletePlan(plan)"
+                  >
+                    <mat-icon fontSet="material-symbols-rounded" class="!text-red-500"
+                      >delete</mat-icon
+                    >
+                    <span>Delete Plan</span>
+                  </button>
+                </mat-menu>
+              </td>
+            </ng-container>
+
+            <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+            <tr
+              mat-row
+              *matRowDef="let row; columns: displayedColumns"
+              class="group border-b border-slate-100 last:border-0 hover:bg-slate-50 transition-colors cursor-pointer"
+              (click)="viewDetails(row)"
+            ></tr>
+          </table>
+
+          <!-- Empty State -->
+          @if (planStore.plans().length === 0) {
+          <div class="flex flex-col items-center justify-center py-16 text-center">
+            <div class="flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 mb-4">
+              <mat-icon fontSet="material-symbols-rounded" class="!text-slate-400"
+                >medical_services</mat-icon
+              >
+            </div>
+            <h3 class="text-sm font-medium text-slate-900">No plans found</h3>
+            <p class="mt-1 text-sm text-slate-500 max-w-xs">
+              Get started by creating a new medical plan with benefits and pricing.
+            </p>
+            <button mat-stroked-button color="primary" class="mt-4" (click)="openCreateDialog()">
+              Create First Plan
+            </button>
+          </div>
+          }
+        </div>
+
+        <!-- Paginator -->
+        <mat-paginator
+          [pageSizeOptions]="[10, 20, 50]"
+          showFirstLastButtons
+          class="!border-t !border-slate-100 !bg-white"
+        ></mat-paginator>
+        }
+      </div>
+    </div>
+  </mat-drawer-content>
+
+  <!-- Detail Drawer -->
+  <mat-drawer #detailDrawer mode="over" position="end" class="!w-full sm:!w-[550px] !bg-white">
+    @if (selectedPlan(); as plan) {
+    <div class="flex flex-col h-full">
+      <!-- Drawer Header -->
+      <div class="flex items-center justify-between border-b border-slate-100 px-6 py-4">
+        <div class="flex items-center gap-3">
+          <div
+            [class]="getTierBadgeClass(plan.tier_level ?? 0)"
+            class="flex h-10 w-10 items-center justify-center rounded-full"
+          >
+            <mat-icon fontSet="material-symbols-rounded">medical_services</mat-icon>
+          </div>
+          <div>
+            <h2 class="text-lg font-semibold text-slate-900">{{ plan.name }}</h2>
+            <p class="text-xs text-slate-500">{{ plan.code }}</p>
+          </div>
+        </div>
+
+        <button
+          mat-icon-button
+          (click)="closeDrawer()"
+          class="!text-slate-400 hover:!text-slate-700"
+        >
+          <mat-icon fontSet="material-symbols-rounded">close</mat-icon>
+        </button>
+      </div>
+
+      <!-- Drawer Content -->
+      <div class="flex-1 overflow-y-auto p-6 space-y-6">
+        <!-- Status & Type Badges -->
+        <div class="flex items-center gap-2 flex-wrap">
+          <span
+            [class]="
+              plan.is_active
+                ? 'bg-green-50 text-green-700 border-green-200'
+                : 'bg-gray-100 text-gray-600 border-gray-200'
+            "
+            class="inline-flex items-center rounded-full border px-3 py-1 text-sm font-medium"
+          >
+            <span
+              [class]="plan.is_active ? 'bg-green-500' : 'bg-gray-400'"
+              class="mr-2 h-2 w-2 rounded-full"
+            ></span>
+            {{ plan.is_active ? 'Active' : 'Inactive' }}
+          </span>
+
+          <span
+            [class]="getTierBadgeClass(plan.tier_level ?? 0)"
+            class="inline-flex items-center gap-1 rounded-full border px-3 py-1 text-sm font-medium"
+          >
+            {{ getTierLabel(plan.tier_level ?? 0) }}
+          </span>
+
+          <span
+            class="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-sm font-medium text-slate-700"
+          >
+            {{ getPlanTypeLabel(plan.plan_type) }}
+          </span>
+
+          @if (plan.is_visible) {
+          <span
+            class="inline-flex items-center gap-1 rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-sm font-medium text-blue-700"
+          >
+            <mat-icon fontSet="material-symbols-rounded" class="!text-[14px]">visibility</mat-icon>
+            Visible
+          </span>
+          }
+        </div>
+
+        <!-- Scheme Info -->
+        @if (plan.scheme) {
+        <div class="rounded-lg border border-slate-200 p-4">
+          <h3 class="text-sm font-medium text-slate-500 mb-2">Parent Scheme</h3>
+          <div class="flex items-center gap-3">
+            <div
+              class="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary"
+            >
+              <mat-icon fontSet="material-symbols-rounded" class="!text-[18px]">category</mat-icon>
+            </div>
+            <div>
+              <p class="text-sm font-medium text-slate-900">{{ plan.scheme.name }}</p>
+              <p class="text-xs text-slate-500">{{ plan.scheme.code }}</p>
+            </div>
+          </div>
+        </div>
+        }
+
+        <!-- Description -->
+        @if (plan.description) {
+        <div>
+          <h3 class="text-sm font-medium text-slate-500 mb-2">Description</h3>
+          <p class="text-sm text-slate-700">{{ plan.description }}</p>
+        </div>
+        }
+
+        <!-- Network Type -->
+        @if (plan.network_type) {
+        <div class="rounded-lg border border-slate-200 p-4">
+          <h3 class="text-sm font-medium text-slate-500 mb-2">Network Type</h3>
+          <div class="flex items-center gap-2">
+            <mat-icon fontSet="material-symbols-rounded" class="!text-slate-500">hub</mat-icon>
+            <span class="text-sm font-medium text-slate-900">{{
+              getNetworkTypeLabel(plan.network_type)
+            }}</span>
+          </div>
+        </div>
+        }
+
+        <!-- Member Configuration -->
+        @if (plan.member_config) {
+        <div class="rounded-lg border border-slate-200 p-4">
+          <h3 class="text-sm font-medium text-slate-500 mb-3">Member Configuration</h3>
+          <div class="space-y-3">
+            @if (plan.member_config.max_dependents !== undefined) {
+            <div class="flex items-center justify-between text-sm">
+              <span class="text-slate-500">Max Dependents</span>
+              <span class="text-slate-900 font-medium">{{
+                plan.member_config.max_dependents
+              }}</span>
+            </div>
+            } @if (plan.member_config.child_age_limit) {
+            <div class="flex items-center justify-between text-sm">
+              <span class="text-slate-500">Child Age Limit</span>
+              <span class="text-slate-900 font-medium"
+                >{{ plan.member_config.child_age_limit }} years</span
+              >
+            </div>
+            } @if (plan.member_config.child_student_age_limit) {
+            <div class="flex items-center justify-between text-sm">
+              <span class="text-slate-500">Student Age Limit</span>
+              <span class="text-slate-900 font-medium"
+                >{{ plan.member_config.child_student_age_limit }} years</span
+              >
+            </div>
+            } @if (plan.member_config.parent_age_limit) {
+            <div class="flex items-center justify-between text-sm">
+              <span class="text-slate-500">Parent Age Limit</span>
+              <span class="text-slate-900 font-medium"
+                >{{ plan.member_config.parent_age_limit }} years</span
+              >
+            </div>
+            } @if (plan.member_config.allowed_member_types?.length) {
+            <div class="pt-2 border-t border-slate-100">
+              <p class="text-xs text-slate-500 mb-2">Allowed Member Types</p>
+              <div class="flex flex-wrap gap-1">
+                @for (type of plan.member_config.allowed_member_types; track type) {
+                <span
+                  class="inline-flex items-center rounded-md bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-700"
+                >
+                  {{ getMemberTypeLabel(type) }}
+                </span>
+                }
+              </div>
+            </div>
+            }
+          </div>
+        </div>
+        }
+
+        <!-- Waiting Periods -->
+        @if (plan.default_waiting_periods) {
+        <div class="rounded-lg border border-slate-200 p-4">
+          <h3 class="text-sm font-medium text-slate-500 mb-3">Default Waiting Periods</h3>
+          <div class="grid grid-cols-2 gap-3">
+            @if (plan.default_waiting_periods.general !== undefined) {
+            <div class="rounded-md bg-slate-50 p-3">
+              <p class="text-xs text-slate-500">General</p>
+              <p class="text-sm font-medium text-slate-900">
+                {{ plan.default_waiting_periods.general }} days
+              </p>
+            </div>
+            } @if (plan.default_waiting_periods.maternity !== undefined) {
+            <div class="rounded-md bg-slate-50 p-3">
+              <p class="text-xs text-slate-500">Maternity</p>
+              <p class="text-sm font-medium text-slate-900">
+                {{ plan.default_waiting_periods.maternity }} days
+              </p>
+            </div>
+            } @if (plan.default_waiting_periods.pre_existing !== undefined) {
+            <div class="rounded-md bg-slate-50 p-3">
+              <p class="text-xs text-slate-500">Pre-existing</p>
+              <p class="text-sm font-medium text-slate-900">
+                {{ plan.default_waiting_periods.pre_existing }} days
+              </p>
+            </div>
+            } @if (plan.default_waiting_periods.chronic !== undefined) {
+            <div class="rounded-md bg-slate-50 p-3">
+              <p class="text-xs text-slate-500">Chronic</p>
+              <p class="text-sm font-medium text-slate-900">
+                {{ plan.default_waiting_periods.chronic }} days
+              </p>
+            </div>
+            } @if (plan.default_waiting_periods.dental !== undefined) {
+            <div class="rounded-md bg-slate-50 p-3">
+              <p class="text-xs text-slate-500">Dental</p>
+              <p class="text-sm font-medium text-slate-900">
+                {{ plan.default_waiting_periods.dental }} days
+              </p>
+            </div>
+            } @if (plan.default_waiting_periods.optical !== undefined) {
+            <div class="rounded-md bg-slate-50 p-3">
+              <p class="text-xs text-slate-500">Optical</p>
+              <p class="text-sm font-medium text-slate-900">
+                {{ plan.default_waiting_periods.optical }} days
+              </p>
+            </div>
+            }
+          </div>
+        </div>
+        }
+
+        <!-- Cost Sharing -->
+        @if (plan.default_cost_sharing) {
+        <div class="rounded-lg border border-slate-200 p-4">
+          <h3 class="text-sm font-medium text-slate-500 mb-3">Default Cost Sharing</h3>
+          <div class="space-y-2">
+            @if (plan.default_cost_sharing.copay_type) {
+            <div class="flex items-center justify-between text-sm">
+              <span class="text-slate-500">Copay Type</span>
+              <span class="text-slate-900 font-medium capitalize">{{
+                plan.default_cost_sharing.copay_type
+              }}</span>
+            </div>
+            } @if (plan.default_cost_sharing.copay_type === 'fixed' &&
+            plan.default_cost_sharing.copay_amount !== undefined) {
+            <div class="flex items-center justify-between text-sm">
+              <span class="text-slate-500">Copay Amount</span>
+              <span class="text-slate-900 font-medium"
+                >ZMW {{ plan.default_cost_sharing.copay_amount | number }}</span
+              >
+            </div>
+            } @if (plan.default_cost_sharing.copay_type === 'percentage' &&
+            plan.default_cost_sharing.copay_percentage !== undefined) {
+            <div class="flex items-center justify-between text-sm">
+              <span class="text-slate-500">Copay Percentage</span>
+              <span class="text-slate-900 font-medium"
+                >{{ plan.default_cost_sharing.copay_percentage }}%</span
+              >
+            </div>
+            } @if (plan.default_cost_sharing.deductible !== undefined) {
+            <div class="flex items-center justify-between text-sm">
+              <span class="text-slate-500">Deductible</span>
+              <span class="text-slate-900 font-medium"
+                >ZMW {{ plan.default_cost_sharing.deductible | number }}</span
+              >
+            </div>
+            } @if (plan.default_cost_sharing.out_of_pocket_max !== undefined) {
+            <div class="flex items-center justify-between text-sm">
+              <span class="text-slate-500">Out-of-Pocket Max</span>
+              <span class="text-slate-900 font-medium">
+                {{
+                  plan.default_cost_sharing.out_of_pocket_max > 0
+                    ? 'ZMW ' + (plan.default_cost_sharing.out_of_pocket_max | number)
+                    : 'No limit'
+                }}
+              </span>
+            </div>
+            }
+          </div>
+        </div>
+        }
+
+        <!-- Benefits Summary -->
+        <div class="rounded-lg border border-slate-200 p-4">
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="text-sm font-medium text-slate-500">Plan Benefits</h3>
+            <span class="text-2xl font-bold text-blue-600">{{
+              plan.plan_benefits_count || 0
+            }}</span>
+          </div>
+          @if ((plan.plan_benefits_count || 0) > 0) {
+          <a
+            [routerLink]="['/medical/plans', plan.id, 'benefits']"
+            class="inline-flex items-center gap-1 text-sm text-primary hover:underline"
+          >
+            View all benefits
+            <mat-icon fontSet="material-symbols-rounded" class="!text-[16px]"
+              >arrow_forward</mat-icon
+            >
+          </a>
+          } @else {
+          <p class="text-sm text-slate-400">No benefits configured yet.</p>
+          }
+        </div>
+      </div>
+
+      <!-- Drawer Footer -->
+      <div
+        class="flex items-center justify-between gap-3 border-t border-slate-100 px-6 py-4 bg-slate-50"
+      >
+        <a [routerLink]="['/plans', plan.id]" mat-stroked-button class="!border-slate-200">
+          <mat-icon fontSet="material-symbols-rounded">open_in_new</mat-icon>
+          Full Details
+        </a>
+        <div class="flex items-center gap-2">
+          <button mat-stroked-button (click)="toggleStatus(plan)" class="!border-slate-200">
+            <mat-icon fontSet="material-symbols-rounded">
+              {{ plan.is_active ? 'block' : 'check_circle' }}
+            </mat-icon>
+            {{ plan.is_active ? 'Deactivate' : 'Activate' }}
+          </button>
+          <button mat-flat-button color="primary" (click)="openCreateDialog(plan)">
+            <mat-icon fontSet="material-symbols-rounded">edit</mat-icon>
+            Edit Plan
+          </button>
+        </div>
+      </div>
+    </div>
+    }
+  </mat-drawer>
+</mat-drawer-container>

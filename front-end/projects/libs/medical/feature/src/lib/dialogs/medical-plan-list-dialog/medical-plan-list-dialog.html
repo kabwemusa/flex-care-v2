@@ -1,0 +1,438 @@
+<!-- libs/medical/ui/src/lib/dialogs/medical-plan-dialog/medical-plan-dialog.html -->
+
+<div class="flex max-h-[90vh] w-[70vw] min-w-[70vw] flex-col overflow-hidden bg-white">
+  <!-- Header -->
+  <div class="flex items-center justify-between border-b border-slate-100 px-6 py-4">
+    <div class="flex items-center gap-3">
+      <div
+        class="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary"
+      >
+        <mat-icon fontSet="material-symbols-rounded">
+          {{ isEditMode ? 'edit_document' : 'add_circle' }}
+        </mat-icon>
+      </div>
+      <div>
+        <h2 class="text-lg font-semibold tracking-tight text-slate-900">
+          {{ isEditMode ? 'Edit Plan' : 'Create New Plan' }}
+        </h2>
+        <p class="text-xs text-slate-500">
+          {{
+            isEditMode
+              ? 'Update plan configuration'
+              : 'Configure a new medical plan with benefits and pricing'
+          }}
+        </p>
+      </div>
+    </div>
+
+    <button
+      mat-icon-button
+      (click)="dialogRef.close()"
+      class="!text-slate-400 hover:!text-slate-700"
+    >
+      <mat-icon fontSet="material-symbols-rounded">close</mat-icon>
+    </button>
+  </div>
+
+  <!-- Stepper Content -->
+  <div class="flex-1 overflow-y-auto">
+    <mat-stepper
+      #stepper
+      [linear]="!isEditMode"
+      [selectedIndex]="currentStep()"
+      (selectionChange)="onStepChange($event.selectedIndex)"
+      class="!bg-transparent"
+    >
+      <!-- Step 1: Basic Information -->
+      <mat-step [stepControl]="basicInfoForm" label="Basic Info">
+        <form [formGroup]="basicInfoForm" class="p-6 space-y-5">
+          <p class="text-sm text-slate-500 mb-4">
+            Define the core attributes of your medical plan including its scheme, type, and
+            visibility.
+          </p>
+
+          <!-- Scheme Selection -->
+          <div class="flex flex-col gap-1.5">
+            <label class="text-sm font-medium text-slate-700">
+              Scheme <span class="text-red-500">*</span>
+            </label>
+            <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+              <mat-select formControlName="scheme_id" placeholder="Select a scheme">
+                @for (scheme of schemeStore.schemes(); track scheme.id) {
+                <mat-option [value]="scheme.id">{{ scheme.name }}</mat-option>
+                }
+              </mat-select>
+              <mat-icon matSuffix fontSet="material-symbols-rounded" class="!text-slate-400"
+                >category</mat-icon
+              >
+              @if (basicInfoForm.get('scheme_id')?.hasError('required')) {
+              <mat-error>Please select a scheme</mat-error>
+              }
+            </mat-form-field>
+            <p class="text-xs text-slate-400">The umbrella product this plan belongs to</p>
+          </div>
+
+          <!-- Plan Name -->
+          <div class="flex flex-col gap-1.5">
+            <label class="text-sm font-medium text-slate-700">
+              Plan Name <span class="text-red-500">*</span>
+            </label>
+            <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+              <input matInput formControlName="name" placeholder="e.g. Gold Plus Family" />
+              <mat-icon matSuffix fontSet="material-symbols-rounded" class="!text-slate-400"
+                >badge</mat-icon
+              >
+              @if (basicInfoForm.get('name')?.hasError('required')) {
+              <mat-error>Plan name is required</mat-error>
+              } @if (basicInfoForm.get('name')?.hasError('minlength')) {
+              <mat-error>Name must be at least 3 characters</mat-error>
+              }
+            </mat-form-field>
+          </div>
+
+          <!-- Plan Type & Network -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div class="flex flex-col gap-1.5">
+              <label class="text-sm font-medium text-slate-700">
+                Plan Type <span class="text-red-500">*</span>
+              </label>
+              <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+                <mat-select formControlName="plan_type" placeholder="Select type">
+                  @for (type of planTypes; track type.value) {
+                  <mat-option [value]="type.value">
+                    <div class="flex flex-col">
+                      <span>{{ type.label }}</span>
+                      <span class="text-xs text-slate-400">{{ type.description }}</span>
+                    </div>
+                  </mat-option>
+                  }
+                </mat-select>
+              </mat-form-field>
+            </div>
+
+            <div class="flex flex-col gap-1.5">
+              <label class="text-sm font-medium text-slate-700">Network Type</label>
+              <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+                <mat-select formControlName="network_type" placeholder="Select network">
+                  @for (network of networkTypes; track network.value) {
+                  <mat-option [value]="network.value">
+                    <div class="flex flex-col">
+                      <span>{{ network.label }}</span>
+                      <span class="text-xs text-slate-400">{{ network.description }}</span>
+                    </div>
+                  </mat-option>
+                  }
+                </mat-select>
+              </mat-form-field>
+            </div>
+          </div>
+
+          <!-- Tier Level -->
+          <div class="flex flex-col gap-1.5">
+            <label class="text-sm font-medium text-slate-700">Tier Level</label>
+            <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+              <mat-select formControlName="tier_level" placeholder="Select tier">
+                @for (tier of tierLevels; track tier.value) {
+                <mat-option [value]="tier.value">
+                  <div class="flex items-center gap-2">
+                    <span
+                      class="flex h-5 w-5 items-center justify-center rounded-full text-xs font-bold"
+                      [class]="
+                        tier.value <= 2
+                          ? 'bg-amber-100 text-amber-700'
+                          : 'bg-slate-100 text-slate-600'
+                      "
+                    >
+                      {{ tier.value }}
+                    </span>
+                    <span>{{ tier.label }}</span>
+                  </div>
+                </mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+            <p class="text-xs text-slate-400">Used for plan comparison and sorting</p>
+          </div>
+
+          <!-- Description -->
+          <div class="flex flex-col gap-1.5">
+            <label class="text-sm font-medium text-slate-700">Description</label>
+            <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+              <textarea
+                matInput
+                formControlName="description"
+                rows="3"
+                placeholder="Brief description of the plan coverage..."
+                class="!resize-none"
+              ></textarea>
+            </mat-form-field>
+          </div>
+
+          <!-- Status Toggles -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div
+              class="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50/50 p-4"
+            >
+              <div class="flex flex-col">
+                <span class="text-sm font-semibold text-slate-900">Active Status</span>
+                <span class="text-xs text-slate-500">Enable for new enrollments</span>
+              </div>
+              <mat-slide-toggle formControlName="is_active" color="primary"></mat-slide-toggle>
+            </div>
+
+            <div
+              class="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50/50 p-4"
+            >
+              <div class="flex flex-col">
+                <span class="text-sm font-semibold text-slate-900">Visible</span>
+                <span class="text-xs text-slate-500">Show on public listings</span>
+              </div>
+              <mat-slide-toggle formControlName="is_visible" color="primary"></mat-slide-toggle>
+            </div>
+          </div>
+        </form>
+      </mat-step>
+
+      <!-- Step 2: Member Configuration -->
+      <mat-step [stepControl]="memberConfigForm" label="Members">
+        <form [formGroup]="memberConfigForm" class="p-6 space-y-5">
+          <p class="text-sm text-slate-500 mb-4">
+            Configure member eligibility rules including age limits and allowed relationship types.
+          </p>
+
+          <!-- Allowed Member Types -->
+          <div class="flex flex-col gap-1.5">
+            <label class="text-sm font-medium text-slate-700">Allowed Member Types</label>
+            <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+              <mat-select
+                formControlName="allowed_member_types"
+                multiple
+                placeholder="Select member types"
+              >
+                @for (type of memberTypes; track type.value) {
+                <mat-option [value]="type.value">{{ type.label }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+            <p class="text-xs text-slate-400">Which relationship types can be added to this plan</p>
+          </div>
+
+          <!-- Max Dependents -->
+          <div class="flex flex-col gap-1.5">
+            <label class="text-sm font-medium text-slate-700">Maximum Dependents</label>
+            <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+              <input matInput type="number" formControlName="max_dependents" min="0" max="20" />
+              <mat-icon matSuffix fontSet="material-symbols-rounded" class="!text-slate-400"
+                >group</mat-icon
+              >
+            </mat-form-field>
+            <p class="text-xs text-slate-400">Maximum number of dependents per principal member</p>
+          </div>
+
+          <!-- Age Limits -->
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div class="flex flex-col gap-1.5">
+              <label class="text-sm font-medium text-slate-700">Child Age Limit</label>
+              <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+                <input matInput type="number" formControlName="child_age_limit" min="0" max="30" />
+                <span matTextSuffix class="text-slate-400 text-sm">years</span>
+              </mat-form-field>
+            </div>
+
+            <div class="flex flex-col gap-1.5">
+              <label class="text-sm font-medium text-slate-700">Student Age Limit</label>
+              <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+                <input
+                  matInput
+                  type="number"
+                  formControlName="child_student_age_limit"
+                  min="0"
+                  max="30"
+                />
+                <span matTextSuffix class="text-slate-400 text-sm">years</span>
+              </mat-form-field>
+            </div>
+
+            <div class="flex flex-col gap-1.5">
+              <label class="text-sm font-medium text-slate-700">Parent Age Limit</label>
+              <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+                <input
+                  matInput
+                  type="number"
+                  formControlName="parent_age_limit"
+                  min="0"
+                  max="100"
+                />
+                <span matTextSuffix class="text-slate-400 text-sm">years</span>
+              </mat-form-field>
+            </div>
+          </div>
+        </form>
+      </mat-step>
+
+      <!-- Step 3: Waiting Periods -->
+      <mat-step [stepControl]="waitingPeriodsForm" label="Waiting Periods">
+        <form [formGroup]="waitingPeriodsForm" class="p-6 space-y-5">
+          <p class="text-sm text-slate-500 mb-4">
+            Set default waiting periods for different benefit categories. These can be overridden at
+            the benefit level.
+          </p>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            @for (period of waitingPeriodTypes; track period.value) {
+            <div class="flex flex-col gap-1.5">
+              <label class="text-sm font-medium text-slate-700">{{ period.label }}</label>
+              <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+                <input matInput type="number" [formControlName]="period.value" min="0" />
+                <span matTextSuffix class="text-slate-400 text-sm">days</span>
+              </mat-form-field>
+            </div>
+            }
+          </div>
+
+          <div class="rounded-lg bg-blue-50 border border-blue-100 p-4">
+            <div class="flex gap-3">
+              <mat-icon fontSet="material-symbols-rounded" class="!text-blue-500">info</mat-icon>
+              <div>
+                <p class="text-sm font-medium text-blue-900">About Waiting Periods</p>
+                <p class="text-xs text-blue-700 mt-1">
+                  Waiting periods are the number of days from cover start date before a member can
+                  claim for specific benefits. Set to 0 for immediate coverage.
+                </p>
+              </div>
+            </div>
+          </div>
+        </form>
+      </mat-step>
+
+      <!-- Step 4: Cost Sharing -->
+      <mat-step [stepControl]="costSharingForm" label="Cost Sharing" [optional]="true">
+        <form [formGroup]="costSharingForm" class="p-6 space-y-5">
+          <p class="text-sm text-slate-500 mb-4">
+            Configure default cost sharing settings. These determine how costs are split between the
+            insurer and member.
+          </p>
+
+          <!-- Copay Type -->
+          <div class="flex flex-col gap-1.5">
+            <label class="text-sm font-medium text-slate-700">Copay Type</label>
+            <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+              <mat-select formControlName="copay_type">
+                <mat-option value="fixed">Fixed Amount</mat-option>
+                <mat-option value="percentage">Percentage</mat-option>
+              </mat-select>
+            </mat-form-field>
+          </div>
+
+          <!-- Copay Values -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            @if (costSharingForm.get('copay_type')?.value === 'fixed') {
+            <div class="flex flex-col gap-1.5">
+              <label class="text-sm font-medium text-slate-700">Copay Amount</label>
+              <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+                <span matTextPrefix class="text-slate-400 mr-1">ZMW</span>
+                <input matInput type="number" formControlName="copay_amount" min="0" />
+              </mat-form-field>
+            </div>
+            } @else {
+            <div class="flex flex-col gap-1.5">
+              <label class="text-sm font-medium text-slate-700">Copay Percentage</label>
+              <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+                <input
+                  matInput
+                  type="number"
+                  formControlName="copay_percentage"
+                  min="0"
+                  max="100"
+                />
+                <span matTextSuffix class="text-slate-400">%</span>
+              </mat-form-field>
+            </div>
+            }
+
+            <div class="flex flex-col gap-1.5">
+              <label class="text-sm font-medium text-slate-700">Deductible</label>
+              <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+                <span matTextPrefix class="text-slate-400 mr-1">ZMW</span>
+                <input matInput type="number" formControlName="deductible" min="0" />
+              </mat-form-field>
+              <p class="text-xs text-slate-400">Amount paid before insurance kicks in</p>
+            </div>
+          </div>
+
+          <!-- Out of Pocket Max -->
+          <div class="flex flex-col gap-1.5">
+            <label class="text-sm font-medium text-slate-700">Out-of-Pocket Maximum</label>
+            <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+              <span matTextPrefix class="text-slate-400 mr-1">ZMW</span>
+              <input matInput type="number" formControlName="out_of_pocket_max" min="0" />
+            </mat-form-field>
+            <p class="text-xs text-slate-400">Maximum amount member pays per year (0 = no limit)</p>
+          </div>
+        </form>
+      </mat-step>
+    </mat-stepper>
+  </div>
+
+  <!-- Footer with Step Navigation -->
+  <div class="flex items-center justify-between border-t border-slate-100 bg-slate-50 px-6 py-4">
+    <div class="flex items-center gap-2">
+      <div class="text-xs text-slate-500">Step {{ currentStep() + 1 }} of 4</div>
+      <div class="flex gap-1 ml-2">
+        @for (step of [0, 1, 2, 3]; track step) {
+        <div
+          [class]="
+            step === currentStep()
+              ? 'w-6 h-1.5 rounded-full bg-primary'
+              : step < currentStep()
+              ? 'w-1.5 h-1.5 rounded-full bg-primary/60'
+              : 'w-1.5 h-1.5 rounded-full bg-slate-300'
+          "
+        ></div>
+        }
+      </div>
+    </div>
+
+    <div class="flex items-center gap-3">
+      <button mat-button (click)="dialogRef.close()" class="!text-slate-600 hover:!bg-slate-200">
+        Cancel
+      </button>
+
+      <!-- Previous Button -->
+      @if (currentStep() > 0) {
+      <button mat-stroked-button (click)="previousStep()" class="!border-slate-300 !text-slate-700">
+        <mat-icon fontSet="material-symbols-rounded">chevron_left</mat-icon>
+        Previous
+      </button>
+      }
+
+      <!-- Next Button (show when not on last step) -->
+      @if (currentStep() < 3) {
+      <button
+        mat-flat-button
+        color="primary"
+        [disabled]="!canProceedToNextStep()"
+        (click)="nextStep()"
+        class="!px-6 !rounded-lg"
+      >
+        Next
+        <mat-icon fontSet="material-symbols-rounded">chevron_right</mat-icon>
+      </button>
+      }
+
+      <!-- Save Button (show on last step or in edit mode) -->
+      @if (currentStep() === 3 || isEditMode) {
+      <button
+        mat-flat-button
+        color="primary"
+        [disabled]="!isFormValid"
+        (click)="save()"
+        class="!px-6 !rounded-lg"
+      >
+        <mat-icon fontSet="material-symbols-rounded">check</mat-icon>
+        {{ isEditMode ? 'Save Changes' : 'Create Plan' }}
+      </button>
+      }
+    </div>
+  </div>
+</div>

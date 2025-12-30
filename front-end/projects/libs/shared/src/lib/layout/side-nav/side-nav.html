@@ -1,26 +1,31 @@
 <aside
   [class]="
-    'relative z-30 flex h-screen flex-col border-r border-divider/80 shadow-lg bg-gradient-to-b from-content1/90 to-background/90 backdrop-blur-sm supports-[backdrop-filter]:from-content1/70 supports-[backdrop-filter]:to-background/70 transition-all duration-300 ease-in-out ' +
+    'relative z-30 flex h-screen flex-col border border-divider/40 shadow-sm bg-white  transition-all duration-300 ease-in-out ' +
     (collapsed ? 'w-16' : 'w-64')
   "
 >
-  <!-- Header -->
-  <div class="flex h-16 items-center justify-between border-b border-divider/60 px-3">
+  <div
+    class="flex h-16 shrink-0 items-center justify-between border-b border-divider/60 px-3 bg-white"
+  >
     <div
       [class]="
         'flex items-center gap-3 transition-all duration-300 ' + (collapsed ? 'justify-center' : '')
       "
     >
       <div
-        class="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/15 ring-1 ring-primary/20"
+        class="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-white shadow-sm shadow-primary/30"
       >
-        <div class="h-4 w-4 rounded bg-primary/60 shadow-sm"></div>
+        <mat-icon fontSet="material-symbols-rounded" class="!text-[20px]"
+          >medical_services</mat-icon
+        >
       </div>
 
       @if (!collapsed) {
-      <div class="flex flex-col">
-        <span class="text-sm font-semibold text-foreground">FlexCare</span>
-        <span class="text-xs text-foreground-500">Admin</span>
+      <div class="flex flex-col overflow-hidden">
+        <span class="truncate text-sm font-bold text-slate-800">FlexCare</span>
+        <span class="truncate text-[10px] font-medium uppercase tracking-wider text-slate-500"
+          >Admin Console</span
+        >
       </div>
       }
     </div>
@@ -29,65 +34,155 @@
     <button
       mat-icon-button
       (click)="toggle.emit()"
-      aria-label="Collapse sidebar"
-      class="!shrink-0 !text-foreground-500 hover:!text-foreground hover:!bg-content2/60"
+      class="!h-8 !w-8 !shrink-0 text-slate-400 hover:text-slate-700"
     >
-      <mat-icon class="!h-4 !w-4 !text-base">chevron_left</mat-icon>
+      <mat-icon fontSet="material-symbols-rounded" class="!text-[18px]">menu_open</mat-icon>
     </button>
     }
   </div>
 
-  <!-- Navigation -->
-  <div class="flex-1 overflow-y-auto p-2">
+  <div class="flex-1 overflow-y-auto overflow-x-hidden p-3 scrollbar-hide">
     <nav class="space-y-1">
-      @for (item of items(); track item.href) { @if (!collapsed) {
-      <a
-        [routerLink]="item.href"
-        routerLinkActive="bg-primary/10 text-primary border-primary/30 shadow-sm"
-        [routerLinkActiveOptions]="{ exact: item.href === '/' }"
-        class="group flex items-center gap-3 rounded-lg px-3 py-2.5 transition-all duration-200 text-foreground-600 hover:text-foreground hover:bg-content2/60 border border-transparent hover:border-divider/60"
-      >
-        <mat-icon
-          class="!h-5 !w-5 shrink-0 !text-xl transition-colors text-foreground-500 group-hover:text-foreground"
-        >
-          {{ item.icon }}
-        </mat-icon>
-        <span class="truncate text-sm font-medium">
-          {{ item.label }}
-        </span>
-      </a>
-      } @else {
-      <div [matTooltip]="item.label" matTooltipPosition="right" [matTooltipShowDelay]="500">
-        <a
-          [routerLink]="item.href"
-          routerLinkActive="bg-primary/10 text-primary border-primary/30 shadow-sm"
-          [routerLinkActiveOptions]="{ exact: item.href === '/' }"
-          class="group flex items-center justify-center rounded-lg px-3 py-2.5 transition-all duration-200 text-foreground-600 hover:text-foreground hover:bg-content2/60 border border-transparent hover:border-divider/60"
+      @for (item of items(); track item.label) { @if (item.children && item.children.length > 0) {
+
+      <div [class.justify-center]="collapsed" class="flex flex-col">
+        <button
+          (click)="toggleExpand(item.label)"
+          [class]="
+            'group flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm font-medium transition-all duration-200 border-l-4 ' +
+            (hasActiveChild(item)
+              ? '!bg-gradient-to-r !from-primary/10 !to-primary/5 !text-primary !font-semibold !border-primary'
+              : isExpanded(item.label)
+              ? 'text-slate-900 bg-slate-100 border-transparent'
+              : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900 border-transparent') +
+            (collapsed ? ' justify-center' : '')
+          "
+          [matTooltip]="collapsed ? item.label : ''"
+          matTooltipPosition="right"
         >
           <mat-icon
-            class="!h-5 !w-5 shrink-0 !text-xl transition-colors text-foreground-500 group-hover:text-foreground"
+            fontSet="material-symbols-rounded"
+            class="!text-[20px] shrink-0 transition-colors"
+            [class.text-primary]="isExpanded(item.label) || hasActiveChild(item)"
+            👈
+            HERE
+            -
+            Second
+            call
           >
             {{ item.icon }}
           </mat-icon>
-        </a>
+
+          @if (!collapsed) {
+          <span class="flex-1 truncate">{{ item.label }}</span>
+          <mat-icon
+            fontSet="material-symbols-rounded"
+            class="!text-[18px] text-slate-400 transition-transform duration-200"
+            [class.rotate-180]="isExpanded(item.label)"
+            [class.text-primary]="hasActiveChild(item)"
+            👈
+            HERE
+            -
+            Third
+            call
+          >
+            keyboard_arrow_down
+          </mat-icon>
+          }
+        </button>
+        <!-- <button
+          (click)="toggleExpand(item.label)"
+          [class]="
+            'group flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm font-medium transition-colors ' +
+            (isExpanded(item.label)
+              ? 'text-slate-900 bg-slate-100'
+              : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900') +
+            (collapsed ? ' justify-center' : '')
+          "
+          [matTooltip]="collapsed ? item.label : ''"
+          matTooltipPosition="right"
+        >
+          <mat-icon
+            fontSet="material-symbols-rounded"
+            class="!text-[20px] shrink-0 transition-colors"
+            [class.text-primary]="isExpanded(item.label)"
+          >
+            {{ item.icon }}
+          </mat-icon>
+
+          @if (!collapsed) {
+          <span class="flex-1 truncate">{{ item.label }}</span>
+          <mat-icon
+            fontSet="material-symbols-rounded"
+            class="!text-[18px] text-slate-400 transition-transform duration-200"
+            [class.rotate-180]="isExpanded(item.label)"
+          >
+            keyboard_arrow_down
+          </mat-icon>
+          }
+        </button> -->
+
+        @if (!collapsed && isExpanded(item.label)) {
+        <div
+          class="relative mt-1 ml-[22px] pl-5 border-l-2 border-slate-200 space-y-1 animate-in slide-in-from-top-2 duration-200"
+        >
+          @for (child of item.children; track child.href) {
+          <a
+            [routerLink]="child.href"
+            routerLinkActive="!text-primary !font-semibold !bg-primary/10 before:!opacity-100"
+            class="relative block rounded-lg px-3 py-2.5 text-sm text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-all before:absolute before:left-0 before:top-1/2 before:-translate-y-1/2 before:-translate-x-[21px] before:h-2 before:w-2 before:rounded-full before:bg-primary before:opacity-0 before:transition-opacity"
+          >
+            {{ child.label }}
+          </a>
+          }
+        </div>
+        }
       </div>
+
+      } @else {
+
+      <a
+        [routerLink]="item.href"
+        routerLinkActive="bg-primary text-white shadow-md shadow-primary/20"
+        [routerLinkActiveOptions]="{ exact: item.href === '/' }"
+        [class]="
+          'group flex items-center gap-3 rounded-lg px-3 py-2 transition-all duration-200 ' +
+          (collapsed ? 'justify-center' : '')
+        "
+        [matTooltip]="collapsed ? item.label : ''"
+        matTooltipPosition="right"
+      >
+        <mat-icon
+          fontSet="material-symbols-rounded"
+          class="!text-[20px] shrink-0"
+          [class]="
+            'text-slate-500 group-[.bg-primary]:text-white group-hover:text-slate-900 group-[.bg-primary]:group-hover:text-white'
+          "
+        >
+          {{ item.icon }}
+        </mat-icon>
+
+        @if (!collapsed) {
+        <span
+          class="truncate text-sm font-medium text-slate-600 group-[.bg-primary]:text-white group-hover:text-slate-900 group-[.bg-primary]:group-hover:text-white"
+        >
+          {{ item.label }}
+        </span>
+        }
+      </a>
       } }
     </nav>
   </div>
 
-  <!-- Footer -->
-  @if (collapsed) {
-  <div class="border-t border-divider/60 p-2">
+  <div class="border-t border-divider/60 p-2 bg-slate-50/50">
     <button
       mat-icon-button
       (click)="toggle.emit()"
-      aria-label="Expand sidebar"
-      class="!w-full !text-foreground-500 hover:!text-foreground hover:!bg-content2/60"
+      class="!w-full !text-slate-400 hover:!text-slate-700 hover:!bg-white"
     >
-      <mat-icon class="!h-4 !w-4 !text-base">chevron_right</mat-icon>
+      <mat-icon fontSet="material-symbols-rounded" class="!text-[20px]">
+        {{ collapsed ? 'last_page' : 'first_page' }}
+      </mat-icon>
     </button>
   </div>
-  } @else {
-  <div class="h-4"></div>
-  }
 </aside>

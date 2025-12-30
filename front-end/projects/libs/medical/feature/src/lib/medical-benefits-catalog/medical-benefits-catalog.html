@@ -1,0 +1,732 @@
+<!-- libs/medical/ui/src/lib/benefits/benefit-catalog.component.html -->
+
+<mat-drawer-container class="h-full">
+  <!-- Main Content -->
+  <mat-drawer-content>
+    <div class="bg-white p-6 md:p-10 min-h-[80vh] shadow-sm">
+      <lib-page-header
+        title="Benefits Catalog"
+        subtitle="Manage the master list of benefits available for medical plans."
+      >
+        <div actions class="flex gap-2">
+          <button
+            mat-stroked-button
+            (click)="toggleViewMode()"
+            class="!border-slate-200 !text-slate-600 hidden sm:flex"
+          >
+            <mat-icon fontSet="material-symbols-rounded">
+              {{ viewMode() === 'table' ? 'account_tree' : 'table_rows' }}
+            </mat-icon>
+            {{ viewMode() === 'table' ? 'Tree View' : 'Table View' }}
+          </button>
+
+          <button
+            mat-button
+            (click)="exportToCsv()"
+            class="!border-divider !text-foreground-600 hover:!bg-content2 hidden sm:flex"
+          >
+            <mat-icon fontSet="material-symbols-rounded">download</mat-icon>
+            Export
+          </button>
+
+          <button
+            mat-stroked-button
+            color="primary"
+            (click)="openCategoryDialog()"
+            class="hidden sm:flex"
+          >
+            <mat-icon fontSet="material-symbols-rounded">create_new_folder</mat-icon>
+            New Category
+          </button>
+
+          <button mat-flat-button color="primary" class="!rounded-lg" (click)="openBenefitDialog()">
+            <mat-icon fontSet="material-symbols-rounded">add</mat-icon>
+            New Benefit
+          </button>
+        </div>
+      </lib-page-header>
+
+      <!-- KPI Cards -->
+      <div class="grid grid-cols-1 gap-4 sm:grid-cols-3 mb-6">
+        <div class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+          <div class="flex items-center justify-between">
+            <div>
+              <div class="text-sm font-medium text-slate-500">Total Benefits</div>
+              <div class="mt-2 text-2xl font-bold tracking-tight text-slate-900">
+                {{ totalBenefits() }}
+              </div>
+            </div>
+            <div class="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100">
+              <mat-icon fontSet="material-symbols-rounded" class="!text-blue-600"
+                >medical_services</mat-icon
+              >
+            </div>
+          </div>
+        </div>
+
+        <div class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+          <div class="flex items-center justify-between">
+            <div>
+              <div class="text-sm font-medium text-slate-500">Categories</div>
+              <div class="mt-2 text-2xl font-bold tracking-tight text-purple-600">
+                {{ totalCategories() }}
+              </div>
+            </div>
+            <div class="flex h-10 w-10 items-center justify-center rounded-full bg-purple-100">
+              <mat-icon fontSet="material-symbols-rounded" class="!text-purple-600"
+                >folder</mat-icon
+              >
+            </div>
+          </div>
+        </div>
+
+        <div class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+          <div class="flex items-center justify-between">
+            <div>
+              <div class="text-sm font-medium text-slate-500">Active Benefits</div>
+              <div class="mt-2 text-2xl font-bold tracking-tight text-green-600">
+                {{ activeBenefits() }}
+              </div>
+            </div>
+            <div class="flex h-10 w-10 items-center justify-center rounded-full bg-green-100">
+              <mat-icon fontSet="material-symbols-rounded" class="!text-green-600"
+                >check_circle</mat-icon
+              >
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Content Container -->
+      <div
+        class="flex flex-col rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden"
+      >
+        <!-- Filters Bar -->
+        <div
+          class="flex flex-col gap-4 border-b border-slate-100 p-4 sm:flex-row sm:items-center sm:justify-between"
+        >
+          <!-- Search -->
+          <div class="relative w-full sm:w-72">
+            <mat-icon
+              fontSet="material-symbols-rounded"
+              class="absolute left-3 top-1/2 -translate-y-1/2 !text-[20px] text-slate-400"
+              >search</mat-icon
+            >
+            <input
+              type="text"
+              placeholder="Search benefits..."
+              class="h-10 w-full rounded-lg border border-slate-200 bg-slate-50 pl-10 pr-4 text-sm text-slate-900 outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all placeholder:text-slate-400"
+              (input)="applyFilter($event)"
+              [value]="searchQuery()"
+            />
+          </div>
+
+          <!-- Filter Dropdowns -->
+          <div class="flex items-center gap-2 flex-wrap">
+            <mat-form-field appearance="outline" subscriptSizing="dynamic" class="!w-40">
+              <mat-select
+                placeholder="All Categories"
+                [value]="selectedCategory()"
+                (selectionChange)="filterByCategory($event.value)"
+              >
+                <mat-option value="">All Categories</mat-option>
+                @for (category of store.categories(); track category.id) {
+                <mat-option [value]="category.id">
+                  <div class="flex items-center gap-2">
+                    <mat-icon fontSet="material-symbols-rounded" class="!text-[18px]">
+                      {{ category.icon || 'folder' }}
+                    </mat-icon>
+                    <span>{{ category.name }}</span>
+                  </div>
+                </mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" subscriptSizing="dynamic" class="!w-40">
+              <mat-select
+                placeholder="All Types"
+                [value]="selectedType()"
+                (selectionChange)="filterByType($event.value)"
+              >
+                <mat-option value="">All Types</mat-option>
+                @for (type of benefitTypes; track type.value) {
+                <mat-option [value]="type.value">
+                  <div class="flex items-center gap-2">
+                    <mat-icon fontSet="material-symbols-rounded" class="!text-[18px]">{{
+                      type.icon
+                    }}</mat-icon>
+                    <span>{{ type.label }}</span>
+                  </div>
+                </mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+
+            @if (selectedCategory() || selectedType() || searchQuery()) {
+            <button
+              mat-stroked-button
+              class="!border-slate-200 !text-slate-600"
+              (click)="clearFilters()"
+            >
+              <mat-icon fontSet="material-symbols-rounded">clear</mat-icon>
+              Clear
+            </button>
+            }
+          </div>
+        </div>
+
+        <!-- Loading State -->
+        @if (store.isLoading()) {
+        <div class="divide-y divide-slate-100">
+          @for (i of [1,2,3,4,5]; track i) {
+          <div class="flex items-center gap-4 p-4 animate-pulse">
+            <div class="h-10 w-10 shrink-0 rounded-full bg-slate-100"></div>
+            <div class="flex-1 space-y-2">
+              <div class="h-4 w-1/3 rounded bg-slate-100"></div>
+              <div class="h-3 w-1/4 rounded bg-slate-50"></div>
+            </div>
+            <div class="h-8 w-24 rounded bg-slate-100"></div>
+          </div>
+          }
+        </div>
+        } @else {
+        <!-- Table View -->
+        @if (viewMode() === 'table') {
+        <div class="overflow-x-auto">
+          <table mat-table [dataSource]="dataSource" matSort class="w-full">
+            <!-- Status Column -->
+            <ng-container matColumnDef="status">
+              <th
+                mat-header-cell
+                *matHeaderCellDef
+                mat-sort-header
+                class="!bg-slate-50 !px-6 !py-3 text-xs font-semibold uppercase tracking-wider text-slate-500 !w-28"
+              >
+                Status
+              </th>
+              <td mat-cell *matCellDef="let benefit" class="!px-6 !py-4">
+                <span
+                  [class]="
+                    benefit.is_active
+                      ? 'bg-green-50 text-green-700 border-green-200'
+                      : 'bg-gray-100 text-gray-600 border-gray-200'
+                  "
+                  class="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium"
+                >
+                  {{ benefit.is_active ? 'Active' : 'Inactive' }}
+                </span>
+              </td>
+            </ng-container>
+
+            <!-- Name Column -->
+            <ng-container matColumnDef="name">
+              <th
+                mat-header-cell
+                *matHeaderCellDef
+                mat-sort-header
+                class="!bg-slate-50 !px-6 !py-3 text-xs font-semibold uppercase tracking-wider text-slate-500"
+              >
+                Benefit
+              </th>
+              <td mat-cell *matCellDef="let benefit" class="!px-6 !py-4">
+                <div class="flex items-center gap-3">
+                  <div
+                    class="flex h-9 w-9 items-center justify-center rounded-lg"
+                    [class]="benefit.parent_id ? 'bg-slate-100' : 'bg-blue-50'"
+                  >
+                    <mat-icon
+                      fontSet="material-symbols-rounded"
+                      [class]="benefit.parent_id ? '!text-slate-500' : '!text-blue-600'"
+                      class="!text-[18px]"
+                    >
+                      {{ getBenefitTypeIcon(benefit.benefit_type) }}
+                    </mat-icon>
+                  </div>
+                  <div class="flex flex-col">
+                    <button
+                      (click)="viewDetails(benefit); $event.stopPropagation()"
+                      class="text-left font-medium text-slate-900 hover:text-primary transition-colors"
+                    >
+                      {{ benefit.name }}
+                    </button>
+                    <div class="flex items-center gap-2">
+                      <span class="text-xs text-slate-500">{{ benefit.code }}</span>
+                      @if (benefit.parent_id) {
+                      <span class="text-xs text-slate-400">• Sub-benefit</span>
+                      }
+                    </div>
+                  </div>
+                </div>
+              </td>
+            </ng-container>
+
+            <!-- Category Column -->
+            <ng-container matColumnDef="category">
+              <th
+                mat-header-cell
+                *matHeaderCellDef
+                mat-sort-header
+                class="!bg-slate-50 !px-6 !py-3 text-xs font-semibold uppercase tracking-wider text-slate-500"
+              >
+                Category
+              </th>
+              <td mat-cell *matCellDef="let benefit" class="!px-6 !py-4">
+                <span class="text-sm text-slate-700">{{
+                  getCategoryName(benefit.category_id)
+                }}</span>
+              </td>
+            </ng-container>
+
+            <!-- Type Column -->
+            <ng-container matColumnDef="type">
+              <th
+                mat-header-cell
+                *matHeaderCellDef
+                mat-sort-header
+                class="!bg-slate-50 !px-6 !py-3 text-xs font-semibold uppercase tracking-wider text-slate-500"
+              >
+                Type
+              </th>
+              <td mat-cell *matCellDef="let benefit" class="!px-6 !py-4">
+                <span
+                  class="inline-flex items-center gap-1 rounded-md bg-slate-100 px-2 py-1 text-xs font-medium text-slate-700"
+                >
+                  <mat-icon fontSet="material-symbols-rounded" class="!text-[14px]">
+                    {{ getBenefitTypeIcon(benefit.benefit_type) }}
+                  </mat-icon>
+                  {{ getBenefitTypeLabel(benefit.benefit_type) }}
+                </span>
+              </td>
+            </ng-container>
+
+            <!-- Defaults Column -->
+            <ng-container matColumnDef="defaults">
+              <th
+                mat-header-cell
+                *matHeaderCellDef
+                class="!bg-slate-50 !px-6 !py-3 text-xs font-semibold uppercase tracking-wider text-slate-500"
+              >
+                Defaults
+              </th>
+              <td mat-cell *matCellDef="let benefit" class="!px-6 !py-4">
+                <div class="flex flex-wrap gap-1">
+                  @if (benefit.default_limit_type) {
+                  <span class="rounded bg-slate-50 px-1.5 py-0.5 text-xs text-slate-600">
+                    {{ getLimitTypeLabel(benefit.default_limit_type) }}
+                  </span>
+                  } @if (benefit.requires_preauth) {
+                  <span class="rounded bg-amber-50 px-1.5 py-0.5 text-xs text-amber-700">
+                    Preauth
+                  </span>
+                  } @if (benefit.requires_referral) {
+                  <span class="rounded bg-purple-50 px-1.5 py-0.5 text-xs text-purple-700">
+                    Referral
+                  </span>
+                  }
+                </div>
+              </td>
+            </ng-container>
+
+            <!-- Actions Column -->
+            <ng-container matColumnDef="actions">
+              <th mat-header-cell *matHeaderCellDef class="!bg-slate-50 !w-16"></th>
+              <td mat-cell *matCellDef="let benefit" class="!px-4 !py-4 text-right">
+                <button
+                  mat-icon-button
+                  [matMenuTriggerFor]="menu"
+                  (click)="$event.stopPropagation()"
+                  class="!text-slate-400 hover:!bg-slate-100 hover:!text-slate-900"
+                >
+                  <mat-icon fontSet="material-symbols-rounded">more_vert</mat-icon>
+                </button>
+
+                <mat-menu
+                  #menu="matMenu"
+                  class="!rounded-xl !border !border-slate-200 !shadow-lg !bg-white"
+                >
+                  <button mat-menu-item (click)="viewDetails(benefit)">
+                    <mat-icon fontSet="material-symbols-rounded" class="!text-slate-500"
+                      >visibility</mat-icon
+                    >
+                    <span>View Details</span>
+                  </button>
+                  <button mat-menu-item (click)="openBenefitDialog(benefit)">
+                    <mat-icon fontSet="material-symbols-rounded" class="!text-slate-500"
+                      >edit</mat-icon
+                    >
+                    <span>Edit Benefit</span>
+                  </button>
+                  <button mat-menu-item (click)="addSubBenefit(benefit)">
+                    <mat-icon fontSet="material-symbols-rounded" class="!text-slate-500"
+                      >add_circle</mat-icon
+                    >
+                    <span>Add Sub-Benefit</span>
+                  </button>
+                  <mat-divider class="!my-1 opacity-50"></mat-divider>
+                  <button
+                    mat-menu-item
+                    class="!text-red-600 hover:!bg-red-50"
+                    (click)="deleteBenefit(benefit)"
+                  >
+                    <mat-icon fontSet="material-symbols-rounded" class="!text-red-500"
+                      >delete</mat-icon
+                    >
+                    <span>Delete Benefit</span>
+                  </button>
+                </mat-menu>
+              </td>
+            </ng-container>
+
+            <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+            <tr
+              mat-row
+              *matRowDef="let row; columns: displayedColumns"
+              class="group border-b border-slate-100 last:border-0 hover:bg-slate-50 transition-colors cursor-pointer"
+              (click)="viewDetails(row)"
+            ></tr>
+          </table>
+
+          <!-- Empty State -->
+          @if (store.benefits().length === 0) {
+          <div class="flex flex-col items-center justify-center py-16 text-center">
+            <div class="flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 mb-4">
+              <mat-icon fontSet="material-symbols-rounded" class="!text-slate-400"
+                >medical_services</mat-icon
+              >
+            </div>
+            <h3 class="text-sm font-medium text-slate-900">No benefits found</h3>
+            <p class="mt-1 text-sm text-slate-500 max-w-xs">
+              Start by creating benefit categories, then add benefits to your catalog.
+            </p>
+            <div class="flex gap-2 mt-4">
+              <button mat-stroked-button color="primary" (click)="openCategoryDialog()">
+                Create Category
+              </button>
+              <button mat-flat-button color="primary" (click)="openBenefitDialog()">
+                Create Benefit
+              </button>
+            </div>
+          </div>
+          }
+        </div>
+
+        <!-- Paginator -->
+        <mat-paginator
+          [pageSizeOptions]="[10, 20, 50]"
+          showFirstLastButtons
+          class="!border-t !border-slate-100 !bg-white"
+        ></mat-paginator>
+        } @else {
+        <!-- Tree View -->
+        <div class="p-4">
+          @if (treeDataSource.data.length === 0) {
+          <div class="flex flex-col items-center justify-center py-16 text-center">
+            <div class="flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 mb-4">
+              <mat-icon fontSet="material-symbols-rounded" class="!text-slate-400"
+                >account_tree</mat-icon
+              >
+            </div>
+            <h3 class="text-sm font-medium text-slate-900">No categories found</h3>
+            <p class="mt-1 text-sm text-slate-500 max-w-xs">
+              Create categories to organize your benefits hierarchically.
+            </p>
+          </div>
+          } @else {
+          <mat-tree [dataSource]="treeDataSource" [treeControl]="treeControl" class="benefit-tree">
+            <!-- Leaf nodes -->
+            <mat-tree-node *matTreeNodeDef="let node" matTreeNodePadding>
+              <button mat-icon-button disabled class="!invisible"></button>
+              <div
+                class="flex items-center gap-2 py-2 px-3 rounded-lg hover:bg-slate-50 cursor-pointer flex-1"
+                (click)="onTreeNodeClick(node)"
+              >
+                @if (node.isCategory) {
+                <mat-icon fontSet="material-symbols-rounded" class="!text-purple-500">{{
+                  node.icon
+                }}</mat-icon>
+                <span class="font-medium text-slate-700">{{ node.name }}</span>
+                } @else {
+                <mat-icon fontSet="material-symbols-rounded" class="!text-blue-500 !text-[18px]">
+                  {{ getBenefitTypeIcon(node.benefit_type) }}
+                </mat-icon>
+                <span class="text-slate-700">{{ node.name }}</span>
+                <span class="text-xs text-slate-400">{{ node.code }}</span>
+                @if (!node.is_active) {
+                <span class="rounded bg-gray-100 px-1.5 py-0.5 text-xs text-gray-500"
+                  >Inactive</span
+                >
+                } }
+              </div>
+            </mat-tree-node>
+
+            <!-- Expandable nodes -->
+            <mat-nested-tree-node *matTreeNodeDef="let node; when: hasChild">
+              <div class="mat-tree-node">
+                <button mat-icon-button matTreeNodeToggle>
+                  <mat-icon fontSet="material-symbols-rounded" class="!text-slate-400">
+                    {{ treeControl.isExpanded(node) ? 'expand_more' : 'chevron_right' }}
+                  </mat-icon>
+                </button>
+                <div
+                  class="flex items-center gap-2 py-2 px-3 rounded-lg hover:bg-slate-50 cursor-pointer flex-1"
+                  (click)="onTreeNodeClick(node)"
+                >
+                  @if (node.isCategory) {
+                  <mat-icon
+                    fontSet="material-symbols-rounded"
+                    [style.color]="node.color || '#8b5cf6'"
+                    >{{ node.icon }}</mat-icon
+                  >
+                  <span class="font-medium text-slate-700">{{ node.name }}</span>
+                  <span class="text-xs text-slate-400"
+                    >({{ node.children?.length || 0 }} benefits)</span
+                  >
+                  } @else {
+                  <mat-icon fontSet="material-symbols-rounded" class="!text-blue-500 !text-[18px]">
+                    {{ getBenefitTypeIcon(node.benefit_type) }}
+                  </mat-icon>
+                  <span class="text-slate-700">{{ node.name }}</span>
+                  <span class="text-xs text-slate-400">{{ node.code }}</span>
+                  @if (node.children && node.children.length > 0) {
+                  <span class="text-xs text-slate-400"
+                    >({{ node.children.length }} sub-benefits)</span
+                  >
+                  } }
+                </div>
+              </div>
+              <div [class.hidden]="!treeControl.isExpanded(node)" class="pl-8">
+                <ng-container matTreeNodeOutlet></ng-container>
+              </div>
+            </mat-nested-tree-node>
+          </mat-tree>
+          }
+        </div>
+        } }
+      </div>
+    </div>
+  </mat-drawer-content>
+
+  <!-- Detail Drawer -->
+  <mat-drawer #detailDrawer mode="over" position="end" class="!w-full sm:!w-[500px] !bg-white">
+    @if (selectedBenefit(); as benefit) {
+    <div class="flex flex-col h-full">
+      <!-- Drawer Header -->
+      <div class="flex items-center justify-between border-b border-slate-100 px-6 py-4">
+        <div class="flex items-center gap-3">
+          <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-50">
+            <mat-icon fontSet="material-symbols-rounded" class="!text-blue-600">
+              {{ getBenefitTypeIcon(benefit.benefit_type) }}
+            </mat-icon>
+          </div>
+          <div>
+            <h2 class="text-lg font-semibold text-slate-900">{{ benefit.name }}</h2>
+            <p class="text-xs text-slate-500">{{ benefit.code }}</p>
+          </div>
+        </div>
+
+        <button
+          mat-icon-button
+          (click)="closeDrawer()"
+          class="!text-slate-400 hover:!text-slate-700"
+        >
+          <mat-icon fontSet="material-symbols-rounded">close</mat-icon>
+        </button>
+      </div>
+
+      <!-- Drawer Content -->
+      <div class="flex-1 overflow-y-auto p-6 space-y-6">
+        <!-- Status & Type Badges -->
+        <div class="flex flex-wrap items-center gap-2">
+          <span
+            [class]="
+              benefit.is_active
+                ? 'bg-green-50 text-green-700 border-green-200'
+                : 'bg-gray-100 text-gray-600 border-gray-200'
+            "
+            class="inline-flex items-center rounded-full border px-3 py-1 text-sm font-medium"
+          >
+            <span
+              [class]="benefit.is_active ? 'bg-green-500' : 'bg-gray-400'"
+              class="mr-2 h-2 w-2 rounded-full"
+            ></span>
+            {{ benefit.is_active ? 'Active' : 'Inactive' }}
+          </span>
+
+          <span
+            class="inline-flex items-center gap-1 rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-sm font-medium text-blue-700"
+          >
+            <mat-icon fontSet="material-symbols-rounded" class="!text-[16px]">
+              {{ getBenefitTypeIcon(benefit.benefit_type) }}
+            </mat-icon>
+            {{ getBenefitTypeLabel(benefit.benefit_type) }}
+          </span>
+
+          @if (benefit.parent_id) {
+          <span
+            class="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-sm font-medium text-slate-600"
+          >
+            Sub-Benefit
+          </span>
+          }
+        </div>
+
+        <!-- Category -->
+        <div class="rounded-lg border border-slate-200 p-4">
+          <h3 class="text-sm font-medium text-slate-500 mb-2">Category</h3>
+          <p class="text-sm font-medium text-slate-900">
+            {{ getCategoryName(benefit.category_id) }}
+          </p>
+        </div>
+
+        <!-- Description -->
+        @if (benefit.description) {
+        <div>
+          <h3 class="text-sm font-medium text-slate-500 mb-2">Description</h3>
+          <p class="text-sm text-slate-700">{{ benefit.description }}</p>
+        </div>
+        }
+
+        <!-- Display Name -->
+        @if (benefit.display_name && benefit.display_name !== benefit.name) {
+        <div>
+          <h3 class="text-sm font-medium text-slate-500 mb-2">Display Name</h3>
+          <p class="text-sm text-slate-700">{{ benefit.display_name }}</p>
+        </div>
+        }
+
+        <!-- Default Limits -->
+        <div class="rounded-lg border border-slate-200 p-4">
+          <h3 class="text-sm font-medium text-slate-500 mb-3">Default Limits</h3>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <p class="text-xs text-slate-400">Limit Type</p>
+              <p class="text-sm font-medium text-slate-900">
+                {{
+                  benefit.default_limit_type
+                    ? getLimitTypeLabel(benefit.default_limit_type)
+                    : 'Not set'
+                }}
+              </p>
+            </div>
+            <div>
+              <p class="text-xs text-slate-400">Frequency</p>
+              <p class="text-sm font-medium text-slate-900">
+                {{ benefit.default_limit_frequency || 'Not set' }}
+              </p>
+            </div>
+            <div>
+              <p class="text-xs text-slate-400">Basis</p>
+              <p class="text-sm font-medium text-slate-900">
+                {{ benefit.default_limit_basis || 'Not set' }}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Requirements -->
+        <div class="rounded-lg border border-slate-200 p-4">
+          <h3 class="text-sm font-medium text-slate-500 mb-3">Requirements</h3>
+          <div class="space-y-3">
+            <div class="flex items-center justify-between">
+              <span class="text-sm text-slate-600">Pre-Authorization</span>
+              <span
+                [class]="
+                  benefit.requires_preauth
+                    ? 'text-amber-600 bg-amber-50'
+                    : 'text-slate-500 bg-slate-50'
+                "
+                class="rounded-full px-2 py-0.5 text-xs font-medium"
+              >
+                {{ benefit.requires_preauth ? 'Required' : 'Not Required' }}
+              </span>
+            </div>
+            <div class="flex items-center justify-between">
+              <span class="text-sm text-slate-600">Referral</span>
+              <span
+                [class]="
+                  benefit.requires_referral
+                    ? 'text-purple-600 bg-purple-50'
+                    : 'text-slate-500 bg-slate-50'
+                "
+                class="rounded-full px-2 py-0.5 text-xs font-medium"
+              >
+                {{ benefit.requires_referral ? 'Required' : 'Not Required' }}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Applicable Member Types -->
+        @if (benefit.applicable_member_types && benefit.applicable_member_types.length > 0) {
+        <div>
+          <h3 class="text-sm font-medium text-slate-500 mb-2">Applicable Member Types</h3>
+          <div class="flex flex-wrap gap-2">
+            @for (type of benefit.applicable_member_types; track type) {
+            <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700">
+              {{ type }}
+            </span>
+            }
+          </div>
+        </div>
+        }
+
+        <!-- Parent Benefit -->
+        @if (benefit.parent) {
+        <div class="rounded-lg border border-slate-200 p-4">
+          <h3 class="text-sm font-medium text-slate-500 mb-2">Parent Benefit</h3>
+          <p class="text-sm font-medium text-slate-900">{{ benefit.parent.name }}</p>
+          <p class="text-xs text-slate-500">{{ benefit.parent.code }}</p>
+        </div>
+        }
+
+        <!-- Child Benefits -->
+        @if (benefit.children && benefit.children.length > 0) {
+        <div class="rounded-lg border border-slate-200 p-4">
+          <h3 class="text-sm font-medium text-slate-500 mb-3">Sub-Benefits</h3>
+          <div class="space-y-2">
+            @for (child of benefit.children; track child.id) {
+            <div
+              class="flex items-center justify-between py-2 border-b border-slate-100 last:border-0"
+            >
+              <div>
+                <p class="text-sm font-medium text-slate-700">{{ child.name }}</p>
+                <p class="text-xs text-slate-400">{{ child.code }}</p>
+              </div>
+              <span [class]="child.is_active ? 'text-green-600' : 'text-slate-400'" class="text-xs">
+                {{ child.is_active ? 'Active' : 'Inactive' }}
+              </span>
+            </div>
+            }
+          </div>
+        </div>
+        }
+
+        <!-- Full Path -->
+        @if (benefit.full_path) {
+        <div>
+          <h3 class="text-sm font-medium text-slate-500 mb-2">Hierarchy Path</h3>
+          <p class="text-xs text-slate-600 font-mono bg-slate-50 px-3 py-2 rounded">
+            {{ benefit.full_path }}
+          </p>
+        </div>
+        }
+      </div>
+
+      <!-- Drawer Footer -->
+      <div
+        class="flex items-center justify-end gap-3 border-t border-slate-100 px-6 py-4 bg-slate-50"
+      >
+        <button mat-stroked-button (click)="addSubBenefit(benefit)" class="!border-slate-200">
+          <mat-icon fontSet="material-symbols-rounded">add_circle</mat-icon>
+          Add Sub-Benefit
+        </button>
+        <button mat-flat-button color="primary" (click)="openBenefitDialog(benefit)">
+          <mat-icon fontSet="material-symbols-rounded">edit</mat-icon>
+          Edit Benefit
+        </button>
+      </div>
+    </div>
+    }
+  </mat-drawer>
+</mat-drawer-container>

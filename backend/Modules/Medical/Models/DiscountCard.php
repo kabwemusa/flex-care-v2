@@ -4,7 +4,7 @@ namespace Modules\Medical\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class DiscountCard extends Model
+class DiscountCard extends BaseModel
 {
     protected $table = 'med_discount_cards';
 

@@ -1,0 +1,296 @@
+<!-- libs/medical/ui/src/lib/benefits/plan-benefits-config.component.html -->
+
+<div class="space-y-4">
+  <!-- Header -->
+  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div>
+      <h3 class="text-lg font-semibold text-slate-900">Plan Benefits</h3>
+      <p class="text-sm text-slate-500">
+        {{ coveredBenefits() }} of {{ totalBenefits() }} benefits covered
+      </p>
+    </div>
+
+    @if (!readonly) {
+    <div class="flex items-center gap-2">
+      <button
+        mat-stroked-button
+        class="!border-slate-200 !text-slate-600"
+        [matMenuTriggerFor]="viewMenu"
+      >
+        <mat-icon fontSet="material-symbols-rounded">unfold_more</mat-icon>
+        View
+      </button>
+
+      <mat-menu #viewMenu="matMenu">
+        <button mat-menu-item (click)="expandAll()">
+          <mat-icon fontSet="material-symbols-rounded">unfold_more</mat-icon>
+          <span>Expand All</span>
+        </button>
+        <button mat-menu-item (click)="collapseAll()">
+          <mat-icon fontSet="material-symbols-rounded">unfold_less</mat-icon>
+          <span>Collapse All</span>
+        </button>
+      </mat-menu>
+
+      <button mat-flat-button color="primary" (click)="openAddBenefitsDialog()">
+        <mat-icon fontSet="material-symbols-rounded">add</mat-icon>
+        Add Benefits
+      </button>
+    </div>
+    }
+  </div>
+
+  <!-- Loading State -->
+  @if (store.isLoading()) {
+  <div class="flex items-center justify-center py-12">
+    <mat-spinner diameter="32"></mat-spinner>
+  </div>
+  } @else if (benefitGroups().length === 0) {
+  <!-- Empty State -->
+  <div class="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-8 text-center">
+    <div class="flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 mx-auto mb-4">
+      <mat-icon fontSet="material-symbols-rounded" class="!text-slate-400"
+        >medical_services</mat-icon
+      >
+    </div>
+    <h4 class="text-sm font-medium text-slate-900">No benefits configured</h4>
+    <p class="mt-1 text-sm text-slate-500 max-w-sm mx-auto">
+      Add benefits from the catalog to define what this plan covers.
+    </p>
+    @if (!readonly) {
+    <button mat-flat-button color="primary" class="mt-4" (click)="openAddBenefitsDialog()">
+      <mat-icon fontSet="material-symbols-rounded">add</mat-icon>
+      Add Benefits
+    </button>
+    }
+  </div>
+  } @else {
+  <!-- Benefit Groups -->
+  <div class="space-y-3">
+    @for (group of benefitGroups(); track group.categoryId) {
+    <div class="rounded-xl border border-slate-200 bg-white overflow-hidden">
+      <!-- Category Header -->
+      <button
+        class="w-full flex items-center justify-between p-4 hover:bg-slate-50 transition-colors"
+        (click)="toggleCategory(group.categoryId)"
+      >
+        <div class="flex items-center gap-3">
+          <div
+            class="flex h-9 w-9 items-center justify-center rounded-lg"
+            [style.background-color]="group.color + '15'"
+          >
+            <mat-icon
+              fontSet="material-symbols-rounded"
+              [style.color]="group.color"
+              class="!text-[20px]"
+              >{{ group.icon }}</mat-icon
+            >
+          </div>
+          <div class="text-left">
+            <h4 class="font-medium text-slate-900">{{ group.category }}</h4>
+            <p class="text-xs text-slate-500">{{ group.benefits.length }} benefits</p>
+          </div>
+        </div>
+
+        <mat-icon fontSet="material-symbols-rounded" class="!text-slate-400">
+          {{ isCategoryExpanded(group.categoryId) ? 'expand_less' : 'expand_more' }}
+        </mat-icon>
+      </button>
+
+      <!-- Benefits List -->
+      @if (isCategoryExpanded(group.categoryId)) {
+      <div class="border-t border-slate-100">
+        @for (pb of group.benefits; track pb.id; let last = $last) {
+        <!-- Main Benefit Row -->
+        <div
+          class="flex items-center justify-between p-4 hover:bg-slate-50 transition-colors"
+          [class.border-b]="!last || getSubBenefits(pb.id).length > 0"
+          [class.border-slate-100]="!last || getSubBenefits(pb.id).length > 0"
+          [class.opacity-50]="!pb.is_covered"
+        >
+          <div class="flex items-center gap-3 flex-1 min-w-0">
+            <!-- Coverage Toggle -->
+            @if (!readonly) {
+            <button
+              mat-icon-button
+              [matTooltip]="pb.is_covered ? 'Click to disable' : 'Click to enable'"
+              (click)="toggleCoverage(pb); $event.stopPropagation()"
+              class="!w-8 !h-8"
+            >
+              <mat-icon
+                fontSet="material-symbols-rounded"
+                [class]="pb.is_covered ? '!text-green-500' : '!text-slate-300'"
+              >
+                {{ pb.is_covered ? 'check_circle' : 'radio_button_unchecked' }}
+              </mat-icon>
+            </button>
+            } @else {
+            <div class="w-8 h-8 flex items-center justify-center">
+              <mat-icon
+                fontSet="material-symbols-rounded"
+                [class]="pb.is_covered ? '!text-green-500' : '!text-slate-300'"
+                class="!text-[20px]"
+              >
+                {{ pb.is_covered ? 'check_circle' : 'cancel' }}
+              </mat-icon>
+            </div>
+            }
+
+            <!-- Benefit Info -->
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-2">
+                <span class="font-medium text-slate-900 truncate">
+                  {{ pb.benefit?.name || 'Unknown Benefit' }}
+                </span>
+                @if (pb.benefit?.requires_preauth) {
+                <span
+                  class="shrink-0 rounded bg-amber-50 px-1.5 py-0.5 text-[10px] font-medium text-amber-700"
+                  matTooltip="Pre-authorization required"
+                >
+                  PREAUTH
+                </span>
+                } @if (getSubBenefits(pb.id).length > 0) {
+                <span class="shrink-0 text-xs text-slate-400">
+                  ({{ getSubBenefits(pb.id).length }} sub-benefits)
+                </span>
+                }
+              </div>
+              <div class="flex items-center gap-2 mt-0.5">
+                <span class="text-xs text-slate-500">{{ pb.benefit?.code }}</span>
+                @if (pb.waiting_period_days && pb.waiting_period_days > 0) {
+                <span class="text-xs text-slate-400">
+                  • {{ pb.waiting_period_days }} days waiting
+                </span>
+                }
+              </div>
+            </div>
+          </div>
+
+          <!-- Limit Display -->
+          <div class="flex items-center gap-3">
+            <div class="text-right hidden sm:block">
+              <p class="text-sm font-medium text-slate-900">{{ formatLimitDisplay(pb) }}</p>
+              <p class="text-xs text-slate-500">
+                {{ getLimitTypeLabel(pb.limit_type || pb.benefit?.default_limit_type) }}
+              </p>
+            </div>
+
+            <!-- Actions -->
+            @if (!readonly) {
+            <button
+              mat-icon-button
+              [matMenuTriggerFor]="benefitMenu"
+              (click)="$event.stopPropagation()"
+              class="!text-slate-400 hover:!text-slate-600"
+            >
+              <mat-icon fontSet="material-symbols-rounded">more_vert</mat-icon>
+            </button>
+
+            <mat-menu #benefitMenu="matMenu">
+              <button mat-menu-item (click)="openConfigureDialog(pb)">
+                <mat-icon fontSet="material-symbols-rounded" class="!text-slate-500">tune</mat-icon>
+                <span>Configure Limits</span>
+              </button>
+              <button mat-menu-item (click)="addSubBenefit(pb)">
+                <mat-icon fontSet="material-symbols-rounded" class="!text-slate-500"
+                  >add_circle</mat-icon
+                >
+                <span>Add Sub-Benefit</span>
+              </button>
+              <mat-divider></mat-divider>
+              <button mat-menu-item class="!text-red-600" (click)="removeBenefit(pb)">
+                <mat-icon fontSet="material-symbols-rounded" class="!text-red-500">delete</mat-icon>
+                <span>Remove</span>
+              </button>
+            </mat-menu>
+            }
+          </div>
+        </div>
+
+        <!-- Sub-Benefits -->
+        @for (subPb of getSubBenefits(pb.id); track subPb.id; let subLast = $last) {
+        <div
+          class="flex items-center justify-between p-4 pl-16 bg-slate-50/50 hover:bg-slate-50 transition-colors"
+          [class.border-b]="!subLast"
+          [class.border-slate-100]="!subLast"
+          [class.opacity-50]="!subPb.is_covered"
+        >
+          <div class="flex items-center gap-3 flex-1 min-w-0">
+            <!-- Coverage Toggle -->
+            @if (!readonly) {
+            <button
+              mat-icon-button
+              [matTooltip]="subPb.is_covered ? 'Click to disable' : 'Click to enable'"
+              (click)="toggleCoverage(subPb); $event.stopPropagation()"
+              class="!w-8 !h-8"
+            >
+              <mat-icon
+                fontSet="material-symbols-rounded"
+                [class]="subPb.is_covered ? '!text-green-500' : '!text-slate-300'"
+                class="!text-[18px]"
+              >
+                {{ subPb.is_covered ? 'check_circle' : 'radio_button_unchecked' }}
+              </mat-icon>
+            </button>
+            } @else {
+            <div class="w-8 h-8 flex items-center justify-center">
+              <mat-icon
+                fontSet="material-symbols-rounded"
+                [class]="subPb.is_covered ? '!text-green-500' : '!text-slate-300'"
+                class="!text-[18px]"
+              >
+                {{ subPb.is_covered ? 'check_circle' : 'cancel' }}
+              </mat-icon>
+            </div>
+            }
+
+            <!-- Sub-Benefit Info -->
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-2">
+                <mat-icon fontSet="material-symbols-rounded" class="!text-slate-400 !text-[14px]">
+                  subdirectory_arrow_right
+                </mat-icon>
+                <span class="text-sm text-slate-700 truncate">
+                  {{ subPb.benefit?.name || 'Unknown' }}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Sub-Benefit Limit -->
+          <div class="flex items-center gap-3">
+            <div class="text-right hidden sm:block">
+              <p class="text-sm text-slate-700">{{ formatLimitDisplay(subPb) }}</p>
+            </div>
+
+            @if (!readonly) {
+            <button
+              mat-icon-button
+              [matMenuTriggerFor]="subBenefitMenu"
+              (click)="$event.stopPropagation()"
+              class="!text-slate-400 hover:!text-slate-600 !w-8 !h-8"
+            >
+              <mat-icon fontSet="material-symbols-rounded" class="!text-[18px]">more_vert</mat-icon>
+            </button>
+
+            <mat-menu #subBenefitMenu="matMenu">
+              <button mat-menu-item (click)="openConfigureDialog(subPb)">
+                <mat-icon fontSet="material-symbols-rounded" class="!text-slate-500">tune</mat-icon>
+                <span>Configure</span>
+              </button>
+              <button mat-menu-item class="!text-red-600" (click)="removeBenefit(subPb)">
+                <mat-icon fontSet="material-symbols-rounded" class="!text-red-500">delete</mat-icon>
+                <span>Remove</span>
+              </button>
+            </mat-menu>
+            }
+          </div>
+        </div>
+        } }
+      </div>
+      }
+    </div>
+    }
+  </div>
+  }
+</div>

@@ -1,0 +1,175 @@
+<div class="flex max-h-[90vh] w-full flex-col overflow-hidden bg-white sm:w-[500px]">
+  <!-- Header -->
+  <div class="flex items-center justify-between border-b border-slate-100 px-6 py-4">
+    <div class="flex items-center gap-3">
+      <div
+        class="flex h-10 w-10 items-center justify-center rounded-full bg-purple-100 text-purple-600"
+      >
+        <mat-icon fontSet="material-symbols-rounded">confirmation_number</mat-icon>
+      </div>
+      <div>
+        <h2 class="text-lg font-semibold tracking-tight text-slate-900">
+          {{ isEditMode ? 'Edit Promo Code' : 'New Promo Code' }}
+        </h2>
+        <p class="text-xs text-slate-500">Create promotional discount code</p>
+      </div>
+    </div>
+
+    <button mat-icon-button (click)="dialogRef.close()" class="!text-slate-400">
+      <mat-icon fontSet="material-symbols-rounded">close</mat-icon>
+    </button>
+  </div>
+
+  <!-- Content -->
+  <div class="flex-1 overflow-y-auto p-6">
+    <form [formGroup]="form" class="space-y-5">
+      <!-- Discount Rule -->
+      <div class="flex flex-col gap-1.5">
+        <label class="text-sm font-medium text-slate-700"
+          >Discount Rule <span class="text-red-500">*</span></label
+        >
+        <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+          <mat-select formControlName="discount_rule_id">
+            @for (rule of promoCodeRules(); track rule.id) {
+            <mat-option [value]="rule.id">
+              <div class="flex items-center justify-between w-full">
+                <span>{{ rule.name }}</span>
+                <span class="text-xs text-slate-400">{{ rule.formatted_value }}</span>
+              </div>
+            </mat-option>
+            }
+          </mat-select>
+          @if (form.get('discount_rule_id')?.hasError('required')) {
+          <mat-error>Please select a discount rule</mat-error>
+          }
+        </mat-form-field>
+        <p class="text-xs text-slate-400">Select a discount rule to associate with this code</p>
+      </div>
+
+      <!-- Code -->
+      <div class="flex flex-col gap-1.5">
+        <label class="text-sm font-medium text-slate-700"
+          >Promo Code <span class="text-red-500">*</span></label
+        >
+        <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+          <input
+            matInput
+            formControlName="code"
+            placeholder="e.g., SAVE20, WELCOME"
+            class="!uppercase"
+          />
+          @if (form.get('code')?.hasError('required')) {
+          <mat-error>Code is required</mat-error>
+          } @if (form.get('code')?.hasError('pattern')) {
+          <mat-error>Only letters, numbers, and underscores allowed</mat-error>
+          }
+        </mat-form-field>
+        <p class="text-xs text-slate-400">Alphanumeric characters only, will be uppercased</p>
+      </div>
+
+      <!-- Name -->
+      <div class="flex flex-col gap-1.5">
+        <label class="text-sm font-medium text-slate-700">Display Name</label>
+        <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+          <input matInput formControlName="name" placeholder="e.g., Welcome Offer" />
+        </mat-form-field>
+      </div>
+
+      <!-- Validity Period -->
+      <div class="grid grid-cols-2 gap-4">
+        <div class="flex flex-col gap-1.5">
+          <label class="text-sm font-medium text-slate-700"
+            >Valid From <span class="text-red-500">*</span></label
+          >
+          <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+            <input matInput [matDatepicker]="fromPicker" formControlName="valid_from" />
+            <mat-datepicker-toggle matIconSuffix [for]="fromPicker"></mat-datepicker-toggle>
+            <mat-datepicker #fromPicker></mat-datepicker>
+            @if (form.get('valid_from')?.hasError('required')) {
+            <mat-error>Required</mat-error>
+            }
+          </mat-form-field>
+        </div>
+
+        <div class="flex flex-col gap-1.5">
+          <label class="text-sm font-medium text-slate-700"
+            >Valid To <span class="text-red-500">*</span></label
+          >
+          <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+            <input matInput [matDatepicker]="toPicker" formControlName="valid_to" />
+            <mat-datepicker-toggle matIconSuffix [for]="toPicker"></mat-datepicker-toggle>
+            <mat-datepicker #toPicker></mat-datepicker>
+            @if (form.get('valid_to')?.hasError('required')) {
+            <mat-error>Required</mat-error>
+            }
+          </mat-form-field>
+        </div>
+      </div>
+
+      <!-- Usage Limits -->
+      <div class="grid grid-cols-2 gap-4">
+        <div class="flex flex-col gap-1.5">
+          <label class="text-sm font-medium text-slate-700">Max Total Uses</label>
+          <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+            <input
+              matInput
+              type="number"
+              formControlName="max_uses"
+              min="0"
+              placeholder="Unlimited"
+            />
+          </mat-form-field>
+        </div>
+
+        <div class="flex flex-col gap-1.5">
+          <label class="text-sm font-medium text-slate-700">Max Per Policy</label>
+          <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+            <input matInput type="number" formControlName="max_uses_per_policy" min="1" />
+          </mat-form-field>
+        </div>
+      </div>
+
+      <!-- Usage Stats (Edit Mode) -->
+      @if (isEditMode && data) {
+      <div class="rounded-lg bg-slate-50 border border-slate-200 p-4">
+        <p class="text-xs text-slate-500 mb-2">Usage Statistics</p>
+        <div class="flex items-center gap-4">
+          <div>
+            <p class="text-2xl font-bold text-slate-900">{{ data.current_uses }}</p>
+            <p class="text-xs text-slate-500">Times Used</p>
+          </div>
+          @if (data.max_uses) {
+          <div class="flex-1">
+            <div class="flex items-center gap-2">
+              <div class="flex-1 h-2 bg-slate-200 rounded-full overflow-hidden">
+                <div
+                  class="h-full bg-purple-500 rounded-full"
+                  [style.width.%]="(data.current_uses / data.max_uses) * 100"
+                ></div>
+              </div>
+              <span class="text-xs text-slate-500">{{ data.remaining_uses }} left</span>
+            </div>
+          </div>
+          }
+        </div>
+      </div>
+      }
+
+      <!-- Active Toggle -->
+      <div class="rounded-lg bg-slate-50 p-4">
+        <mat-slide-toggle formControlName="is_active">
+          <span class="text-sm font-medium text-slate-700">Active</span>
+        </mat-slide-toggle>
+        <p class="text-xs text-slate-400 mt-1">Enable this promo code for use</p>
+      </div>
+    </form>
+  </div>
+
+  <!-- Footer -->
+  <div class="flex items-center justify-end gap-3 border-t border-slate-100 bg-slate-50 px-6 py-4">
+    <button mat-button (click)="dialogRef.close()" class="!text-slate-600">Cancel</button>
+    <button mat-flat-button color="primary" [disabled]="!form.valid" (click)="save()">
+      {{ isEditMode ? 'Update Code' : 'Create Code' }}
+    </button>
+  </div>
+</div>

@@ -4,27 +4,38 @@ namespace Modules\Medical\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use Modules\Medical\Constants\MedicalConstants;
 
 class SchemeRequest extends FormRequest
 {
-    public function authorize() { return true; }
-
-    public function rules()
+    public function authorize(): bool
     {
-        // 1. Get the scheme ID from the route. 
-        // Note: If your route is /schemes/{scheme}, use 'scheme' instead of 'id'.
+        return true;
+    }
+
+    public function rules(): array
+    {
         $schemeId = $this->route('scheme') ?? $this->route('id');
 
         return [
-            'name' => [
+            'name' => 'required|string|max:255',
+            'slug' => [
+                'nullable',
+                'string',
+                'max:100',
+                Rule::unique('med_schemes', 'slug')->ignore($schemeId),
+            ],
+            'market_segment' => [
                 'required',
                 'string',
-                'max:255',
-                // 2. Use the Rule class for a cleaner, safer unique check
-                Rule::unique('med_schemes', 'name')->ignore($schemeId),
+                Rule::in(array_keys(MedicalConstants::MARKET_SEGMENTS)),
             ],
-            'description' => 'nullable|string',
-            'is_active' => 'boolean',
+            'description' => 'nullable|string|max:1000',
+            'eligibility_rules' => 'nullable|array',
+            'underwriting_rules' => 'nullable|array',
+            'effective_from' => 'required|date',
+            'effective_to' => 'nullable|date|after:effective_from',
+            'is_active' => 'nullable|boolean',
         ];
     }
 }

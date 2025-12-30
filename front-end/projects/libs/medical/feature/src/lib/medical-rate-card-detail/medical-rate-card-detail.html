@@ -1,0 +1,470 @@
+<!-- libs/medical/ui/src/lib/rate-cards/medical-rate-card-detail.html -->
+
+<div class="bg-white min-h-[80vh]">
+  <!-- Loading State -->
+  @if (isLoading()) {
+  <div class="flex items-center justify-center py-24">
+    <mat-spinner diameter="40"></mat-spinner>
+  </div>
+  } @else if (rateCard(); as rc) {
+  <!-- Header Section -->
+  <div class="border-b border-slate-200 bg-white px-6 py-6 md:px-10">
+    <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+      <!-- Back & Title -->
+      <div class="flex items-start gap-4">
+        <button mat-icon-button (click)="goBack()" class="!bg-slate-100 hover:!bg-slate-200 !mt-1">
+          <mat-icon fontSet="material-symbols-rounded">arrow_back</mat-icon>
+        </button>
+
+        <div>
+          <div class="flex items-center gap-3 mb-1 flex-wrap">
+            <h1 class="text-2xl font-bold tracking-tight text-slate-900">
+              {{ rc.name }}
+            </h1>
+            @if (rc.is_active) {
+            <span
+              class="bg-green-50 text-green-700 border-green-200 inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium"
+            >
+              Active
+            </span>
+            } @if (rc.is_draft) {
+            <span
+              class="bg-amber-50 text-amber-700 border-amber-200 inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium"
+            >
+              Draft
+            </span>
+            }
+          </div>
+          <p class="text-sm text-slate-500">
+            {{ rc.code }} • v{{ rc.version }} • {{ rc.plan?.name || 'No Plan' }}
+          </p>
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <div class="flex items-center gap-2">
+        @if (rc.is_draft && !rc.is_active) {
+        <button mat-flat-button color="primary" (click)="activateRateCard()">
+          <mat-icon fontSet="material-symbols-rounded">check_circle</mat-icon>
+          Activate
+        </button>
+        }
+      </div>
+    </div>
+
+    <!-- Quick Info Cards -->
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-6">
+      <div class="rounded-lg border border-slate-200 bg-slate-50 p-3">
+        <p class="text-xs text-slate-500 mb-1">Frequency</p>
+        <p class="text-sm font-medium text-slate-900">
+          {{ getFrequencyLabel(rc.premium_frequency) }}
+        </p>
+      </div>
+
+      <div class="rounded-lg border border-slate-200 bg-slate-50 p-3">
+        <p class="text-xs text-slate-500 mb-1">Basis</p>
+        <p class="text-sm font-medium text-slate-900">{{ getBasisLabel(rc.premium_basis) }}</p>
+      </div>
+
+      <div class="rounded-lg border border-slate-200 bg-slate-50 p-3">
+        <p class="text-xs text-slate-500 mb-1">Age Bands</p>
+        <p class="text-sm font-medium text-blue-600">{{ rc.entries_count || 0 }} entries</p>
+      </div>
+
+      <div class="rounded-lg border border-slate-200 bg-slate-50 p-3">
+        <p class="text-xs text-slate-500 mb-1">Tiers</p>
+        <p class="text-sm font-medium text-purple-600">{{ rc.tiers_count || 0 }} tiers</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tabs Section -->
+  <div class="px-6 md:px-10">
+    <mat-tab-group
+      [selectedIndex]="activeTabIndex()"
+      (selectedIndexChange)="onTabChange($event)"
+      class="rate-card-detail-tabs"
+    >
+      <!-- Entries Tab (Age Bands) -->
+      <mat-tab>
+        <ng-template mat-tab-label>
+          <mat-icon fontSet="material-symbols-rounded" class="!mr-2 !text-[20px]"
+            >table_chart</mat-icon
+          >
+          Age Bands ({{ entriesDataSource.data.length }})
+        </ng-template>
+        <div class="py-6 space-y-4">
+          <!-- Actions Bar -->
+          <div class="flex items-center justify-between">
+            <div>
+              <h3 class="text-lg font-semibold text-slate-900">Premium Entries</h3>
+              <p class="text-sm text-slate-500">Base premiums by age band</p>
+            </div>
+            <div class="flex items-center gap-2">
+              <button mat-stroked-button (click)="openBulkImportDialog()" class="!border-slate-200">
+                <mat-icon fontSet="material-symbols-rounded">upload</mat-icon>
+                Bulk Import
+              </button>
+              <button mat-flat-button color="primary" (click)="openEntryDialog()">
+                <mat-icon fontSet="material-symbols-rounded">add</mat-icon>
+                Add Entry
+              </button>
+            </div>
+          </div>
+
+          <!-- Entries Table -->
+          <div class="rounded-xl border border-slate-200 overflow-hidden">
+            @if (entriesDataSource.data.length > 0) {
+            <table
+              mat-table
+              [dataSource]="entriesDataSource"
+              matSort
+              #entriesSort="matSort"
+              class="w-full"
+            >
+              <!-- Age Band Column -->
+              <ng-container matColumnDef="age_band">
+                <th
+                  mat-header-cell
+                  *matHeaderCellDef
+                  mat-sort-header
+                  class="!bg-slate-50 !px-6 !py-3 text-xs font-semibold uppercase tracking-wider text-slate-500"
+                >
+                  Age Band
+                </th>
+                <td mat-cell *matCellDef="let entry" class="!px-6 !py-4">
+                  <div class="flex items-center gap-2">
+                    <div class="flex h-8 w-8 items-center justify-center rounded-full bg-blue-100">
+                      <mat-icon
+                        fontSet="material-symbols-rounded"
+                        class="!text-blue-600 !text-[16px]"
+                        >person</mat-icon
+                      >
+                    </div>
+                    <span class="font-medium text-slate-900">{{ getAgeBandLabel(entry) }}</span>
+                  </div>
+                </td>
+              </ng-container>
+
+              <!-- Gender Column -->
+              <ng-container matColumnDef="gender">
+                <th
+                  mat-header-cell
+                  *matHeaderCellDef
+                  mat-sort-header
+                  class="!bg-slate-50 !px-6 !py-3 text-xs font-semibold uppercase tracking-wider text-slate-500"
+                >
+                  Gender
+                </th>
+                <td mat-cell *matCellDef="let entry" class="!px-6 !py-4">
+                  <span class="text-sm text-slate-600">{{ getGenderLabel(entry.gender) }}</span>
+                </td>
+              </ng-container>
+
+              <!-- Region Column -->
+              <ng-container matColumnDef="region">
+                <th
+                  mat-header-cell
+                  *matHeaderCellDef
+                  class="!bg-slate-50 !px-6 !py-3 text-xs font-semibold uppercase tracking-wider text-slate-500"
+                >
+                  Region
+                </th>
+                <td mat-cell *matCellDef="let entry" class="!px-6 !py-4">
+                  <span class="text-sm text-slate-600">{{ entry.region_code || 'National' }}</span>
+                </td>
+              </ng-container>
+
+              <!-- Base Premium Column -->
+              <ng-container matColumnDef="base_premium">
+                <th
+                  mat-header-cell
+                  *matHeaderCellDef
+                  mat-sort-header
+                  class="!bg-slate-50 !px-6 !py-3 text-xs font-semibold uppercase tracking-wider text-slate-500 text-right"
+                >
+                  Base Premium
+                </th>
+                <td mat-cell *matCellDef="let entry" class="!px-6 !py-4 text-right">
+                  <span class="font-semibold text-slate-900">
+                    {{
+                      entry.formatted_premium || 'ZMW ' + (entry.base_premium | number : '1.2-2')
+                    }}
+                  </span>
+                </td>
+              </ng-container>
+
+              <!-- Actions Column -->
+              <ng-container matColumnDef="actions">
+                <th mat-header-cell *matHeaderCellDef class="!bg-slate-50 !w-16"></th>
+                <td mat-cell *matCellDef="let entry" class="!px-4 !py-4 text-right">
+                  <button mat-icon-button [matMenuTriggerFor]="entryMenu" class="!text-slate-400">
+                    <mat-icon fontSet="material-symbols-rounded">more_vert</mat-icon>
+                  </button>
+                  <mat-menu #entryMenu="matMenu">
+                    <button mat-menu-item (click)="openEntryDialog(entry)">
+                      <mat-icon fontSet="material-symbols-rounded" class="!text-slate-500"
+                        >edit</mat-icon
+                      >
+                      <span>Edit</span>
+                    </button>
+                    <mat-divider></mat-divider>
+                    <button mat-menu-item class="!text-red-600" (click)="deleteEntry(entry)">
+                      <mat-icon fontSet="material-symbols-rounded" class="!text-red-500"
+                        >delete</mat-icon
+                      >
+                      <span>Delete</span>
+                    </button>
+                  </mat-menu>
+                </td>
+              </ng-container>
+
+              <tr mat-header-row *matHeaderRowDef="entriesColumns"></tr>
+              <tr
+                mat-row
+                *matRowDef="let row; columns: entriesColumns"
+                class="hover:bg-slate-50"
+              ></tr>
+            </table>
+
+            <mat-paginator
+              #entriesPaginator
+              [pageSizeOptions]="[10, 25, 50]"
+              showFirstLastButtons
+              class="!border-t !border-slate-100"
+            ></mat-paginator>
+            } @else {
+            <!-- Empty State -->
+            <div class="flex flex-col items-center justify-center py-16 text-center">
+              <div
+                class="flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 mb-4"
+              >
+                <mat-icon fontSet="material-symbols-rounded" class="!text-slate-400"
+                  >table_chart</mat-icon
+                >
+              </div>
+              <h4 class="text-sm font-medium text-slate-900">No Age Bands</h4>
+              <p class="mt-1 text-sm text-slate-500 max-w-xs">
+                Add premium entries for different age ranges.
+              </p>
+              <div class="flex items-center gap-2 mt-4">
+                <button mat-stroked-button (click)="openBulkImportDialog()">
+                  <mat-icon fontSet="material-symbols-rounded">upload</mat-icon>
+                  Bulk Import
+                </button>
+                <button mat-flat-button color="primary" (click)="openEntryDialog()">
+                  <mat-icon fontSet="material-symbols-rounded">add</mat-icon>
+                  Add Entry
+                </button>
+              </div>
+            </div>
+            }
+          </div>
+        </div>
+      </mat-tab>
+
+      <!-- Tiers Tab (Family Sizes) -->
+      <mat-tab>
+        <ng-template mat-tab-label>
+          <mat-icon fontSet="material-symbols-rounded" class="!mr-2 !text-[20px]">groups</mat-icon>
+          Tiers ({{ tiersDataSource.data.length }})
+        </ng-template>
+        <div class="py-6 space-y-4">
+          <!-- Actions Bar -->
+          <div class="flex items-center justify-between">
+            <div>
+              <h3 class="text-lg font-semibold text-slate-900">Family Tiers</h3>
+              <p class="text-sm text-slate-500">Fixed premiums by family size</p>
+            </div>
+            <button mat-flat-button color="primary" (click)="openTierDialog()">
+              <mat-icon fontSet="material-symbols-rounded">add</mat-icon>
+              Add Tier
+            </button>
+          </div>
+
+          <!-- Info Box -->
+          <div class="rounded-lg bg-blue-50 border border-blue-100 p-4">
+            <div class="flex gap-3">
+              <mat-icon fontSet="material-symbols-rounded" class="!text-blue-500">info</mat-icon>
+              <div>
+                <p class="text-sm font-medium text-blue-900">Tiered Pricing</p>
+                <p class="text-xs text-blue-700 mt-1">
+                  Tiers allow you to charge a flat premium based on family size instead of
+                  per-member age-rated premiums. The "Extra Member Premium" is charged for each
+                  member beyond the tier's max.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tiers Table -->
+          <div class="rounded-xl border border-slate-200 overflow-hidden">
+            @if (tiersDataSource.data.length > 0) {
+            <table
+              mat-table
+              [dataSource]="tiersDataSource"
+              matSort
+              #tiersSort="matSort"
+              class="w-full"
+            >
+              <!-- Tier Name Column -->
+              <ng-container matColumnDef="tier_name">
+                <th
+                  mat-header-cell
+                  *matHeaderCellDef
+                  mat-sort-header
+                  class="!bg-slate-50 !px-6 !py-3 text-xs font-semibold uppercase tracking-wider text-slate-500"
+                >
+                  Tier
+                </th>
+                <td mat-cell *matCellDef="let tier" class="!px-6 !py-4">
+                  <div class="flex flex-col">
+                    <span class="font-medium text-slate-900">{{ tier.tier_name }}</span>
+                    @if (tier.tier_description) {
+                    <span class="text-xs text-slate-500">{{ tier.tier_description }}</span>
+                    }
+                  </div>
+                </td>
+              </ng-container>
+
+              <!-- Member Range Column -->
+              <ng-container matColumnDef="member_range">
+                <th
+                  mat-header-cell
+                  *matHeaderCellDef
+                  class="!bg-slate-50 !px-6 !py-3 text-xs font-semibold uppercase tracking-wider text-slate-500"
+                >
+                  Members
+                </th>
+                <td mat-cell *matCellDef="let tier" class="!px-6 !py-4">
+                  <div class="flex items-center gap-2">
+                    <mat-icon
+                      fontSet="material-symbols-rounded"
+                      class="!text-slate-400 !text-[18px]"
+                      >groups</mat-icon
+                    >
+                    <span class="text-sm text-slate-700">{{ getMemberRangeLabel(tier) }}</span>
+                  </div>
+                </td>
+              </ng-container>
+
+              <!-- Tier Premium Column -->
+              <ng-container matColumnDef="tier_premium">
+                <th
+                  mat-header-cell
+                  *matHeaderCellDef
+                  mat-sort-header
+                  class="!bg-slate-50 !px-6 !py-3 text-xs font-semibold uppercase tracking-wider text-slate-500 text-right"
+                >
+                  Tier Premium
+                </th>
+                <td mat-cell *matCellDef="let tier" class="!px-6 !py-4 text-right">
+                  <span class="font-semibold text-slate-900">
+                    {{ tier.formatted_premium || 'ZMW ' + (tier.tier_premium | number : '1.2-2') }}
+                  </span>
+                </td>
+              </ng-container>
+
+              <!-- Extra Member Premium Column -->
+              <ng-container matColumnDef="extra_member">
+                <th
+                  mat-header-cell
+                  *matHeaderCellDef
+                  class="!bg-slate-50 !px-6 !py-3 text-xs font-semibold uppercase tracking-wider text-slate-500 text-right"
+                >
+                  Extra Member
+                </th>
+                <td mat-cell *matCellDef="let tier" class="!px-6 !py-4 text-right">
+                  @if (tier.extra_member_premium) {
+                  <span class="text-sm text-slate-700">
+                    + ZMW {{ tier.extra_member_premium | number : '1.2-2' }}
+                  </span>
+                  } @else {
+                  <span class="text-sm text-slate-400">—</span>
+                  }
+                </td>
+              </ng-container>
+
+              <!-- Actions Column -->
+              <ng-container matColumnDef="actions">
+                <th mat-header-cell *matHeaderCellDef class="!bg-slate-50 !w-16"></th>
+                <td mat-cell *matCellDef="let tier" class="!px-4 !py-4 text-right">
+                  <button mat-icon-button [matMenuTriggerFor]="tierMenu" class="!text-slate-400">
+                    <mat-icon fontSet="material-symbols-rounded">more_vert</mat-icon>
+                  </button>
+                  <mat-menu #tierMenu="matMenu">
+                    <button mat-menu-item (click)="openTierDialog(tier)">
+                      <mat-icon fontSet="material-symbols-rounded" class="!text-slate-500"
+                        >edit</mat-icon
+                      >
+                      <span>Edit</span>
+                    </button>
+                    <mat-divider></mat-divider>
+                    <button mat-menu-item class="!text-red-600" (click)="deleteTier(tier)">
+                      <mat-icon fontSet="material-symbols-rounded" class="!text-red-500"
+                        >delete</mat-icon
+                      >
+                      <span>Delete</span>
+                    </button>
+                  </mat-menu>
+                </td>
+              </ng-container>
+
+              <tr mat-header-row *matHeaderRowDef="tiersColumns"></tr>
+              <tr
+                mat-row
+                *matRowDef="let row; columns: tiersColumns"
+                class="hover:bg-slate-50"
+              ></tr>
+            </table>
+
+            <mat-paginator
+              #tiersPaginator
+              [pageSizeOptions]="[10, 25, 50]"
+              showFirstLastButtons
+              class="!border-t !border-slate-100"
+            ></mat-paginator>
+            } @else {
+            <!-- Empty State -->
+            <div class="flex flex-col items-center justify-center py-16 text-center">
+              <div
+                class="flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 mb-4"
+              >
+                <mat-icon fontSet="material-symbols-rounded" class="!text-slate-400"
+                  >groups</mat-icon
+                >
+              </div>
+              <h4 class="text-sm font-medium text-slate-900">No Tiers</h4>
+              <p class="mt-1 text-sm text-slate-500 max-w-xs">
+                Add tiers for family-based pricing.
+              </p>
+              <button mat-flat-button color="primary" class="mt-4" (click)="openTierDialog()">
+                <mat-icon fontSet="material-symbols-rounded">add</mat-icon>
+                Add Tier
+              </button>
+            </div>
+            }
+          </div>
+        </div>
+      </mat-tab>
+    </mat-tab-group>
+  </div>
+  } @else {
+  <!-- Not Found State -->
+  <div class="flex flex-col items-center justify-center py-24 text-center">
+    <div class="flex h-16 w-16 items-center justify-center rounded-full bg-slate-100 mb-4">
+      <mat-icon fontSet="material-symbols-rounded" class="!text-slate-400 !text-[32px]"
+        >search_off</mat-icon
+      >
+    </div>
+    <h3 class="text-lg font-medium text-slate-900">Rate card not found</h3>
+    <p class="mt-1 text-sm text-slate-500 max-w-sm">
+      The rate card you're looking for doesn't exist or has been removed.
+    </p>
+    <button mat-flat-button color="primary" class="mt-4" (click)="goBack()">
+      <mat-icon fontSet="material-symbols-rounded">arrow_back</mat-icon>
+      Go Back
+    </button>
+  </div>
+  }
+</div>

@@ -1,0 +1,401 @@
+<!-- libs/medical/feature/src/lib/dialogs/medical-policy-dialog/medical-policy-dialog.html -->
+<!-- Medical Policy Dialog - Aligned with Plan/Scheme Dialog patterns -->
+
+<div class="flex flex-col h-full w-[70vw] min-w-[70vw] max-h-[90vh]">
+  <!-- Dialog Header -->
+  <div
+    class="flex items-center justify-between gap-4 border-b border-slate-100 px-6 py-4 bg-slate-50 shrink-0"
+  >
+    <div class="flex items-center gap-3">
+      <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-100">
+        <mat-icon fontSet="material-symbols-rounded" class="!text-blue-600">
+          {{ isEdit ? 'edit_document' : 'add_circle' }}
+        </mat-icon>
+      </div>
+      <div>
+        <h2 class="text-lg font-semibold tracking-tight text-slate-900">
+          {{ isEdit ? 'Edit Policy' : 'Create New Policy' }}
+        </h2>
+        <p class="text-xs text-slate-500">
+          {{
+            isEdit
+              ? 'Update policy information and coverage'
+              : 'Set up a new insurance policy with coverage details'
+          }}
+        </p>
+      </div>
+    </div>
+
+    <button
+      mat-icon-button
+      (click)="dialogRef.close()"
+      class="!text-slate-400 hover:!text-slate-700"
+    >
+      <mat-icon fontSet="material-symbols-rounded">close</mat-icon>
+    </button>
+  </div>
+
+  <!-- Stepper Content -->
+  <div class="flex-1 overflow-y-auto">
+    <mat-stepper
+      #stepper
+      [linear]="!isEdit"
+      [selectedIndex]="currentStep()"
+      (selectionChange)="onStepChange($event.selectedIndex)"
+      class="!bg-transparent"
+    >
+      <!-- Step 1: Policy Information -->
+      <mat-step [stepControl]="policyInfoForm" label="Policy Info">
+        <form [formGroup]="policyInfoForm" class="p-6 space-y-5">
+          <p class="text-sm text-slate-500 mb-4">
+            Enter the basic policy information. Fields marked with * are required.
+          </p>
+
+          <!-- Policy Type -->
+          <div class="flex flex-col gap-1.5">
+            <label class="text-sm font-medium text-slate-700">
+              Policy Type <span class="text-red-500">*</span>
+            </label>
+            <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+              <mat-select formControlName="policy_type">
+                @for (type of POLICY_TYPES; track type.value) {
+                <mat-option [value]="type.value">
+                  <span class="flex items-center gap-2">
+                    <mat-icon fontSet="material-symbols-rounded" class="!text-[18px]">{{
+                      type.icon
+                    }}</mat-icon>
+                    {{ type.label }}
+                  </span>
+                </mat-option>
+                }
+              </mat-select>
+              <mat-icon matSuffix fontSet="material-symbols-rounded" class="!text-slate-400"
+                >description</mat-icon
+              >
+              @if (policyInfoForm.get('policy_type')?.hasError('required')) {
+              <mat-error>Policy type is required</mat-error>
+              }
+            </mat-form-field>
+            <p class="text-xs text-slate-400">
+              Select individual for personal policies or corporate for group policies
+            </p>
+          </div>
+
+          <!-- Corporate Group (conditional) -->
+          @if (isPolicyTypeCorporate()) {
+          <div class="flex flex-col gap-1.5">
+            <label class="text-sm font-medium text-slate-700">Corporate Group</label>
+            <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+              <mat-select formControlName="group_id">
+                <mat-option value="">Select a corporate group...</mat-option>
+                @for (group of groups(); track group.id) {
+                <mat-option [value]="group.id"> {{ group.name }} ({{ group.code }}) </mat-option>
+                }
+              </mat-select>
+              <mat-icon matSuffix fontSet="material-symbols-rounded" class="!text-slate-400"
+                >business</mat-icon
+              >
+            </mat-form-field>
+            <p class="text-xs text-slate-400">Link this policy to a corporate client</p>
+          </div>
+          }
+
+          <!-- Policy Holder Section -->
+          <div class="rounded-lg border border-slate-200 bg-slate-50 p-4 space-y-4">
+            <h4 class="font-medium text-slate-900 flex items-center gap-2">
+              <mat-icon fontSet="material-symbols-rounded" class="!text-slate-500 !text-[20px]"
+                >person</mat-icon
+              >
+              Policy Holder Details
+            </h4>
+
+            <div class="flex flex-col gap-1.5">
+              <label class="text-sm font-medium text-slate-700">
+                Full Name <span class="text-red-500">*</span>
+              </label>
+              <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+                <input matInput formControlName="policy_holder_name" placeholder="John Doe" />
+                @if (policyInfoForm.get('policy_holder_name')?.hasError('required')) {
+                <mat-error>Policy holder name is required</mat-error>
+                }
+              </mat-form-field>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div class="flex flex-col gap-1.5">
+                <label class="text-sm font-medium text-slate-700">Email Address</label>
+                <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+                  <input
+                    matInput
+                    type="email"
+                    formControlName="policy_holder_email"
+                    placeholder="john@example.com"
+                  />
+                  <mat-icon matSuffix fontSet="material-symbols-rounded" class="!text-slate-400"
+                    >mail</mat-icon
+                  >
+                  @if (policyInfoForm.get('policy_holder_email')?.hasError('email')) {
+                  <mat-error>Enter a valid email address</mat-error>
+                  }
+                </mat-form-field>
+              </div>
+
+              <div class="flex flex-col gap-1.5">
+                <label class="text-sm font-medium text-slate-700">Phone Number</label>
+                <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+                  <input
+                    matInput
+                    formControlName="policy_holder_phone"
+                    placeholder="+260 97 XXXXXXX"
+                  />
+                  <mat-icon matSuffix fontSet="material-symbols-rounded" class="!text-slate-400"
+                    >phone</mat-icon
+                  >
+                </mat-form-field>
+              </div>
+            </div>
+          </div>
+        </form>
+      </mat-step>
+
+      <!-- Step 2: Coverage Details -->
+      <mat-step [stepControl]="coverageForm" label="Coverage">
+        <form [formGroup]="coverageForm" class="p-6 space-y-5">
+          <p class="text-sm text-slate-500 mb-4">
+            Select the coverage scheme and plan for this policy.
+          </p>
+
+          <!-- Scheme & Plan Selection -->
+          <div class="rounded-lg border border-blue-200 bg-blue-50 p-4 space-y-4">
+            <h4 class="font-medium text-blue-900 flex items-center gap-2">
+              <mat-icon fontSet="material-symbols-rounded" class="!text-blue-600 !text-[20px]"
+                >local_hospital</mat-icon
+              >
+              Coverage Selection
+            </h4>
+
+            <div class="flex flex-col gap-1.5">
+              <label class="text-sm font-medium text-slate-700">
+                Scheme <span class="text-red-500">*</span>
+              </label>
+              <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+                <mat-select formControlName="scheme_id" placeholder="Select a scheme">
+                  <mat-option value="">Select a scheme...</mat-option>
+                  @for (scheme of schemes(); track scheme.id) {
+                  <mat-option [value]="scheme.id">{{ scheme.name }}</mat-option>
+                  }
+                </mat-select>
+                @if (coverageForm.get('scheme_id')?.hasError('required')) {
+                <mat-error>Scheme is required</mat-error>
+                }
+              </mat-form-field>
+              <p class="text-xs text-slate-400">The insurance scheme this policy falls under</p>
+            </div>
+
+            <div class="flex flex-col gap-1.5">
+              <label class="text-sm font-medium text-slate-700">
+                Plan <span class="text-red-500">*</span>
+              </label>
+              <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+                <mat-select
+                  formControlName="plan_id"
+                  placeholder="Select a plan"
+                  [disabled]="!coverageForm.get('scheme_id')?.value"
+                >
+                  <mat-option value="">Select a plan...</mat-option>
+                  @for (plan of filteredPlans(); track plan.id) {
+                  <mat-option [value]="plan.id">
+                    {{ plan.name }}
+                    <!-- @if (plan?.tier) {
+                    <span class="text-slate-400 text-xs ml-2">({{ plan.tier }})</span>
+                    } -->
+                  </mat-option>
+                  }
+                </mat-select>
+                @if (coverageForm.get('plan_id')?.hasError('required')) {
+                <mat-error>Plan is required</mat-error>
+                }
+              </mat-form-field>
+              <p class="text-xs text-slate-400">
+                The specific coverage plan with benefits and limits
+              </p>
+            </div>
+          </div>
+
+          <!-- Policy Term -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div class="flex flex-col gap-1.5">
+              <label class="text-sm font-medium text-slate-700">
+                Policy Term <span class="text-red-500">*</span>
+              </label>
+              <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+                <mat-select formControlName="policy_term_months">
+                  @for (term of POLICY_TERMS; track term.value) {
+                  <mat-option [value]="term.value">{{ term.label }}</mat-option>
+                  }
+                </mat-select>
+                @if (coverageForm.get('policy_term_months')?.hasError('required')) {
+                <mat-error>Policy term is required</mat-error>
+                }
+              </mat-form-field>
+              <p class="text-xs text-slate-400">Duration of coverage</p>
+            </div>
+
+            <div class="flex flex-col gap-1.5">
+              <label class="text-sm font-medium text-slate-700">
+                Inception Date <span class="text-red-500">*</span>
+              </label>
+              <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+                <input
+                  matInput
+                  [matDatepicker]="inceptionPicker"
+                  formControlName="inception_date"
+                />
+                <mat-datepicker-toggle matSuffix [for]="inceptionPicker"></mat-datepicker-toggle>
+                <mat-datepicker #inceptionPicker></mat-datepicker>
+                @if (coverageForm.get('inception_date')?.hasError('required')) {
+                <mat-error>Inception date is required</mat-error>
+                }
+              </mat-form-field>
+              <p class="text-xs text-slate-400">When coverage begins</p>
+            </div>
+          </div>
+
+          <!-- Auto Renew Toggle -->
+          <div class="flex items-center gap-3 p-4 rounded-lg border border-slate-200 bg-slate-50">
+            <mat-slide-toggle formControlName="is_auto_renew" color="primary"></mat-slide-toggle>
+            <div>
+              <p class="font-medium text-slate-900">Auto Renewal</p>
+              <p class="text-xs text-slate-500">Automatically renew this policy when it expires</p>
+            </div>
+          </div>
+        </form>
+      </mat-step>
+
+      <!-- Step 3: Billing -->
+      <mat-step [stepControl]="billingForm" label="Billing">
+        <form [formGroup]="billingForm" class="p-6 space-y-5">
+          <p class="text-sm text-slate-500 mb-4">
+            Configure billing preferences and apply any promotional codes.
+          </p>
+
+          <!-- Billing Frequency -->
+          <div class="flex flex-col gap-1.5">
+            <label class="text-sm font-medium text-slate-700">
+              Billing Frequency <span class="text-red-500">*</span>
+            </label>
+            <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+              <mat-select formControlName="billing_frequency">
+                @for (freq of BILLING_FREQUENCIES; track freq.value) {
+                <mat-option [value]="freq.value">{{ freq.label }}</mat-option>
+                }
+              </mat-select>
+              @if (billingForm.get('billing_frequency')?.hasError('required')) {
+              <mat-error>Billing frequency is required</mat-error>
+              }
+            </mat-form-field>
+            <p class="text-xs text-slate-400">How often premiums will be billed</p>
+          </div>
+
+          <!-- Promo Code -->
+          <div class="rounded-lg border border-green-200 bg-green-50 p-4 space-y-4">
+            <h4 class="font-medium text-green-900 flex items-center gap-2">
+              <mat-icon fontSet="material-symbols-rounded" class="!text-green-600 !text-[20px]"
+                >local_offer</mat-icon
+              >
+              Promotional Code
+              <span class="text-xs text-green-600 font-normal">(Optional)</span>
+            </h4>
+
+            <div class="flex flex-col gap-1.5">
+              <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+                <input
+                  matInput
+                  formControlName="promo_code"
+                  placeholder="Enter promo code"
+                  class="uppercase"
+                />
+                <mat-icon matSuffix fontSet="material-symbols-rounded" class="!text-green-500"
+                  >redeem</mat-icon
+                >
+              </mat-form-field>
+              <p class="text-xs text-slate-400">Enter a valid promotional code for discounts</p>
+            </div>
+          </div>
+
+          <!-- Notes -->
+          <div class="flex flex-col gap-1.5">
+            <label class="text-sm font-medium text-slate-700">Notes</label>
+            <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+              <textarea
+                matInput
+                formControlName="notes"
+                rows="3"
+                placeholder="Any additional notes about this policy..."
+              ></textarea>
+            </mat-form-field>
+          </div>
+        </form>
+      </mat-step>
+    </mat-stepper>
+  </div>
+
+  <!-- Dialog Footer -->
+  <div
+    class="flex items-center justify-between gap-4 border-t border-slate-100 px-6 py-4 bg-slate-50 shrink-0"
+  >
+    <!-- Step Indicator -->
+    <div class="flex items-center gap-2 text-sm text-slate-500">
+      <span>Step {{ currentStep() + 1 }} of 3</span>
+      <div class="flex items-center gap-1">
+        @for (step of [0, 1, 2]; track step) {
+        <span
+          class="h-1.5 w-1.5 rounded-full transition-colors"
+          [class]="
+            step === currentStep()
+              ? 'bg-primary'
+              : step < currentStep()
+              ? 'bg-green-500'
+              : 'bg-slate-300'
+          "
+        ></span>
+        }
+      </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="flex items-center gap-2">
+      <button mat-button (click)="dialogRef.close()" class="!text-slate-600">Cancel</button>
+
+      @if (currentStep() > 0) {
+      <button mat-stroked-button (click)="previousStep()" class="!border-slate-200">
+        <mat-icon fontSet="material-symbols-rounded">arrow_back</mat-icon>
+        Back
+      </button>
+      } @if (currentStep() < 2) {
+      <button
+        mat-flat-button
+        color="primary"
+        (click)="nextStep()"
+        [disabled]="!canProceedToNextStep()"
+      >
+        Next
+        <mat-icon fontSet="material-symbols-rounded">arrow_forward</mat-icon>
+      </button>
+      } @if (currentStep() === 2) {
+      <button
+        mat-flat-button
+        color="primary"
+        (click)="save()"
+        [disabled]="store.isSaving() || !isFormValid()"
+      >
+        @if (store.isSaving()) {
+        <mat-spinner diameter="20" class="mr-2"></mat-spinner>
+        }
+        <mat-icon fontSet="material-symbols-rounded">{{ isEdit ? 'save' : 'add_circle' }}</mat-icon>
+        {{ isEdit ? 'Update Policy' : 'Create Policy' }}
+      </button>
+      }
+    </div>
+  </div>
+</div>

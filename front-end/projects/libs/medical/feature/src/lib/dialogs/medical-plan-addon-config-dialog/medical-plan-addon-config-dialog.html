@@ -1,0 +1,137 @@
+<div class="flex max-h-[90vh] w-full flex-col overflow-hidden bg-white sm:w-[500px]">
+  <!-- Header -->
+  <div class="flex items-center justify-between border-b border-slate-100 px-6 py-4">
+    <div class="flex items-center gap-3">
+      <div
+        class="flex h-10 w-10 items-center justify-center rounded-full bg-purple-100 text-purple-600"
+      >
+        <mat-icon fontSet="material-symbols-rounded">tune</mat-icon>
+      </div>
+      <div>
+        <h2 class="text-lg font-semibold tracking-tight text-slate-900">Configure Addon</h2>
+        <p class="text-xs text-slate-500">{{ data.planAddon.addon?.name }}</p>
+      </div>
+    </div>
+
+    <button
+      mat-icon-button
+      (click)="dialogRef.close()"
+      class="!text-slate-400 hover:!text-slate-700"
+    >
+      <mat-icon fontSet="material-symbols-rounded">close</mat-icon>
+    </button>
+  </div>
+
+  <!-- Content -->
+  <div class="flex-1 overflow-y-auto p-6">
+    <form [formGroup]="form" class="space-y-5">
+      <!-- Availability -->
+      <div class="flex flex-col gap-1.5">
+        <label class="text-sm font-medium text-slate-700">Availability</label>
+        <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+          <mat-select formControlName="availability">
+            <mat-select-trigger>
+              @if (form.get('availability')?.value; as avail) {
+              <span class="flex items-center gap-2">
+                <mat-icon
+                  fontSet="material-symbols-rounded"
+                  [class]="getAvailabilityIconClass(avail)"
+                  class="!text-[18px]"
+                >
+                  {{ getAvailabilityIcon(avail) }}
+                </mat-icon>
+                <span>{{ getAvailabilityLabel(avail) }}</span>
+              </span>
+              }
+            </mat-select-trigger>
+            @for (avail of availabilityOptions; track avail.value) {
+            <mat-option [value]="avail.value">
+              <div class="flex items-center gap-2">
+                <mat-icon
+                  fontSet="material-symbols-rounded"
+                  [class]="getAvailabilityIconClass(avail.value)"
+                  class="!text-[18px]"
+                >
+                  {{ getAvailabilityIcon(avail.value) }}
+                </mat-icon>
+                <div class="flex flex-col">
+                  <span>{{ avail.label }}</span>
+                  <span class="text-xs text-slate-400">{{ avail.description }}</span>
+                </div>
+              </div>
+            </mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+      </div>
+
+      <!-- Info Box based on availability -->
+      @switch (form.get('availability')?.value) { @case ('included') {
+      <div class="rounded-lg bg-green-50 border border-green-100 p-4">
+        <div class="flex gap-3">
+          <mat-icon fontSet="material-symbols-rounded" class="!text-green-500">info</mat-icon>
+          <p class="text-sm text-green-700">
+            This addon is included in the plan at no additional cost. Members automatically get this
+            coverage.
+          </p>
+        </div>
+      </div>
+      } @case ('mandatory') {
+      <div class="rounded-lg bg-blue-50 border border-blue-100 p-4">
+        <div class="flex gap-3">
+          <mat-icon fontSet="material-symbols-rounded" class="!text-blue-500">info</mat-icon>
+          <p class="text-sm text-blue-700">
+            This addon is required. Members must have this coverage and pay the additional premium.
+          </p>
+        </div>
+      </div>
+      } @case ('optional') {
+      <div class="rounded-lg bg-purple-50 border border-purple-100 p-4">
+        <div class="flex gap-3">
+          <mat-icon fontSet="material-symbols-rounded" class="!text-purple-500">info</mat-icon>
+          <p class="text-sm text-purple-700">
+            Members can choose to add this coverage for an additional premium.
+          </p>
+        </div>
+      </div>
+      } @case ('conditional') {
+      <div class="rounded-lg bg-amber-50 border border-amber-100 p-4">
+        <div class="flex gap-3">
+          <mat-icon fontSet="material-symbols-rounded" class="!text-amber-500">info</mat-icon>
+          <p class="text-sm text-amber-700">
+            This addon is available based on specific criteria (age, member type, etc.).
+          </p>
+        </div>
+      </div>
+      } }
+
+      <!-- Sort Order -->
+      <div class="flex flex-col gap-1.5">
+        <label class="text-sm font-medium text-slate-700">Sort Order</label>
+        <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+          <input matInput type="number" formControlName="sort_order" min="0" />
+        </mat-form-field>
+        <p class="text-xs text-slate-400">Lower numbers appear first</p>
+      </div>
+
+      <!-- Active Toggle -->
+      <div
+        class="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50/50 p-4"
+      >
+        <div class="flex flex-col">
+          <span class="text-sm font-semibold text-slate-900">Active</span>
+          <span class="text-xs text-slate-500">Make this addon available on the plan</span>
+        </div>
+        <mat-slide-toggle formControlName="is_active" color="primary"></mat-slide-toggle>
+      </div>
+    </form>
+  </div>
+
+  <!-- Footer -->
+  <div class="flex items-center justify-end gap-3 border-t border-slate-100 bg-slate-50 px-6 py-4">
+    <button mat-button (click)="dialogRef.close()" class="!text-slate-600">Cancel</button>
+    <button mat-flat-button color="primary" [disabled]="!form.valid" (click)="save()">
+      Save Configuration
+    </button>
+  </div>
+</div>

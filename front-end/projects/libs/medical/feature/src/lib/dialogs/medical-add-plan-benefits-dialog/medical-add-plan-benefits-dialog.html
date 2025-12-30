@@ -1,0 +1,196 @@
+<!-- libs/medical/ui/src/lib/dialogs/add-benefits-to-plan-dialog/add-benefits-to-plan-dialog.component.html -->
+
+<div class="flex max-h-[90vh] w-full flex-col overflow-hidden bg-white sm:w-[70vw]">
+    <!-- Header -->
+    <div class="flex items-center justify-between border-b border-slate-100 px-6 py-4">
+      <div class="flex items-center gap-3">
+        <div class="flex h-10 w-10 items-center justify-center rounded-full bg-green-100 text-green-600">
+          <mat-icon fontSet="material-symbols-rounded">add_circle</mat-icon>
+        </div>
+        <div>
+          <h2 class="text-lg font-semibold tracking-tight text-slate-900">
+            {{ isAddingSubBenefits() ? 'Add Sub-Benefits' : 'Add Benefits to Plan' }}
+          </h2>
+          <p class="text-xs text-slate-500">
+            Select benefits from the catalog to add to this plan
+          </p>
+        </div>
+      </div>
+  
+      <button mat-icon-button (click)="dialogRef.close()" class="!text-slate-400 hover:!text-slate-700">
+        <mat-icon fontSet="material-symbols-rounded">close</mat-icon>
+      </button>
+    </div>
+  
+    <!-- Filters -->
+    <div class="flex flex-col sm:flex-row gap-3 p-4 border-b border-slate-100 bg-slate-50">
+      <!-- Search -->
+      <div class="relative flex-1">
+        <mat-icon
+          fontSet="material-symbols-rounded"
+          class="absolute left-3 top-1/2 -translate-y-1/2 !text-[20px] text-slate-400"
+        >search</mat-icon>
+        <input
+          type="text"
+          placeholder="Search benefits..."
+          class="h-10 w-full rounded-lg border border-slate-200 bg-white pl-10 pr-4 text-sm text-slate-900 outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all placeholder:text-slate-400"
+          [value]="searchQuery()"
+          (input)="onSearchInput($event)"
+        />
+      </div>
+  
+      <!-- Category Filter -->
+      @if (!isAddingSubBenefits()) {
+        <mat-form-field appearance="outline" subscriptSizing="dynamic" class="!w-48">
+          <mat-select
+            placeholder="All Categories"
+            [value]="selectedCategory()"
+            (selectionChange)="onCategoryChange($event.value)"
+          >
+            <mat-option value="">All Categories</mat-option>
+            @for (category of store.categories(); track category.id) {
+              <mat-option [value]="category.id">
+                <div class="flex items-center gap-2">
+                  <mat-icon
+                    fontSet="material-symbols-rounded"
+                    [style.color]="category.color"
+                    class="!text-[18px]"
+                  >{{ category.icon || 'folder' }}</mat-icon>
+                  <span>{{ category.name }}</span>
+                </div>
+              </mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+      }
+    </div>
+  
+    <!-- Selection Summary -->
+    @if (selectedCount() > 0) {
+      <div class="flex items-center justify-between px-4 py-2 bg-primary/5 border-b border-primary/20">
+        <span class="text-sm font-medium text-primary">
+          {{ selectedCount() }} benefit{{ selectedCount() > 1 ? 's' : '' }} selected
+        </span>
+        <button mat-button class="!text-primary" (click)="clearSelection()">
+          Clear Selection
+        </button>
+      </div>
+    }
+  
+    <!-- Benefits List -->
+    <div class="flex-1 overflow-y-auto">
+      @if (store.isLoading()) {
+        <div class="flex items-center justify-center py-12">
+          <mat-spinner diameter="32"></mat-spinner>
+        </div>
+      } @else if (availableBenefits().length === 0) {
+        <div class="flex flex-col items-center justify-center py-12 text-center px-6">
+          <div class="flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 mb-4">
+            <mat-icon fontSet="material-symbols-rounded" class="!text-slate-400">search_off</mat-icon>
+          </div>
+          <h4 class="text-sm font-medium text-slate-900">No benefits available</h4>
+          <p class="mt-1 text-sm text-slate-500 max-w-sm">
+            @if (searchQuery() || selectedCategory()) {
+              No benefits match your filters. Try adjusting your search criteria.
+            } @else if (data.existingBenefitIds.length > 0) {
+              All available benefits have already been added to this plan.
+            } @else {
+              Add benefits to the catalog first before adding them to plans.
+            }
+          </p>
+        </div>
+      } @else {
+        <!-- Quick Actions -->
+        <div class="flex items-center justify-between px-4 py-2 border-b border-slate-100">
+          <span class="text-xs text-slate-500">
+            {{ availableBenefits().length }} benefit{{ availableBenefits().length > 1 ? 's' : '' }} available
+          </span>
+          <button mat-button class="!text-primary !text-xs" (click)="selectAll()">
+            Select All
+          </button>
+        </div>
+  
+        <!-- Benefits Grid -->
+        <div class="divide-y divide-slate-100">
+          @for (benefit of availableBenefits(); track benefit.id) {
+            <div
+              class="flex items-center gap-4 p-4 hover:bg-slate-50 transition-colors cursor-pointer"
+              [class.bg-primary/5]="isSelected(benefit.id)"
+              (click)="toggleSelection(benefit.id)"
+            >
+              <!-- Checkbox -->
+              <mat-checkbox
+                [checked]="isSelected(benefit.id)"
+                (change)="toggleSelection(benefit.id, $event)"
+                (click)="$event.stopPropagation()"
+                color="primary"
+              ></mat-checkbox>
+  
+              <!-- Benefit Icon -->
+              <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-blue-50">
+                <mat-icon fontSet="material-symbols-rounded" class="!text-blue-600 !text-[18px]">
+                  {{ getBenefitTypeIcon(benefit.benefit_type) }}
+                </mat-icon>
+              </div>
+  
+              <!-- Benefit Info -->
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-2">
+                  <span class="font-medium text-slate-900 truncate">{{ benefit.name }}</span>
+                  @if (benefit.requires_preauth) {
+                    <span class="shrink-0 rounded bg-amber-50 px-1.5 py-0.5 text-[10px] font-medium text-amber-700">
+                      PREAUTH
+                    </span>
+                  }
+                </div>
+                <div class="flex items-center gap-2 mt-0.5">
+                  <span class="text-xs text-slate-500">{{ benefit.code }}</span>
+                  @if (!isAddingSubBenefits()) {
+                    <span class="text-xs text-slate-400">• {{ getCategoryName(benefit.category_id) }}</span>
+                  }
+                </div>
+              </div>
+  
+              <!-- Default Limit Type -->
+              @if (benefit.default_limit_type) {
+                <span class="shrink-0 rounded bg-slate-100 px-2 py-1 text-xs text-slate-600">
+                  {{ benefit.default_limit_type === 'unlimited' ? 'Unlimited' : benefit.default_limit_type }}
+                </span>
+              }
+            </div>
+          }
+        </div>
+      }
+    </div>
+  
+    <!-- Footer -->
+    <div class="flex items-center justify-between border-t border-slate-100 bg-slate-50 px-6 py-4">
+      <p class="text-xs text-slate-500">
+        @if (selectedCount() > 0) {
+          You can configure limits after adding
+        } @else {
+          Select benefits to add to this plan
+        }
+      </p>
+  
+      <div class="flex items-center gap-3">
+        <button mat-button (click)="dialogRef.close()" class="!text-slate-600 hover:!bg-slate-200">
+          Cancel
+        </button>
+        <button
+          mat-flat-button
+          color="primary"
+          [disabled]="selectedCount() === 0 || isSaving()"
+          (click)="addSelected()"
+          class="!px-6 !rounded-lg"
+        >
+          @if (isSaving()) {
+            <mat-spinner diameter="20" class="!mr-2"></mat-spinner>
+            Adding...
+          } @else {
+            Add {{ selectedCount() }} Benefit{{ selectedCount() > 1 ? 's' : '' }}
+          }
+        </button>
+      </div>
+    </div>
+  </div>

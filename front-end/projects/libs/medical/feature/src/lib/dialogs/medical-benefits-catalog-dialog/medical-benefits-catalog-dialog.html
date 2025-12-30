@@ -1,0 +1,433 @@
+<!-- libs/medical/ui/src/lib/dialogs/benefit-dialog/benefit-dialog.component.html -->
+
+<div class="flex max-h-[90vh] w-full flex-col overflow-hidden bg-white sm:w-[70vw]">
+  <!-- Header -->
+  <div class="flex items-center justify-between border-b border-slate-100 px-6 py-4">
+    <div class="flex items-center gap-3">
+      <div
+        class="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100 text-blue-600"
+      >
+        <mat-icon fontSet="material-symbols-rounded">
+          {{ isEditMode ? 'edit' : 'add_circle' }}
+        </mat-icon>
+      </div>
+      <div>
+        <h2 class="text-lg font-semibold tracking-tight text-slate-900">
+          {{ isEditMode ? 'Edit Benefit' : data?.parent_id ? 'New Sub-Benefit' : 'New Benefit' }}
+        </h2>
+        <p class="text-xs text-slate-500">
+          {{ isEditMode ? 'Update benefit configuration' : 'Add a new benefit to the catalog' }}
+        </p>
+      </div>
+    </div>
+
+    <button
+      mat-icon-button
+      (click)="dialogRef.close()"
+      class="!text-slate-400 hover:!text-slate-700"
+    >
+      <mat-icon fontSet="material-symbols-rounded">close</mat-icon>
+    </button>
+  </div>
+
+  <!-- Stepper Content -->
+  <div class="flex-1 overflow-y-auto">
+    <mat-stepper
+      #stepper
+      [linear]="!isEditMode"
+      [selectedIndex]="currentStep()"
+      (selectionChange)="onStepChange($event.selectedIndex)"
+      class="!bg-transparent"
+    >
+      <!-- Step 1: Basic Information -->
+      <mat-step [stepControl]="basicInfoForm" label="Basic Info">
+        <form [formGroup]="basicInfoForm" class="p-6 space-y-5">
+          <p class="text-sm text-slate-500 mb-4">
+            Define the benefit's identity and classification within the catalog.
+          </p>
+
+          <!-- Category -->
+          <div class="flex flex-col gap-1.5">
+            <label class="text-sm font-medium text-slate-700">
+              Category <span class="text-red-500">*</span>
+            </label>
+            <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+              <mat-select formControlName="category_id" placeholder="Select category">
+                <mat-select-trigger>
+                  @if (basicInfoForm.get('category_id')?.value; as catId) {
+                  <span class="flex items-center gap-2">
+                    <mat-icon
+                      fontSet="material-symbols-rounded"
+                      [style.color]="getCategoryColor(catId)"
+                      class="!text-[18px]"
+                      >{{ getCategoryIcon(catId) }}</mat-icon
+                    >
+                    <span>{{ getCategoryName(catId) }}</span>
+                  </span>
+                  }
+                </mat-select-trigger>
+                @for (category of store.categories(); track category.id) {
+                <mat-option [value]="category.id">
+                  <div class="flex items-center gap-2">
+                    <mat-icon
+                      fontSet="material-symbols-rounded"
+                      [style.color]="category.color"
+                      class="!text-[18px]"
+                      >{{ category.icon || 'folder' }}</mat-icon
+                    >
+                    <span>{{ category.name }}</span>
+                  </div>
+                </mat-option>
+                }
+              </mat-select>
+              @if (basicInfoForm.get('category_id')?.hasError('required')) {
+              <mat-error>Please select a category</mat-error>
+              }
+            </mat-form-field>
+          </div>
+
+          <!-- Parent Benefit (for sub-benefits) -->
+          @if (parentBenefits.length > 0 || data?.parent_id) {
+          <div class="flex flex-col gap-1.5">
+            <label class="text-sm font-medium text-slate-700">Parent Benefit</label>
+            <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+              <mat-select formControlName="parent_id" placeholder="None (Root benefit)">
+                <mat-select-trigger>
+                  @if (basicInfoForm.get('parent_id')?.value; as parentId) {
+                  <span>{{ getParentBenefitName(parentId) }}</span>
+                  } @else {
+                  <span>None (Root benefit)</span>
+                  }
+                </mat-select-trigger>
+                <mat-option [value]="null">None (Root benefit)</mat-option>
+                @for (parent of parentBenefits; track parent.id) {
+                <mat-option [value]="parent.id">
+                  <div class="flex items-center gap-2">
+                    <mat-icon
+                      fontSet="material-symbols-rounded"
+                      class="!text-[18px] !text-blue-500"
+                    >
+                      {{ getBenefitTypeIcon(parent.benefit_type) }}
+                    </mat-icon>
+                    <span>{{ parent.name }}</span>
+                  </div>
+                </mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+            <p class="text-xs text-slate-400">
+              Select if this is a sub-benefit under another benefit
+            </p>
+          </div>
+          }
+
+          <!-- Benefit Name -->
+          <div class="flex flex-col gap-1.5">
+            <label class="text-sm font-medium text-slate-700">
+              Benefit Name <span class="text-red-500">*</span>
+            </label>
+            <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+              <input matInput formControlName="name" placeholder="e.g. Hospital Room & Board" />
+              <mat-icon matSuffix fontSet="material-symbols-rounded" class="!text-slate-400"
+                >badge</mat-icon
+              >
+              @if (basicInfoForm.get('name')?.hasError('required')) {
+              <mat-error>Benefit name is required</mat-error>
+              }
+            </mat-form-field>
+          </div>
+
+          <!-- Display Name -->
+          <div class="flex flex-col gap-1.5">
+            <label class="text-sm font-medium text-slate-700">Display Name</label>
+            <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+              <input
+                matInput
+                formControlName="display_name"
+                placeholder="Optional friendly name for members"
+              />
+            </mat-form-field>
+            <p class="text-xs text-slate-400">Shown to members if different from internal name</p>
+          </div>
+
+          <!-- Benefit Type -->
+          <div class="flex flex-col gap-1.5">
+            <label class="text-sm font-medium text-slate-700">
+              Benefit Type <span class="text-red-500">*</span>
+            </label>
+            <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+              <mat-select formControlName="benefit_type" placeholder="Select type">
+                <mat-select-trigger>
+                  @if (basicInfoForm.get('benefit_type')?.value; as typeValue) {
+                  <span class="flex items-center gap-2">
+                    <mat-icon fontSet="material-symbols-rounded" class="!text-[18px]">
+                      {{ getBenefitTypeIcon(typeValue) }}
+                    </mat-icon>
+                    <span>{{ getBenefitTypeLabel(typeValue) }}</span>
+                  </span>
+                  }
+                </mat-select-trigger>
+                @for (type of benefitTypes; track type.value) {
+                <mat-option [value]="type.value">
+                  <div class="flex items-center gap-2">
+                    <mat-icon fontSet="material-symbols-rounded" class="!text-[18px]">{{
+                      type.icon
+                    }}</mat-icon>
+                    <span>{{ type.label }}</span>
+                  </div>
+                </mat-option>
+                }
+              </mat-select>
+              @if (basicInfoForm.get('benefit_type')?.hasError('required')) {
+              <mat-error>Please select a benefit type</mat-error>
+              }
+            </mat-form-field>
+          </div>
+
+          <!-- Description -->
+          <div class="flex flex-col gap-1.5">
+            <label class="text-sm font-medium text-slate-700">Description</label>
+            <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+              <textarea
+                matInput
+                formControlName="description"
+                rows="3"
+                placeholder="What this benefit covers..."
+                class="!resize-none"
+              ></textarea>
+            </mat-form-field>
+          </div>
+
+          <!-- Active Status -->
+          <div
+            class="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50/50 p-4"
+          >
+            <div class="flex flex-col">
+              <span class="text-sm font-semibold text-slate-900">Active Status</span>
+              <span class="text-xs text-slate-500">Enable to allow adding to plans</span>
+            </div>
+            <mat-slide-toggle formControlName="is_active" color="primary"></mat-slide-toggle>
+          </div>
+        </form>
+      </mat-step>
+
+      <!-- Step 2: Default Limits -->
+      <mat-step [stepControl]="limitsForm" label="Default Limits" [optional]="true">
+        <form [formGroup]="limitsForm" class="p-6 space-y-5">
+          <p class="text-sm text-slate-500 mb-4">
+            Set default limit configurations. These will be pre-filled when adding this benefit to a
+            plan.
+          </p>
+
+          <!-- Limit Type -->
+          <div class="flex flex-col gap-1.5">
+            <label class="text-sm font-medium text-slate-700">Default Limit Type</label>
+            <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+              <mat-select formControlName="default_limit_type">
+                <mat-select-trigger>
+                  @if (limitsForm.get('default_limit_type')?.value; as limitType) {
+                  <span>{{ getLimitTypeLabel(limitType) }}</span>
+                  }
+                </mat-select-trigger>
+                @for (type of limitTypes; track type.value) {
+                <mat-option [value]="type.value">
+                  <div class="flex flex-col">
+                    <span>{{ type.label }}</span>
+                    <span class="text-xs text-slate-400">{{ type.description }}</span>
+                  </div>
+                </mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+          </div>
+
+          <!-- Limit Frequency -->
+          <div class="flex flex-col gap-1.5">
+            <label class="text-sm font-medium text-slate-700">Default Limit Frequency</label>
+            <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+              <mat-select formControlName="default_limit_frequency">
+                <mat-select-trigger>
+                  @if (limitsForm.get('default_limit_frequency')?.value; as freq) {
+                  <span>{{ getLimitFrequencyLabel(freq) }}</span>
+                  }
+                </mat-select-trigger>
+                @for (freq of limitFrequencies; track freq.value) {
+                <mat-option [value]="freq.value">{{ freq.label }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+            <p class="text-xs text-slate-400">How often the limit resets</p>
+          </div>
+
+          <!-- Limit Basis -->
+          <div class="flex flex-col gap-1.5">
+            <label class="text-sm font-medium text-slate-700">Default Limit Basis</label>
+            <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+              <mat-select formControlName="default_limit_basis">
+                <mat-select-trigger>
+                  @if (limitsForm.get('default_limit_basis')?.value; as basis) {
+                  <span>{{ getLimitBasisLabel(basis) }}</span>
+                  }
+                </mat-select-trigger>
+                @for (basis of limitBases; track basis.value) {
+                <mat-option [value]="basis.value">{{ basis.label }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+          </div>
+
+          <div class="rounded-lg bg-blue-50 border border-blue-100 p-4">
+            <div class="flex gap-3">
+              <mat-icon fontSet="material-symbols-rounded" class="!text-blue-500">info</mat-icon>
+              <div>
+                <p class="text-sm font-medium text-blue-900">About Default Limits</p>
+                <p class="text-xs text-blue-700 mt-1">
+                  These are catalog defaults. When adding this benefit to a specific plan, you can
+                  customize the actual limits, amounts, and frequencies.
+                </p>
+              </div>
+            </div>
+          </div>
+        </form>
+      </mat-step>
+
+      <!-- Step 3: Requirements -->
+      <mat-step [stepControl]="requirementsForm" label="Requirements" [optional]="true">
+        <form [formGroup]="requirementsForm" class="p-6 space-y-5">
+          <p class="text-sm text-slate-500 mb-4">
+            Define authorization and eligibility requirements for this benefit.
+          </p>
+
+          <!-- Pre-Authorization -->
+          <div
+            class="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50/50 p-4"
+          >
+            <div class="flex items-start gap-3">
+              <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-100">
+                <mat-icon fontSet="material-symbols-rounded" class="!text-amber-600 !text-[18px]"
+                  >verified_user</mat-icon
+                >
+              </div>
+              <div class="flex flex-col">
+                <span class="text-sm font-semibold text-slate-900">Requires Pre-Authorization</span>
+                <span class="text-xs text-slate-500"
+                  >Member must get approval before treatment</span
+                >
+              </div>
+            </div>
+            <mat-slide-toggle formControlName="requires_preauth" color="primary"></mat-slide-toggle>
+          </div>
+
+          <!-- Referral -->
+          <div
+            class="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50/50 p-4"
+          >
+            <div class="flex items-start gap-3">
+              <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-purple-100">
+                <mat-icon fontSet="material-symbols-rounded" class="!text-purple-600 !text-[18px]"
+                  >send</mat-icon
+                >
+              </div>
+              <div class="flex flex-col">
+                <span class="text-sm font-semibold text-slate-900">Requires Referral</span>
+                <span class="text-xs text-slate-500"
+                  >Member needs referral from GP or primary care</span
+                >
+              </div>
+            </div>
+            <mat-slide-toggle
+              formControlName="requires_referral"
+              color="primary"
+            ></mat-slide-toggle>
+          </div>
+
+          <!-- Applicable Member Types -->
+          <div class="flex flex-col gap-1.5">
+            <label class="text-sm font-medium text-slate-700">Applicable Member Types</label>
+            <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+              <mat-select
+                formControlName="applicable_member_types"
+                multiple
+                placeholder="Select member types"
+              >
+                <mat-select-trigger>
+                  @if (requirementsForm.get('applicable_member_types')?.value; as types) { @if
+                  (types.length === memberTypes.length) {
+                  <span>All Member Types</span>
+                  } @else if (types.length > 0) {
+                  <span>{{ types.length }} type{{ types.length > 1 ? 's' : '' }} selected</span>
+                  } }
+                </mat-select-trigger>
+                @for (type of memberTypes; track type.value) {
+                <mat-option [value]="type.value">{{ type.label }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+            <p class="text-xs text-slate-400">
+              Which member types can use this benefit (leave all selected for universal coverage)
+            </p>
+          </div>
+
+          <div class="rounded-lg bg-amber-50 border border-amber-100 p-4">
+            <div class="flex gap-3">
+              <mat-icon fontSet="material-symbols-rounded" class="!text-amber-500"
+                >lightbulb</mat-icon
+              >
+              <div>
+                <p class="text-sm font-medium text-amber-900">Tip</p>
+                <p class="text-xs text-amber-700 mt-1">
+                  Pre-authorization requirements help control costs for expensive procedures.
+                  Referral requirements ensure proper care pathways.
+                </p>
+              </div>
+            </div>
+          </div>
+        </form>
+      </mat-step>
+    </mat-stepper>
+  </div>
+
+  <!-- Footer with Navigation -->
+  <div class="flex items-center justify-between border-t border-slate-100 bg-slate-50 px-6 py-4">
+    <div class="text-xs text-slate-500">Step {{ currentStep() + 1 }} of 3</div>
+
+    <div class="flex items-center gap-3">
+      <button mat-button (click)="dialogRef.close()" class="!text-slate-600 hover:!bg-slate-200">
+        Cancel
+      </button>
+
+      <!-- Back Button -->
+      @if (!isFirstStep) {
+      <button mat-stroked-button (click)="prevStep()" class="!border-slate-300">
+        <mat-icon fontSet="material-symbols-rounded">arrow_back</mat-icon>
+        Back
+      </button>
+      }
+
+      <!-- Next Button -->
+      @if (!isLastStep) {
+      <button
+        mat-flat-button
+        color="primary"
+        [disabled]="!canGoNext"
+        (click)="nextStep()"
+        class="!px-6 !rounded-lg"
+      >
+        Next
+        <mat-icon fontSet="material-symbols-rounded">arrow_forward</mat-icon>
+      </button>
+      } @else {
+      <!-- Save Button (only on last step) -->
+      <button
+        mat-flat-button
+        color="primary"
+        [disabled]="!isFormValid"
+        (click)="save()"
+        class="!px-6 !rounded-lg"
+      >
+        {{ isEditMode ? 'Save Changes' : 'Create Benefit' }}
+      </button>
+      }
+    </div>
+  </div>
+</div>
