@@ -81,6 +81,20 @@ class AddonRate extends BaseModel
     // SCOPES
     // =========================================================================
 
+    public function scopeActive($query)
+    {
+        return $query->where('is_active', true);
+    }
+
+    public function scopeEffectivee($query)
+    {
+        return $query->where('effective_from', '<=', now())
+            ->where(function ($q) {
+                $q->whereNull('effective_to')
+                  ->orWhere('effective_to', '>=', now());
+            });
+    }
+
     public function scopeByPricingType($query, string $type)
     {
         return $query->where('pricing_type', $type);

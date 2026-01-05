@@ -105,6 +105,23 @@ export class SchemeListStore {
     );
   }
 
+  activate(id: string) {
+    this.state.update((s) => ({ ...s, saving: true }));
+
+    return this.http.post<ApiResponse<MedicalScheme>>(`${this.apiUrl}/${id}/activate`, {}).pipe(
+      tap({
+        next: (res) =>
+          this.state.update((s) => ({
+            ...s,
+            items: s.items.map((item) => (item.id === id ? res.data : item)),
+            selected: s.selected?.id === id ? res.data : s.selected,
+            saving: false,
+          })),
+        error: () => this.state.update((s) => ({ ...s, saving: false })),
+      })
+    );
+  }
+
   delete(id: string) {
     return this.http.delete<ApiResponse<void>>(`${this.apiUrl}/${id}`).pipe(
       tap(() =>

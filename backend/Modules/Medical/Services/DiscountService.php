@@ -34,13 +34,57 @@ class DiscountService
     /**
      * Calculate discounts on a premium.
      */
-    public function calculateDiscounts(float $premium, array $discountRules): array
+    // public function calculateDiscounts(float $premium, array $discountRules): array
+    // {
+    //     $applied = [];
+    //     $totalDiscount = 0;
+    //     $runningPremium = $premium;
+
+    //     foreach ($discountRules as $rule) {
+    //         if (!$rule instanceof DiscountRule) {
+    //             $rule = DiscountRule::find($rule);
+    //         }
+
+    //         if (!$rule || !$rule->canBeUsed()) {
+    //             continue;
+    //         }
+
+    //         // Check stacking
+    //         if (!$rule->can_stack && !empty($applied)) {
+    //             continue;
+    //         }
+
+    //         $discountAmount = $rule->calculateAdjustment($runningPremium);
+
+    //         $runningPremium -= $discountAmount;
+    //         $totalDiscount += $discountAmount;
+
+    //         $applied[] = [
+    //             'rule_id' => $rule->id,
+    //             'code' => $rule->code,
+    //             'name' => $rule->name,
+    //             'value' => $rule->value,
+    //             'value_type' => $rule->value_type,
+    //             'amount' => $discountAmount,
+    //         ];
+    //     }
+
+    //     return [
+    //         'original_premium' => $premium,
+    //         'discounts' => $applied,
+    //         'total_discount' => round($totalDiscount, 2),
+    //         'final_premium' => round(max(0, $runningPremium), 2),
+    //     ];
+    // }
+
+    public function calculateDiscounts(float $basePremium, array $discountRules): array
     {
         $applied = [];
         $totalDiscount = 0;
-        $runningPremium = $premium;
+        $runningPremium = $basePremium;
 
         foreach ($discountRules as $rule) {
+            // Convert ID to model if necessary
             if (!$rule instanceof DiscountRule) {
                 $rule = DiscountRule::find($rule);
             }
@@ -49,28 +93,36 @@ class DiscountService
                 continue;
             }
 
-            // Check stacking
+            // Stacking check
             if (!$rule->can_stack && !empty($applied)) {
                 continue;
             }
 
-            $discountAmount = $rule->calculateAdjustment($runningPremium);
+            // LOGIC FIX: Determine the amount to calculate against
+            $calculationBasis = ($rule->applies_to === 'total_premium') 
+                ? $runningPremium 
+                : $basePremium;
+
+            $discountAmount = $rule->calculateAdjustment($calculationBasis);
+            
+            // Safety cap: Discount cannot exceed the current running premium
+            if ($discountAmount > $runningPremium) {
+                $discountAmount = $runningPremium;
+            }
 
             $runningPremium -= $discountAmount;
             $totalDiscount += $discountAmount;
 
             $applied[] = [
                 'rule_id' => $rule->id,
-                'code' => $rule->code,
                 'name' => $rule->name,
-                'value' => $rule->value,
-                'value_type' => $rule->value_type,
-                'amount' => $discountAmount,
+                'basis' => $rule->applies_to, // detailed info
+                'amount' => round($discountAmount, 2),
             ];
         }
 
         return [
-            'original_premium' => $premium,
+            'original_premium' => $basePremium,
             'discounts' => $applied,
             'total_discount' => round($totalDiscount, 2),
             'final_premium' => round(max(0, $runningPremium), 2),

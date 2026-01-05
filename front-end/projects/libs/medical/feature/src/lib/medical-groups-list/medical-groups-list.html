@@ -65,7 +65,7 @@
             <div>
               <div class="text-sm font-medium text-slate-500">Total Policies</div>
               <div class="mt-2 text-2xl font-bold tracking-tight text-purple-600">
-                {{ store.totalPolicies() }}
+                <!-- {{ store.totalPolicies() }} -->
               </div>
             </div>
             <div class="flex h-10 w-10 items-center justify-center rounded-full bg-purple-100">
@@ -81,7 +81,7 @@
             <div>
               <div class="text-sm font-medium text-slate-500">Total Members</div>
               <div class="mt-2 text-2xl font-bold tracking-tight text-amber-600">
-                {{ store.totalMembers() }}
+                <!-- {{ store.totalMembers() }} -->
               </div>
             </div>
             <div class="flex h-10 w-10 items-center justify-center rounded-full bg-amber-100">
@@ -455,7 +455,8 @@
                 {{ group.website }}
               </a>
             </div>
-            } @if (group.physical_address) {
+            }
+            <!-- @if (group.physical_address) {
             <div class="flex items-start justify-between text-sm gap-4">
               <span class="text-slate-500 shrink-0">Address</span>
               <span class="text-slate-900 text-right">
@@ -464,7 +465,7 @@
                 {{ group.province }} }
               </span>
             </div>
-            }
+            } -->
           </div>
         </div>
 
@@ -507,9 +508,9 @@
           <div class="space-y-2.5">
             <div class="flex items-center justify-between text-sm">
               <span class="text-slate-500">Payment Terms</span>
-              <span class="text-slate-900">{{
+              <!-- <span class="text-slate-900">{{
                 getLabelByValue(PAYMENT_TERMS, group.payment_terms) || 'Not set'
-              }}</span>
+              }}</span> -->
             </div>
             @if (group.billing_email) {
             <div class="flex items-center justify-between text-sm">
@@ -527,7 +528,7 @@
             <p class="text-sm text-purple-600">Policies</p>
           </div>
           <div class="rounded-lg border border-amber-200 bg-amber-50 p-4 text-center">
-            <p class="text-2xl font-bold text-amber-700">{{ group.active_members_count || 0 }}</p>
+            <!-- <p class="text-2xl font-bold text-amber-700">{{ group.active_members_count || 0 }}</p> -->
             <p class="text-sm text-amber-600">Members</p>
           </div>
         </div>

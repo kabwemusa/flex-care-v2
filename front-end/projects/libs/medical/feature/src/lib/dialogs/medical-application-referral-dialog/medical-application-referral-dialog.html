@@ -1,0 +1,83 @@
+<!-- libs/medical/feature/src/lib/dialogs/medical-application-referral-dialog/medical-application-referral-dialog.html -->
+
+<div class="flex flex-col max-h-[90vh]">
+  <!-- Header -->
+  <div class="flex items-center justify-between border-b border-slate-200 px-6 py-4">
+    <div class="flex items-center gap-3">
+      <div class="flex h-10 w-10 items-center justify-center rounded-full bg-amber-100">
+        <mat-icon fontSet="material-symbols-rounded" class="!text-[24px] text-amber-600"
+          >forward</mat-icon
+        >
+      </div>
+      <div>
+        <h2 class="text-lg font-semibold text-slate-900">Refer Application</h2>
+        @if (data?.applicationNumber) {
+        <p class="text-sm text-slate-500">{{ data?.applicationNumber }}</p>
+        }
+      </div>
+    </div>
+    <button mat-icon-button (click)="cancel()" class="!text-slate-400">
+      <mat-icon fontSet="material-symbols-rounded">close</mat-icon>
+    </button>
+  </div>
+
+  <!-- Content -->
+  <form [formGroup]="form" (ngSubmit)="submit()" class="flex-1 overflow-y-auto px-6 py-6">
+    <div class="space-y-4">
+      <!-- Info Alert -->
+      <div class="rounded-lg border border-amber-200 bg-amber-50 p-4">
+        <div class="flex gap-3">
+          <mat-icon fontSet="material-symbols-rounded" class="!text-[20px] text-amber-600"
+            >info</mat-icon
+          >
+          <div class="flex-1">
+            <h3 class="text-sm font-medium text-amber-900">Referral Process</h3>
+            <p class="mt-1 text-sm text-amber-700">
+              This application will be referred for further review. Please provide a detailed reason
+              for the referral. The application status will be changed to "Referred" and the
+              underwriting team will be notified.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Referral Reason -->
+      <mat-form-field appearance="outline" class="w-full">
+        <mat-label>Referral Reason</mat-label>
+        <textarea
+          matInput
+          formControlName="reason"
+          rows="6"
+          placeholder="Provide a detailed reason for referring this application..."
+        ></textarea>
+        <mat-hint>Minimum 10 characters required</mat-hint>
+        @if (form.get('reason')?.hasError('required') && form.get('reason')?.touched) {
+        <mat-error>Referral reason is required</mat-error>
+        } @else if (form.get('reason')?.hasError('minlength') && form.get('reason')?.touched) {
+        <mat-error
+          >Reason must be at least 10 characters (currently
+          {{ form.get('reason')?.value?.length || 0 }})</mat-error
+        >
+        } @else if (form.get('reason')?.hasError('maxlength')) {
+        <mat-error>Reason cannot exceed 1000 characters</mat-error>
+        }
+      </mat-form-field>
+
+      <!-- Underwriter ID (Optional) -->
+      <mat-form-field appearance="outline" class="w-full">
+        <mat-label>Assign to Underwriter (Optional)</mat-label>
+        <input matInput formControlName="underwriter_id" placeholder="Enter underwriter ID" />
+        <mat-hint>Leave empty to assign to default underwriter</mat-hint>
+      </mat-form-field>
+    </div>
+  </form>
+
+  <!-- Footer -->
+  <div class="flex items-center justify-end gap-3 border-t border-slate-200 px-6 py-4">
+    <button mat-stroked-button type="button" (click)="cancel()">Cancel</button>
+    <button mat-flat-button color="warn" type="submit" (click)="submit()" [disabled]="form.invalid">
+      <mat-icon fontSet="material-symbols-rounded">forward</mat-icon>
+      Refer Application
+    </button>
+  </div>
+</div>

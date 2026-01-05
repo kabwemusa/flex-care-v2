@@ -58,6 +58,10 @@
             </mat-icon>
             <span>{{ plan.is_active ? 'Deactivate' : 'Activate' }}</span>
           </button>
+          <button mat-menu-item (click)="exportToPdf()">
+            <mat-icon fontSet="material-symbols-rounded" class="!text-slate-500">download</mat-icon>
+            <span>Export to PDF</span>
+          </button>
           <button mat-menu-item (click)="clonePlan()">
             <mat-icon fontSet="material-symbols-rounded" class="!text-slate-500"
               >content_copy</mat-icon
@@ -301,22 +305,7 @@
           Exclusions
         </ng-template>
         <div class="py-6">
-          <!-- TODO: Replace with actual component -->
-          <div class="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-8 text-center">
-            <div
-              class="flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 mx-auto mb-4"
-            >
-              <mat-icon fontSet="material-symbols-rounded" class="!text-slate-400">block</mat-icon>
-            </div>
-            <h4 class="text-sm font-medium text-slate-900">Plan Exclusions</h4>
-            <p class="text-sm text-slate-500 mt-1 max-w-sm mx-auto">
-              Define conditions, treatments, or services not covered by this plan.
-            </p>
-            <button mat-flat-button color="primary" class="mt-4">
-              <mat-icon fontSet="material-symbols-rounded">add</mat-icon>
-              Add Exclusion
-            </button>
-          </div>
+          <lib-plan-exclusion-config [planId]="planId()" />
         </div>
       </mat-tab>
     </mat-tab-group>

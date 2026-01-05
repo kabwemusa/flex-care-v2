@@ -6,38 +6,6 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Str;
 use Modules\Medical\Constants\MedicalConstants;
 
-// class Scheme extends BaseModel
-// {
-//     protected $table = 'med_schemes';
-
-//     protected $fillable = ['name', 'slug', 'description', 'is_active'];
-
-//     protected $casts = [
-//         'is_active' => 'boolean',
-//     ];
-
-//     protected static function boot()
-//     {
-//         parent::boot();
-
-//         static::creating(function ($scheme) {
-//             $scheme->slug = Str::slug($scheme->name);
-//         });
-
-//         static::updating(function ($scheme) {
-//             $scheme->slug = Str::slug($scheme->name);
-//         });
-//     }
-
-//     public function plans(): HasMany
-//     {
-//         return $this->hasMany(Plan::class, 'scheme_id');
-//     }
-// }
-
-
-
-
 class Scheme extends BaseModel
 {
     protected $table = 'med_schemes';

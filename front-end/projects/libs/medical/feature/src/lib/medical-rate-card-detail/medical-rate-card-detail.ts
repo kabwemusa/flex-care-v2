@@ -296,22 +296,25 @@ export class MedicalRateCardDetail implements OnInit {
 
   // ==================== ACTIONS ====================
 
-  async activateRateCard() {
+  async toggleStatus() {
     const rc = this.rateCard();
     if (!rc) return;
 
+    const action = rc.is_active ? 'deactivate' : 'activate';
     const confirmed = await this.feedback.confirm(
-      'Activate Rate Card?',
-      'This will make this the active rate card for the plan. The current active rate card will be deactivated.'
+      `${action.charAt(0).toUpperCase() + action.slice(1)} Rate Card?`,
+      rc.is_active
+        ? 'This rate card will no longer be used for new quotes and applications.'
+        : 'This will make this the active rate card for the plan. The current active rate card will be deactivated.'
     );
     if (!confirmed) return;
 
     this.store.activate(rc.id).subscribe({
       next: () => {
-        this.feedback.success('Rate card activated');
+        this.feedback.success(`Rate card ${action}d successfully`);
         this.loadRateCard(rc.id);
       },
-      error: (err) => this.feedback.error(err?.error?.message ?? 'Failed to activate'),
+      error: (err) => this.feedback.error(err?.error?.message ?? `Failed to ${action} rate card`),
     });
   }
 }

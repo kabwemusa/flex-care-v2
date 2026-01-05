@@ -5,12 +5,17 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 
-// 1. Updated Interface to support nesting
+// 1. Updated Interface to support nesting and permissions
 export interface NavItem {
   href?: string; // Optional because a parent might just be a container
   label: string;
   icon?: string;
   children?: NavItem[];
+  // Permission requirements
+  requiredPermissions?: string[]; // User must have at least one of these permissions
+  requiredModule?: string; // User must have access to this module
+  requireSystemAdmin?: boolean; // Only system admins can see this
+  guard?: string; // Which guard to check permissions against (default: 'web')
 }
 
 @Component({
@@ -65,21 +70,27 @@ export class SideNav {
     return this.expandedItems().has(label);
   }
 
-  hasActiveChild(item: any): boolean {
+  hasActiveChild(item: NavItem): boolean {
     if (!item.children || item.children.length === 0) {
       return false;
     }
 
-    // Check if any child route is currently active
-    return item.children.some((child: any) => {
-      // You'll need to inject Router in your constructor
-      // constructor(private router: Router) {}
-      return this.router.isActive(child.href, {
-        paths: 'exact',
-        queryParams: 'exact',
-        fragment: 'ignored',
-        matrixParams: 'ignored',
-      });
+    // Check if any child route is currently active (recursively for nested children)
+    return item.children.some((child) => {
+      // If child has an href, check if it's active
+      if (child.href) {
+        return this.router.isActive(child.href, {
+          paths: 'exact',
+          queryParams: 'exact',
+          fragment: 'ignored',
+          matrixParams: 'ignored',
+        });
+      }
+      // If child has children, recursively check them
+      if (child.children) {
+        return this.hasActiveChild(child);
+      }
+      return false;
     });
   }
 }

@@ -1,0 +1,335 @@
+<!-- libs/medical/ui/src/lib/dialogs/application-dialog/application-dialog.component.html -->
+
+<div class="flex flex-col max-h-[90vh]">
+  <!-- Header -->
+  <div class="flex items-center justify-between px-6 py-4 border-b border-slate-200">
+    <div class="flex items-center gap-3">
+      <div class="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
+        <mat-icon fontSet="material-symbols-rounded" class="!text-primary">
+          {{ isEditMode() ? 'edit' : 'add_circle' }}
+        </mat-icon>
+      </div>
+      <div>
+        <h2 class="text-lg font-semibold text-slate-900">
+          {{ isEditMode() ? 'Edit Application' : 'New Application' }}
+        </h2>
+        <p class="text-sm text-slate-500">Enter application details</p>
+      </div>
+    </div>
+    <button mat-icon-button (click)="cancel()" class="!text-slate-400">
+      <mat-icon fontSet="material-symbols-rounded">close</mat-icon>
+    </button>
+  </div>
+
+  <!-- Content -->
+  <div class="flex-1 overflow-y-auto">
+    <mat-stepper [linear]="false" #stepper class="p-4">
+      <!-- Step 1: Product Selection -->
+      <form [formGroup]="form" class="p-6 space-y-5">
+        <mat-step [stepControl]="form">
+          <ng-template matStepLabel>Product</ng-template>
+          <div class="py-4 space-y-4">
+            <div class="grid grid-cols-2 gap-4">
+              <mat-form-field appearance="outline" class="w-full">
+                <mat-label>Application Type</mat-label>
+                <mat-select formControlName="application_type">
+                  @for (type of applicationTypes; track type.value) {
+                  <mat-option [value]="type.value">{{ type.label }}</mat-option>
+                  }
+                </mat-select>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" class="w-full">
+                <mat-label>Policy Type</mat-label>
+                <mat-select formControlName="policy_type">
+                  @for (type of policyTypes; track type.value) {
+                  <mat-option [value]="type.value">{{ type.label }}</mat-option>
+                  }
+                </mat-select>
+              </mat-form-field>
+            </div>
+
+            <mat-form-field appearance="outline" class="w-full">
+              <mat-label>Scheme</mat-label>
+              <mat-select formControlName="scheme_id">
+                @for (scheme of schemes(); track scheme.id) {
+                <mat-option [value]="scheme.id">{{ scheme.name }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+
+            <div class="grid grid-cols-2 gap-4">
+              <mat-form-field appearance="outline" class="w-full">
+                <mat-label>Plan</mat-label>
+                <mat-select formControlName="plan_id">
+                  @for (plan of plans(); track plan.id) {
+                  <mat-option [value]="plan.id">{{ plan.name }}</mat-option>
+                  }
+                </mat-select>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" class="w-full">
+                <mat-label>Rate Card</mat-label>
+                <mat-select formControlName="rate_card_id">
+                  @for (rc of rateCards(); track rc.id) {
+                  <mat-option [value]="rc.id">{{ rc.name }}</mat-option>
+                  }
+                </mat-select>
+              </mat-form-field>
+            </div>
+
+            @if (isCorporate()) {
+            <mat-form-field appearance="outline" class="w-full">
+              <mat-label>Corporate Group</mat-label>
+              <mat-select formControlName="group_id">
+                @for (group of groups(); track group.id) {
+                <mat-option [value]="group.id">{{ group.name }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+            }
+
+            <div class="flex justify-end pt-4">
+              <button mat-flat-button color="primary" matStepperNext>
+                Next
+                <mat-icon fontSet="material-symbols-rounded">arrow_forward</mat-icon>
+              </button>
+            </div>
+          </div>
+        </mat-step>
+
+        <!-- Step 2: Contact Info -->
+        <mat-step>
+          <ng-template matStepLabel>Contact</ng-template>
+          <div class="py-4 space-y-4">
+            <mat-form-field appearance="outline" class="w-full">
+              <mat-label>Contact Name</mat-label>
+              <input matInput formControlName="contact_name" />
+            </mat-form-field>
+
+            <div class="grid grid-cols-2 gap-4">
+              <mat-form-field appearance="outline" class="w-full">
+                <mat-label>Email Address</mat-label>
+                <input matInput type="email" formControlName="contact_email" />
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" class="w-full">
+                <mat-label>Phone Number</mat-label>
+                <input matInput formControlName="contact_phone" />
+              </mat-form-field>
+            </div>
+
+            <div class="flex justify-between pt-4">
+              <button mat-stroked-button matStepperPrevious>
+                <mat-icon fontSet="material-symbols-rounded">arrow_back</mat-icon>
+                Back
+              </button>
+              <button mat-flat-button color="primary" matStepperNext>
+                Next
+                <mat-icon fontSet="material-symbols-rounded">arrow_forward</mat-icon>
+              </button>
+            </div>
+          </div>
+        </mat-step>
+
+        <!-- Step 3: Policy Details -->
+        <mat-step>
+          <ng-template matStepLabel>Details</ng-template>
+          <div class="py-4 space-y-4">
+            <div class="grid grid-cols-2 gap-4">
+              <mat-form-field appearance="outline" class="w-full">
+                <mat-label>Proposed Start Date</mat-label>
+                <input
+                  matInput
+                  [matDatepicker]="startPicker"
+                  formControlName="proposed_start_date"
+                />
+                <mat-datepicker-toggle matIconSuffix [for]="startPicker"></mat-datepicker-toggle>
+                <mat-datepicker #startPicker></mat-datepicker>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" class="w-full">
+                <mat-label>Policy Term (months)</mat-label>
+                <input matInput type="number" formControlName="policy_term_months" />
+              </mat-form-field>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+              <mat-form-field appearance="outline" class="w-full">
+                <mat-label>Billing Frequency</mat-label>
+                <mat-select formControlName="billing_frequency">
+                  @for (freq of billingFrequencies; track freq.value) {
+                  <mat-option [value]="freq.value">{{ freq.label }}</mat-option>
+                  }
+                </mat-select>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" class="w-full">
+                <mat-label>Source</mat-label>
+                <mat-select formControlName="source">
+                  @for (src of applicationSources; track src.value) {
+                  <mat-option [value]="src.value">{{ src.label }}</mat-option>
+                  }
+                </mat-select>
+              </mat-form-field>
+            </div>
+
+            <mat-form-field appearance="outline" class="w-full">
+              <mat-label>Notes (optional)</mat-label>
+              <textarea matInput rows="3" formControlName="notes"></textarea>
+            </mat-form-field>
+
+            <div class="flex justify-between pt-4">
+              <button mat-stroked-button matStepperPrevious>
+                <mat-icon fontSet="material-symbols-rounded">arrow_back</mat-icon>
+                Back
+              </button>
+              <button mat-flat-button color="primary" matStepperNext>
+                Next
+                <mat-icon fontSet="material-symbols-rounded">arrow_forward</mat-icon>
+              </button>
+            </div>
+          </div>
+        </mat-step>
+
+        <!-- Step 4: Members -->
+        <mat-step>
+          <ng-template matStepLabel>Members</ng-template>
+          <div class="py-4">
+            <div class="flex items-center justify-between mb-4">
+              <p class="text-sm text-slate-600">{{ membersArray.length }} member(s) added</p>
+              <button
+                mat-stroked-button
+                (click)="addMember(membersArray.length === 0)"
+                class="!border-primary !text-primary"
+              >
+                <mat-icon fontSet="material-symbols-rounded">person_add</mat-icon>
+                Add Member
+              </button>
+            </div>
+
+            <div class="space-y-4 max-h-[400px] overflow-y-auto">
+              @for (member of membersArray.controls; track $index; let i = $index) {
+              <div class="rounded-lg border border-slate-200 p-4" [formGroup]="$any(member)">
+                <div class="flex items-center justify-between mb-3">
+                  <div class="flex items-center gap-2">
+                    <span
+                      [class]="
+                        isPrincipalMember(i)
+                          ? 'bg-blue-50 text-blue-700'
+                          : 'bg-slate-50 text-slate-600'
+                      "
+                      class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium"
+                    >
+                      {{ getMemberTypeLabel(member.get('member_type')?.value) }}
+                    </span>
+                    <span class="text-sm font-medium text-slate-900">
+                      {{ member.get('first_name')?.value || 'New' }}
+                      {{ member.get('last_name')?.value || 'Member' }}
+                    </span>
+                  </div>
+                  @if (membersArray.length > 1 || !isPrincipalMember(i)) {
+                  <button
+                    mat-icon-button
+                    (click)="removeMember(i)"
+                    class="!text-slate-400 hover:!text-red-600 !w-8 !h-8"
+                  >
+                    <mat-icon fontSet="material-symbols-rounded" class="!text-[20px]"
+                      >close</mat-icon
+                    >
+                  </button>
+                  }
+                </div>
+
+                <div class="grid grid-cols-3 gap-3">
+                  <mat-form-field appearance="outline" class="w-full">
+                    <mat-label>Type</mat-label>
+                    <mat-select formControlName="member_type">
+                      @for (type of memberTypes; track type.value) {
+                      <mat-option [value]="type.value">{{ type.label }}</mat-option>
+                      }
+                    </mat-select>
+                  </mat-form-field>
+
+                  <mat-form-field appearance="outline" class="w-full">
+                    <mat-label>First Name</mat-label>
+                    <input matInput formControlName="first_name" />
+                  </mat-form-field>
+
+                  <mat-form-field appearance="outline" class="w-full">
+                    <mat-label>Last Name</mat-label>
+                    <input matInput formControlName="last_name" />
+                  </mat-form-field>
+                </div>
+
+                <div class="grid grid-cols-3 gap-3">
+                  <mat-form-field appearance="outline" class="w-full">
+                    <mat-label>Date of Birth</mat-label>
+                    <input matInput [matDatepicker]="dobPicker" formControlName="date_of_birth" />
+                    <mat-datepicker-toggle matIconSuffix [for]="dobPicker"></mat-datepicker-toggle>
+                    <mat-datepicker #dobPicker></mat-datepicker>
+                  </mat-form-field>
+
+                  <mat-form-field appearance="outline" class="w-full">
+                    <mat-label>Gender</mat-label>
+                    <mat-select formControlName="gender">
+                      @for (g of genders; track g.value) {
+                      <mat-option [value]="g.value">{{ g.label }}</mat-option>
+                      }
+                    </mat-select>
+                  </mat-form-field>
+
+                  @if (!isPrincipalMember(i)) {
+                  <mat-form-field appearance="outline" class="w-full">
+                    <mat-label>Relationship</mat-label>
+                    <mat-select formControlName="relationship">
+                      @for (rel of relationships; track rel.value) { @if (rel.value !== 'self') {
+                      <mat-option [value]="rel.value">{{ rel.label }}</mat-option>
+                      } }
+                    </mat-select>
+                  </mat-form-field>
+                  } @else {
+                  <mat-form-field appearance="outline" class="w-full">
+                    <mat-label>National ID</mat-label>
+                    <input matInput formControlName="national_id" />
+                  </mat-form-field>
+                  }
+                </div>
+
+                <mat-checkbox formControlName="has_pre_existing_conditions" class="text-sm">
+                  Has pre-existing conditions
+                </mat-checkbox>
+              </div>
+              } @if (membersArray.length === 0) {
+              <div class="text-center py-8 border-2 border-dashed border-slate-200 rounded-lg">
+                <mat-icon fontSet="material-symbols-rounded" class="!text-[40px] text-slate-300"
+                  >group_add</mat-icon
+                >
+                <p class="text-sm text-slate-500 mt-2">No members added yet</p>
+                <button mat-stroked-button (click)="addMember(true)" class="mt-3">
+                  Add Principal Member
+                </button>
+              </div>
+              }
+            </div>
+
+            <div class="flex justify-between pt-4">
+              <button mat-stroked-button matStepperPrevious>
+                <mat-icon fontSet="material-symbols-rounded">arrow_back</mat-icon>
+                Back
+              </button>
+              <button mat-flat-button color="primary" (click)="save()" [disabled]="isSaving()">
+                @if (isSaving()) {
+                <mat-icon fontSet="material-symbols-rounded" class="animate-spin"
+                  >progress_activity</mat-icon
+                >
+                }
+                {{ isEditMode() ? 'Update' : 'Create' }} Application
+              </button>
+            </div>
+          </div>
+        </mat-step>
+      </form>
+    </mat-stepper>
+  </div>
+</div>

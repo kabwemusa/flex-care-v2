@@ -81,8 +81,8 @@ export class MedicalAddonsCatalog implements OnInit, AfterViewInit {
   // KPIs
   totalAddons = computed(() => this.store.addons()?.length || 0);
   activeAddons = computed(() => this.store.addons()?.filter((a) => a.is_active).length || 0);
-  riderAddons = computed(
-    () => this.store.addons()?.filter((a) => a.addon_type === 'rider').length || 0
+  optionalAddons = computed(
+    () => this.store.addons()?.filter((a) => a.addon_type === 'optional').length || 0
   );
 
   constructor() {
@@ -150,18 +150,18 @@ export class MedicalAddonsCatalog implements OnInit, AfterViewInit {
 
   getAddonTypeIcon(type: string): string {
     const icons: Record<string, string> = {
-      rider: 'add_circle',
-      top_up: 'trending_up',
-      standalone: 'extension',
+      optional: 'add_circle',
+      mandatory: 'verified',
+      conditional: 'rule',
     };
     return icons[type] || 'extension';
   }
 
   getAddonTypeClass(type: string): string {
     const classes: Record<string, string> = {
-      rider: 'bg-purple-100 text-purple-600',
-      top_up: 'bg-blue-100 text-blue-600',
-      standalone: 'bg-teal-100 text-teal-600',
+      optional: 'bg-purple-100 text-purple-600',
+      mandatory: 'bg-blue-100 text-blue-600',
+      conditional: 'bg-teal-100 text-teal-600',
     };
     return classes[type] || 'bg-slate-100 text-slate-600';
   }
@@ -224,12 +224,9 @@ export class MedicalAddonsCatalog implements OnInit, AfterViewInit {
 
     if (!confirmed) return;
 
-    this.store.update(addon.id, { is_active: !addon.is_active }).subscribe({
+    this.store.activate(addon.id).subscribe({
       next: () => {
         this.feedback.success(`Addon ${action}d successfully`);
-        if (this.selectedAddon()?.id === addon.id) {
-          this.selectedAddon.set({ ...this.selectedAddon()!, is_active: !addon.is_active });
-        }
       },
       error: (err) => this.feedback.error(err?.error?.message ?? `Failed to ${action} addon`),
     });

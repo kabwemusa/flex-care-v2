@@ -9,9 +9,14 @@ return new class extends Migration
     /**
      * Policies (Contracts)
      * 
+     * A Policy is created ONLY when an Application is approved, accepted, and paid.
+     * It represents an active insurance contract.
+     * 
+     * Key principle: Policy is the OUTPUT of the sales process, not the starting point.
+     * 
      * Tables:
-     * - med_policies: Insurance contracts linking groups/individuals to plans
-     * - med_policy_addons: Selected addons for a policy
+     * - med_policies: Insurance contracts
+     * - med_policy_addons: Active addons on the policy
      * - med_policy_documents: Policy documents (certificates, schedules, endorsements)
      */
     public function up(): void
@@ -21,23 +26,33 @@ return new class extends Migration
         // =====================================================================
         Schema::create('med_policies', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->string('policy_number', 30)->unique();
+            $table->string('policy_number', 30)->unique(); // POL-2025-000001
+            
+            // Source Application (always required for new business)
+            $table->uuid('application_id')->nullable();
+            $table->foreign('application_id')->references('id')->on('med_applications')->nullOnDelete();
             
             // Links to Product Configuration
             $table->foreignUuid('scheme_id')->constrained('med_schemes')->restrictOnDelete();
             $table->foreignUuid('plan_id')->constrained('med_plans')->restrictOnDelete();
             $table->foreignUuid('rate_card_id')->nullable()->constrained('med_rate_cards')->nullOnDelete();
             
-            // Policy Holder (Corporate or Individual)
-            $table->string('policy_type', 20); // corporate, individual, family, sme
-            $table->uuid('group_id')->nullable();
-
-            $table->foreign('group_id')
-                  ->references('id')
-                  ->on('med_corporate_groups')
-                  ->nullOnDelete();
+            // Policy Type & Holder
+            $table->string('policy_type', 20); // individual, family, corporate, sme
             
-            $table->foreignUuid('principal_member_id')->nullable(); // FK to med_members, set after member created
+            // Corporate Group (only for corporate/sme)
+            $table->uuid('group_id')->nullable();
+            $table->foreign('group_id')->references('id')->on('med_corporate_groups')->nullOnDelete();
+            
+            // Principal Member (set after members are created)
+            // For individual/family - the main policyholder
+            // For corporate - may be null or set to a designated principal
+            $table->uuid('principal_member_id')->nullable();
+            
+            // Policy Holder Contact (denormalized for quick access)
+            $table->string('holder_name')->nullable(); // Person or Company name
+            $table->string('holder_email')->nullable();
+            $table->string('holder_phone', 30)->nullable();
             
             // Policy Period
             $table->date('inception_date');
@@ -46,7 +61,7 @@ return new class extends Migration
             $table->integer('policy_term_months')->default(12);
             $table->boolean('is_auto_renew')->default(true);
             
-            // Premium Information
+            // Premium (as of policy issue - snapshot from application)
             $table->string('currency', 3)->default('ZMW');
             $table->string('billing_frequency', 20); // monthly, quarterly, semi_annual, annual
             $table->decimal('base_premium', 15, 2)->default(0);
@@ -57,17 +72,25 @@ return new class extends Migration
             $table->decimal('tax_amount', 15, 2)->default(0);
             $table->decimal('gross_premium', 15, 2)->default(0);
             
-            // Member Counts
+            // Member Counts (updated as members are added/removed via endorsements)
             $table->integer('member_count')->default(0);
             $table->integer('principal_count')->default(0);
             $table->integer('dependent_count')->default(0);
             
-            // Status & Lifecycle
-            $table->string('status', 20)->default('draft'); // draft, pending_payment, active, suspended, lapsed, cancelled, expired, renewed
-            $table->string('underwriting_status', 20)->default('pending'); // pending, approved, referred, declined
+            // Policy Status (post-issue lifecycle)
+            $table->string('status', 20)->default('active');
+            // active, suspended, lapsed, cancelled, expired, renewed
+            // Note: No 'draft' or 'pending' - those are Application statuses
+            
+            // Underwriting (copied from application for reference)
+            $table->string('underwriting_status', 20)->default('approved');
             $table->text('underwriting_notes')->nullable();
             $table->uuid('underwritten_by')->nullable();
             $table->timestamp('underwritten_at')->nullable();
+            
+            // Suspension
+            $table->date('suspended_at')->nullable();
+            $table->string('suspension_reason', 100)->nullable();
             
             // Cancellation
             $table->date('cancelled_at')->nullable();
@@ -76,23 +99,26 @@ return new class extends Migration
             $table->uuid('cancelled_by')->nullable();
             
             // Renewal Tracking
-            $table->uuid('previous_policy_id')->nullable(); // FK to self for renewals
-            $table->uuid('renewed_to_policy_id')->nullable(); // FK to self
+            $table->uuid('previous_policy_id')->nullable(); // Renewed from
+            $table->uuid('renewed_to_policy_id')->nullable(); // Renewed to
             $table->integer('renewal_count')->default(0);
             
-            // Sales & Commission
+            // Sales & Commission (copied from application)
+            $table->string('source', 30)->nullable();
             $table->uuid('sales_agent_id')->nullable();
             $table->uuid('broker_id')->nullable();
             $table->decimal('commission_rate', 5, 2)->nullable();
             $table->decimal('commission_amount', 15, 2)->nullable();
             
-            // Promo & Discounts Applied
+            // Promo & Discounts (copied from application)
             $table->foreignUuid('promo_code_id')->nullable()->constrained('med_promo_codes')->nullOnDelete();
             $table->json('applied_discounts')->nullable();
             $table->json('applied_loadings')->nullable();
             
-            // Metadata
-            $table->string('source', 20)->nullable(); // online, agent, broker, direct, renewal
+            // Issue Information
+            $table->timestamp('issued_at')->nullable();
+            $table->uuid('issued_by')->nullable();
+            
             $table->json('metadata')->nullable();
             $table->text('notes')->nullable();
             
@@ -106,12 +132,19 @@ return new class extends Migration
             $table->index('group_id');
             $table->index('scheme_id');
             $table->index('plan_id');
+            $table->index('application_id');
         });
 
-        // Add self-referencing FKs after table creation
+        // Self-referencing FKs for renewal chain
         Schema::table('med_policies', function (Blueprint $table) {
             $table->foreign('previous_policy_id')->references('id')->on('med_policies')->nullOnDelete();
             $table->foreign('renewed_to_policy_id')->references('id')->on('med_policies')->nullOnDelete();
+        });
+
+        // Update applications table to link converted policy
+        Schema::table('med_applications', function (Blueprint $table) {
+            $table->foreign('converted_policy_id')->references('id')->on('med_policies')->nullOnDelete();
+            $table->foreign('renewal_of_policy_id')->references('id')->on('med_policies')->nullOnDelete();
         });
 
         // =====================================================================
@@ -140,7 +173,7 @@ return new class extends Migration
             $table->uuid('id')->primary();
             $table->foreignUuid('policy_id')->constrained('med_policies')->cascadeOnDelete();
             
-            $table->string('document_type', 30); // certificate, schedule, endorsement, terms, invoice, receipt, claim_form
+            $table->string('document_type', 30); // certificate, schedule, endorsement, terms, welcome_letter
             $table->string('title');
             $table->string('file_path');
             $table->string('file_name');
@@ -153,7 +186,7 @@ return new class extends Migration
             $table->date('valid_to')->nullable();
             
             $table->uuid('uploaded_by')->nullable();
-            $table->uuid('generated_by')->nullable(); // System generated
+            $table->uuid('generated_by')->nullable();
             $table->boolean('is_system_generated')->default(false);
             $table->boolean('is_active')->default(true);
             
@@ -167,6 +200,11 @@ return new class extends Migration
     {
         Schema::dropIfExists('med_policy_documents');
         Schema::dropIfExists('med_policy_addons');
+        
+        Schema::table('med_applications', function (Blueprint $table) {
+            $table->dropForeign(['converted_policy_id']);
+            $table->dropForeign(['renewal_of_policy_id']);
+        });
         
         Schema::table('med_policies', function (Blueprint $table) {
             $table->dropForeign(['previous_policy_id']);

@@ -1,0 +1,133 @@
+<div
+  class="min-h-screen flex items-center justify-center bg-[#F8FAFC] p-4 relative overflow-hidden"
+>
+  <div
+    class="absolute top-[-10%] left-[-10%] w-96 h-96 bg-blue-100 rounded-full blur-3xl opacity-50 pointer-events-none"
+  ></div>
+  <div
+    class="absolute bottom-[-10%] right-[-10%] w-96 h-96 bg-indigo-100 rounded-full blur-3xl opacity-50 pointer-events-none"
+  ></div>
+
+  <div class="w-full max-w-[400px] relative z-10">
+    <div class="text-center mb-8">
+      <div
+        class="inline-flex items-center justify-center w-14 h-14 bg-gradient-to-tr from-blue-600 to-indigo-600 rounded-2xl shadow-lg shadow-blue-600/20 mb-6 transform transition hover:scale-105 duration-300"
+      >
+        <mat-icon fontSet="material-symbols-rounded" class="!text-white !text-3xl">
+          shield_lock
+        </mat-icon>
+      </div>
+      <h1 class="text-2xl font-bold tracking-tight text-slate-900">Welcome back</h1>
+      <p class="text-slate-500 text-sm mt-2">Enter your credentials to access FlexCare</p>
+    </div>
+
+    <div
+      class="bg-white rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 p-8"
+    >
+      <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="flex flex-col gap-5">
+        @if (errorMessage()) {
+        <div
+          class="rounded-xl bg-red-50 border border-red-100 p-3 flex items-start gap-3 animate-fade-in"
+        >
+          <mat-icon fontSet="material-symbols-rounded" class="!text-red-500 !text-xl mt-0.5"
+            >error</mat-icon
+          >
+          <p class="text-sm text-red-600 font-medium leading-tight">{{ errorMessage() }}</p>
+        </div>
+        }
+
+        <div class="space-y-1">
+          <label class="text-xs font-semibold text-slate-700 ml-1">Email Address</label>
+          <mat-form-field
+            class="w-full custom-input"
+            appearance="outline"
+            subscriptSizing="dynamic"
+          >
+            <input
+              matInput
+              type="text"
+              formControlName="email"
+              placeholder="name@company.com"
+              autocomplete="username"
+            />
+            <mat-icon matPrefix class="!text-slate-400 mr-2">mail</mat-icon>
+
+            @if (loginForm.get('email')?.hasError('required')) {
+            <mat-error>Email is required</mat-error>
+            } @if (loginForm.get('email')?.hasError('email')) {
+            <mat-error>Invalid email address</mat-error>
+            }
+          </mat-form-field>
+        </div>
+
+        <div class="space-y-1">
+          <div class="flex justify-between items-center ml-1">
+            <label class="text-xs font-semibold text-slate-700">Password</label>
+            <a
+              href="#"
+              class="text-xs font-medium text-blue-600 hover:text-blue-700 hover:underline transition-all"
+            >
+              Forgot password?
+            </a>
+          </div>
+
+          <mat-form-field
+            class="w-full custom-input"
+            appearance="outline"
+            subscriptSizing="dynamic"
+          >
+            <input
+              matInput
+              [type]="hidePassword() ? 'password' : 'text'"
+              formControlName="password"
+              placeholder="••••••••"
+              autocomplete="current-password"
+            />
+            <mat-icon matPrefix class="!text-slate-400 mr-2">lock</mat-icon>
+
+            <button
+              mat-icon-button
+              matSuffix
+              type="button"
+              (click)="togglePasswordVisibility()"
+              class="!text-slate-400 hover:!text-slate-600"
+            >
+              <mat-icon fontSet="material-symbols-rounded">
+                {{ hidePassword() ? 'visibility' : 'visibility_off' }}
+              </mat-icon>
+            </button>
+
+            @if (loginForm.get('password')?.hasError('required')) {
+            <mat-error>Password is required</mat-error>
+            }
+          </mat-form-field>
+        </div>
+
+        <button
+          mat-raised-button
+          color="primary"
+          type="submit"
+          class="!w-full !h-12 !rounded-xl !text-[15px] !font-semibold !tracking-wide shadow-blue-600/20 shadow-lg mt-2"
+          [disabled]="loginForm.invalid || loading()"
+        >
+          @if (loading()) {
+          <mat-spinner diameter="20" class="inline-block mr-2 text-white/80"></mat-spinner>
+          <span>Signing in...</span>
+          } @else {
+          <span>Sign In</span>
+          }
+        </button>
+      </form>
+    </div>
+
+    <div class="mt-8 text-center">
+      <p class="text-sm text-slate-500">
+        Don't have an account?
+        <a href="#" class="font-semibold text-blue-600 hover:text-blue-700 transition-colors"
+          >Contact Admin</a
+        >
+      </p>
+      <p class="text-xs text-slate-400 mt-6">FlexCare IAM v1.0.0 &copy; 2026</p>
+    </div>
+  </div>
+</div>

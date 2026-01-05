@@ -1,6 +1,4 @@
 // libs/medical/feature/src/lib/dialogs/medical-group-dialog/medical-group-dialog.ts
-// Corporate Group Dialog - Create/Edit with Stepper - Aligned with Plan/Scheme patterns
-
 import { Component, Inject, inject, signal, OnInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -22,7 +20,6 @@ import { STEPPER_GLOBAL_OPTIONS } from '@angular/cdk/stepper';
 import {
   GroupStore,
   CorporateGroup,
-  CreateGroupPayload,
   INDUSTRIES,
   COMPANY_SIZES,
   PAYMENT_TERMS,
@@ -113,13 +110,13 @@ export class MedicalGroupDialog implements OnInit {
       email: ['', [Validators.email]],
       phone: [''],
       website: [''],
-      physical_address: [''],
+      address: [''], // Aligned with Interface
       city: [''],
-      province: [''],
+      province: [''], // Maps to Country/Region depending on backend
     });
 
     this.billingForm = this.fb.group({
-      payment_terms: ['30_days'],
+      payment_terms_days: [30], // Aligned with Interface
       preferred_payment_method: [''],
       billing_email: ['', [Validators.email]],
       notes: [''],
@@ -149,14 +146,14 @@ export class MedicalGroupDialog implements OnInit {
       email: group.email,
       phone: group.phone,
       website: group.website,
-      physical_address: group.physical_address,
+      address: group.address,
       city: group.city,
-      province: group.province,
+      province: group.country, // Assuming country field holds province data in this context
     });
 
     this.billingForm.patchValue({
-      payment_terms: group.payment_terms,
-      preferred_payment_method: group.preferred_payment_method,
+      payment_terms_days: group.payment_terms_days,
+      // preferred_payment_method: group.preferred_payment_method, // If part of interface
       billing_email: group.billing_email,
       notes: group.notes,
     });
@@ -201,7 +198,7 @@ export class MedicalGroupDialog implements OnInit {
   }
 
   isFormValid(): boolean {
-    return this.companyForm.valid;
+    return this.companyForm.valid && this.contactForm.valid && this.billingForm.valid;
   }
 
   // =========================================================================
@@ -211,22 +208,26 @@ export class MedicalGroupDialog implements OnInit {
   save(): void {
     if (!this.isFormValid()) return;
 
-    const payload: CreateGroupPayload = {
+    const payload: any = {
       ...this.companyForm.value,
       ...this.contactForm.value,
       ...this.billingForm.value,
     };
 
-    // Remove primary_contact if not adding one
+    // Fix Country/Province mapping
+    payload.country = payload.province;
+    delete payload.province;
+
+    // Remove primary_contact if not adding one or if unchecked
     if (!this.showPrimaryContact()) {
-      delete (payload as any).primary_contact;
+      delete payload.primary_contact;
     }
 
     // Clean up empty values
     Object.keys(payload).forEach((key) => {
-      const value = (payload as any)[key];
-      if (value === '' || value === null) {
-        delete (payload as any)[key];
+      const value = payload[key];
+      if (value === '' || value === null || value === undefined) {
+        delete payload[key];
       }
     });
 

@@ -130,6 +130,23 @@ export class PlanListStore {
     );
   }
 
+  activate(id: string) {
+    this.state.update((s) => ({ ...s, saving: true }));
+
+    return this.http.post<ApiResponse<MedicalPlan>>(`${this.apiUrl}/${id}/activate`, {}).pipe(
+      tap({
+        next: (res) =>
+          this.state.update((s) => ({
+            ...s,
+            items: s.items.map((item) => (item.id === id ? res.data : item)),
+            selected: s.selected?.id === id ? res.data : s.selected,
+            saving: false,
+          })),
+        error: () => this.state.update((s) => ({ ...s, saving: false })),
+      })
+    );
+  }
+
   clone(id: string) {
     this.state.update((s) => ({ ...s, saving: true }));
 
@@ -144,6 +161,10 @@ export class PlanListStore {
         error: () => this.state.update((s) => ({ ...s, saving: false })),
       })
     );
+  }
+
+  exportPdf(id: string) {
+    return this.http.get<ApiResponse<any>>(`${this.apiUrl}/${id}/export-pdf`);
   }
 
   delete(id: string) {
@@ -161,6 +182,10 @@ export class PlanListStore {
     return this.http.post<
       ApiResponse<{ plans: MedicalPlan[]; comparison: Record<string, unknown> }>
     >(`${this.apiUrl}/compare`, { plan_ids: planIds });
+  }
+
+  generateQuickQuote(payload: { plan_id: string; members: any[] }) {
+    return this.http.post<ApiResponse<any>>('/api/v1/medical/quotes', payload);
   }
 
   clearSelected() {

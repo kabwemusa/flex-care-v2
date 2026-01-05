@@ -52,6 +52,7 @@ import { FeedbackService, PageHeaderComponent } from 'shared';
     PageHeaderComponent,
   ],
   templateUrl: './medical-scheme-list.html',
+  // styleUrls: ['./medical-scheme-list.scss'],
 })
 export class MedicalSchemesList implements OnInit, AfterViewInit {
   readonly store = inject(SchemeListStore);
@@ -217,9 +218,7 @@ export class MedicalSchemesList implements OnInit, AfterViewInit {
 
     if (!confirmed) return;
 
-    // Optimistic update
-    const updatedScheme = { ...scheme, is_active: !scheme.is_active };
-    this.store.update(scheme.id, { is_active: !scheme.is_active }).subscribe({
+    this.store.activate(scheme.id).subscribe({
       next: () => this.feedback.success(`Scheme ${action.toLowerCase()}d successfully`),
       error: (err) => {
         this.feedback.error(err?.error?.message ?? 'Failed to update scheme status');
@@ -256,6 +255,11 @@ export class MedicalSchemesList implements OnInit, AfterViewInit {
       },
       error: (err) => this.feedback.error(err?.error?.message ?? 'Failed to delete scheme'),
     });
+  }
+
+  // Add this to your component class
+  getSegmentDetails(value: string) {
+    return this.marketSegments.find((s) => s.value === value);
   }
 
   exportToCsv() {

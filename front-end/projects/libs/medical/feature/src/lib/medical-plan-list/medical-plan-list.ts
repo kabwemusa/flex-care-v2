@@ -38,6 +38,7 @@ import {
   getLabelByValue,
 } from 'medical-data';
 import { MedicalPlanListDialog } from '../dialogs/medical-plan-list-dialog/medical-plan-list-dialog';
+import { MedicalQuickQuoteDialog } from '../dialogs/medical-quick-quote-dialog/medical-quick-quote-dialog';
 import { FeedbackService, PageHeaderComponent } from 'shared';
 
 @Component({
@@ -292,6 +293,15 @@ export class MedicalPlanList implements OnInit, AfterViewInit {
     this.planStore.create(clonedPlan).subscribe({
       next: () => this.feedback.success('Plan cloned successfully'),
       error: (err) => this.feedback.error(err?.error?.message ?? 'Failed to clone plan'),
+    });
+  }
+
+  openQuickQuote(plan: MedicalPlan) {
+    this.dialog.open(MedicalQuickQuoteDialog, {
+      width: '800px',
+      maxHeight: '90vh',
+      data: { planId: plan.id, plan },
+      disableClose: true,
     });
   }
 

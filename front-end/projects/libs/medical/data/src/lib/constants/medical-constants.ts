@@ -360,8 +360,8 @@ export const CARD_STATUSES = [
 ] as const;
 
 export const GENDERS = [
-  { value: 'male', label: 'Male' },
-  { value: 'female', label: 'Female' },
+  { value: 'M', label: 'Male' },
+  { value: 'F', label: 'Female' },
 ] as const;
 
 export const MARITAL_STATUSES = [
@@ -373,12 +373,13 @@ export const MARITAL_STATUSES = [
 
 export const RELATIONSHIPS = [
   { value: 'self', label: 'Self (Principal)' },
-  { value: 'spouse', label: 'Spouse' },
-  { value: 'child', label: 'Child' },
-  { value: 'adopted_child', label: 'Adopted Child' },
-  { value: 'step_child', label: 'Step Child' },
-  { value: 'parent', label: 'Parent' },
-  { value: 'parent_in_law', label: 'Parent-in-Law' },
+  { value: 'wife', label: 'Wife' },
+  { value: 'husband', label: 'Husband' },
+  { value: 'son', label: 'Son' },
+  { value: 'daughter', label: 'Daughter' },
+  { value: 'father', label: 'Father' },
+  { value: 'mother', label: 'Mother' },
+  { value: 'partner', label: 'Partner' },
 ] as const;
 
 export const ID_TYPES = [
@@ -415,6 +416,14 @@ export const DURATION_TYPES = [
   { value: 'reviewable', label: 'Reviewable' },
 ] as const;
 
+export const PLAN_EXCLUSION_TYPES = [
+  { value: 'absolute', label: 'Absolute (Never Covered)', description: 'Never covered under any circumstances' },
+  { value: 'conditional', label: 'Conditional', description: 'May be covered if conditions are met' },
+  { value: 'time_limited', label: 'Time Limited', description: 'Excluded for X days, then covered' },
+  { value: 'pre_existing', label: 'Pre-existing Related', description: 'Related to pre-existing conditions' },
+] as const;
+
+// Member exclusion types (for underwriting)
 export const EXCLUSION_TYPES = [
   { value: 'pre_existing', label: 'Pre-existing Condition' },
   { value: 'specific', label: 'Specific Condition' },
@@ -457,7 +466,7 @@ export function getStatusConfig<T extends { value: string; color: string; bgColo
   return list.find((item) => item.value === value);
 }
 
-export function calculateAge(dateOfBirth: string | Date): number {
+export function calculateAge(dateOfBirth: string): number {
   const today = new Date();
   const birthDate = new Date(dateOfBirth);
   let age = today.getFullYear() - birthDate.getFullYear();
@@ -489,4 +498,311 @@ export function getConstantOptions<T extends readonly { value: string; label: st
   list: T
 ): { value: string; label: string }[] {
   return [...list];
+}
+
+// libs/medical/data/src/lib/constants/medical.constants.ts
+
+// export const MARKET_SEGMENTS = [
+//   { value: 'corporate', label: 'Corporate', icon: 'business' },
+//   { value: 'sme', label: 'SME', icon: 'store' },
+//   { value: 'individual', label: 'Individual', icon: 'person' },
+//   { value: 'family', label: 'Family', icon: 'family_restroom' },
+//   { value: 'senior', label: 'Senior', icon: 'elderly' },
+// ] as const;
+
+// export const POLICY_TYPES = [
+//   { value: 'individual', label: 'Individual', icon: 'person' },
+//   { value: 'family', label: 'Family', icon: 'family_restroom' },
+//   { value: 'corporate', label: 'Corporate', icon: 'business' },
+//   { value: 'sme', label: 'SME', icon: 'store' },
+// ] as const;
+
+export const APPLICATION_TYPES = [
+  { value: 'new_business', label: 'New Business', icon: 'add_circle' },
+  { value: 'renewal', label: 'Renewal', icon: 'autorenew' },
+  { value: 'addition', label: 'Member Addition', icon: 'person_add' },
+] as const;
+
+export const APPLICATION_STATUSES = [
+  { value: 'draft', label: 'Draft', color: 'slate', icon: 'edit_note' },
+  { value: 'quoted', label: 'Quoted', color: 'blue', icon: 'request_quote' },
+  { value: 'submitted', label: 'Submitted', color: 'indigo', icon: 'send' },
+  { value: 'underwriting', label: 'Underwriting', color: 'amber', icon: 'policy' },
+  { value: 'approved', label: 'Approved', color: 'green', icon: 'check_circle' },
+  { value: 'declined', label: 'Declined', color: 'red', icon: 'cancel' },
+  { value: 'referred', label: 'Referred', color: 'orange', icon: 'forward' },
+  { value: 'accepted', label: 'Accepted', color: 'emerald', icon: 'thumb_up' },
+  { value: 'converted', label: 'Converted', color: 'teal', icon: 'task_alt' },
+  { value: 'expired', label: 'Expired', color: 'gray', icon: 'schedule' },
+  { value: 'cancelled', label: 'Cancelled', color: 'red', icon: 'block' },
+  { value: 'on_hold', label: 'On Hold', color: 'yellow', icon: 'pause_circle' },
+] as const;
+
+// export const POLICY_STATUSES = [
+//   { value: 'active', label: 'Active', color: 'green', icon: 'check_circle' },
+//   { value: 'suspended', label: 'Suspended', color: 'amber', icon: 'pause_circle' },
+//   { value: 'lapsed', label: 'Lapsed', color: 'orange', icon: 'warning' },
+//   { value: 'cancelled', label: 'Cancelled', color: 'red', icon: 'cancel' },
+//   { value: 'expired', label: 'Expired', color: 'gray', icon: 'schedule' },
+//   { value: 'renewed', label: 'Renewed', color: 'blue', icon: 'autorenew' },
+// ] as const;
+
+// export const MEMBER_STATUSES = [
+//   { value: 'active', label: 'Active', color: 'green', icon: 'check_circle' },
+//   { value: 'suspended', label: 'Suspended', color: 'amber', icon: 'pause_circle' },
+//   { value: 'terminated', label: 'Terminated', color: 'red', icon: 'person_off' },
+//   { value: 'deceased', label: 'Deceased', color: 'gray', icon: 'person_off' },
+// ] as const;
+
+export const UNDERWRITING_STATUSES = [
+  { value: 'pending', label: 'Pending', color: 'slate', icon: 'hourglass_empty' },
+  { value: 'in_progress', label: 'In Progress', color: 'blue', icon: 'pending' },
+  { value: 'approved', label: 'Approved', color: 'green', icon: 'check_circle' },
+  { value: 'declined', label: 'Declined', color: 'red', icon: 'cancel' },
+  { value: 'referred', label: 'Referred', color: 'orange', icon: 'forward' },
+  { value: 'terms', label: 'Approved with Terms', color: 'amber', icon: 'gavel' },
+] as const;
+
+// export const PLAN_TYPES = [
+//   { value: 'comprehensive', label: 'Comprehensive', description: 'Full medical coverage' },
+//   { value: 'hospital_only', label: 'Hospital Only', description: 'In-patient coverage only' },
+//   { value: 'outpatient_only', label: 'Outpatient Only', description: 'Out-patient coverage only' },
+//   { value: 'supplementary', label: 'Supplementary', description: 'Top-up coverage' },
+//   { value: 'maternity', label: 'Maternity', description: 'Pregnancy and childbirth' },
+//   { value: 'dental', label: 'Dental', description: 'Dental care only' },
+//   { value: 'optical', label: 'Optical', description: 'Eye care only' },
+// ] as const;
+
+// export const NETWORK_TYPES = [
+//   { value: 'open', label: 'Open Network', description: 'Any provider' },
+//   { value: 'closed', label: 'Closed Network', description: 'Panel providers only' },
+//   { value: 'tiered', label: 'Tiered Network', description: 'Different copays by tier' },
+//   { value: 'hybrid', label: 'Hybrid', description: 'Mix of open and closed' },
+// ] as const;
+
+// export const MEMBER_TYPES = [
+//   { value: 'principal', label: 'Principal Member', factor: 1.0, icon: 'person' },
+//   { value: 'spouse', label: 'Spouse', factor: 1.0, icon: 'favorite' },
+//   { value: 'child', label: 'Child', factor: 0.5, icon: 'child_care' },
+//   { value: 'parent', label: 'Parent', factor: 1.5, icon: 'elderly' },
+// ] as const;
+
+// export const RELATIONSHIPS = [
+//   { value: 'self', label: 'Self' },
+//   { value: 'wife', label: 'Wife' },
+//   { value: 'husband', label: 'Husband' },
+//   { value: 'son', label: 'Son' },
+//   { value: 'daughter', label: 'Daughter' },
+//   { value: 'father', label: 'Father' },
+//   { value: 'mother', label: 'Mother' },
+//   { value: 'partner', label: 'Partner' },
+// ] as const;
+
+// export const GENDERS = [
+//   { value: 'M', label: 'Male', icon: 'male' },
+//   { value: 'F', label: 'Female', icon: 'female' },
+// ] as const;
+
+// export const BILLING_FREQUENCIES = [
+//   { value: 'monthly', label: 'Monthly', factor: 1, months: 1 },
+//   { value: 'quarterly', label: 'Quarterly', factor: 3, months: 3 },
+//   { value: 'semi_annual', label: 'Semi-Annual', factor: 6, months: 6 },
+//   { value: 'annual', label: 'Annual', factor: 12, months: 12 },
+// ] as const;
+
+export const APPLICATION_SOURCES = [
+  { value: 'online', label: 'Online', icon: 'language' },
+  { value: 'walk_in', label: 'Walk-in', icon: 'storefront' },
+  { value: 'agent', label: 'Agent', icon: 'support_agent' },
+  { value: 'broker', label: 'Broker', icon: 'handshake' },
+  { value: 'referral', label: 'Referral', icon: 'group_add' },
+  { value: 'renewal', label: 'Renewal', icon: 'autorenew' },
+] as const;
+
+// export const BENEFIT_TYPES = [
+//   { value: 'in_patient', label: 'In-Patient', icon: 'local_hospital' },
+//   { value: 'out_patient', label: 'Out-Patient', icon: 'medical_services' },
+//   { value: 'dental', label: 'Dental', icon: 'dentistry' },
+//   { value: 'optical', label: 'Optical', icon: 'visibility' },
+//   { value: 'maternity', label: 'Maternity', icon: 'pregnant_woman' },
+//   { value: 'chronic', label: 'Chronic', icon: 'medication' },
+//   { value: 'wellness', label: 'Wellness', icon: 'spa' },
+//   { value: 'emergency', label: 'Emergency', icon: 'emergency' },
+// ] as const;
+
+// export const LIMIT_TYPES = [
+//   { value: 'unlimited', label: 'Unlimited', description: 'No limit applies' },
+//   { value: 'monetary', label: 'Monetary Limit', description: 'Fixed amount limit' },
+//   { value: 'count', label: 'Visit/Count Limit', description: 'Number of visits/uses' },
+//   { value: 'days', label: 'Days Limit', description: 'Number of days covered' },
+//   { value: 'combined', label: 'Combined Limit', description: 'Multiple limit types' },
+// ] as const;
+
+// export const LIMIT_FREQUENCIES = [
+//   { value: 'per_annum', label: 'Per Year' },
+//   { value: 'per_claim', label: 'Per Claim' },
+//   { value: 'per_visit', label: 'Per Visit' },
+//   { value: 'per_condition', label: 'Per Condition' },
+//   { value: 'lifetime', label: 'Lifetime' },
+// ] as const;
+
+// export const LIMIT_BASES = [
+//   { value: 'per_member', label: 'Per Member' },
+//   { value: 'per_family', label: 'Per Family' },
+//   { value: 'shared_pool', label: 'Shared Pool' },
+// ] as const;
+
+// export const PREMIUM_FREQUENCIES = [
+//   { value: 'monthly', label: 'Monthly', factor: 1 },
+//   { value: 'quarterly', label: 'Quarterly', factor: 3 },
+//   { value: 'semi_annual', label: 'Semi-Annual', factor: 6 },
+//   { value: 'annual', label: 'Annual', factor: 12 },
+// ] as const;
+
+// export const PREMIUM_BASES = [
+//   { value: 'per_member', label: 'Per Member', description: 'Each member pays separately' },
+//   { value: 'tiered', label: 'Tiered/Family', description: 'Flat rate by family size' },
+// ] as const;
+
+// export const ADDON_TYPES = [
+//   { value: 'rider', label: 'Rider', description: 'Additional coverage' },
+//   { value: 'top_up', label: 'Top-Up', description: 'Increase existing limits' },
+//   { value: 'standalone', label: 'Standalone', description: 'Independent benefit' },
+// ] as const;
+
+// export const ADDON_AVAILABILITY = [
+//   { value: 'optional', label: 'Optional', description: 'Member can choose' },
+//   { value: 'mandatory', label: 'Mandatory', description: 'Required with plan' },
+//   { value: 'included', label: 'Included', description: 'Part of plan, no extra cost' },
+//   { value: 'conditional', label: 'Conditional', description: 'Based on criteria' },
+// ] as const;
+
+// export const ADDON_PRICING_TYPES = [
+//   { value: 'fixed', label: 'Fixed Amount' },
+//   { value: 'per_member', label: 'Per Member' },
+//   { value: 'percentage', label: 'Percentage of Premium' },
+//   { value: 'age_rated', label: 'Age Rated' },
+// ] as const;
+
+// export const DISCOUNT_TYPES = [
+//   { value: 'discount', label: 'Discount', icon: 'discount' },
+//   { value: 'loading', label: 'Loading', icon: 'trending_up' },
+// ] as const;
+
+// export const DISCOUNT_APPLICATION = [
+//   { value: 'automatic', label: 'Automatic', description: 'Applied when rules match' },
+//   { value: 'manual', label: 'Manual', description: 'Applied by underwriter' },
+//   { value: 'promo_code', label: 'Promo Code', description: 'Requires code entry' },
+// ] as const;
+
+// export const LOADING_TYPES = [
+//   { value: 'percentage', label: 'Percentage' },
+//   { value: 'fixed', label: 'Fixed Amount' },
+//   { value: 'exclusion', label: 'Exclusion Only' },
+// ] as const;
+
+// export const DURATION_TYPES = [
+//   { value: 'permanent', label: 'Permanent' },
+//   { value: 'time_limited', label: 'Time Limited' },
+//   { value: 'reviewable', label: 'Subject to Review' },
+// ] as const;
+
+// export const CONDITION_CATEGORIES = [
+//   { value: 'cardiovascular', label: 'Cardiovascular' },
+//   { value: 'respiratory', label: 'Respiratory' },
+//   { value: 'diabetes', label: 'Diabetes & Metabolic' },
+//   { value: 'musculoskeletal', label: 'Musculoskeletal' },
+//   { value: 'mental_health', label: 'Mental Health' },
+//   { value: 'oncology', label: 'Oncology' },
+//   { value: 'renal', label: 'Renal' },
+//   { value: 'other', label: 'Other' },
+// ] as const;
+
+// export const EXCLUSION_TYPES = [
+//   { value: 'absolute', label: 'Absolute', description: 'Never covered' },
+//   { value: 'time_limited', label: 'Time Limited', description: 'Excluded for period' },
+//   { value: 'conditional', label: 'Conditional', description: 'Excluded if conditions met' },
+// ] as const;
+
+// export const WAITING_PERIOD_TYPES = [
+//   { value: 'general', label: 'General', defaultDays: 30 },
+//   { value: 'maternity', label: 'Maternity', defaultDays: 270 },
+//   { value: 'pre_existing', label: 'Pre-existing Conditions', defaultDays: 365 },
+//   { value: 'chronic', label: 'Chronic Conditions', defaultDays: 180 },
+//   { value: 'dental', label: 'Dental', defaultDays: 90 },
+//   { value: 'optical', label: 'Optical', defaultDays: 90 },
+// ] as const;
+
+// export const GROUP_STATUSES = [
+//   { value: 'prospect', label: 'Prospect', color: 'blue', icon: 'person_search' },
+//   { value: 'active', label: 'Active', color: 'green', icon: 'check_circle' },
+//   { value: 'suspended', label: 'Suspended', color: 'amber', icon: 'pause_circle' },
+//   { value: 'terminated', label: 'Terminated', color: 'red', icon: 'cancel' },
+// ] as const;
+
+// export const COMPANY_SIZES = [
+//   { value: 'micro', label: 'Micro (1-10)', min: 1, max: 10 },
+//   { value: 'small', label: 'Small (11-50)', min: 11, max: 50 },
+//   { value: 'medium', label: 'Medium (51-250)', min: 51, max: 250 },
+//   { value: 'large', label: 'Large (251-1000)', min: 251, max: 1000 },
+//   { value: 'enterprise', label: 'Enterprise (1000+)', min: 1001, max: null },
+// ] as const;
+
+// export const CONTACT_TYPES = [
+//   { value: 'primary', label: 'Primary Contact' },
+//   { value: 'hr', label: 'HR Contact' },
+//   { value: 'finance', label: 'Finance Contact' },
+//   { value: 'claims', label: 'Claims Contact' },
+//   { value: 'billing', label: 'Billing Contact' },
+// ] as const;
+
+// export const CARD_STATUSES = [
+//   { value: 'pending', label: 'Pending', color: 'slate' },
+//   { value: 'issued', label: 'Issued', color: 'blue' },
+//   { value: 'active', label: 'Active', color: 'green' },
+//   { value: 'blocked', label: 'Blocked', color: 'red' },
+//   { value: 'expired', label: 'Expired', color: 'gray' },
+// ] as const;
+
+export const DOCUMENT_TYPES = [
+  { value: 'id_document', label: 'ID Document' },
+  { value: 'passport', label: 'Passport' },
+  { value: 'birth_certificate', label: 'Birth Certificate' },
+  { value: 'marriage_certificate', label: 'Marriage Certificate' },
+  { value: 'medical_report', label: 'Medical Report' },
+  { value: 'employment_letter', label: 'Employment Letter' },
+  { value: 'bank_statement', label: 'Bank Statement' },
+  { value: 'declaration_form', label: 'Declaration Form' },
+  { value: 'policy_document', label: 'Policy Document' },
+  { value: 'other', label: 'Other' },
+] as const;
+
+// Helper functions
+// export function getLabelByValue<T extends readonly { value: string; label: string }[]>(
+//   list: T,
+//   value: string
+// ): string {
+//   return list.find((item) => item.value === value)?.label ?? value;
+// }
+
+// export function getConstantOptions<T extends readonly { value: string; label: string }[]>(
+//   list: T
+// ): { value: string; label: string }[] {
+//   return [...list];
+// }
+
+export function getStatusColor(
+  status: string,
+  statusList: readonly { value: string; color?: string }[]
+): string {
+  const item = statusList.find((s) => s.value === status);
+  return item?.color ?? 'slate';
+}
+
+export function getStatusIcon(
+  status: string,
+  statusList: readonly { value: string; icon?: string }[]
+): string {
+  const item = statusList.find((s) => s.value === status);
+  return item?.icon ?? 'circle';
 }

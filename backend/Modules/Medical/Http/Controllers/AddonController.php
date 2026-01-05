@@ -170,6 +170,32 @@ class AddonController extends Controller
     }
 
     /**
+     * Activate/deactivate an addon.
+     * POST /v1/medical/addons/{id}/activate
+     */
+    public function activate(string $id): JsonResponse
+    {
+        try {
+            $addon = Addon::findOrFail($id);
+
+            // Toggle the is_active status
+            $addon->is_active = !$addon->is_active;
+            $addon->save();
+
+            $action = $addon->is_active ? 'activated' : 'deactivated';
+
+            return $this->success(
+                new AddonResource($addon),
+                "Addon {$action} successfully"
+            );
+        } catch (ModelNotFoundException $e) {
+            return $this->error('Addon not found', 404);
+        } catch (Throwable $e) {
+            return $this->error('Failed to update addon status: ' . $e->getMessage(), 500);
+        }
+    }
+
+    /**
      * Get addons dropdown.
      * GET /v1/medical/addons/dropdown
      */

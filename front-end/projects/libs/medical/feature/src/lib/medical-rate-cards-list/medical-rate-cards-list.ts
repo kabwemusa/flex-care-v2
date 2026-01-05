@@ -243,26 +243,29 @@ export class MedicalRateCardsList implements OnInit, AfterViewInit {
     });
   }
 
-  async activateRateCard(rateCard: RateCard) {
+  async toggleStatus(rateCard: RateCard) {
+    const action = rateCard.is_active ? 'deactivate' : 'activate';
     const confirmed = await this.feedback.confirm(
-      'Activate Rate Card?',
-      'This will make this rate card the active version for the plan. Any existing active rate card will be deactivated.'
+      `${action.charAt(0).toUpperCase() + action.slice(1)} Rate Card?`,
+      rateCard.is_active
+        ? 'This rate card will no longer be used for new quotes and applications.'
+        : 'This will make this rate card the active version for the plan. Any existing active rate card will be deactivated.'
     );
 
     if (!confirmed) return;
 
     this.store.activate(rateCard.id).subscribe({
       next: () => {
-        this.feedback.success('Rate card activated successfully');
+        this.feedback.success(`Rate card ${action}d successfully`);
         if (this.selectedRateCard()?.id === rateCard.id) {
           this.selectedRateCard.set({
             ...this.selectedRateCard()!,
-            is_active: true,
-            is_draft: false,
+            is_active: !rateCard.is_active,
+            is_draft: rateCard.is_active ? true : false,
           });
         }
       },
-      error: (err) => this.feedback.error(err?.error?.message ?? 'Failed to activate rate card'),
+      error: (err) => this.feedback.error(err?.error?.message ?? `Failed to ${action} rate card`),
     });
   }
 

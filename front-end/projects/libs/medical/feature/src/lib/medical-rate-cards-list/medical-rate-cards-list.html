@@ -312,8 +312,15 @@
                     >
                     <span>Edit</span>
                   </button>
-                  @if (rc.is_draft) {
-                  <button mat-menu-item (click)="activateRateCard(rc)">
+                  @if (rc.is_active) {
+                  <button mat-menu-item (click)="toggleStatus(rc)">
+                    <mat-icon fontSet="material-symbols-rounded" class="!text-red-500"
+                      >block</mat-icon
+                    >
+                    <span>Deactivate</span>
+                  </button>
+                  } @else if (rc.is_draft) {
+                  <button mat-menu-item (click)="toggleStatus(rc)">
                     <mat-icon fontSet="material-symbols-rounded" class="!text-green-500"
                       >check_circle</mat-icon
                     >
@@ -534,10 +541,15 @@
       <div
         class="flex items-center justify-between gap-3 border-t border-slate-100 px-6 py-4 bg-slate-50"
       >
-        @if (rc.is_draft) {
+        @if (rc.is_active) {
+        <button mat-stroked-button (click)="toggleStatus(rc)" class="!border-red-300 !text-red-700">
+          <mat-icon fontSet="material-symbols-rounded">block</mat-icon>
+          Deactivate
+        </button>
+        } @else if (rc.is_draft) {
         <button
           mat-stroked-button
-          (click)="activateRateCard(rc)"
+          (click)="toggleStatus(rc)"
           class="!border-green-300 !text-green-700"
         >
           <mat-icon fontSet="material-symbols-rounded">check_circle</mat-icon>

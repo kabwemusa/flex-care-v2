@@ -6,12 +6,14 @@ use Illuminate\Routing\Controller;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Support\Str;
 use Modules\Medical\Models\RateCard;
 use Modules\Medical\Models\RateCardEntry;
+use Modules\Medical\Models\RateCardTier;
 use Modules\Medical\Http\Requests\RateCardRequest;
 use Modules\Medical\Http\Resources\RateCardResource;
 use App\Traits\ApiResponse;
-use Modules\Medical\Services\PremiumCalculatorService;
+use Modules\Medical\Services\PremiumService;
 use Throwable;
 use Exception;
 
@@ -20,7 +22,7 @@ class RateCardController extends Controller
     use ApiResponse;
 
     public function __construct(
-        protected PremiumCalculatorService $PremiumCalculatorService
+        protected PremiumService $premiumService
     ) {}
 
     /**
@@ -31,6 +33,7 @@ class RateCardController extends Controller
     {
         try {
             $query = RateCard::with('plan');
+            $query->withCount(['entries', 'tiers']);
 
             if ($planId = request('plan_id')) {
                 $query->where('plan_id', $planId);
@@ -100,7 +103,9 @@ class RateCardController extends Controller
     {
         try {
             $rateCard = RateCard::with(['plan', 'entries', 'tiers'])
+                ->withCount(['entries', 'tiers'])
                 ->findOrFail($id);
+            
 
             return $this->success(
                 new RateCardResource($rateCard),
@@ -128,7 +133,8 @@ class RateCardController extends Controller
                 }
 
                 $rateCard->update($request->validated());
-                return $rateCard->fresh(['plan']);
+
+                return $rateCard->fresh(['plan'])->loadCount(['entries', 'tiers']);
             });
 
             return $this->success(
@@ -172,7 +178,7 @@ class RateCardController extends Controller
     }
 
     /**
-     * Activate rate card.
+     * Toggle rate card activation status (activate/deactivate).
      * POST /v1/medical/rate-cards/{id}/activate
      */
     public function activate(string $id): JsonResponse
@@ -181,19 +187,26 @@ class RateCardController extends Controller
             $rateCard = DB::transaction(function () use ($id) {
                 $rateCard = RateCard::findOrFail($id);
 
+                // If already active, deactivate
+                if ($rateCard->is_active) {
+                    $rateCard->deactivate();
+                    return ['rate_card' => $rateCard->fresh(['plan'])->loadCount(['entries', 'tiers']), 'action' => 'deactivated'];
+                }
+
+                // If not active, activate (with validation)
                 if ($rateCard->entries()->count() === 0 && $rateCard->tiers()->count() === 0) {
                     throw new Exception('Rate card must have entries or tiers before activation', 422);
                 }
 
-                $rateCard->approve();
+                $rateCard->approve(Str::uuid()->toString());
                 $rateCard->activate();
 
-                return $rateCard->fresh(['plan']);
+                return ['rate_card' => $rateCard->fresh(['plan'])->loadCount(['entries', 'tiers']), 'action' => 'activated'];
             });
 
             return $this->success(
-                new RateCardResource($rateCard),
-                'Rate card activated'
+                new RateCardResource($rateCard['rate_card']),
+                'Rate card ' . $rateCard['action']
             );
         } catch (ModelNotFoundException $e) {
             return $this->error('Rate card not found', 404);
@@ -243,7 +256,7 @@ class RateCardController extends Controller
                     $newTier->save();
                 }
 
-                return $newRateCard->fresh(['plan', 'entries', 'tiers']);
+                return $newRateCard->fresh(['plan', 'entries', 'tiers'])->loadCount(['entries', 'tiers']);
             });
 
             return $this->success(
@@ -411,34 +424,62 @@ class RateCardController extends Controller
      * Calculate premium using rate card.
      * POST /v1/medical/rate-cards/{id}/calculate
      */
+    // public function calculate(string $id): JsonResponse
+    // {
+    //     try {
+    //         $rateCard = RateCard::findOrFail($id);
+
+    //         $validated = request()->validate([
+    //             'members' => 'required|array|min:1',
+    //             'members.*.age' => 'required|integer|min:0|max:100',
+    //             'members.*.member_type' => 'required|string',
+    //             'members.*.gender' => 'nullable|string|in:M,F',
+    //             'addon_ids' => 'nullable|array',
+    //         ]);
+
+    //         $result = $this->PremiumCalculatorService->calculateApplicationMemberPremium(
+                
+    //             $validated['members'],
+    //             $rateCard,
+                
+    //         );
+
+    //         if (!$result['success']) {
+    //             return $this->error($result['message'], 422);
+    //         }
+
+    //         return $this->success($result, 'Premium calculated');
+    //     } catch (ModelNotFoundException $e) {
+    //         return $this->error('Rate card not found', 404);
+    //     } catch (Throwable $e) {
+    //         return $this->error('Calculation failed: ' . $e->getMessage(), 500);
+    //     }
+    // }
+
     public function calculate(string $id): JsonResponse
-    {
-        try {
-            $rateCard = RateCard::findOrFail($id);
+        {
+            try {
+                $rateCard = RateCard::with('plan')->findOrFail($id);
 
-            $validated = request()->validate([
-                'members' => 'required|array|min:1',
-                'members.*.age' => 'required|integer|min:0|max:100',
-                'members.*.member_type' => 'required|string',
-                'members.*.gender' => 'nullable|string|in:M,F',
-                'addon_ids' => 'nullable|array',
-            ]);
+                $validated = request()->validate([
+                    'members' => 'required|array|min:1',
+                    'members.*.age' => 'required|integer|min:0|max:100',
+                    'members.*.member_type' => 'required|string',
+                    'members.*.gender' => 'nullable|string|in:M,F',
+                    'addon_ids' => 'nullable|array', // You validated this
+                    'addon_ids.*' => 'exists:med_addons,id',
+                ]);
 
-            $result = $this->PremiumCalculatorService->calculateTotalPremium(
-                $rateCard,
-                $validated['members'],
-                $validated['addon_ids'] ?? []
-            );
+                // FIX: Pass addon_ids to the service
+                $result = $this->premiumService->calculateQuote(
+                    $rateCard,
+                    $validated['members'],
+                    $validated['addon_ids'] ?? []
+                );
 
-            if (!$result['success']) {
-                return $this->error($result['message'], 422);
-            }
-
-            return $this->success($result, 'Premium calculated');
-        } catch (ModelNotFoundException $e) {
-            return $this->error('Rate card not found', 404);
-        } catch (Throwable $e) {
-            return $this->error('Calculation failed: ' . $e->getMessage(), 500);
+                return $this->success($result, 'Premium calculated');
+            } catch (Throwable $e) {
+                return $this->error('Calculation failed: ' . $e->getMessage(), 500);
         }
     }
 
@@ -460,6 +501,109 @@ class RateCardController extends Controller
             );
         } catch (Throwable $e) {
             return $this->error('Failed to retrieve rate cards', 500);
+        }
+    }
+
+    // =========================================================================
+    // RATE CARD TIERS
+    // =========================================================================
+
+    /**
+     * Add tier to rate card.
+     * POST /v1/medical/rate-cards/{id}/tiers
+     */
+    public function addTier(string $id): JsonResponse
+    {
+        try {
+            $tier = DB::transaction(function () use ($id) {
+                $rateCard = RateCard::findOrFail($id);
+
+                if ($rateCard->is_active) {
+                    throw new Exception('Cannot modify active rate card', 422);
+                }
+
+                $validated = request()->validate([
+                    'tier_name' => 'required|string|max:100',
+                    'tier_description' => 'nullable|string|max:500',
+                    'min_members' => 'required|integer|min:1',
+                    'max_members' => 'required|integer|min:1|gte:min_members',
+                    'tier_premium' => 'required|numeric|min:0',
+                    'extra_member_premium' => 'nullable|numeric|min:0',
+                    'sort_order' => 'nullable|integer|min:0',
+                ]);
+
+                return $rateCard->tiers()->create($validated);
+            });
+
+            return $this->success($tier, 'Tier added', 201);
+        } catch (ModelNotFoundException $e) {
+            return $this->error('Rate card not found', 404);
+        } catch (Throwable $e) {
+            $code = $e->getCode() === 422 ? 422 : 500;
+            return $this->error($e->getMessage(), $code);
+        }
+    }
+
+    /**
+     * Update rate card tier.
+     * PUT /v1/medical/rate-card-tiers/{id}
+     */
+    public function updateTier(string $id): JsonResponse
+    {
+        try {
+            $tier = DB::transaction(function () use ($id) {
+                $tier = RateCardTier::findOrFail($id);
+
+                if ($tier->rateCard->is_active) {
+                    throw new Exception('Cannot modify active rate card', 422);
+                }
+
+                $validated = request()->validate([
+                    'tier_name' => 'sometimes|string|max:100',
+                    'tier_description' => 'nullable|string|max:500',
+                    'min_members' => 'sometimes|integer|min:1',
+                    'max_members' => 'sometimes|integer|min:1',
+                    'tier_premium' => 'sometimes|numeric|min:0',
+                    'extra_member_premium' => 'nullable|numeric|min:0',
+                    'sort_order' => 'nullable|integer|min:0',
+                ]);
+
+                $tier->update($validated);
+                return $tier;
+            });
+
+            return $this->success($tier, 'Tier updated');
+        } catch (ModelNotFoundException $e) {
+            return $this->error('Tier not found', 404);
+        } catch (Throwable $e) {
+            $code = $e->getCode() === 422 ? 422 : 500;
+            return $this->error($e->getMessage(), $code);
+        }
+    }
+
+    /**
+     * Delete rate card tier.
+     * DELETE /v1/medical/rate-card-tiers/{id}
+     */
+    public function deleteTier(string $id): JsonResponse
+    {
+        try {
+            DB::transaction(function () use ($id) {
+                $tier = RateCardTier::findOrFail($id);
+
+                if ($tier->rateCard->is_active) {
+                    throw new Exception('Cannot modify active rate card', 422);
+                }
+
+                $tier->delete();
+            });
+
+            return $this->success(null, 'Tier deleted');
+        } catch (ModelNotFoundException $e) {
+            return $this->error('Tier not found', 404);
+        } catch (Throwable $e) {
+            $code = $e->getCode() === 422 ? 422 : 500;
+            return $this->error($e->getMessage(), $code);
         }
     }
 

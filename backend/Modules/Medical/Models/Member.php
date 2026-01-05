@@ -4,7 +4,6 @@ namespace Modules\Medical\Models;
 
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Carbon\Carbon;
 use Modules\Medical\Constants\MedicalConstants;
 
 class Member extends BaseModel
@@ -14,6 +13,7 @@ class Member extends BaseModel
     protected $fillable = [
         'member_number',
         'policy_id',
+        'application_member_id',
         'member_type',
         'principal_id',
         'relationship',
@@ -55,7 +55,6 @@ class Member extends BaseModel
         'termination_notes',
         'has_pre_existing_conditions',
         'is_chronic_patient',
-        'requires_special_underwriting',
         'declared_conditions',
         'has_portal_access',
         'user_id',
@@ -74,47 +73,49 @@ class Member extends BaseModel
         'loading_amount' => 'decimal:2',
         'card_issued_date' => 'date',
         'card_expiry_date' => 'date',
-        'status_changed_at' => 'date',
+        'status_changed_at' => 'datetime',
         'terminated_at' => 'date',
         'has_pre_existing_conditions' => 'boolean',
         'is_chronic_patient' => 'boolean',
-        'requires_special_underwriting' => 'boolean',
         'declared_conditions' => 'array',
         'has_portal_access' => 'boolean',
         'metadata' => 'array',
     ];
 
     protected $attributes = [
-        'premium' => 0,
-        'loading_amount' => 0,
+        'status' => MedicalConstants::MEMBER_STATUS_ACTIVE,
         'card_status' => MedicalConstants::CARD_STATUS_PENDING,
-        'status' => MedicalConstants::MEMBER_STATUS_PENDING,
         'has_pre_existing_conditions' => false,
         'is_chronic_patient' => false,
-        'requires_special_underwriting' => false,
         'has_portal_access' => false,
+        'premium' => 0,
+        'loading_amount' => 0,
     ];
 
     // =========================================================================
-    // BOOT - Auto-generate member number
+    // CODE GENERATION
     // =========================================================================
 
-    protected static function boot(): void
+    protected static function booted()
     {
         parent::boot();
 
-        static::creating(function (self $member) {
-            if (empty($member->member_number)) {
-                $member->member_number = $member->generateMemberNumber();
+        static::creating(function ($model) {
+            if (empty($model->member_number)) {
+                $model->member_number = $model->generateMemberNumber();
             }
         });
 
-        static::created(function (self $member) {
-            $member->policy?->updateMemberCounts();
+        static::saved(function ($model) {
+            if ($model->policy) {
+                $model->policy->updateMemberCounts();
+            }
         });
 
-        static::deleted(function (self $member) {
-            $member->policy?->updateMemberCounts();
+        static::deleted(function ($model) {
+            if ($model->policy) {
+                $model->policy->updateMemberCounts();
+            }
         });
     }
 
@@ -122,9 +123,18 @@ class Member extends BaseModel
     {
         $prefix = MedicalConstants::PREFIX_MEMBER;
         $year = date('Y');
-        $sequence = static::whereYear('created_at', $year)->count() + 1;
         
-        return sprintf('%s-%s-%06d', $prefix, $year, $sequence);
+        $lastNumber = static::where('member_number', 'like', "{$prefix}{$year}-%")
+            ->orderByRaw('CAST(SUBSTRING(member_number, -6) AS UNSIGNED) DESC')
+            ->value('member_number');
+
+        if ($lastNumber) {
+            $sequence = (int) substr($lastNumber, -6) + 1;
+        } else {
+            $sequence = 1;
+        }
+
+        return sprintf('%s%s-%06d', $prefix, $year, $sequence);
     }
 
     // =========================================================================
@@ -134,6 +144,11 @@ class Member extends BaseModel
     public function policy(): BelongsTo
     {
         return $this->belongsTo(Policy::class, 'policy_id');
+    }
+
+    public function applicationMember(): BelongsTo
+    {
+        return $this->belongsTo(ApplicationMember::class, 'application_member_id');
     }
 
     public function principal(): BelongsTo
@@ -146,6 +161,11 @@ class Member extends BaseModel
         return $this->hasMany(self::class, 'principal_id');
     }
 
+    public function activeDependents(): HasMany
+    {
+        return $this->dependents()->where('status', MedicalConstants::MEMBER_STATUS_ACTIVE);
+    }
+
     public function loadings(): HasMany
     {
         return $this->hasMany(MemberLoading::class, 'member_id');
@@ -153,8 +173,7 @@ class Member extends BaseModel
 
     public function activeLoadings(): HasMany
     {
-        return $this->hasMany(MemberLoading::class, 'member_id')
-                    ->where('status', 'active');
+        return $this->loadings()->where('status', 'active');
     }
 
     public function exclusions(): HasMany
@@ -164,8 +183,7 @@ class Member extends BaseModel
 
     public function activeExclusions(): HasMany
     {
-        return $this->hasMany(MemberExclusion::class, 'member_id')
-                    ->where('status', 'active');
+        return $this->exclusions()->where('status', 'active');
     }
 
     public function documents(): HasMany
@@ -177,6 +195,21 @@ class Member extends BaseModel
     // SCOPES
     // =========================================================================
 
+    public function scopeActive($query)
+    {
+        return $query->where('status', MedicalConstants::MEMBER_STATUS_ACTIVE);
+    }
+
+    public function scopeSuspended($query)
+    {
+        return $query->where('status', MedicalConstants::MEMBER_STATUS_SUSPENDED);
+    }
+
+    public function scopeTerminated($query)
+    {
+        return $query->where('status', MedicalConstants::MEMBER_STATUS_TERMINATED);
+    }
+
     public function scopePrincipals($query)
     {
         return $query->where('member_type', MedicalConstants::MEMBER_TYPE_PRINCIPAL);
@@ -187,55 +220,30 @@ class Member extends BaseModel
         return $query->where('member_type', '!=', MedicalConstants::MEMBER_TYPE_PRINCIPAL);
     }
 
-    public function scopeSpouses($query)
+    public function scopeWithActiveCover($query)
     {
-        return $query->where('member_type', MedicalConstants::MEMBER_TYPE_SPOUSE);
-    }
-
-    public function scopeChildren($query)
-    {
-        return $query->where('member_type', MedicalConstants::MEMBER_TYPE_CHILD);
-    }
-
-    public function scopeActive($query)
-    {
-        return $query->where('status', MedicalConstants::MEMBER_STATUS_ACTIVE);
-    }
-
-    public function scopePending($query)
-    {
-        return $query->where('status', MedicalConstants::MEMBER_STATUS_PENDING);
-    }
-
-    public function scopeWithCover($query, $date = null)
-    {
-        $date = $date ?? now()->toDateString();
-
-        return $query->where('cover_start_date', '<=', $date)
-                     ->where(function ($q) use ($date) {
-                         $q->whereNull('cover_end_date')
-                           ->orWhere('cover_end_date', '>=', $date);
-                     });
+        return $query->where('status', MedicalConstants::MEMBER_STATUS_ACTIVE)
+            ->where('cover_start_date', '<=', now())
+            ->where(function ($q) {
+                $q->whereNull('cover_end_date')
+                  ->orWhere('cover_end_date', '>=', now());
+            });
     }
 
     public function scopeInWaitingPeriod($query)
     {
         return $query->whereNotNull('waiting_period_end_date')
-                     ->where('waiting_period_end_date', '>', now());
+            ->where('waiting_period_end_date', '>', now());
     }
 
-    public function scopeSearch($query, string $term)
+    public function scopeCardPending($query)
     {
-        return $query->where(function ($q) use ($term) {
-            $q->where('member_number', 'LIKE', "%{$term}%")
-              ->orWhere('first_name', 'LIKE', "%{$term}%")
-              ->orWhere('last_name', 'LIKE', "%{$term}%")
-              ->orWhere('national_id', 'LIKE', "%{$term}%")
-              ->orWhere('email', 'LIKE', "%{$term}%")
-              ->orWhere('phone', 'LIKE', "%{$term}%")
-              ->orWhere('mobile', 'LIKE', "%{$term}%")
-              ->orWhere('card_number', 'LIKE', "%{$term}%");
-        });
+        return $query->where('card_status', MedicalConstants::CARD_STATUS_PENDING);
+    }
+
+    public function scopeCardActive($query)
+    {
+        return $query->where('card_status', MedicalConstants::CARD_STATUS_ACTIVE);
     }
 
     // =========================================================================
@@ -250,48 +258,58 @@ class Member extends BaseModel
             $this->middle_name,
             $this->last_name,
         ]);
-
         return implode(' ', $parts);
     }
 
     public function getShortNameAttribute(): string
     {
-        return "{$this->first_name} {$this->last_name}";
+        return trim($this->first_name . ' ' . $this->last_name);
     }
 
     public function getInitialsAttribute(): string
     {
-        return strtoupper(
-            substr($this->first_name, 0, 1) . substr($this->last_name, 0, 1)
-        );
+        $first = $this->first_name ? strtoupper(substr($this->first_name, 0, 1)) : '';
+        $last = $this->last_name ? strtoupper(substr($this->last_name, 0, 1)) : '';
+        return $first . $last;
     }
 
     public function getAgeAttribute(): int
     {
-        return $this->date_of_birth->age;
+        return $this->date_of_birth ? $this->date_of_birth->age : 0;
     }
 
     public function getAgeBandAttribute(): string
     {
         $age = $this->age;
-
-        if ($age < 18) return '0-17';
-        if ($age <= 30) return '18-30';
-        if ($age <= 40) return '31-40';
-        if ($age <= 50) return '41-50';
-        if ($age <= 60) return '51-60';
-        if ($age <= 70) return '61-70';
-        return '71+';
-    }
-
-    public function getStatusLabelAttribute(): string
-    {
-        return MedicalConstants::MEMBER_STATUSES[$this->status] ?? $this->status;
+        
+        if ($age < 1) return '0-1';
+        if ($age <= 17) return '1-17';
+        if ($age <= 25) return '18-25';
+        if ($age <= 30) return '26-30';
+        if ($age <= 35) return '31-35';
+        if ($age <= 40) return '36-40';
+        if ($age <= 45) return '41-45';
+        if ($age <= 50) return '46-50';
+        if ($age <= 55) return '51-55';
+        if ($age <= 60) return '56-60';
+        if ($age <= 65) return '61-65';
+        return '65+';
     }
 
     public function getMemberTypeLabelAttribute(): string
     {
         return MedicalConstants::MEMBER_TYPES[$this->member_type] ?? $this->member_type;
+    }
+
+    public function getRelationshipLabelAttribute(): ?string
+    {
+        if (!$this->relationship) return null;
+        return MedicalConstants::RELATIONSHIPS[$this->relationship] ?? $this->relationship;
+    }
+
+    public function getStatusLabelAttribute(): string
+    {
+        return MedicalConstants::MEMBER_STATUSES[$this->status] ?? $this->status;
     }
 
     public function getCardStatusLabelAttribute(): string
@@ -301,7 +319,11 @@ class Member extends BaseModel
 
     public function getGenderLabelAttribute(): string
     {
-        return $this->gender === 'M' ? 'Male' : 'Female';
+        return match($this->gender) {
+            'M' => 'Male',
+            'F' => 'Female',
+            default => $this->gender,
+        };
     }
 
     public function getIsPrincipalAttribute(): bool
@@ -311,7 +333,7 @@ class Member extends BaseModel
 
     public function getIsDependentAttribute(): bool
     {
-        return $this->member_type !== MedicalConstants::MEMBER_TYPE_PRINCIPAL;
+        return !$this->is_principal;
     }
 
     public function getIsActiveAttribute(): bool
@@ -319,102 +341,137 @@ class Member extends BaseModel
         return $this->status === MedicalConstants::MEMBER_STATUS_ACTIVE;
     }
 
-    public function getIsPendingAttribute(): bool
+    public function getIsSuspendedAttribute(): bool
     {
-        return $this->status === MedicalConstants::MEMBER_STATUS_PENDING;
+        return $this->status === MedicalConstants::MEMBER_STATUS_SUSPENDED;
     }
 
-    public function getIsInWaitingPeriodAttribute(): bool
+    public function getIsTerminatedAttribute(): bool
     {
-        return $this->waiting_period_end_date && $this->waiting_period_end_date->isFuture();
-    }
-
-    public function getWaitingDaysRemainingAttribute(): int
-    {
-        if (!$this->waiting_period_end_date) {
-            return 0;
-        }
-
-        return max(0, now()->diffInDays($this->waiting_period_end_date, false));
+        return $this->status === MedicalConstants::MEMBER_STATUS_TERMINATED;
     }
 
     public function getHasCoverAttribute(): bool
     {
-        $today = now()->toDateString();
+        return $this->is_active
+            && $this->cover_start_date <= now()
+            && ($this->cover_end_date === null || $this->cover_end_date >= now());
+    }
 
-        if ($this->cover_start_date > $today) {
-            return false;
-        }
+    public function getIsInWaitingPeriodAttribute(): bool
+    {
+        return $this->waiting_period_end_date !== null
+            && $this->waiting_period_end_date > now();
+    }
 
-        if ($this->cover_end_date && $this->cover_end_date < $today) {
-            return false;
-        }
-
-        return $this->is_active;
+    public function getWaitingDaysRemainingAttribute(): int
+    {
+        if (!$this->is_in_waiting_period) return 0;
+        return max(0, now()->diffInDays($this->waiting_period_end_date, false));
     }
 
     public function getTotalPremiumAttribute(): float
     {
-        return $this->premium + $this->loading_amount;
+        return (float) $this->premium + (float) $this->loading_amount;
+    }
+
+    public function getDependentCountAttribute(): int
+    {
+        return $this->activeDependents()->count();
+    }
+
+    public function getCanMakeClaimAttribute(): bool
+    {
+        return $this->has_cover
+            && !$this->is_in_waiting_period
+            && $this->card_status === MedicalConstants::CARD_STATUS_ACTIVE;
     }
 
     // =========================================================================
     // METHODS
     // =========================================================================
 
-    public function activate(): bool
-    {
-        $this->status = MedicalConstants::MEMBER_STATUS_ACTIVE;
-        $this->status_changed_at = now();
-        
-        return $this->save();
-    }
-
-    public function suspend(string $reason): bool
+    /**
+     * Suspend the member.
+     */
+    public function suspend(string $reason, bool $includeDependents = false): bool
     {
         $this->status = MedicalConstants::MEMBER_STATUS_SUSPENDED;
         $this->status_changed_at = now();
         $this->status_reason = $reason;
         
+        if ($includeDependents && $this->is_principal) {
+            $this->activeDependents()->update([
+                'status' => MedicalConstants::MEMBER_STATUS_SUSPENDED,
+                'status_changed_at' => now(),
+                'status_reason' => 'Principal suspended',
+            ]);
+        }
+        
         return $this->save();
     }
 
+    /**
+     * Terminate the member.
+     */
     public function terminate(string $reason, ?string $notes = null): bool
     {
         $this->status = MedicalConstants::MEMBER_STATUS_TERMINATED;
-        $this->status_changed_at = now();
         $this->terminated_at = now();
         $this->termination_reason = $reason;
         $this->termination_notes = $notes;
-        $this->cover_end_date = now();
         $this->card_status = MedicalConstants::CARD_STATUS_BLOCKED;
+        
+        // Terminate dependents too if principal
+        if ($this->is_principal) {
+            $this->activeDependents()->update([
+                'status' => MedicalConstants::MEMBER_STATUS_TERMINATED,
+                'terminated_at' => now(),
+                'termination_reason' => 'principal_terminated',
+                'termination_notes' => 'Principal member terminated',
+                'card_status' => MedicalConstants::CARD_STATUS_BLOCKED,
+            ]);
+        }
         
         return $this->save();
     }
 
-    public function markDeceased(?string $notes = null): bool
+    /**
+     * Reactivate a suspended member.
+     */
+    public function reactivate(): bool
     {
-        $this->status = MedicalConstants::MEMBER_STATUS_DECEASED;
+        if ($this->status !== MedicalConstants::MEMBER_STATUS_SUSPENDED) {
+            return false;
+        }
+
+        $this->status = MedicalConstants::MEMBER_STATUS_ACTIVE;
         $this->status_changed_at = now();
-        $this->terminated_at = now();
-        $this->termination_reason = 'deceased';
-        $this->termination_notes = $notes;
-        $this->cover_end_date = now();
-        $this->card_status = MedicalConstants::CARD_STATUS_BLOCKED;
+        $this->status_reason = 'Reactivated';
         
         return $this->save();
     }
 
+    /**
+     * Issue a member card.
+     */
     public function issueCard(): bool
     {
+        if ($this->card_number) {
+            return false; // Already has card
+        }
+
         $this->card_number = $this->generateCardNumber();
         $this->card_issued_date = now();
-        $this->card_expiry_date = $this->policy->expiry_date;
+        $this->card_expiry_date = $this->policy?->expiry_date ?? now()->addYear();
         $this->card_status = MedicalConstants::CARD_STATUS_ISSUED;
         
         return $this->save();
     }
 
+    /**
+     * Activate the member card.
+     */
     public function activateCard(): bool
     {
         if ($this->card_status !== MedicalConstants::CARD_STATUS_ISSUED) {
@@ -422,71 +479,158 @@ class Member extends BaseModel
         }
 
         $this->card_status = MedicalConstants::CARD_STATUS_ACTIVE;
-        
         return $this->save();
     }
 
+    /**
+     * Block the member card.
+     */
     public function blockCard(string $reason): bool
     {
         $this->card_status = MedicalConstants::CARD_STATUS_BLOCKED;
-        
-        if ($reason) {
-            $this->notes = ($this->notes ? $this->notes . "\n" : '') . "Card blocked: {$reason}";
-        }
-        
+        $this->status_reason = $reason;
         return $this->save();
     }
 
+    /**
+     * Generate card number.
+     */
     protected function generateCardNumber(): string
     {
-        $prefix = substr($this->policy->policy_number, -6);
-        $sequence = $this->policy->members()->whereNotNull('card_number')->count() + 1;
+        $prefix = 'MED';
+        $year = date('y');
+        $random = str_pad(mt_rand(1, 999999), 6, '0', STR_PAD_LEFT);
+        $checkDigit = $this->calculateLuhnCheckDigit($prefix . $year . $random);
         
-        return sprintf('%s-%04d', $prefix, $sequence);
+        return $prefix . $year . $random . $checkDigit;
     }
 
-    public function setWaitingPeriod(int $days): void
+    /**
+     * Calculate Luhn check digit.
+     */
+    protected function calculateLuhnCheckDigit(string $number): int
     {
-        $this->waiting_period_end_date = $this->cover_start_date->copy()->addDays($days);
-    }
+        $sum = 0;
+        $numDigits = strlen($number);
+        $parity = $numDigits % 2;
 
-    public function calculateWaitingPeriodEndDate(): ?Carbon
-    {
-        $plan = $this->policy->plan;
-        
-        if (!$plan) {
-            return null;
+        for ($i = 0; $i < $numDigits; $i++) {
+            $digit = ord($number[$i]) - ord('0');
+            if ($digit < 0 || $digit > 9) {
+                $digit = ord(strtoupper($number[$i])) - ord('A') + 10;
+            }
+            if ($i % 2 === $parity) {
+                $digit *= 2;
+                if ($digit > 9) {
+                    $digit -= 9;
+                }
+            }
+            $sum += $digit;
         }
 
-        $waitingDays = $plan->getWaitingPeriodDays(MedicalConstants::WAITING_TYPE_GENERAL);
-        
-        return $this->cover_start_date->copy()->addDays($waitingDays);
+        return (10 - ($sum % 10)) % 10;
     }
 
-    public function canMakeClaim(): bool
+    /**
+     * Recalculate loading amount from active loadings.
+     */
+    public function recalculateLoadings(): void
     {
-        return $this->is_active 
-            && $this->has_cover 
-            && !$this->is_in_waiting_period;
+        $this->loading_amount = $this->activeLoadings()->sum('loading_amount');
+        $this->save();
     }
 
-    public function addDependent(array $data): self
+    /**
+     * Check claim eligibility.
+     */
+    public function checkEligibility(): array
     {
-        if (!$this->is_principal) {
-            throw new \Exception('Only principals can add dependents');
+        $issues = [];
+
+        if (!$this->is_active) {
+            $issues[] = 'Member is not active (status: ' . $this->status_label . ')';
         }
 
-        $data['policy_id'] = $this->policy_id;
-        $data['principal_id'] = $this->id;
-        $data['cover_start_date'] = $data['cover_start_date'] ?? now();
+        if (!$this->has_cover) {
+            $issues[] = 'Member does not have active cover';
+        }
 
-        return static::create($data);
+        if ($this->is_in_waiting_period) {
+            $issues[] = 'Member is in waiting period (' . $this->waiting_days_remaining . ' days remaining)';
+        }
+
+        if ($this->card_status !== MedicalConstants::CARD_STATUS_ACTIVE) {
+            $issues[] = 'Member card is not active (status: ' . $this->card_status_label . ')';
+        }
+
+        // Check policy status
+        if ($this->policy && !$this->policy->is_active) {
+            $issues[] = 'Policy is not active (status: ' . $this->policy->status_label . ')';
+        }
+
+        return [
+            'eligible' => empty($issues),
+            'issues' => $issues,
+        ];
     }
 
-    public function isEligibleForBenefit(string $benefitId): bool
-    {
-        return !$this->activeExclusions()
-                     ->where('benefit_id', $benefitId)
-                     ->exists();
+    /**
+     * Create member from application member.
+     */
+    public static function createFromApplicationMember(
+        ApplicationMember $appMember,
+        Policy $policy,
+        ?Member $principal = null
+    ): self {
+        $member = new self([
+            'policy_id' => $policy->id,
+            'application_member_id' => $appMember->id,
+            'member_type' => $appMember->member_type,
+            'principal_id' => $principal?->id,
+            'relationship' => $appMember->relationship,
+            'title' => $appMember->title,
+            'first_name' => $appMember->first_name,
+            'middle_name' => $appMember->middle_name,
+            'last_name' => $appMember->last_name,
+            'date_of_birth' => $appMember->date_of_birth,
+            'gender' => $appMember->gender,
+            'marital_status' => $appMember->marital_status,
+            'national_id' => $appMember->national_id,
+            'passport_number' => $appMember->passport_number,
+            'employee_number' => $appMember->employee_number,
+            'email' => $appMember->email,
+            'phone' => $appMember->phone,
+            'mobile' => $appMember->mobile,
+            'address' => $appMember->address,
+            'city' => $appMember->city,
+            'job_title' => $appMember->job_title,
+            'department' => $appMember->department,
+            'employment_date' => $appMember->employment_date,
+            'salary' => $appMember->salary,
+            'salary_band' => $appMember->salary_band,
+            'cover_start_date' => $policy->inception_date,
+            'cover_end_date' => $policy->expiry_date,
+            'premium' => $appMember->base_premium,
+            'loading_amount' => $appMember->loading_amount,
+            'has_pre_existing_conditions' => $appMember->has_pre_existing_conditions,
+            'declared_conditions' => $appMember->declared_conditions,
+            'status' => MedicalConstants::MEMBER_STATUS_ACTIVE,
+            'card_status' => MedicalConstants::CARD_STATUS_PENDING,
+        ]);
+
+        // Calculate waiting period
+        $plan = $policy->plan;
+        if ($plan) {
+            $waitingDays = $plan->general_waiting_period ?? MedicalConstants::DEFAULT_GENERAL_WAITING_DAYS;
+            $member->waiting_period_end_date = $policy->inception_date->copy()->addDays($waitingDays);
+        }
+
+        $member->save();
+
+        // Update application member with converted member link
+        $appMember->converted_member_id = $member->id;
+        $appMember->save();
+
+        return $member;
     }
 }

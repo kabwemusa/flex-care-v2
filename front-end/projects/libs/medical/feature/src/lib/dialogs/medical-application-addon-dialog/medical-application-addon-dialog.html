@@ -1,0 +1,273 @@
+<div class="flex max-h-[90vh] w-full flex-col overflow-hidden bg-white sm:w-[700px]">
+  <!-- Header -->
+  <div class="flex items-center justify-between border-b border-slate-100 px-6 py-4">
+    <div class="flex items-center gap-3">
+      @if (selectedAddon()) {
+      <button
+        mat-icon-button
+        (click)="backToList()"
+        class="!-ml-2 !text-slate-600 hover:!text-slate-900"
+      >
+        <mat-icon fontSet="material-symbols-rounded">arrow_back</mat-icon>
+      </button>
+      }
+      <div
+        class="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100 text-blue-600"
+      >
+        <mat-icon fontSet="material-symbols-rounded">extension</mat-icon>
+      </div>
+      <div>
+        <h2 class="text-lg font-semibold tracking-tight text-slate-900">
+          {{ selectedAddon() ? 'Configure Addon' : 'Add Addon' }}
+        </h2>
+        <p class="text-xs text-slate-500">
+          {{ selectedAddon() ? 'Select pricing and review details' : 'Select an addon to add to the application' }}
+        </p>
+      </div>
+    </div>
+
+    <button
+      mat-icon-button
+      (click)="dialogRef.close()"
+      class="!text-slate-400 hover:!text-slate-700"
+    >
+      <mat-icon fontSet="material-symbols-rounded">close</mat-icon>
+    </button>
+  </div>
+
+  <!-- Content -->
+  <div class="flex-1 overflow-y-auto">
+    @if (isLoading()) {
+    <!-- Loading State -->
+    <div class="flex items-center justify-center py-12">
+      <mat-spinner diameter="32"></mat-spinner>
+    </div>
+    } @else { @if (!selectedAddon()) {
+    <!-- Addon List View -->
+    <div class="p-6">
+      <!-- Search & Filter -->
+      <div class="mb-4 flex gap-3">
+        <div class="relative flex-1">
+          <mat-icon
+            fontSet="material-symbols-rounded"
+            class="absolute left-3 top-1/2 -translate-y-1/2 !text-[20px] text-slate-400"
+          >
+            search
+          </mat-icon>
+          <input
+            type="text"
+            placeholder="Search addons by name or code..."
+            class="h-10 w-full rounded-lg border border-slate-200 bg-slate-50 pl-10 pr-4 text-sm"
+            [value]="searchQuery()"
+            (input)="onSearchInput($event)"
+          />
+        </div>
+        <mat-form-field appearance="outline" subscriptSizing="dynamic" class="!w-40">
+          <mat-select [value]="selectedType()" (selectionChange)="selectedType.set($event.value)">
+            <mat-option value="">All Types</mat-option>
+            @for (type of addonTypes; track type.value) {
+            <mat-option [value]="type.value">{{ type.label }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+      </div>
+
+      <!-- Addons List -->
+      @if (filteredAddons().length > 0) {
+      <div class="space-y-2">
+        @for (addon of filteredAddons(); track addon.id) {
+        <div
+          class="cursor-pointer rounded-lg border border-slate-200 p-4 transition-all hover:border-primary hover:bg-primary/5"
+          (click)="selectAddon(addon)"
+        >
+          <div class="flex items-start gap-3">
+            <div [class]="getAddonTypeClass(addon.addon_type)" class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full">
+              <mat-icon fontSet="material-symbols-rounded" class="!text-[20px]">
+                {{ getAddonTypeIcon(addon.addon_type) }}
+              </mat-icon>
+            </div>
+
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-2 mb-1">
+                <span class="font-semibold text-slate-900">{{ addon.name }}</span>
+                <span class="rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-600">
+                  {{ getAddonTypeLabel(addon.addon_type) }}
+                </span>
+              </div>
+
+              <p class="text-sm text-slate-600 mb-2">{{ addon.description || addon.code }}</p>
+
+              @if (addon.addon_benefits && addon.addon_benefits.length > 0) {
+              <div class="flex flex-wrap gap-1">
+                <mat-chip-set>
+                  @for (benefit of addon.addon_benefits.slice(0, 3); track benefit.id) {
+                  <mat-chip class="!h-6 !px-2 !text-xs">
+                    {{ benefit.benefit?.name || 'Benefit' }}
+                  </mat-chip>
+                  }
+                  @if (addon.addon_benefits.length > 3) {
+                  <mat-chip class="!h-6 !px-2 !text-xs">
+                    +{{ addon.addon_benefits.length - 3 }} more
+                  </mat-chip>
+                  }
+                </mat-chip-set>
+              </div>
+              }
+            </div>
+
+            <mat-icon fontSet="material-symbols-rounded" class="!text-slate-400">
+              chevron_right
+            </mat-icon>
+          </div>
+        </div>
+        }
+      </div>
+      } @else {
+      <!-- Empty State -->
+      <div class="py-12 text-center">
+        <mat-icon fontSet="material-symbols-rounded" class="!text-[48px] !text-slate-300">
+          search_off
+        </mat-icon>
+        <p class="mt-2 text-sm text-slate-500">No addons available</p>
+        <p class="text-xs text-slate-400">
+          {{ searchQuery() || selectedType() ? 'Try adjusting your filters' : 'All addons have been added or none are available for this plan' }}
+        </p>
+      </div>
+      }
+    </div>
+    } @else {
+    <!-- Addon Detail View -->
+    <div class="p-6">
+      <!-- Addon Header -->
+      <div class="mb-6 rounded-lg bg-slate-50 p-4">
+        <div class="flex items-start gap-3">
+          <div [class]="getAddonTypeClass(selectedAddon()!.addon_type)" class="flex h-12 w-12 shrink-0 items-center justify-center rounded-full">
+            <mat-icon fontSet="material-symbols-rounded" class="!text-[24px]">
+              {{ getAddonTypeIcon(selectedAddon()!.addon_type) }}
+            </mat-icon>
+          </div>
+          <div class="flex-1">
+            <div class="mb-1 flex items-center gap-2">
+              <h3 class="text-lg font-semibold text-slate-900">{{ selectedAddon()!.name }}</h3>
+              <span class="rounded-full bg-slate-100 px-2 py-1 text-xs text-slate-600">
+                {{ getAddonTypeLabel(selectedAddon()!.addon_type) }}
+              </span>
+            </div>
+            <p class="text-sm text-slate-600">{{ selectedAddon()!.description || selectedAddon()!.code }}</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Benefits Included -->
+      @if (selectedAddon()!.addon_benefits && selectedAddon()!.addon_benefits!.length > 0) {
+      <div class="mb-6">
+        <h4 class="mb-3 text-sm font-semibold text-slate-900">Benefits Included</h4>
+        <div class="space-y-2">
+          @for (addonBenefit of selectedAddon()!.addon_benefits; track addonBenefit.id) {
+          <div class="flex items-start gap-2 rounded-lg border border-slate-200 bg-white p-3">
+            <mat-icon fontSet="material-symbols-rounded" class="!text-[18px] text-primary">
+              check_circle
+            </mat-icon>
+            <div class="flex-1">
+              <p class="font-medium text-slate-900">{{ addonBenefit.benefit?.name || 'Benefit' }}</p>
+              @if (addonBenefit.display_value) {
+              <p class="text-xs text-slate-500">{{ addonBenefit.display_value }}</p>
+              }
+            </div>
+          </div>
+          }
+        </div>
+      </div>
+      }
+
+      <mat-divider class="!mb-6"></mat-divider>
+
+      <!-- Pricing Selection -->
+      <div>
+        <h4 class="mb-3 text-sm font-semibold text-slate-900">Select Pricing</h4>
+
+        @if (addonRates().length === 0) {
+        <div class="rounded-lg border border-amber-200 bg-amber-50 p-4 text-center">
+          <mat-icon fontSet="material-symbols-rounded" class="!text-amber-600">warning</mat-icon>
+          <p class="mt-2 text-sm text-amber-900">No active pricing available for this addon</p>
+          <p class="text-xs text-amber-700">Please contact support to configure pricing</p>
+        </div>
+        } @else {
+        <mat-radio-group
+          [value]="selectedRateId()"
+          (change)="selectedRateId.set($event.value)"
+          class="flex flex-col gap-2"
+        >
+          @for (rate of addonRates(); track rate.id) {
+          <div
+            class="flex cursor-pointer items-center gap-3 rounded-lg border p-4 transition-all"
+            [class]="
+              selectedRateId() === rate.id
+                ? 'border-primary bg-primary/5'
+                : 'border-slate-200 hover:border-slate-300'
+            "
+          >
+            <mat-radio-button [value]="rate.id" color="primary"></mat-radio-button>
+            <div class="flex-1">
+              <div class="flex items-center gap-2">
+                <span class="font-medium text-slate-900">
+                  {{ getPricingTypeLabel(rate.pricing_type) }}
+                </span>
+                @if (rate.is_plan_specific) {
+                <span class="rounded-full bg-purple-100 px-2 py-0.5 text-xs text-purple-600">
+                  Plan-specific
+                </span>
+                } @else {
+                <span class="rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-600">
+                  Global rate
+                </span>
+                }
+              </div>
+              <p class="text-sm text-slate-600">{{ getRatePricingDescription(rate) }}</p>
+            </div>
+          </div>
+          }
+        </mat-radio-group>
+        }
+      </div>
+
+      <!-- Estimated Premium -->
+      @if (selectedRate()) {
+      <div class="mt-6 rounded-lg border border-green-200 bg-green-50 p-4">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-xs font-medium text-green-900">Estimated Addon Premium</p>
+            @if (selectedRate()!.pricing_type === 'age_rated') {
+            <p class="text-xs text-green-700">Final calculation based on member ages</p>
+            }
+          </div>
+          <p class="text-xl font-bold text-green-900">
+            @if (selectedRate()!.pricing_type === 'age_rated') {
+            <span class="text-base">Varies by age</span>
+            } @else {
+            ZMW {{ formatPremium(estimatedPremium()) }}
+            }
+          </p>
+        </div>
+      </div>
+      }
+    </div>
+    } }
+  </div>
+
+  <!-- Footer -->
+  <div class="flex items-center justify-end gap-3 border-t border-slate-100 bg-slate-50 px-6 py-4">
+    <button mat-button (click)="dialogRef.close()" class="!text-slate-600">Cancel</button>
+    @if (selectedAddon()) {
+    <button
+      mat-flat-button
+      color="primary"
+      [disabled]="!canAdd()"
+      (click)="addAddon()"
+    >
+      <mat-icon fontSet="material-symbols-rounded" class="!mr-1">add</mat-icon>
+      Add Addon
+    </button>
+    }
+  </div>
+</div>

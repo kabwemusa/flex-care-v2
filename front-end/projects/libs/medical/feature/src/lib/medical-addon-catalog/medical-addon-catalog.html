@@ -1,12 +1,12 @@
 <!-- libs/medical/ui/src/lib/addons/medical-addons-catalog.html -->
 
-<mat-drawer-container class="h-full">
+<mat-drawer-container class="h-screen">
   <!-- Main Content -->
-  <mat-drawer-content>
+  <mat-drawer-content class="overflow-auto">
     <div class="bg-white p-6 md:p-10 min-h-[80vh] shadow-sm">
       <lib-page-header
         title="Addons Catalog"
-        subtitle="Manage optional riders, top-ups, and standalone products."
+        subtitle="Manage optional, mandatory, and conditional addon products."
       >
         <div actions class="flex gap-2">
           <button mat-flat-button color="primary" class="!rounded-lg" (click)="openCreateDialog()">
@@ -53,9 +53,9 @@
         <div class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
           <div class="flex items-center justify-between">
             <div>
-              <div class="text-sm font-medium text-slate-500">Riders</div>
+              <div class="text-sm font-medium text-slate-500">Optional</div>
               <div class="mt-2 text-2xl font-bold tracking-tight text-purple-600">
-                {{ riderAddons() }}
+                {{ optionalAddons() }}
               </div>
             </div>
             <div class="flex h-10 w-10 items-center justify-center rounded-full bg-purple-100">
@@ -324,7 +324,7 @@
             </div>
             <h3 class="text-sm font-medium text-slate-900">No addons found</h3>
             <p class="mt-1 text-sm text-slate-500 max-w-xs">
-              Create riders, top-ups, and standalone products that can be added to plans.
+              Create optional, mandatory, or conditional addon products that can be added to plans.
             </p>
             <button mat-stroked-button color="primary" class="mt-4" (click)="openCreateDialog()">
               Create First Addon

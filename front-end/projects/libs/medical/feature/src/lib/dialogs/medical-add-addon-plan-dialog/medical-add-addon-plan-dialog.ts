@@ -127,18 +127,18 @@ export class MedicalAddAddonPlanDialog implements OnInit {
 
   getAddonTypeIcon(type: string): string {
     const icons: Record<string, string> = {
-      rider: 'add_circle',
-      top_up: 'trending_up',
-      standalone: 'extension',
+      optional: 'add_circle',
+      mandatory: 'verified',
+      conditional: 'rule',
     };
     return icons[type] || 'extension';
   }
 
   getAddonTypeClass(type: string): string {
     const classes: Record<string, string> = {
-      rider: 'bg-purple-100 text-purple-600',
-      top_up: 'bg-blue-100 text-blue-600',
-      standalone: 'bg-teal-100 text-teal-600',
+      optional: 'bg-purple-100 text-purple-600',
+      mandatory: 'bg-blue-100 text-blue-600',
+      conditional: 'bg-teal-100 text-teal-600',
     };
     return classes[type] || 'bg-slate-100 text-slate-600';
   }

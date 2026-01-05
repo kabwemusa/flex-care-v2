@@ -19,236 +19,247 @@ use Modules\Medical\Http\Resources\MemberListResource;
 use Modules\Medical\Http\Resources\MemberLoadingResource;
 use Modules\Medical\Http\Resources\MemberExclusionResource;
 use Modules\Medical\Http\Resources\MemberDocumentResource;
-use Modules\Medical\Services\PremiumCalculator;
+use Modules\Medical\Services\PremiumService;
 use Modules\Medical\Constants\MedicalConstants;
 use App\Traits\ApiResponse;
 use Throwable;
 use Exception;
+use Modules\Medical\Services\MemberService;
 
 class MemberController extends Controller
 {
     use ApiResponse;
 
     public function __construct(
-        protected PremiumCalculator $premiumCalculator
+        protected MemberService $memberService
     ) {}
+
+    public function index(): JsonResponse
+    {
+        $query = Member::query()
+            ->with(['policy:id,policy_number,status', 'principal:id,first_name,last_name']);
+
+        if ($search = request('search')) $query->search($search);
+        if ($status = request('status')) $query->where('status', $status);
+        if ($policyId = request('policy_id')) $query->where('policy_id', $policyId);
+        
+        // Scopes
+        if (request('principals_only')) $query->principals();
+        if (request('dependents_only')) $query->dependents();
+
+        return $this->success(
+            MemberListResource::collection($query->paginate(request('per_page', 20))),
+            'Members retrieved'
+        );
+    }
+
+    public function store(MemberRequest $request): JsonResponse
+    {
+        try {
+            $member = $this->memberService->createMember($request->validated());
+            
+            return $this->success(
+                new MemberResource($member->load(['policy', 'principal'])),
+                'Member created',
+                201
+            );
+        } catch (Throwable $e) {
+            return $this->error($e->getMessage(), 422);
+        }
+    }
+
+    public function show(string $id): JsonResponse
+    {
+        try {
+            $member = Member::with([
+                'policy.scheme', 'policy.plan', 'principal', 'dependents',
+                'activeLoadings', 'activeExclusions', 'documents'
+            ])->findOrFail($id);
+
+            return $this->success(new MemberResource($member), 'Member retrieved');
+        } catch (Throwable $e) {
+            return $this->error('Member not found', 404);
+        }
+    }
+
+    public function update(MemberRequest $request, string $id): JsonResponse
+    {
+        try {
+            $member = Member::findOrFail($id);
+            $updatedMember = $this->memberService->updateMember($member, $request->validated());
+
+            return $this->success(new MemberResource($updatedMember), 'Member updated');
+        } catch (Throwable $e) {
+            return $this->error($e->getMessage(), 500);
+        }
+    }
+
+    public function destroy(string $id): JsonResponse
+    {
+        try {
+            // Note: In insurance, we rarely "Delete". We "Terminate".
+            // But if it's a draft or error, we might delete.
+            $member = Member::findOrFail($id);
+            if ($member->is_principal && $member->dependents()->exists()) {
+                return $this->error('Cannot delete principal with dependents.', 422);
+            }
+            $this->memberService->terminateMember($member, 'Deleted via API');
+            $member->delete(); // Soft delete usually
+            
+            return $this->success(null, 'Member deleted');
+        } catch (Throwable $e) {
+            return $this->error($e->getMessage(), 500);
+        }
+    }
+
+    // =========================================================================
+    // RISK MANAGEMENT
+    // =========================================================================
+
+    public function addLoading(MemberLoadingRequest $request, string $id): JsonResponse
+    {
+        try {
+            $member = Member::findOrFail($id);
+            $loading = $this->memberService->addLoading($member, $request->validated());
+            
+            return $this->success(new MemberLoadingResource($loading), 'Loading applied', 201);
+        } catch (Throwable $e) {
+            return $this->error($e->getMessage(), 500);
+        }
+    }
+
+    public function removeLoading(string $memberId, string $loadingId): JsonResponse
+    {
+        try {
+            $loading = MemberLoading::where('member_id', $memberId)->findOrFail($loadingId);
+            $this->memberService->removeLoading($loading, request('reason', 'Manual removal'));
+            
+            return $this->success(null, 'Loading removed');
+        } catch (Throwable $e) {
+            return $this->error($e->getMessage(), 500);
+        }
+    }
+
+    // =========================================================================
+    // CARDS
+    // =========================================================================
+
+    public function issueCard(string $id): JsonResponse
+    {
+        try {
+            $member = Member::findOrFail($id);
+            $member = $this->memberService->issueCard($member);
+            return $this->success(new MemberResource($member), 'Card issued');
+        } catch (Throwable $e) {
+            return $this->error($e->getMessage(), 422);
+        }
+    }
+
+    // =========================================================================
+    // DOCUMENTS
+    // =========================================================================
+
+    public function uploadDocument(string $id): JsonResponse
+    {
+        try {
+            $request = request();
+            $request->validate([
+                'document_type' => 'required|string',
+                'title' => 'required|string',
+                'file' => 'required|file|max:10240',
+            ]);
+
+            $member = Member::findOrFail($id);
+            $doc = $this->memberService->uploadDocument($member, $request->all(), $request->file('file'));
+
+            return $this->success(new MemberDocumentResource($doc), 'Document uploaded', 201);
+        } catch (Throwable $e) {
+            return $this->error($e->getMessage(), 500);
+        }
+    }
 
     /**
      * List members with filtering.
      * GET /v1/medical/members
      */
-    public function index(): JsonResponse
-    {
-        try {
-            $query = Member::query()
-                ->with(['policy:id,policy_number,status', 'principal:id,first_name,last_name']);
+    // public function index(): JsonResponse
+    // {
+    //     try {
+    //         $query = Member::query()
+    //             ->with(['policy:id,policy_number,status', 'principal:id,first_name,last_name']);
 
-            // Search
-            if ($search = request('search')) {
-                $query->search($search);
-            }
+    //         // Search
+    //         if ($search = request('search')) {
+    //             $query->search($search);
+    //         }
 
-            // Filters
-            if ($status = request('status')) {
-                $query->where('status', $status);
-            }
+    //         // Filters
+    //         if ($status = request('status')) {
+    //             $query->where('status', $status);
+    //         }
 
-            if ($memberType = request('member_type')) {
-                $query->where('member_type', $memberType);
-            }
+    //         if ($memberType = request('member_type')) {
+    //             $query->where('member_type', $memberType);
+    //         }
 
-            if ($policyId = request('policy_id')) {
-                $query->where('policy_id', $policyId);
-            }
+    //         if ($policyId = request('policy_id')) {
+    //             $query->where('policy_id', $policyId);
+    //         }
 
-            if (request('principals_only')) {
-                $query->principals();
-            }
+    //         if (request('principals_only')) {
+    //             $query->principals();
+    //         }
 
-            if (request('dependents_only')) {
-                $query->dependents();
-            }
+    //         if (request('dependents_only')) {
+    //             $query->dependents();
+    //         }
 
-            if (request('active_only')) {
-                $query->active();
-            }
+    //         if (request('active_only')) {
+    //             $query->active();
+    //         }
 
-            if (request('in_waiting_period')) {
-                $query->inWaitingPeriod();
-            }
+    //         if (request('in_waiting_period')) {
+    //             $query->inWaitingPeriod();
+    //         }
 
-            // Sorting
-            $sortBy = request('sort_by', 'created_at');
-            $sortOrder = request('sort_order', 'desc');
-            $query->orderBy($sortBy, $sortOrder);
+    //         // Sorting
+    //         $sortBy = request('sort_by', 'created_at');
+    //         $sortOrder = request('sort_order', 'desc');
+    //         $query->orderBy($sortBy, $sortOrder);
 
-            $members = $query->paginate(request('per_page', 20));
+    //         $members = $query->paginate(request('per_page', 20));
 
-            return $this->success(
-                MemberListResource::collection($members),
-                'Members retrieved'
-            );
-        } catch (Throwable $e) {
-            return $this->error('Failed to retrieve members: ' . $e->getMessage(), 500);
-        }
-    }
+    //         return $this->success(
+    //             MemberListResource::collection($members),
+    //             'Members retrieved'
+    //         );
+    //     } catch (Throwable $e) {
+    //         return $this->error('Failed to retrieve members: ' . $e->getMessage(), 500);
+    //     }
+    // }
 
     /**
      * Create a new member (principal or dependent).
      * POST /v1/medical/members
      */
-    public function store(MemberRequest $request): JsonResponse
-    {
-        try {
-            $member = DB::transaction(function () use ($request) {
-                $policy = Policy::with('plan')->findOrFail($request->policy_id);
-
-                if (!$policy->canAddMember()) {
-                    throw new Exception('Cannot add members to this policy. Check policy status.', 422);
-                }
-
-                // Validate member type limits
-                $plan = $policy->plan;
-                if ($request->member_type !== MedicalConstants::MEMBER_TYPE_PRINCIPAL) {
-                    $currentDependents = $policy->members()->where('member_type', '!=', MedicalConstants::MEMBER_TYPE_PRINCIPAL)->count();
-                    if ($currentDependents >= $plan->max_dependents) {
-                        throw new Exception("Maximum dependents ({$plan->max_dependents}) reached for this plan", 422);
-                    }
-                }
-
-                $data = $request->validated();
-                
-                // Set cover dates if not provided
-                $data['cover_start_date'] = $data['cover_start_date'] ?? now();
-                $data['cover_end_date'] = $data['cover_end_date'] ?? $policy->expiry_date;
-
-                $member = Member::create($data);
-
-                // Calculate waiting period
-                $waitingEndDate = $member->calculateWaitingPeriodEndDate();
-                if ($waitingEndDate) {
-                    $member->waiting_period_end_date = $waitingEndDate;
-                    $member->save();
-                }
-
-                // Calculate member premium
-                $this->premiumCalculator->calculateMemberPremium($member);
-
-                // Update policy counts
-                $policy->updateMemberCounts();
-
-                // Recalculate policy premium
-                $this->premiumCalculator->calculate($policy);
-
-                return $member;
-            });
-
-            $member->load(['policy', 'principal']);
-
-            return $this->success(
-                new MemberResource($member),
-                'Member created',
-                201
-            );
-        } catch (ModelNotFoundException $e) {
-            return $this->error('Policy not found', 404);
-        } catch (Throwable $e) {
-            $code = $e->getCode() === 422 ? 422 : 500;
-            return $this->error($e->getMessage(), $code);
-        }
-    }
+   
 
     /**
      * Show member details.
      * GET /v1/medical/members/{id}
      */
-    public function show(string $id): JsonResponse
-    {
-        try {
-            $member = Member::with([
-                'policy.scheme',
-                'policy.plan',
-                'principal',
-                'dependents',
-                'loadings' => fn($q) => $q->orderBy('status')->orderBy('created_at', 'desc'),
-                'exclusions' => fn($q) => $q->orderBy('status')->orderBy('created_at', 'desc'),
-                'documents' => fn($q) => $q->active()->latest(),
-            ])
-            ->withCount(['dependents', 'activeLoadings', 'activeExclusions'])
-            ->findOrFail($id);
-
-            return $this->success(
-                new MemberResource($member),
-                'Member retrieved'
-            );
-        } catch (ModelNotFoundException $e) {
-            return $this->error('Member not found', 404);
-        } catch (Throwable $e) {
-            return $this->error('Failed to retrieve member details', 500);
-        }
-    }
+    
 
     /**
      * Update member.
      * PUT /v1/medical/members/{id}
      */
-    public function update(MemberRequest $request, string $id): JsonResponse
-    {
-        try {
-            $member = DB::transaction(function () use ($request, $id) {
-                $member = Member::findOrFail($id);
-                $member->update($request->validated());
-
-                // Recalculate if premium-affecting fields changed
-                if ($request->hasAny(['date_of_birth', 'salary_band'])) {
-                    $this->premiumCalculator->calculateMemberPremium($member);
-                    $this->premiumCalculator->calculate($member->policy);
-                }
-
-                return $member->fresh(['policy', 'principal']);
-            });
-
-            return $this->success(
-                new MemberResource($member),
-                'Member updated'
-            );
-        } catch (ModelNotFoundException $e) {
-            return $this->error('Member not found', 404);
-        } catch (Throwable $e) {
-            return $this->error('Failed to update member: ' . $e->getMessage(), 500);
-        }
-    }
+   
 
     /**
      * Delete member.
      * DELETE /v1/medical/members/{id}
      */
-    public function destroy(string $id): JsonResponse
-    {
-        try {
-            DB::transaction(function () use ($id) {
-                $member = Member::findOrFail($id);
-
-                if ($member->is_principal && $member->dependents()->exists()) {
-                    throw new Exception('Cannot delete principal with dependents. Remove dependents first.', 422);
-                }
-
-                $policy = $member->policy;
-                $member->delete();
-
-                // Update policy
-                $policy->updateMemberCounts();
-                $this->premiumCalculator->calculate($policy);
-            });
-
-            return $this->success(null, 'Member deleted');
-        } catch (ModelNotFoundException $e) {
-            return $this->error('Member not found', 404);
-        } catch (Throwable $e) {
-            $code = $e->getCode() === 422 ? 422 : 500;
-            return $this->error($e->getMessage(), $code);
-        }
-    }
 
     // =========================================================================
     // STATUS MANAGEMENT
@@ -304,106 +315,106 @@ class MemberController extends Controller
         }
     }
 
-    /**
-     * Terminate member.
-     * POST /v1/medical/members/{id}/terminate
-     */
-    public function terminate(string $id): JsonResponse
-    {
-        try {
-            $member = DB::transaction(function () use ($id) {
-                $member = Member::findOrFail($id);
+    // /**
+    //  * Terminate member.
+    //  * POST /v1/medical/members/{id}/terminate
+    //  */
+    // public function terminate(string $id): JsonResponse
+    // {
+    //     try {
+    //         $member = DB::transaction(function () use ($id) {
+    //             $member = Member::findOrFail($id);
 
-                $reason = request('reason', 'terminated');
-                $notes = request('notes');
+    //             $reason = request('reason', 'terminated');
+    //             $notes = request('notes');
 
-                $member->terminate($reason, $notes);
+    //             $member->terminate($reason, $notes);
 
-                // If principal, terminate dependents too
-                if ($member->is_principal) {
-                    $member->dependents()
-                        ->whereNotIn('status', [MedicalConstants::MEMBER_STATUS_TERMINATED, MedicalConstants::MEMBER_STATUS_DECEASED])
-                        ->each(fn($dep) => $dep->terminate('principal_terminated', 'Principal member terminated'));
-                }
+    //             // If principal, terminate dependents too
+    //             if ($member->is_principal) {
+    //                 $member->dependents()
+    //                     ->whereNotIn('status', [MedicalConstants::MEMBER_STATUS_TERMINATED, MedicalConstants::MEMBER_STATUS_DECEASED])
+    //                     ->each(fn($dep) => $dep->terminate('principal_terminated', 'Principal member terminated'));
+    //             }
 
-                // Update policy
-                $member->policy->updateMemberCounts();
-                $this->premiumCalculator->calculate($member->policy);
+    //             // Update policy
+    //             $member->policy->updateMemberCounts();
+    //             $this->premiumCalculator->calculatePolicyPremium($member->policy);
 
-                return $member->fresh();
-            });
+    //             return $member->fresh();
+    //         });
 
-            return $this->success(
-                new MemberResource($member),
-                'Member terminated'
-            );
-        } catch (Throwable $e) {
-            return $this->error('Failed to terminate member', 500);
-        }
-    }
+    //         return $this->success(
+    //             new MemberResource($member),
+    //             'Member terminated'
+    //         );
+    //     } catch (Throwable $e) {
+    //         return $this->error('Failed to terminate member', 500);
+    //     }
+    // }
 
-    /**
-     * Mark member as deceased.
-     * POST /v1/medical/members/{id}/deceased
-     */
-    public function markDeceased(string $id): JsonResponse
-    {
-        try {
-            $member = DB::transaction(function () use ($id) {
-                $member = Member::findOrFail($id);
-                $member->markDeceased(request('notes'));
+    // /**
+    //  * Mark member as deceased.
+    //  * POST /v1/medical/members/{id}/deceased
+    //  */
+    // public function markDeceased(string $id): JsonResponse
+    // {
+    //     try {
+    //         $member = DB::transaction(function () use ($id) {
+    //             $member = Member::findOrFail($id);
+    //             $member->markDeceased(request('notes'));
 
-                // Update policy
-                $member->policy->updateMemberCounts();
-                $this->premiumCalculator->calculate($member->policy);
+    //             // Update policy
+    //             $member->policy->updateMemberCounts();
+    //             $this->premiumCalculator->calculatePolicyPremium($member->policy);
 
-                return $member->fresh();
-            });
+    //             return $member->fresh();
+    //         });
 
-            return $this->success(
-                new MemberResource($member),
-                'Member marked as deceased'
-            );
-        } catch (Throwable $e) {
-            return $this->error('Failed to update member status', 500);
-        }
-    }
+    //         return $this->success(
+    //             new MemberResource($member),
+    //             'Member marked as deceased'
+    //         );
+    //     } catch (Throwable $e) {
+    //         return $this->error('Failed to update member status', 500);
+    //     }
+    // }
 
-    // =========================================================================
-    // CARD MANAGEMENT
-    // =========================================================================
+    // // =========================================================================
+    // // CARD MANAGEMENT
+    // // =========================================================================
 
-    /**
-     * Issue member card.
-     * POST /v1/medical/members/{id}/issue-card
-     */
-    public function issueCard(string $id): JsonResponse
-    {
-        try {
-            $member = DB::transaction(function () use ($id) {
-                $member = Member::findOrFail($id);
+    // /**
+    //  * Issue member card.
+    //  * POST /v1/medical/members/{id}/issue-card
+    //  */
+    // public function issueCard(string $id): JsonResponse
+    // {
+    //     try {
+    //         $member = DB::transaction(function () use ($id) {
+    //             $member = Member::findOrFail($id);
 
-                if ($member->card_number) {
-                    throw new Exception('Member already has a card', 422);
-                }
+    //             if ($member->card_number) {
+    //                 throw new Exception('Member already has a card', 422);
+    //             }
 
-                if (!$member->is_active) {
-                    throw new Exception('Cannot issue card to inactive member', 422);
-                }
+    //             if (!$member->is_active) {
+    //                 throw new Exception('Cannot issue card to inactive member', 422);
+    //             }
 
-                $member->issueCard();
-                return $member->fresh();
-            });
+    //             $member->issueCard();
+    //             return $member->fresh();
+    //         });
 
-            return $this->success(
-                new MemberResource($member),
-                'Card issued'
-            );
-        } catch (Throwable $e) {
-            $code = $e->getCode() === 422 ? 422 : 500;
-            return $this->error($e->getMessage(), $code);
-        }
-    }
+    //         return $this->success(
+    //             new MemberResource($member),
+    //             'Card issued'
+    //         );
+    //     } catch (Throwable $e) {
+    //         $code = $e->getCode() === 422 ? 422 : 500;
+    //         return $this->error($e->getMessage(), $code);
+    //     }
+    // }
 
     /**
      * Activate member card.
@@ -512,75 +523,6 @@ class MemberController extends Controller
      * Add loading to member.
      * POST /v1/medical/members/{id}/loadings
      */
-    public function addLoading(MemberLoadingRequest $request, string $id): JsonResponse
-    {
-        try {
-            $loading = DB::transaction(function () use ($request, $id) {
-                $member = Member::findOrFail($id);
-
-                $data = $request->validated();
-                $data['member_id'] = $id;
-
-                // Calculate loading amount if percentage
-                if ($data['loading_type'] === MedicalConstants::LOADING_TYPE_PERCENTAGE) {
-                    $data['loading_amount'] = round($member->premium * ($data['loading_value'] / 100), 2);
-                } else {
-                    $data['loading_amount'] = $data['loading_value'] ?? 0;
-                }
-
-                $loading = MemberLoading::create($data);
-
-                // Update member loading amount
-                $member->loading_amount = $member->activeLoadings()->sum('loading_amount');
-                $member->has_pre_existing_conditions = true;
-                $member->save();
-
-                // Recalculate policy premium
-                $this->premiumCalculator->calculate($member->policy);
-
-                return $loading;
-            });
-
-            return $this->success(
-                new MemberLoadingResource($loading),
-                'Loading added',
-                201
-            );
-        } catch (Throwable $e) {
-            return $this->error('Failed to add loading', 500);
-        }
-    }
-
-    /**
-     * Remove/waive loading.
-     * DELETE /v1/medical/members/{memberId}/loadings/{loadingId}
-     */
-    public function removeLoading(string $memberId, string $loadingId): JsonResponse
-    {
-        try {
-            DB::transaction(function () use ($memberId, $loadingId) {
-                $loading = MemberLoading::where('member_id', $memberId)
-                    ->findOrFail($loadingId);
-
-                $member = $loading->member;
-                
-                $loading->remove(request('reason'));
-
-                // Update member
-                $member->loading_amount = $member->activeLoadings()->sum('loading_amount');
-                $member->save();
-
-                // Recalculate policy premium
-                $this->premiumCalculator->calculate($member->policy);
-            });
-
-            return $this->success(null, 'Loading removed');
-        } catch (ModelNotFoundException $e) {
-            return $this->error('Loading not found', 404);
-        } catch (Throwable $e) {
-            return $this->error('Failed to remove loading', 500);
-        }
-    }
 
     // =========================================================================
     // EXCLUSIONS
@@ -691,44 +633,7 @@ class MemberController extends Controller
      * Upload member document.
      * POST /v1/medical/members/{id}/documents
      */
-    public function uploadDocument(string $id): JsonResponse
-    {
-        try {
-            $document = DB::transaction(function () use ($id) {
-                $member = Member::findOrFail($id);
-
-                request()->validate([
-                    'document_type' => 'required|string',
-                    'title' => 'required|string|max:255',
-                    'file' => 'required|file|max:10240',
-                    'expiry_date' => 'nullable|date',
-                ]);
-
-                $file = request()->file('file');
-                $path = $file->store("members/{$member->id}/documents", 'private');
-
-                return $member->documents()->create([
-                    'document_type' => request('document_type'),
-                    'title' => request('title'),
-                    'file_path' => $path,
-                    'file_name' => $file->getClientOriginalName(),
-                    'mime_type' => $file->getMimeType(),
-                    'file_size' => $file->getSize(),
-                    'expiry_date' => request('expiry_date'),
-                ]);
-            });
-
-            return $this->success(
-                new MemberDocumentResource($document),
-                'Document uploaded',
-                201
-            );
-        } catch (ModelNotFoundException $e) {
-            return $this->error('Member not found', 404);
-        } catch (Throwable $e) {
-            return $this->error('File upload failed: ' . $e->getMessage(), 500);
-        }
-    }
+    
 
     /**
      * Verify document.
@@ -763,78 +668,7 @@ class MemberController extends Controller
      * Add dependent to principal.
      * POST /v1/medical/members/{id}/dependents
      */
-    public function addDependent(MemberRequest $request, string $id): JsonResponse
-    {
-        try {
-            $dependent = DB::transaction(function () use ($request, $id) {
-                $principal = Member::findOrFail($id);
-
-                if (!$principal->is_principal) {
-                    throw new Exception('Can only add dependents to principal members', 422);
-                }
-
-                $plan = $principal->policy->plan;
-                if ($principal->dependents()->count() >= $plan->max_dependents) {
-                    throw new Exception("Maximum dependents ({$plan->max_dependents}) reached", 422);
-                }
-
-                $data = $request->validated();
-                $data['policy_id'] = $principal->policy_id;
-                $data['principal_id'] = $principal->id;
-                $data['cover_start_date'] = $data['cover_start_date'] ?? now();
-                $data['cover_end_date'] = $principal->cover_end_date;
-
-                $dependent = Member::create($data);
-
-                // Calculate waiting period
-                $waitingEndDate = $dependent->calculateWaitingPeriodEndDate();
-                if ($waitingEndDate) {
-                    $dependent->waiting_period_end_date = $waitingEndDate;
-                    $dependent->save();
-                }
-
-                // Calculate premium
-                $this->premiumCalculator->calculateMemberPremium($dependent);
-                $principal->policy->updateMemberCounts();
-                $this->premiumCalculator->calculate($principal->policy);
-
-                return $dependent->load(['policy', 'principal']);
-            });
-
-            return $this->success(
-                new MemberResource($dependent),
-                'Dependent added',
-                201
-            );
-        } catch (ModelNotFoundException $e) {
-            return $this->error('Principal member not found', 404);
-        } catch (Throwable $e) {
-            $code = $e->getCode() === 422 ? 422 : 500;
-            return $this->error($e->getMessage(), $code);
-        }
-    }
-
-    /**
-     * List dependents of a principal.
-     * GET /v1/medical/members/{id}/dependents
-     */
-    public function dependents(string $id): JsonResponse
-    {
-        try {
-            $dependents = Member::where('principal_id', $id)
-                ->with('policy')
-                ->orderBy('member_type')
-                ->orderBy('created_at')
-                ->get();
-
-            return $this->success(
-                MemberResource::collection($dependents),
-                'Dependents retrieved'
-            );
-        } catch (Throwable $e) {
-            return $this->error('Failed to retrieve dependents', 500);
-        }
-    }
+   
 
     // =========================================================================
     // UTILITIES

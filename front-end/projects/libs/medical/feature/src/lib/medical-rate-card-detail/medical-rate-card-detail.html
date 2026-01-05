@@ -43,8 +43,13 @@
 
       <!-- Actions -->
       <div class="flex items-center gap-2">
-        @if (rc.is_draft && !rc.is_active) {
-        <button mat-flat-button color="primary" (click)="activateRateCard()">
+        @if (rc.is_active) {
+        <button mat-flat-button color="warn" (click)="toggleStatus()">
+          <mat-icon fontSet="material-symbols-rounded">block</mat-icon>
+          Deactivate
+        </button>
+        } @else if (rc.is_draft) {
+        <button mat-flat-button color="primary" (click)="toggleStatus()">
           <mat-icon fontSet="material-symbols-rounded">check_circle</mat-icon>
           Activate
         </button>

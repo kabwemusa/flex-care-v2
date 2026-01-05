@@ -86,17 +86,17 @@ class AddonBenefit extends BaseModel
 
     public function getEffectiveLimitTypeAttribute(): string
     {
-        return $this->limit_type ?? $this->benefit->limit_type ?? MedicalConstants::LIMIT_TYPE_AMOUNT;
+        return $this->limit_type ?? $this->benefit->limit_type ?? MedicalConstants::MONETARY;
     }
 
     public function getEffectiveLimitFrequencyAttribute(): string
     {
-        return $this->limit_frequency ?? $this->benefit->limit_frequency ?? MedicalConstants::LIMIT_FREQUENCY_ANNUAL;
+        return $this->limit_frequency ?? $this->benefit->limit_frequency ?? MedicalConstants::PER_ANNUM;
     }
 
     public function getEffectiveLimitBasisAttribute(): string
     {
-        return $this->limit_basis ?? $this->benefit->limit_basis ?? MedicalConstants::LIMIT_BASIS_INDIVIDUAL;
+        return $this->limit_basis ?? $this->benefit->limit_basis ?? MedicalConstants::PER_MEMBER;
     }
 
     public function getFormattedDisplayValueAttribute(): string
@@ -117,16 +117,16 @@ class AddonBenefit extends BaseModel
         $limitType = $this->effective_limit_type;
         
         return match($limitType) {
-            MedicalConstants::LIMIT_TYPE_AMOUNT => $this->limit_amount 
+            MedicalConstants::MONETARY => $this->limit_amount 
                 ? 'K' . number_format($this->limit_amount, 2) 
                 : 'N/A',
-            MedicalConstants::LIMIT_TYPE_VISITS => $this->limit_count 
+            MedicalConstants::COUNT => $this->limit_count 
                 ? $this->limit_count . ' visits' 
                 : 'N/A',
-            MedicalConstants::LIMIT_TYPE_DAYS => $this->limit_days 
+            MedicalConstants::DAYS => $this->limit_days 
                 ? $this->limit_days . ' days' 
                 : 'N/A',
-            MedicalConstants::LIMIT_TYPE_UNLIMITED => 'Unlimited',
+            MedicalConstants::UNLIMITED => 'Unlimited',
             default => 'N/A',
         };
     }

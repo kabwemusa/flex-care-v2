@@ -66,17 +66,15 @@
           <div
             class="relative flex h-7 w-7 items-center justify-center rounded-full bg-primary/10 text-primary ring-2 ring-background"
           >
-            <span class="text-xs font-bold">MK</span>
+            <span class="text-xs font-bold">{{ userInitials() }}</span>
             <span
               class="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 border-background bg-green-500"
             ></span>
           </div>
 
           <div class="hidden flex-col items-start text-left sm:flex">
-            <span class="text-xs font-semibold leading-none text-foreground">Michael K.</span>
-            <span class="text-[10px] font-medium leading-none text-muted-foreground mt-1"
-              >Admin</span
-            >
+            <span class="text-xs font-semibold leading-none text-foreground">{{ displayName() }}</span>
+            <span class="text-[10px] font-medium leading-none text-muted-foreground mt-1">{{ userRole() }}</span>
           </div>
 
           <mat-icon fontSet="material-symbols-rounded" class="!text-[18px] !text-muted-foreground"
@@ -91,8 +89,8 @@
         class="!min-w-[200px] !rounded-xl !border !border-divider/50 !bg-background/95 !backdrop-blur-md"
       >
         <div class="px-4 py-3 border-b border-divider/50 mb-1">
-          <p class="text-sm font-semibold text-foreground">Michael Kings</p>
-          <p class="text-xs text-muted-foreground truncate">michael&#64;flexcare.com</p>
+          <p class="text-sm font-semibold text-foreground">{{ displayName() }}</p>
+          <p class="text-xs text-muted-foreground truncate">{{ user()?.email }}</p>
         </div>
 
         <button
@@ -129,6 +127,7 @@
 
         <button
           mat-menu-item
+          (click)="onLogout()"
           class="!h-10 !rounded-md !mx-1 !w-[calc(100%-8px)] hover:!bg-red-50 !text-red-600"
         >
           <mat-icon fontSet="material-symbols-rounded" class="!text-[20px] !text-red-500"

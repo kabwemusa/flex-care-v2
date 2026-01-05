@@ -1,0 +1,746 @@
+<!-- libs/medical/ui/src/lib/applications/application-detail.component.html -->
+
+<div class="bg-slate-50 min-h-screen">
+  @if (isLoading() && !application()) {
+  <!-- Loading State -->
+  <div class="p-6 md:p-10 animate-pulse">
+    <div class="h-8 w-48 rounded bg-slate-200 mb-4"></div>
+    <div class="h-4 w-96 rounded bg-slate-100 mb-8"></div>
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div class="lg:col-span-2 space-y-6">
+        <div class="h-48 rounded-xl bg-white"></div>
+        <div class="h-64 rounded-xl bg-white"></div>
+      </div>
+      <div class="h-96 rounded-xl bg-white"></div>
+    </div>
+  </div>
+  } @else if (application(); as app) {
+  <!-- Header -->
+  <div class="bg-white border-b border-slate-200 sticky top-0 z-10">
+    <div class="px-6 md:px-10 py-4">
+      <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div class="flex items-center gap-4">
+          <button
+            mat-icon-button
+            (click)="goBack()"
+            class="!bg-slate-100 hover:!bg-slate-200"
+            matTooltip="Back to list"
+          >
+            <mat-icon fontSet="material-symbols-rounded">arrow_back</mat-icon>
+          </button>
+          <div>
+            <div class="flex items-center gap-3">
+              <h1 class="text-xl font-bold text-slate-900">{{ app.application_number }}</h1>
+              <span
+                [class]="getStatusClass(app.status)"
+                class="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium"
+              >
+                {{ getStatusLabel(app.status) }}
+              </span>
+            </div>
+            <p class="text-sm text-slate-500">
+              {{ app.applicant_name || app.contact_name || 'No applicant' }} •
+              {{ app.plan?.name || 'No plan selected' }}
+            </p>
+          </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="flex items-center gap-2 flex-wrap">
+          @if (canEdit()) {
+          <button mat-stroked-button (click)="editApplication()">
+            <mat-icon fontSet="material-symbols-rounded">edit</mat-icon>
+            Edit
+          </button>
+          } @switch (app.status) { @case ('draft') {
+          <button mat-stroked-button (click)="calculatePremium()" [disabled]="isSaving()">
+            <mat-icon fontSet="material-symbols-rounded">calculate</mat-icon>
+            Calculate
+          </button>
+          <button mat-flat-button color="primary" (click)="generateQuote()" [disabled]="isSaving()">
+            <mat-icon fontSet="material-symbols-rounded">request_quote</mat-icon>
+            Generate Quote
+          </button>
+          } @case ('quoted') {
+          <button mat-stroked-button (click)="openQuoteActions()">
+            <mat-icon fontSet="material-symbols-rounded">description</mat-icon>
+            Quote Actions
+          </button>
+          <button
+            mat-flat-button
+            color="primary"
+            (click)="submitForUnderwriting()"
+            [disabled]="isSaving()"
+          >
+            <mat-icon fontSet="material-symbols-rounded">send</mat-icon>
+            Submit for UW
+          </button>
+          } @case ('submitted') {
+          <button
+            mat-flat-button
+            color="accent"
+            (click)="startUnderwriting()"
+            [disabled]="isSaving()"
+          >
+            <mat-icon fontSet="material-symbols-rounded">policy</mat-icon>
+            Start Underwriting
+          </button>
+          } @case ('underwriting') {
+          <button
+            mat-stroked-button
+            (click)="referApplication()"
+            [disabled]="isSaving()"
+          >
+            <mat-icon fontSet="material-symbols-rounded">forward</mat-icon>
+            Refer
+          </button>
+          <button
+            mat-stroked-button
+            color="warn"
+            (click)="declineApplication()"
+            [disabled]="isSaving()"
+          >
+            <mat-icon fontSet="material-symbols-rounded">cancel</mat-icon>
+            Decline
+          </button>
+          <button
+            mat-flat-button
+            color="primary"
+            (click)="approveApplication()"
+            [disabled]="isSaving()"
+          >
+            <mat-icon fontSet="material-symbols-rounded">check_circle</mat-icon>
+            Approve
+          </button>
+          } @case ('approved') {
+          <button
+            mat-flat-button
+            color="primary"
+            (click)="acceptApplication()"
+            [disabled]="isSaving()"
+          >
+            <mat-icon fontSet="material-symbols-rounded">thumb_up</mat-icon>
+            Record Acceptance
+          </button>
+          } @case ('accepted') {
+          <button
+            mat-flat-button
+            color="primary"
+            (click)="convertToPolicy()"
+            [disabled]="isSaving()"
+          >
+            <mat-icon fontSet="material-symbols-rounded">task_alt</mat-icon>
+            Convert to Policy
+          </button>
+          } }
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Content -->
+  <div class="p-6 md:p-10">
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <!-- Main Content -->
+      <div class="lg:col-span-2 space-y-6">
+        <!-- Members Section -->
+        <div class="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+          <div class="flex items-center justify-between border-b border-slate-100 px-6 py-4">
+            <div>
+              <h2 class="text-base font-semibold text-slate-900">Members</h2>
+              <p class="text-sm text-slate-500">
+                {{ members().length }} member(s) on this application
+              </p>
+            </div>
+            @if (canEdit()) {
+            <button mat-flat-button color="primary" (click)="addMember()">
+              <mat-icon fontSet="material-symbols-rounded">person_add</mat-icon>
+              Add Member
+            </button>
+            }
+          </div>
+
+          @if (members().length === 0) {
+          <div class="p-8 text-center">
+            <mat-icon fontSet="material-symbols-rounded" class="!text-[48px] text-slate-300 mb-2">
+              group_off
+            </mat-icon>
+            <p class="text-slate-500 mb-4">No members added yet</p>
+            @if (canEdit()) {
+            <button mat-stroked-button color="primary" (click)="addMember()">
+              Add First Member
+            </button>
+            }
+          </div>
+          } @else {
+          <div class="overflow-x-auto">
+            <table mat-table [dataSource]="memberDataSource" class="w-full">
+              <!-- Member Type -->
+              <ng-container matColumnDef="member_type">
+                <th
+                  mat-header-cell
+                  *matHeaderCellDef
+                  class="!bg-slate-50 !px-4 !py-3 text-xs font-semibold uppercase text-slate-500"
+                >
+                  Type
+                </th>
+                <td mat-cell *matCellDef="let member" class="!px-4 !py-3">
+                  <span
+                    [class]="
+                      member.is_principal
+                        ? 'bg-blue-50 text-blue-700 border-blue-200'
+                        : 'bg-slate-50 text-slate-600 border-slate-200'
+                    "
+                    class="inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium"
+                  >
+                    {{ getMemberTypeLabel(member.member_type) }}
+                  </span>
+                </td>
+              </ng-container>
+
+              <!-- Name -->
+              <ng-container matColumnDef="name">
+                <th
+                  mat-header-cell
+                  *matHeaderCellDef
+                  class="!bg-slate-50 !px-4 !py-3 text-xs font-semibold uppercase text-slate-500"
+                >
+                  Name
+                </th>
+                <td mat-cell *matCellDef="let member" class="!px-4 !py-3">
+                  <div class="font-medium text-slate-900">
+                    {{ member.full_name || member.first_name + ' ' + member.last_name }}
+                  </div>
+                  @if (member.relationship && member.relationship !== 'self') {
+                  <div class="text-xs text-slate-500">
+                    {{ getRelationshipLabel(member.relationship) }}
+                  </div>
+                  }
+                </td>
+              </ng-container>
+
+              <!-- DOB -->
+              <ng-container matColumnDef="dob">
+                <th
+                  mat-header-cell
+                  *matHeaderCellDef
+                  class="!bg-slate-50 !px-4 !py-3 text-xs font-semibold uppercase text-slate-500"
+                >
+                  Age
+                </th>
+                <td mat-cell *matCellDef="let member" class="!px-4 !py-3">
+                  <div class="text-sm text-slate-900">
+                    {{ member.age || calculateAge(member.date_of_birth) }} yrs
+                  </div>
+                  <div class="text-xs text-slate-500">{{ formatDate(member.date_of_birth) }}</div>
+                </td>
+              </ng-container>
+
+              <!-- Gender -->
+              <ng-container matColumnDef="gender">
+                <th
+                  mat-header-cell
+                  *matHeaderCellDef
+                  class="!bg-slate-50 !px-4 !py-3 text-xs font-semibold uppercase text-slate-500"
+                >
+                  Gender
+                </th>
+                <td mat-cell *matCellDef="let member" class="!px-4 !py-3">
+                  <span class="text-sm text-slate-700">{{
+                    member.gender === 'M' ? 'Male' : member.gender === 'F' ? 'Female' : '-'
+                  }}</span>
+                </td>
+              </ng-container>
+
+              <!-- Premium -->
+              <ng-container matColumnDef="premium">
+                <th
+                  mat-header-cell
+                  *matHeaderCellDef
+                  class="!bg-slate-50 !px-4 !py-3 text-xs font-semibold uppercase text-slate-500 !text-right"
+                >
+                  Premium
+                </th>
+                <td mat-cell *matCellDef="let member" class="!px-4 !py-3 !text-right">
+                  <div class="font-medium text-slate-900">
+                    {{ formatCurrency(member.total_premium, app.currency) }}
+                  </div>
+                  @if (member.loading_amount > 0) {
+                  <div class="text-xs text-amber-600">
+                    +{{ formatCurrency(member.loading_amount, app.currency) }} loading
+                  </div>
+                  }
+                </td>
+              </ng-container>
+
+              <!-- UW Status -->
+              <ng-container matColumnDef="uw_status">
+                <th
+                  mat-header-cell
+                  *matHeaderCellDef
+                  class="!bg-slate-50 !px-4 !py-3 text-xs font-semibold uppercase text-slate-500"
+                >
+                  UW Status
+                </th>
+                <td mat-cell *matCellDef="let member" class="!px-4 !py-3">
+                  <span
+                    [class]="getUwStatusClass(member.underwriting_status)"
+                    class="inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium"
+                  >
+                    {{ getUwStatusLabel(member.underwriting_status) }}
+                  </span>
+                  @if (member.has_loadings || member.has_exclusions) {
+                  <div class="flex gap-1 mt-1">
+                    @if (member.has_loadings) {
+                    <span class="text-xs text-amber-600" matTooltip="Has loadings">
+                      <mat-icon fontSet="material-symbols-rounded" class="!text-[14px]"
+                        >trending_up</mat-icon
+                      >
+                    </span>
+                    } @if (member.has_exclusions) {
+                    <span class="text-xs text-red-600" matTooltip="Has exclusions">
+                      <mat-icon fontSet="material-symbols-rounded" class="!text-[14px]"
+                        >block</mat-icon
+                      >
+                    </span>
+                    }
+                  </div>
+                  }
+                </td>
+              </ng-container>
+
+              <!-- Actions -->
+              <ng-container matColumnDef="actions">
+                <th mat-header-cell *matHeaderCellDef class="!bg-slate-50 !px-4 !py-3 !w-16"></th>
+                <td mat-cell *matCellDef="let member" class="!px-4 !py-3">
+                  <button mat-icon-button [matMenuTriggerFor]="memberMenu" class="!text-slate-400">
+                    <mat-icon fontSet="material-symbols-rounded">more_vert</mat-icon>
+                  </button>
+                  <mat-menu #memberMenu="matMenu">
+                    @if (canEdit()) {
+                    <button mat-menu-item (click)="editMember(member)">
+                      <mat-icon fontSet="material-symbols-rounded">edit</mat-icon>
+                      <span>Edit</span>
+                    </button>
+                    } @if (canUnderwrite()) {
+                    <button mat-menu-item (click)="underwriteMember(member)">
+                      <mat-icon fontSet="material-symbols-rounded">policy</mat-icon>
+                      <span>Underwrite</span>
+                    </button>
+                    } @if (canEdit()) {
+                    <mat-divider></mat-divider>
+                    <button mat-menu-item (click)="removeMember(member)" class="!text-red-600">
+                      <mat-icon fontSet="material-symbols-rounded" class="!text-red-600"
+                        >delete</mat-icon
+                      >
+                      <span>Remove</span>
+                    </button>
+                    }
+                  </mat-menu>
+                </td>
+              </ng-container>
+
+              <tr mat-header-row *matHeaderRowDef="memberDisplayedColumns"></tr>
+              <tr
+                mat-row
+                *matRowDef="let row; columns: memberDisplayedColumns"
+                class="hover:bg-slate-50"
+              ></tr>
+            </table>
+          </div>
+          }
+        </div>
+
+        <!-- Addons Section -->
+        <div class="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+          <div class="flex items-center justify-between border-b border-slate-100 px-6 py-4">
+            <div>
+              <h2 class="text-base font-semibold text-slate-900">Add-ons</h2>
+              <p class="text-sm text-slate-500">Optional coverage additions</p>
+            </div>
+            @if (canEdit()) {
+            <button mat-stroked-button (click)="addAddon()">
+              <mat-icon fontSet="material-symbols-rounded">add</mat-icon>
+              Add Add-on
+            </button>
+            }
+          </div>
+
+          @if (addons().length === 0) {
+          <div class="p-6 text-center text-slate-500">No add-ons selected</div>
+          } @else {
+          <div class="overflow-x-auto">
+            <table mat-table [dataSource]="addonDataSource" class="w-full">
+              <ng-container matColumnDef="addon">
+                <th
+                  mat-header-cell
+                  *matHeaderCellDef
+                  class="!bg-slate-50 !px-4 !py-3 text-xs font-semibold uppercase text-slate-500"
+                >
+                  Add-on
+                </th>
+                <td mat-cell *matCellDef="let addon" class="!px-4 !py-3">
+                  <div class="font-medium text-slate-900">
+                    {{ addon.addon_name || addon.addon?.name || '-' }}
+                  </div>
+                  <div class="text-xs text-slate-500">
+                    {{ addon.addon_code || addon.addon?.code || '' }}
+                  </div>
+                </td>
+              </ng-container>
+
+              <ng-container matColumnDef="premium">
+                <th
+                  mat-header-cell
+                  *matHeaderCellDef
+                  class="!bg-slate-50 !px-4 !py-3 text-xs font-semibold uppercase text-slate-500 !text-right"
+                >
+                  Premium
+                </th>
+                <td mat-cell *matCellDef="let addon" class="!px-4 !py-3 !text-right">
+                  <span class="font-medium text-slate-900">{{
+                    formatCurrency(addon.premium, app.currency)
+                  }}</span>
+                </td>
+              </ng-container>
+
+              <ng-container matColumnDef="actions">
+                <th mat-header-cell *matHeaderCellDef class="!bg-slate-50 !px-4 !py-3 !w-16"></th>
+                <td mat-cell *matCellDef="let addon" class="!px-4 !py-3">
+                  @if (canEdit()) {
+                  <button
+                    mat-icon-button
+                    (click)="removeAddon(addon)"
+                    class="!text-slate-400 hover:!text-red-600"
+                  >
+                    <mat-icon fontSet="material-symbols-rounded">delete</mat-icon>
+                  </button>
+                  }
+                </td>
+              </ng-container>
+
+              <tr mat-header-row *matHeaderRowDef="addonDisplayedColumns"></tr>
+              <tr
+                mat-row
+                *matRowDef="let row; columns: addonDisplayedColumns"
+                class="hover:bg-slate-50"
+              ></tr>
+            </table>
+          </div>
+          }
+        </div>
+
+        <!-- Documents Section -->
+        <lib-application-documents
+          [applicationId]="applicationId()"
+          [canEdit]="canEdit()"
+          [members]="members()"
+        ></lib-application-documents>
+
+        <!-- Notes Section -->
+        @if (app.notes || app.underwriting_notes) {
+        <div class="rounded-xl border border-slate-200 bg-white shadow-sm p-6">
+          <h2 class="text-base font-semibold text-slate-900 mb-4">Notes</h2>
+          @if (app.notes) {
+          <div class="mb-4">
+            <h3 class="text-sm font-medium text-slate-500 mb-1">Application Notes</h3>
+            <p class="text-sm text-slate-700 whitespace-pre-wrap">{{ app.notes }}</p>
+          </div>
+          } @if (app.underwriting_notes) {
+          <div>
+            <h3 class="text-sm font-medium text-slate-500 mb-1">Underwriting Notes</h3>
+            <p class="text-sm text-slate-700 whitespace-pre-wrap">{{ app.underwriting_notes }}</p>
+          </div>
+          }
+        </div>
+        }
+      </div>
+
+      <!-- Sidebar -->
+      <div class="space-y-6">
+        <!-- Premium Summary Card -->
+        <div class="rounded-xl border border-slate-200 bg-white shadow-sm p-6">
+          <h2 class="text-base font-semibold text-slate-900 mb-4">Premium Summary</h2>
+          <div class="space-y-3">
+            <div class="flex items-center justify-between text-sm">
+              <span class="text-slate-500">Base Premium</span>
+              <span class="font-medium text-slate-900">{{
+                formatCurrency(app.base_premium, app.currency)
+              }}</span>
+            </div>
+            @if (app.addon_premium > 0) {
+            <div class="flex items-center justify-between text-sm">
+              <span class="text-slate-500">Add-ons</span>
+              <span class="text-slate-900">{{
+                formatCurrency(app.addon_premium, app.currency)
+              }}</span>
+            </div>
+            } @if (app.loading_amount > 0) {
+            <div class="flex items-center justify-between text-sm">
+              <span class="text-slate-500">Loadings</span>
+              <span class="text-amber-600"
+                >+{{ formatCurrency(app.loading_amount, app.currency) }}</span
+              >
+            </div>
+            } @if (app.discount_amount > 0) {
+            <div class="flex items-center justify-between text-sm">
+              <span class="text-slate-500">Discounts</span>
+              <span class="text-green-600"
+                >-{{ formatCurrency(app.discount_amount, app.currency) }}</span
+              >
+            </div>
+            }
+            <mat-divider></mat-divider>
+            <div class="flex items-center justify-between text-sm">
+              <span class="text-slate-500">Subtotal</span>
+              <span class="text-slate-900">{{
+                formatCurrency(app.total_premium, app.currency)
+              }}</span>
+            </div>
+            @if (app.tax_amount > 0) {
+            <div class="flex items-center justify-between text-sm">
+              <span class="text-slate-500">Tax</span>
+              <span class="text-slate-900">{{ formatCurrency(app.tax_amount, app.currency) }}</span>
+            </div>
+            }
+            <div class="pt-3 border-t border-slate-200">
+              <div class="flex items-center justify-between">
+                <span class="font-semibold text-slate-900">Total</span>
+                <span class="text-xl font-bold text-primary">{{
+                  formatCurrency(app.gross_premium, app.currency)
+                }}</span>
+              </div>
+              <p class="text-xs text-slate-500 text-right mt-1">
+                {{ getBillingLabel(app.billing_frequency) }}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Application Details Card -->
+        <div class="rounded-xl border border-slate-200 bg-white shadow-sm p-6">
+          <h2 class="text-base font-semibold text-slate-900 mb-4">Application Details</h2>
+          <div class="space-y-3">
+            <div class="flex items-center justify-between text-sm">
+              <span class="text-slate-500">Scheme</span>
+              <span class="font-medium text-slate-900">{{ app.scheme?.name || '-' }}</span>
+            </div>
+            <div class="flex items-center justify-between text-sm">
+              <span class="text-slate-500">Plan</span>
+              <span class="font-medium text-slate-900">{{ app.plan?.name || '-' }}</span>
+            </div>
+            <div class="flex items-center justify-between text-sm">
+              <span class="text-slate-500">Rate Card</span>
+              <span class="text-slate-900">{{ app.rate_card?.name || '-' }}</span>
+            </div>
+            @if (app.is_corporate && app.group) {
+            <div class="flex items-center justify-between text-sm">
+              <span class="text-slate-500">Corporate Group</span>
+              <span class="text-slate-900">{{ app.group.name }}</span>
+            </div>
+            }
+            <mat-divider></mat-divider>
+            <div class="flex items-center justify-between text-sm">
+              <span class="text-slate-500">Policy Term</span>
+              <span class="text-slate-900">{{ app.policy_term_months }} months</span>
+            </div>
+            <div class="flex items-center justify-between text-sm">
+              <span class="text-slate-500">Proposed Start</span>
+              <span class="text-slate-900">{{ formatDate(app.proposed_start_date) }}</span>
+            </div>
+            <div class="flex items-center justify-between text-sm">
+              <span class="text-slate-500">Proposed End</span>
+              <span class="text-slate-900">{{ formatDate(app.proposed_end_date) }}</span>
+            </div>
+            @if (app.quote_valid_until) {
+            <div class="flex items-center justify-between text-sm">
+              <span class="text-slate-500">Quote Expires</span>
+              <span [class]="app.is_expired ? 'text-red-600' : 'text-slate-900'">
+                {{ formatDate(app.quote_valid_until) }}
+              </span>
+            </div>
+            }
+          </div>
+        </div>
+
+        <!-- Contact Card -->
+        <div class="rounded-xl border border-slate-200 bg-white shadow-sm p-6">
+          <h2 class="text-base font-semibold text-slate-900 mb-4">Contact Information</h2>
+          <div class="space-y-3">
+            <div class="flex items-start gap-3">
+              <mat-icon
+                fontSet="material-symbols-rounded"
+                class="!text-[20px] text-slate-400 mt-0.5"
+                >person</mat-icon
+              >
+              <div>
+                <p class="text-sm font-medium text-slate-900">{{ app.contact_name || '-' }}</p>
+                <p class="text-xs text-slate-500">Contact Name</p>
+              </div>
+            </div>
+            <div class="flex items-start gap-3">
+              <mat-icon
+                fontSet="material-symbols-rounded"
+                class="!text-[20px] text-slate-400 mt-0.5"
+                >email</mat-icon
+              >
+              <div>
+                <p class="text-sm text-slate-900">{{ app.contact_email || '-' }}</p>
+                <p class="text-xs text-slate-500">Email</p>
+              </div>
+            </div>
+            <div class="flex items-start gap-3">
+              <mat-icon
+                fontSet="material-symbols-rounded"
+                class="!text-[20px] text-slate-400 mt-0.5"
+                >phone</mat-icon
+              >
+              <div>
+                <p class="text-sm text-slate-900">{{ app.contact_phone || '-' }}</p>
+                <p class="text-xs text-slate-500">Phone</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Timeline Card -->
+        <div class="rounded-xl border border-slate-200 bg-white shadow-sm p-6">
+          <h2 class="text-base font-semibold text-slate-900 mb-4">Timeline</h2>
+          <div class="space-y-4">
+            <div class="flex items-start gap-3">
+              <div class="flex h-6 w-6 items-center justify-center rounded-full bg-slate-100">
+                <mat-icon fontSet="material-symbols-rounded" class="!text-[14px] text-slate-500"
+                  >add</mat-icon
+                >
+              </div>
+              <div>
+                <p class="text-sm font-medium text-slate-900">Created</p>
+                <p class="text-xs text-slate-500">{{ formatDate(app.created_at!) }}</p>
+              </div>
+            </div>
+            @if (app.quoted_at) {
+            <div class="flex items-start gap-3">
+              <div class="flex h-6 w-6 items-center justify-center rounded-full bg-blue-100">
+                <mat-icon fontSet="material-symbols-rounded" class="!text-[14px] text-blue-600"
+                  >request_quote</mat-icon
+                >
+              </div>
+              <div>
+                <p class="text-sm font-medium text-slate-900">Quoted</p>
+                <p class="text-xs text-slate-500">{{ formatDate(app.quoted_at) }}</p>
+              </div>
+            </div>
+            } @if (app.submitted_at) {
+            <div class="flex items-start gap-3">
+              <div class="flex h-6 w-6 items-center justify-center rounded-full bg-indigo-100">
+                <mat-icon fontSet="material-symbols-rounded" class="!text-[14px] text-indigo-600"
+                  >send</mat-icon
+                >
+              </div>
+              <div>
+                <p class="text-sm font-medium text-slate-900">Submitted</p>
+                <p class="text-xs text-slate-500">{{ formatDate(app.submitted_at) }}</p>
+              </div>
+            </div>
+            } @if (app.underwriting_started_at) {
+            <div class="flex items-start gap-3">
+              <div class="flex h-6 w-6 items-center justify-center rounded-full bg-amber-100">
+                <mat-icon fontSet="material-symbols-rounded" class="!text-[14px] text-amber-600"
+                  >policy</mat-icon
+                >
+              </div>
+              <div>
+                <p class="text-sm font-medium text-slate-900">Underwriting Started</p>
+                <p class="text-xs text-slate-500">{{ formatDate(app.underwriting_started_at) }}</p>
+              </div>
+            </div>
+            } @if (app.underwriting_completed_at) {
+            <div class="flex items-start gap-3">
+              <div class="flex h-6 w-6 items-center justify-center rounded-full bg-green-100">
+                <mat-icon fontSet="material-symbols-rounded" class="!text-[14px] text-green-600"
+                  >check_circle</mat-icon
+                >
+              </div>
+              <div>
+                <p class="text-sm font-medium text-slate-900">
+                  {{ app.status === 'declined' ? 'Declined' : 'Approved' }}
+                </p>
+                <p class="text-xs text-slate-500">
+                  {{ formatDate(app.underwriting_completed_at) }}
+                </p>
+              </div>
+            </div>
+            } @if (app.accepted_at) {
+            <div class="flex items-start gap-3">
+              <div class="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-100">
+                <mat-icon fontSet="material-symbols-rounded" class="!text-[14px] text-emerald-600"
+                  >thumb_up</mat-icon
+                >
+              </div>
+              <div>
+                <p class="text-sm font-medium text-slate-900">Accepted</p>
+                <p class="text-xs text-slate-500">{{ formatDate(app.accepted_at) }}</p>
+              </div>
+            </div>
+            } @if (app.converted_at) {
+            <div class="flex items-start gap-3">
+              <div class="flex h-6 w-6 items-center justify-center rounded-full bg-teal-100">
+                <mat-icon fontSet="material-symbols-rounded" class="!text-[14px] text-teal-600"
+                  >task_alt</mat-icon
+                >
+              </div>
+              <div>
+                <p class="text-sm font-medium text-slate-900">Converted to Policy</p>
+                <p class="text-xs text-slate-500">{{ formatDate(app.converted_at) }}</p>
+                @if (app.converted_policy) {
+                <a
+                  [routerLink]="['/medical/policies', app.converted_policy.id]"
+                  class="text-xs text-primary hover:underline"
+                >
+                  {{ app.converted_policy.policy_number }}
+                </a>
+                }
+              </div>
+            </div>
+            }
+          </div>
+        </div>
+
+        <!-- Renewal Info -->
+        @if (app.is_renewal && app.renewal_of_policy) {
+        <div class="rounded-xl border border-purple-200 bg-purple-50 p-6">
+          <div class="flex items-center gap-2 mb-3">
+            <mat-icon fontSet="material-symbols-rounded" class="!text-[20px] text-purple-600"
+              >autorenew</mat-icon
+            >
+            <h2 class="text-base font-semibold text-purple-900">Renewal Application</h2>
+          </div>
+          <p class="text-sm text-purple-700 mb-2">This is a renewal of an existing policy.</p>
+          <a
+            [routerLink]="['/medical/policies', app.renewal_of_policy.id]"
+            class="text-sm font-medium text-purple-600 hover:underline"
+          >
+            View Original Policy: {{ app.renewal_of_policy.policy_number }}
+          </a>
+        </div>
+        }
+      </div>
+    </div>
+  </div>
+  } @else {
+  <!-- Not Found State -->
+  <div class="flex flex-col items-center justify-center min-h-[60vh]">
+    <mat-icon fontSet="material-symbols-rounded" class="!text-[64px] text-slate-300 mb-4"
+      >search_off</mat-icon
+    >
+    <h2 class="text-xl font-semibold text-slate-900 mb-2">Application Not Found</h2>
+    <p class="text-slate-500 mb-6">
+      The application you're looking for doesn't exist or has been removed.
+    </p>
+    <button mat-flat-button color="primary" (click)="goBack()">
+      <mat-icon fontSet="material-symbols-rounded">arrow_back</mat-icon>
+      Back to Applications
+    </button>
+  </div>
+  }
+</div>

@@ -318,7 +318,7 @@ export class MedicalGroupsList implements OnInit, AfterViewInit {
       getLabelByValue(COMPANY_SIZES, g.company_size),
       g.status,
       g.policies_count || 0,
-      g.active_members_count || 0,
+      // g.active_members_count || 0,
       g.email || '',
     ]);
 

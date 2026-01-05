@@ -71,7 +71,7 @@ export class MedicalAddonCatalogDialog implements OnInit {
     // Step 1: Basic Info
     this.basicForm = this.fb.group({
       name: [this.data?.name || '', Validators.required],
-      code: [this.data?.code || ''],
+      // code: [this.data?.code || ''],
       addon_type: [this.data?.addon_type || 'rider', Validators.required],
       description: [this.data?.description || ''],
     });

@@ -1,25 +1,15 @@
 // libs/medical/data/src/lib/stores/group.store.ts
-// Corporate Groups Store - Signal-based state management
 
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { computed, inject, Injectable, signal } from '@angular/core';
-import { tap, catchError, of, finalize, Observable } from 'rxjs';
-import { ApiResponse } from '../models/api-reponse';
-import {
-  CorporateGroup,
-  GroupContact,
-  GroupStats,
-  CreateGroupPayload,
-  CreateContactPayload,
-} from '../models/medical-interfaces';
+import { tap } from 'rxjs';
+import { ApiResponse, CorporateGroup, GroupContact } from '../models/medical-interfaces';
 
 interface GroupState {
   items: CorporateGroup[];
   selected: CorporateGroup | null;
-  stats: GroupStats | null;
   loading: boolean;
   saving: boolean;
-  error: string | null;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -30,161 +20,115 @@ export class GroupStore {
   private readonly state = signal<GroupState>({
     items: [],
     selected: null,
-    stats: null,
     loading: false,
     saving: false,
-    error: null,
   });
 
-  // =========================================================================
-  // SELECTORS
-  // =========================================================================
-
+  // Selectors
   readonly groups = computed(() => this.state().items);
   readonly selectedGroup = computed(() => this.state().selected);
-  readonly stats = computed(() => this.state().stats);
   readonly isLoading = computed(() => this.state().loading);
   readonly isSaving = computed(() => this.state().saving);
-  readonly error = computed(() => this.state().error);
 
-  // Computed helpers
+  // Computed selectors
   readonly activeGroups = computed(() => this.groups().filter((g) => g.status === 'active'));
-
-  readonly totalPolicies = computed(() =>
-    this.groups().reduce((sum, g) => sum + (g.policies_count || 0), 0)
-  );
-
-  readonly totalMembers = computed(() =>
-    this.groups().reduce((sum, g) => sum + (g.active_members_count || 0), 0)
-  );
+  readonly prospectGroups = computed(() => this.groups().filter((g) => g.status === 'prospect'));
 
   // =========================================================================
-  // ACTIONS
+  // LOAD OPERATIONS
   // =========================================================================
 
-  loadAll(): void {
-    this.state.update((s) => ({ ...s, loading: true, error: null }));
+  loadAll(filters?: {
+    search?: string;
+    status?: string;
+    company_size?: string;
+    industry?: string;
+  }) {
+    this.state.update((s) => ({ ...s, loading: true }));
 
-    this.http
-      .get<ApiResponse<CorporateGroup[]>>(this.apiUrl)
-      .pipe(
-        tap((res) => {
-          this.state.update((s) => ({
-            ...s,
-            items: res.data ?? [],
-            loading: false,
-          }));
-        }),
-        catchError((err) => {
-          this.state.update((s) => ({
-            ...s,
-            loading: false,
-            error: err.error?.message || 'Failed to load groups',
-          }));
-          return of(null);
-        })
-      )
-      .subscribe();
+    let params = new HttpParams();
+    if (filters?.search) params = params.set('search', filters.search);
+    if (filters?.status) params = params.set('status', filters.status);
+    if (filters?.company_size) params = params.set('company_size', filters.company_size);
+    if (filters?.industry) params = params.set('industry', filters.industry);
+
+    this.http.get<ApiResponse<CorporateGroup[]>>(this.apiUrl, { params }).subscribe({
+      next: (res) =>
+        this.state.update((s) => ({
+          ...s,
+          items: res.data,
+          loading: false,
+        })),
+      error: () => this.state.update((s) => ({ ...s, loading: false })),
+    });
   }
 
-  loadOne(id: string): Observable<ApiResponse<CorporateGroup> | null> {
-    this.state.update((s) => ({ ...s, loading: true, error: null }));
+  loadOne(id: string) {
+    this.state.update((s) => ({ ...s, loading: true }));
 
     return this.http.get<ApiResponse<CorporateGroup>>(`${this.apiUrl}/${id}`).pipe(
-      tap((res) => {
-        this.state.update((s) => ({
-          ...s,
-          selected: res.data,
-          loading: false,
-        }));
-      }),
-      catchError((err) => {
-        this.state.update((s) => ({
-          ...s,
-          loading: false,
-          error: err.error?.message || 'Failed to load group',
-        }));
-        return of(null);
+      tap({
+        next: (res) =>
+          this.state.update((s) => ({
+            ...s,
+            selected: res.data,
+            loading: false,
+          })),
+        error: () => this.state.update((s) => ({ ...s, loading: false })),
       })
     );
   }
 
-  loadDropdown(): Observable<ApiResponse<CorporateGroup[]>> {
+  loadDropdown() {
     return this.http.get<ApiResponse<CorporateGroup[]>>(`${this.apiUrl}/dropdown`);
   }
 
-  create(payload: CreateGroupPayload): Observable<ApiResponse<CorporateGroup> | null> {
-    this.state.update((s) => ({ ...s, saving: true, error: null }));
+  // =========================================================================
+  // CRUD OPERATIONS
+  // =========================================================================
 
-    return this.http.post<ApiResponse<CorporateGroup>>(this.apiUrl, payload).pipe(
-      tap((res) => {
-        if (res.data) {
+  create(group: Partial<CorporateGroup>) {
+    this.state.update((s) => ({ ...s, saving: true }));
+
+    return this.http.post<ApiResponse<CorporateGroup>>(this.apiUrl, group).pipe(
+      tap({
+        next: (res) =>
           this.state.update((s) => ({
             ...s,
-            items: [res.data!, ...s.items],
+            items: [res.data, ...s.items],
             saving: false,
-          }));
-        }
-      }),
-      catchError((err) => {
-        this.state.update((s) => ({
-          ...s,
-          saving: false,
-          error: err.error?.message || 'Failed to create group',
-        }));
-        return of(null);
+          })),
+        error: () => this.state.update((s) => ({ ...s, saving: false })),
       })
     );
   }
 
-  update(
-    id: string,
-    payload: Partial<CreateGroupPayload>
-  ): Observable<ApiResponse<CorporateGroup> | null> {
-    this.state.update((s) => ({ ...s, saving: true, error: null }));
+  update(id: string, changes: Partial<CorporateGroup>) {
+    this.state.update((s) => ({ ...s, saving: true }));
 
-    return this.http.put<ApiResponse<CorporateGroup>>(`${this.apiUrl}/${id}`, payload).pipe(
-      tap((res) => {
-        if (res.data) {
+    return this.http.patch<ApiResponse<CorporateGroup>>(`${this.apiUrl}/${id}`, changes).pipe(
+      tap({
+        next: (res) =>
           this.state.update((s) => ({
             ...s,
-            items: s.items.map((g) => (g.id === id ? res.data! : g)),
+            items: s.items.map((item) => (item.id === id ? res.data : item)),
             selected: s.selected?.id === id ? res.data : s.selected,
             saving: false,
-          }));
-        }
-      }),
-      catchError((err) => {
-        this.state.update((s) => ({
-          ...s,
-          saving: false,
-          error: err.error?.message || 'Failed to update group',
-        }));
-        return of(null);
+          })),
+        error: () => this.state.update((s) => ({ ...s, saving: false })),
       })
     );
   }
 
-  delete(id: string): Observable<ApiResponse<null> | null> {
-    this.state.update((s) => ({ ...s, saving: true, error: null }));
-
-    return this.http.delete<ApiResponse<null>>(`${this.apiUrl}/${id}`).pipe(
-      tap(() => {
+  delete(id: string) {
+    return this.http.delete<ApiResponse<void>>(`${this.apiUrl}/${id}`).pipe(
+      tap(() =>
         this.state.update((s) => ({
           ...s,
-          items: s.items.filter((g) => g.id !== id),
+          items: s.items.filter((item) => item.id !== id),
           selected: s.selected?.id === id ? null : s.selected,
-          saving: false,
-        }));
-      }),
-      catchError((err) => {
-        this.state.update((s) => ({
-          ...s,
-          saving: false,
-          error: err.error?.message || 'Failed to delete group',
-        }));
-        return of(null);
-      })
+        }))
+      )
     );
   }
 
@@ -192,179 +136,87 @@ export class GroupStore {
   // STATUS ACTIONS
   // =========================================================================
 
-  activate(id: string): Observable<ApiResponse<CorporateGroup> | null> {
-    return this.updateStatus(id, 'activate');
+  activate(id: string) {
+    this.state.update((s) => ({ ...s, saving: true }));
+
+    return this.http.post<ApiResponse<CorporateGroup>>(`${this.apiUrl}/${id}/activate`, {}).pipe(
+      tap({
+        next: (res) => this.updateGroupInState(id, res.data),
+        error: () => this.state.update((s) => ({ ...s, saving: false })),
+      })
+    );
   }
 
-  suspend(id: string, reason?: string): Observable<ApiResponse<CorporateGroup> | null> {
-    return this.updateStatus(id, 'suspend', { reason });
-  }
-
-  private updateStatus(
-    id: string,
-    action: string,
-    payload?: object
-  ): Observable<ApiResponse<CorporateGroup> | null> {
+  suspend(id: string, reason?: string) {
     this.state.update((s) => ({ ...s, saving: true }));
 
     return this.http
-      .post<ApiResponse<CorporateGroup>>(`${this.apiUrl}/${id}/${action}`, payload || {})
+      .post<ApiResponse<CorporateGroup>>(`${this.apiUrl}/${id}/suspend`, { reason })
       .pipe(
-        tap((res) => {
-          if (res.data) {
-            this.state.update((s) => ({
-              ...s,
-              items: s.items.map((g) => (g.id === id ? res.data! : g)),
-              selected: s.selected?.id === id ? res.data : s.selected,
-              saving: false,
-            }));
-          }
-        }),
-        catchError((err) => {
-          this.state.update((s) => ({
-            ...s,
-            saving: false,
-            error: err.error?.message || `Failed to ${action} group`,
-          }));
-          return of(null);
+        tap({
+          next: (res) => this.updateGroupInState(id, res.data),
+          error: () => this.state.update((s) => ({ ...s, saving: false })),
         })
       );
   }
 
   // =========================================================================
-  // CONTACTS
+  // CONTACT OPERATIONS
   // =========================================================================
 
-  loadContacts(groupId: string): Observable<ApiResponse<GroupContact[]>> {
-    return this.http.get<ApiResponse<GroupContact[]>>(`${this.apiUrl}/${groupId}/contacts`);
-  }
-
-  addContact(
-    groupId: string,
-    payload: CreateContactPayload
-  ): Observable<ApiResponse<GroupContact> | null> {
+  addContact(groupId: string, contact: Partial<GroupContact>) {
     this.state.update((s) => ({ ...s, saving: true }));
 
     return this.http
-      .post<ApiResponse<GroupContact>>(`${this.apiUrl}/${groupId}/contacts`, payload)
+      .post<ApiResponse<CorporateGroup>>(`${this.apiUrl}/${groupId}/contacts`, contact)
       .pipe(
-        tap((res) => {
-          if (res.data && this.state().selected?.id === groupId) {
-            const contacts = [...(this.state().selected?.contacts || []), res.data];
-            this.state.update((s) => ({
-              ...s,
-              selected: s.selected ? { ...s.selected, contacts } : null,
-              saving: false,
-            }));
-          }
-        }),
-        finalize(() => this.state.update((s) => ({ ...s, saving: false }))),
-        catchError((err) => {
-          this.state.update((s) => ({
-            ...s,
-            error: err.error?.message || 'Failed to add contact',
-          }));
-          return of(null);
+        tap({
+          next: (res) => this.updateGroupInState(groupId, res.data),
+          error: () => this.state.update((s) => ({ ...s, saving: false })),
         })
       );
   }
 
-  updateContact(
-    groupId: string,
-    contactId: string,
-    payload: Partial<CreateContactPayload>
-  ): Observable<ApiResponse<GroupContact> | null> {
+  updateContact(groupId: string, contactId: string, changes: Partial<GroupContact>) {
     this.state.update((s) => ({ ...s, saving: true }));
 
     return this.http
-      .put<ApiResponse<GroupContact>>(`${this.apiUrl}/${groupId}/contacts/${contactId}`, payload)
-      .pipe(
-        tap((res) => {
-          if (res.data && this.state().selected?.id === groupId) {
-            const contacts = this.state().selected?.contacts?.map((c) =>
-              c.id === contactId ? res.data! : c
-            );
-            this.state.update((s) => ({
-              ...s,
-              selected: s.selected ? { ...s.selected, contacts } : null,
-              saving: false,
-            }));
-          }
-        }),
-        finalize(() => this.state.update((s) => ({ ...s, saving: false }))),
-        catchError((err) => {
-          this.state.update((s) => ({
-            ...s,
-            error: err.error?.message || 'Failed to update contact',
-          }));
-          return of(null);
-        })
-      );
-  }
-
-  removeContact(groupId: string, contactId: string): Observable<ApiResponse<null> | null> {
-    this.state.update((s) => ({ ...s, saving: true }));
-
-    return this.http
-      .delete<ApiResponse<null>>(`${this.apiUrl}/${groupId}/contacts/${contactId}`)
-      .pipe(
-        tap(() => {
-          if (this.state().selected?.id === groupId) {
-            const contacts = this.state().selected?.contacts?.filter((c) => c.id !== contactId);
-            this.state.update((s) => ({
-              ...s,
-              selected: s.selected ? { ...s.selected, contacts } : null,
-              saving: false,
-            }));
-          }
-        }),
-        finalize(() => this.state.update((s) => ({ ...s, saving: false }))),
-        catchError((err) => {
-          this.state.update((s) => ({
-            ...s,
-            error: err.error?.message || 'Failed to remove contact',
-          }));
-          return of(null);
-        })
-      );
-  }
-
-  setPrimaryContact(
-    groupId: string,
-    contactId: string
-  ): Observable<ApiResponse<GroupContact> | null> {
-    this.state.update((s) => ({ ...s, saving: true }));
-
-    return this.http
-      .post<ApiResponse<GroupContact>>(
-        `${this.apiUrl}/${groupId}/contacts/${contactId}/primary`,
-        {}
+      .patch<ApiResponse<CorporateGroup>>(
+        `${this.apiUrl}/${groupId}/contacts/${contactId}`,
+        changes
       )
       .pipe(
-        tap(() => {
-          // Reload the group to get updated contacts
-          this.loadOne(groupId).subscribe();
-        }),
-        finalize(() => this.state.update((s) => ({ ...s, saving: false }))),
-        catchError((err) => {
-          this.state.update((s) => ({
-            ...s,
-            error: err.error?.message || 'Failed to set primary contact',
-          }));
-          return of(null);
+        tap({
+          next: (res) => this.updateGroupInState(groupId, res.data),
+          error: () => this.state.update((s) => ({ ...s, saving: false })),
+        })
+      );
+  }
+
+  removeContact(groupId: string, contactId: string) {
+    return this.http
+      .delete<ApiResponse<CorporateGroup>>(`${this.apiUrl}/${groupId}/contacts/${contactId}`)
+      .pipe(
+        tap({
+          next: (res) => this.updateGroupInState(groupId, res.data),
         })
       );
   }
 
   // =========================================================================
-  // HELPERS
+  // UTILITY METHODS
   // =========================================================================
 
-  clearSelected(): void {
+  clearSelected() {
     this.state.update((s) => ({ ...s, selected: null }));
   }
 
-  clearError(): void {
-    this.state.update((s) => ({ ...s, error: null }));
+  private updateGroupInState(id: string, data: CorporateGroup) {
+    this.state.update((s) => ({
+      ...s,
+      items: s.items.map((item) => (item.id === id ? data : item)),
+      selected: s.selected?.id === id ? data : s.selected,
+      saving: false,
+    }));
   }
 }

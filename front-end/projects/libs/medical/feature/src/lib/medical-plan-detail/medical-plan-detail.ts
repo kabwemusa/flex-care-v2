@@ -30,6 +30,7 @@ import { MedicalPlanListDialog } from '../dialogs/medical-plan-list-dialog/medic
 import { MedicalPlanBenefitsConfig } from '../medical-plan-benefits-config/medical-plan-benefits-config';
 import { MedicalPlanRateCardConfig } from '../medical-plan-rate-card-config/medical-plan-rate-card-config';
 import { MedicalPlanAddonConfig } from '../medical-plan-addon-config/medical-plan-addon-config';
+import { MedicalPlanExclusionConfig } from '../medical-plan-exclusion-config/medical-plan-exclusion-config';
 
 @Component({
   selector: 'lib-medical-plan-detail',
@@ -46,6 +47,7 @@ import { MedicalPlanAddonConfig } from '../medical-plan-addon-config/medical-pla
     MedicalPlanBenefitsConfig,
     MedicalPlanRateCardConfig,
     MedicalPlanAddonConfig,
+    MedicalPlanExclusionConfig,
   ],
   templateUrl: './medical-plan-detail.html',
 })
@@ -211,12 +213,34 @@ export class MedicalPlanDetail implements OnInit {
 
     if (!confirmed) return;
 
-    this.store.update(plan.id, { is_active: !plan.is_active }).subscribe({
+    this.store.activate(plan.id).subscribe({
       next: () => {
         this.feedback.success(`Plan ${action}d successfully`);
-        this.loadPlan(plan.id);
       },
       error: (err) => this.feedback.error(err?.error?.message ?? `Failed to ${action} plan`),
+    });
+  }
+
+  exportToPdf() {
+    const plan = this.plan();
+    if (!plan) return;
+
+    this.store.exportPdf(plan.id).subscribe({
+      next: (response) => {
+        // For now, we'll create a JSON file with the plan data
+        // In production, the backend will return a PDF blob
+        const dataStr = JSON.stringify(response.data, null, 2);
+        const dataBlob = new Blob([dataStr], { type: 'application/json' });
+        const url = window.URL.createObjectURL(dataBlob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `${plan.code}_plan_details.json`;
+        link.click();
+        window.URL.revokeObjectURL(url);
+
+        this.feedback.success('Plan details exported successfully');
+      },
+      error: (err) => this.feedback.error(err?.error?.message ?? 'Failed to export plan'),
     });
   }
 

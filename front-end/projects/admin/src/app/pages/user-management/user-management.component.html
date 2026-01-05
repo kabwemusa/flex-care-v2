@@ -1,0 +1,379 @@
+<div class="bg-white p-6 md:p-10 min-h-screen shadow-sm">
+  <lib-page-header title="User Management" subtitle="Manage system users, roles, and permissions.">
+    <div actions class="flex gap-2">
+      <button
+        mat-button
+        (click)="exportToCsv()"
+        class="!border-divider !text-foreground-600 hover:!bg-content2 hidden sm:flex"
+      >
+        <mat-icon fontSet="material-symbols-rounded">download</mat-icon>
+        Export
+      </button>
+
+      <button mat-flat-button color="primary" class="!rounded-lg" (click)="openUserDialog()">
+        <mat-icon fontSet="material-symbols-rounded">person_add</mat-icon>
+        New User
+      </button>
+    </div>
+  </lib-page-header>
+
+  <!-- KPI Cards -->
+  <div class="grid grid-cols-1 gap-4 sm:grid-cols-3 mb-6">
+    <div class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+      <div class="flex items-center justify-between">
+        <div>
+          <div class="text-sm font-medium text-slate-500">Total Users</div>
+          <div class="mt-2 text-2xl font-bold tracking-tight text-slate-900">
+            {{ store.total() }}
+          </div>
+        </div>
+        <div class="flex h-10 w-10 items-center justify-center rounded-full bg-slate-100">
+          <mat-icon fontSet="material-symbols-rounded" class="!text-slate-500">group</mat-icon>
+        </div>
+      </div>
+    </div>
+
+    <div class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+      <div class="flex items-center justify-between">
+        <div>
+          <div class="text-sm font-medium text-slate-500">Active Users</div>
+          <div class="mt-2 text-2xl font-bold tracking-tight text-green-600">
+            {{ store.activeUsers().length }}
+          </div>
+        </div>
+        <div class="flex h-10 w-10 items-center justify-center rounded-full bg-green-100">
+          <mat-icon fontSet="material-symbols-rounded" class="!text-green-600"
+            >check_circle</mat-icon
+          >
+        </div>
+      </div>
+    </div>
+
+    <div class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+      <div class="flex items-center justify-between">
+        <div>
+          <div class="text-sm font-medium text-slate-500">System Admins</div>
+          <div class="mt-2 text-2xl font-bold tracking-tight text-blue-600">
+            {{ store.systemAdmins().length }}
+          </div>
+        </div>
+        <div class="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100">
+          <mat-icon fontSet="material-symbols-rounded" class="!text-blue-600"
+            >admin_panel_settings</mat-icon
+          >
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Table Container -->
+  <div class="flex flex-col rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+    <!-- Filters Bar -->
+    <div
+      class="flex flex-col gap-4 border-b border-slate-100 p-4 sm:flex-row sm:items-start sm:justify-between"
+    >
+      <!-- Search -->
+      <div class="relative w-full sm:w-72 sm:mt-1">
+        <mat-icon
+          fontSet="material-symbols-rounded"
+          class="absolute left-3 top-1/2 -translate-y-1/2 !text-[20px] text-slate-400"
+          >search</mat-icon
+        >
+        <input
+          type="text"
+          placeholder="Search users..."
+          class="h-10 w-full rounded-lg border border-slate-200 bg-slate-50 pl-10 pr-4 text-sm text-slate-900 outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all placeholder:text-slate-400"
+          [(ngModel)]="searchQuery"
+          (input)="applyFilters()"
+        />
+      </div>
+
+      <!-- Filter Dropdowns -->
+      <div class="flex items-start gap-2 flex-wrap">
+        <mat-form-field
+          appearance="outline"
+          subscriptSizing="dynamic"
+          class="modern-filter-select w-48"
+        >
+          <mat-select
+            [(value)]="statusFilter"
+            (selectionChange)="applyFilters()"
+            panelClass="modern-select-panel"
+            placeholder="All Statuses"
+          >
+            <mat-option [value]="undefined">All Statuses</mat-option>
+            <mat-option [value]="true">Active</mat-option>
+            <mat-option [value]="false">Inactive</mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field
+          appearance="outline"
+          subscriptSizing="dynamic"
+          class="modern-filter-select w-48"
+        >
+          <mat-select
+            [(value)]="moduleFilter"
+            (selectionChange)="applyFilters()"
+            panelClass="modern-select-panel"
+            placeholder="All Modules"
+          >
+            <mat-option [value]="undefined">All Modules</mat-option>
+            <mat-option value="medical">Medical</mat-option>
+            <mat-option value="life">Life</mat-option>
+            <mat-option value="motor">Motor</mat-option>
+            <mat-option value="travel">Travel</mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        @if (searchQuery || statusFilter !== undefined || moduleFilter) {
+        <button
+          mat-stroked-button
+          class="!border-slate-200 !text-slate-600 !h-10 !mt-1"
+          (click)="clearFilters()"
+        >
+          <mat-icon fontSet="material-symbols-rounded">clear</mat-icon>
+          Clear
+        </button>
+        }
+      </div>
+    </div>
+
+    <!-- Loading State -->
+    @if (store.isLoading()) {
+    <div class="divide-y divide-slate-100">
+      @for (i of [1,2,3,4,5]; track i) {
+      <div class="flex items-center gap-4 p-4 animate-pulse">
+        <div class="h-10 w-10 shrink-0 rounded-full bg-slate-100"></div>
+        <div class="flex-1 space-y-2">
+          <div class="h-4 w-1/3 rounded bg-slate-100"></div>
+          <div class="h-3 w-1/4 rounded bg-slate-50"></div>
+        </div>
+        <div class="h-8 w-24 rounded bg-slate-100"></div>
+      </div>
+      }
+    </div>
+    } @else {
+    <!-- Table -->
+    <div class="overflow-x-auto">
+      <table mat-table [dataSource]="dataSource" matSort class="w-full">
+        <!-- Status Column -->
+        <ng-container matColumnDef="status">
+          <th
+            mat-header-cell
+            *matHeaderCellDef
+            mat-sort-header
+            class="!bg-slate-50 !px-6 !py-3 text-xs font-semibold uppercase tracking-wider text-slate-500 !w-28"
+          >
+            Status
+          </th>
+          <td mat-cell *matCellDef="let user" class="!px-6 !py-4">
+            <span
+              [class]="
+                user.is_active
+                  ? 'bg-green-50 text-green-700 border-green-200'
+                  : 'bg-gray-100 text-gray-600 border-gray-200'
+              "
+              class="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium"
+            >
+              {{ user.is_active ? 'Active' : 'Inactive' }}
+            </span>
+          </td>
+        </ng-container>
+
+        <!-- User Column -->
+        <ng-container matColumnDef="user">
+          <th
+            mat-header-cell
+            *matHeaderCellDef
+            mat-sort-header
+            class="!bg-slate-50 !px-6 !py-3 text-xs font-semibold uppercase tracking-wider text-slate-500"
+          >
+            User
+          </th>
+          <td mat-cell *matCellDef="let user" class="!px-6 !py-4">
+            <div class="flex items-center gap-3">
+              <div
+                class="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary font-semibold text-sm"
+              >
+                {{ getUserInitials(user) }}
+              </div>
+              <div class="flex flex-col">
+                <span class="font-medium text-slate-900">{{ user.username || user.email }}</span>
+                @if (user.username) {
+                <span class="text-xs text-slate-500">{{ user.email }}</span>
+                }
+              </div>
+            </div>
+          </td>
+        </ng-container>
+
+        <!-- Modules Column -->
+        <ng-container matColumnDef="modules">
+          <th
+            mat-header-cell
+            *matHeaderCellDef
+            class="!bg-slate-50 !px-6 !py-3 text-xs font-semibold uppercase tracking-wider text-slate-500"
+          >
+            Modules
+          </th>
+          <td mat-cell *matCellDef="let user" class="!px-6 !py-4">
+            <div class="flex flex-wrap gap-1">
+              @if (user.is_system_admin) {
+              <span
+                class="inline-flex items-center rounded-full border border-purple-200 bg-purple-50 px-2 py-0.5 text-xs font-medium text-purple-700"
+              >
+                All Modules
+              </span>
+              } @else if (user.module_access && user.module_access.length > 0) { @for (module of
+              user.module_access; track module.module_code) {
+              <span
+                class="inline-flex items-center rounded-full border border-blue-200 bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700"
+              >
+                {{ module.module_code | titlecase }}
+              </span>
+              } } @else {
+              <span class="text-xs text-slate-400">No modules</span>
+              }
+            </div>
+          </td>
+        </ng-container>
+
+        <!-- Roles Column -->
+        <ng-container matColumnDef="roles">
+          <th
+            mat-header-cell
+            *matHeaderCellDef
+            class="!bg-slate-50 !px-6 !py-3 text-xs font-semibold uppercase tracking-wider text-slate-500"
+          >
+            Roles
+          </th>
+          <td mat-cell *matCellDef="let user" class="!px-6 !py-4">
+            <div class="flex flex-wrap gap-1">
+              @if (user.is_system_admin) {
+              <span
+                class="inline-flex items-center rounded-full border border-red-200 bg-red-50 px-2 py-0.5 text-xs font-medium text-red-700"
+              >
+                System Admin
+              </span>
+              } @else if (user.roles && user.roles.length > 0) { @for (role of user.roles.slice(0,
+              2); track role.id) {
+              <span
+                class="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-xs font-medium text-slate-700"
+              >
+                {{ role.name }}
+              </span>
+              } @if (user.roles.length > 2) {
+              <span class="text-xs text-slate-500">+{{ user.roles.length - 2 }} more</span>
+              } } @else {
+              <span class="text-xs text-slate-400">No roles</span>
+              }
+            </div>
+          </td>
+        </ng-container>
+
+        <!-- Last Login Column -->
+        <ng-container matColumnDef="last_login">
+          <th
+            mat-header-cell
+            *matHeaderCellDef
+            mat-sort-header
+            class="!bg-slate-50 !px-6 !py-3 text-xs font-semibold uppercase tracking-wider text-slate-500"
+          >
+            Last Login
+          </th>
+          <td mat-cell *matCellDef="let user" class="!px-6 !py-4">
+            <span class="text-sm text-slate-700">{{
+              user.last_login_at ? (user.last_login_at | date : 'short') : 'Never'
+            }}</span>
+          </td>
+        </ng-container>
+
+        <!-- Actions Column -->
+        <ng-container matColumnDef="actions">
+          <th mat-header-cell *matHeaderCellDef class="!bg-slate-50 !w-16"></th>
+          <td mat-cell *matCellDef="let user" class="!px-4 !py-4 text-right">
+            <button
+              mat-icon-button
+              [matMenuTriggerFor]="menu"
+              class="!text-slate-400 hover:!bg-slate-100 hover:!text-slate-900"
+            >
+              <mat-icon fontSet="material-symbols-rounded">more_vert</mat-icon>
+            </button>
+
+            <mat-menu
+              #menu="matMenu"
+              class="!rounded-xl !border !border-slate-200 !shadow-lg !bg-white"
+            >
+              <button mat-menu-item (click)="openUserDialog(user)">
+                <mat-icon fontSet="material-symbols-rounded" class="!text-slate-500">edit</mat-icon>
+                <span>Edit User</span>
+              </button>
+              <button mat-menu-item (click)="openRoleDialog(user)">
+                <mat-icon fontSet="material-symbols-rounded" class="!text-slate-500"
+                  >badge</mat-icon
+                >
+                <span>Assign Roles</span>
+              </button>
+              <button mat-menu-item (click)="openModuleAccessDialog(user)">
+                <mat-icon fontSet="material-symbols-rounded" class="!text-slate-500">apps</mat-icon>
+                <span>Module Access</span>
+              </button>
+              <mat-divider class="!my-1 opacity-50"></mat-divider>
+              <button mat-menu-item (click)="toggleUserStatus(user)">
+                <mat-icon fontSet="material-symbols-rounded" class="!text-slate-500">
+                  {{ user.is_active ? 'block' : 'check_circle' }}
+                </mat-icon>
+                <span>{{ user.is_active ? 'Deactivate' : 'Activate' }}</span>
+              </button>
+              <button
+                mat-menu-item
+                class="!text-red-600 hover:!bg-red-50"
+                (click)="deleteUser(user)"
+              >
+                <mat-icon fontSet="material-symbols-rounded" class="!text-red-500">delete</mat-icon>
+                <span>Delete User</span>
+              </button>
+            </mat-menu>
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+        <tr
+          mat-row
+          *matRowDef="let row; columns: displayedColumns"
+          class="group border-b border-slate-100 last:border-0 hover:bg-slate-50 transition-colors"
+        ></tr>
+      </table>
+
+      <!-- Empty State -->
+      @if (store.users().length === 0) {
+      <div class="flex flex-col items-center justify-center py-16 text-center">
+        <div class="flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 mb-4">
+          <mat-icon fontSet="material-symbols-rounded" class="!text-slate-400">group</mat-icon>
+        </div>
+        <h3 class="text-sm font-medium text-slate-900">No users found</h3>
+        <p class="mt-1 text-sm text-slate-500 max-w-xs">
+          Get started by creating a new user account.
+        </p>
+        <button mat-stroked-button color="primary" class="mt-4" (click)="openUserDialog()">
+          Create First User
+        </button>
+      </div>
+      }
+    </div>
+
+    <!-- Paginator -->
+    @if (store.users().length > 0) {
+    <mat-paginator
+      [length]="store.total()"
+      [pageSize]="pageSize"
+      [pageSizeOptions]="[10, 20, 50]"
+      [pageIndex]="store.currentPage() - 1"
+      (page)="onPageChange($event)"
+      showFirstLastButtons
+      class="!border-t !border-slate-100 !bg-white"
+    ></mat-paginator>
+    } }
+  </div>
+</div>

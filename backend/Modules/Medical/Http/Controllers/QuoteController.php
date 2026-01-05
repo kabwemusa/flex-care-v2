@@ -7,7 +7,7 @@ use Illuminate\Http\JsonResponse;
 use Modules\Medical\Models\Plan;
 use Modules\Medical\Models\RateCard;
 use Modules\Medical\Http\Requests\QuoteRequest;
-use Modules\Medical\Services\PremiumCalculatorService;
+use Modules\Medical\Services\PremiumService;
 use Modules\Medical\Services\DiscountService;
 use Modules\Medical\Services\LoadingService;
 use App\Traits\ApiResponse;
@@ -17,7 +17,7 @@ class QuoteController extends Controller
     use ApiResponse;
 
     public function __construct(
-        protected PremiumCalculatorService $premiumCalculator,
+        protected PremiumService $premiumCalculator,
         protected DiscountService $discountService,
         protected LoadingService $loadingService
     ) {}
@@ -28,17 +28,26 @@ class QuoteController extends Controller
      */
     public function generate(QuoteRequest $request): JsonResponse
     {
-        $plan = Plan::with(['rateCards' => fn($q) => $q->active()->effective()])
+        $plan = Plan::with(['scheme', 'rateCards'])
             ->findOrFail($request->plan_id);
 
-        $rateCard = $plan->active_rate_card;
+        // Get the active and effective rate card
+        $rateCard = $plan->rateCards
+            ->where('is_active', true)
+            ->sortByDesc('effective_from')
+            ->filter(function ($rc) {
+                $now = now();
+                return (!$rc->effective_from || $rc->effective_from <= $now) &&
+                       (!$rc->effective_to || $rc->effective_to >= $now);
+            })
+            ->first();
 
         if (!$rateCard) {
             return $this->error('No active rate card for this plan', 422);
         }
 
-        // Calculate base premium
-        $premiumResult = $this->premiumCalculator->calculateTotalPremium(
+        // Calculate base premium using the correct method
+        $premiumResult = $this->premiumCalculator->calculateQuote(
             $rateCard,
             $request->members,
             $request->addon_ids ?? []
@@ -80,6 +89,18 @@ class QuoteController extends Controller
             $premium = $loadingResult['final_premium'];
         }
 
+        // Enhance member data with individual premiums
+        $membersWithPremiums = [];
+        foreach ($request->members as $index => $memberData) {
+            $memberBreakdown = collect($premiumResult['breakdown']['members'] ?? [])->firstWhere('index', $index);
+            $membersWithPremiums[] = [
+                'member_type' => $memberData['member_type'],
+                'age' => $memberData['age'],
+                'gender' => $memberData['gender'] ?? null,
+                'premium' => $memberBreakdown['amount'] ?? 0,
+            ];
+        }
+
         return $this->success([
             'plan' => [
                 'id' => $plan->id,
@@ -91,10 +112,10 @@ class QuoteController extends Controller
                 'code' => $rateCard->code,
                 'version' => $rateCard->version,
             ],
-            'members' => $premiumResult['members'] ?? $request->members,
+            'members' => $membersWithPremiums,
             'base_premium' => $premiumResult['base_premium'],
             'addon_premium' => $premiumResult['addon_premium'],
-            'addons' => $premiumResult['addons'],
+            'addons' => $premiumResult['breakdown']['addons'] ?? [],
             'discounts' => $discountResult['discounts'] ?? [],
             'total_discount' => $discountResult['total_discount'] ?? 0,
             'promo_discount' => $promoResult['discount_amount'] ?? 0,
@@ -127,7 +148,7 @@ class QuoteController extends Controller
         $quotes = [];
 
         foreach ($validated['plan_ids'] as $planId) {
-            $plan = Plan::with(['rateCards' => fn($q) => $q->active()->effective()])
+            $plan = Plan::with(['rateCards'])
                 ->find($planId);
 
             if (!$plan) {
@@ -139,7 +160,16 @@ class QuoteController extends Controller
                 continue;
             }
 
-            $rateCard = $plan->active_rate_card;
+            // Get active and effective rate card
+            $rateCard = $plan->rateCards
+                ->where('is_active', true)
+                ->sortByDesc('effective_from')
+                ->filter(function ($rc) {
+                    $now = now();
+                    return (!$rc->effective_from || $rc->effective_from <= $now) &&
+                           (!$rc->effective_to || $rc->effective_to >= $now);
+                })
+                ->first();
 
             if (!$rateCard) {
                 $quotes[] = [
@@ -151,7 +181,7 @@ class QuoteController extends Controller
                 continue;
             }
 
-            $result = $this->premiumCalculator->calculateTotalPremium(
+            $result = $this->premiumCalculator->calculateQuote(
                 $rateCard,
                 $validated['members'],
                 $validated['addon_ids'] ?? []
@@ -205,18 +235,32 @@ class QuoteController extends Controller
             'gender' => 'nullable|string|in:M,F',
         ]);
 
-        $plan = Plan::findOrFail($planId);
-        $rateCard = $plan->active_rate_card;
+        $plan = Plan::with('rateCards')->findOrFail($planId);
+
+        // Get active and effective rate card
+        $rateCard = $plan->rateCards
+            ->where('is_active', true)
+            ->sortByDesc('effective_from')
+            ->filter(function ($rc) {
+                $now = now();
+                return (!$rc->effective_from || $rc->effective_from <= $now) &&
+                       (!$rc->effective_to || $rc->effective_to >= $now);
+            })
+            ->first();
 
         if (!$rateCard) {
             return $this->error('No active rate card', 422);
         }
 
-        $result = $this->premiumCalculator->calculateMemberPremium(
+        // Use calculateQuote with a single member
+        $result = $this->premiumCalculator->calculateQuote(
             $rateCard,
-            $validated['age'],
-            $validated['member_type'],
-            $validated['gender'] ?? null
+            [[
+                'age' => $validated['age'],
+                'member_type' => $validated['member_type'],
+                'gender' => $validated['gender'] ?? null,
+            ]],
+            []
         );
 
         if (!$result['success']) {
@@ -225,7 +269,7 @@ class QuoteController extends Controller
 
         return $this->success([
             'plan_name' => $plan->name,
-            'premium' => $result['premium'],
+            'premium' => $result['total_premium'],
             'currency' => $rateCard->currency,
             'frequency' => $rateCard->premium_frequency,
         ], 'Quick quote generated');

@@ -1,35 +1,15 @@
 // libs/medical/data/src/lib/stores/policy.store.ts
-// Policy Store - Signal-based state management
 
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { computed, inject, Injectable, signal } from '@angular/core';
-import { tap, catchError, of, finalize, Observable } from 'rxjs';
-import { ApiResponse } from '../models/api-reponse';
-import {
-  Policy,
-  PolicyAddon,
-  PolicyStats,
-  CreatePolicyPayload,
-  Member,
-} from '../models/medical-interfaces';
-
-interface PolicyFilters {
-  status?: string;
-  policy_type?: string;
-  scheme_id?: string;
-  plan_id?: string;
-  group_id?: string;
-  expiring_in_days?: number;
-}
+import { tap } from 'rxjs';
+import { ApiResponse, Policy, Member, PolicyAddon } from '../models/medical-interfaces';
 
 interface PolicyState {
   items: Policy[];
   selected: Policy | null;
-  stats: PolicyStats | null;
-  filters: PolicyFilters;
   loading: boolean;
   saving: boolean;
-  error: string | null;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -40,202 +20,101 @@ export class PolicyStore {
   private readonly state = signal<PolicyState>({
     items: [],
     selected: null,
-    stats: null,
-    filters: {},
     loading: false,
     saving: false,
-    error: null,
   });
 
-  // =========================================================================
-  // SELECTORS
-  // =========================================================================
-
+  // Selectors
   readonly policies = computed(() => this.state().items);
   readonly selectedPolicy = computed(() => this.state().selected);
-  readonly stats = computed(() => this.state().stats);
-  readonly filters = computed(() => this.state().filters);
   readonly isLoading = computed(() => this.state().loading);
   readonly isSaving = computed(() => this.state().saving);
-  readonly error = computed(() => this.state().error);
 
-  // Computed helpers
+  // Computed selectors
   readonly activePolicies = computed(() => this.policies().filter((p) => p.status === 'active'));
-
-  readonly pendingPayment = computed(() =>
-    this.policies().filter((p) => p.status === 'pending_payment')
+  readonly suspendedPolicies = computed(() =>
+    this.policies().filter((p) => p.status === 'suspended')
   );
-
-  readonly expiringPolicies = computed(() => this.policies().filter((p) => p.is_expiring_soon));
-
-  readonly totalPremium = computed(() =>
-    this.activePolicies().reduce((sum, p) => sum + (p.net_premium || 0), 0)
+  readonly forRenewal = computed(() =>
+    this.policies().filter((p) => {
+      if (!p.expiry_date) return false;
+      const daysToExpiry = Math.ceil(
+        (new Date(p.expiry_date).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)
+      );
+      return daysToExpiry <= 60 && daysToExpiry > 0 && p.status === 'active';
+    })
   );
 
   // =========================================================================
-  // ACTIONS
+  // LOAD OPERATIONS
   // =========================================================================
 
-  loadAll(filters?: PolicyFilters): void {
-    this.state.update((s) => ({ ...s, loading: true, error: null, filters: filters || {} }));
+  loadAll(filters?: {
+    search?: string;
+    status?: string;
+    policy_type?: string;
+    scheme_id?: string;
+    plan_id?: string;
+    group_id?: string;
+  }) {
+    this.state.update((s) => ({ ...s, loading: true }));
 
     let params = new HttpParams();
-    if (filters) {
-      Object.entries(filters).forEach(([key, value]) => {
-        if (value !== undefined && value !== null && value !== '') {
-          params = params.set(key, String(value));
-        }
-      });
-    }
+    if (filters?.search) params = params.set('search', filters.search);
+    if (filters?.status) params = params.set('status', filters.status);
+    if (filters?.policy_type) params = params.set('policy_type', filters.policy_type);
+    if (filters?.scheme_id) params = params.set('scheme_id', filters.scheme_id);
+    if (filters?.plan_id) params = params.set('plan_id', filters.plan_id);
+    if (filters?.group_id) params = params.set('group_id', filters.group_id);
 
-    this.http
-      .get<ApiResponse<Policy[]>>(this.apiUrl, { params })
-      .pipe(
-        tap((res) => {
-          this.state.update((s) => ({
-            ...s,
-            items: res.data ?? [],
-            loading: false,
-          }));
-        }),
-        catchError((err) => {
-          this.state.update((s) => ({
-            ...s,
-            loading: false,
-            error: err.error?.message || 'Failed to load policies',
-          }));
-          return of(null);
-        })
-      )
-      .subscribe();
-  }
-
-  loadOne(id: string): Observable<ApiResponse<Policy> | null> {
-    this.state.update((s) => ({ ...s, loading: true, error: null }));
-
-    return this.http.get<ApiResponse<Policy>>(`${this.apiUrl}/${id}`).pipe(
-      tap((res) => {
+    this.http.get<ApiResponse<Policy[]>>(this.apiUrl, { params }).subscribe({
+      next: (res) =>
         this.state.update((s) => ({
           ...s,
-          selected: res.data,
+          items: res.data,
           loading: false,
-        }));
-      }),
-      catchError((err) => {
-        this.state.update((s) => ({
-          ...s,
-          loading: false,
-          error: err.error?.message || 'Failed to load policy',
-        }));
-        return of(null);
-      })
-    );
-  }
-
-  loadStats(): void {
-    this.http.get<ApiResponse<PolicyStats>>(`${this.apiUrl}/stats`).subscribe({
-      next: (res) => {
-        this.state.update((s) => ({ ...s, stats: res.data }));
-      },
+        })),
+      error: () => this.state.update((s) => ({ ...s, loading: false })),
     });
   }
 
-  loadByGroup(groupId: string): void {
+  loadOne(id: string) {
     this.state.update((s) => ({ ...s, loading: true }));
 
-    this.http
-      .get<ApiResponse<Policy[]>>(`/api/v1/medical/groups/${groupId}/policies`)
-      .pipe(
-        tap((res) => {
+    return this.http.get<ApiResponse<Policy>>(`${this.apiUrl}/${id}`).pipe(
+      tap({
+        next: (res) =>
           this.state.update((s) => ({
             ...s,
-            items: res.data ?? [],
+            selected: res.data,
             loading: false,
-          }));
-        }),
-        catchError((err) => {
-          this.state.update((s) => ({
-            ...s,
-            loading: false,
-            error: err.error?.message || 'Failed to load group policies',
-          }));
-          return of(null);
-        })
-      )
-      .subscribe();
-  }
-
-  create(payload: CreatePolicyPayload): Observable<ApiResponse<Policy> | null> {
-    this.state.update((s) => ({ ...s, saving: true, error: null }));
-
-    return this.http.post<ApiResponse<Policy>>(this.apiUrl, payload).pipe(
-      tap((res) => {
-        if (res.data) {
-          this.state.update((s) => ({
-            ...s,
-            items: [res.data!, ...s.items],
-            saving: false,
-          }));
-        }
-      }),
-      catchError((err) => {
-        this.state.update((s) => ({
-          ...s,
-          saving: false,
-          error: err.error?.message || 'Failed to create policy',
-        }));
-        return of(null);
+          })),
+        error: () => this.state.update((s) => ({ ...s, loading: false })),
       })
     );
   }
 
-  update(
-    id: string,
-    payload: Partial<CreatePolicyPayload>
-  ): Observable<ApiResponse<Policy> | null> {
-    this.state.update((s) => ({ ...s, saving: true, error: null }));
+  loadDropdown() {
+    return this.http.get<ApiResponse<Policy[]>>(`${this.apiUrl}/dropdown`);
+  }
 
-    return this.http.put<ApiResponse<Policy>>(`${this.apiUrl}/${id}`, payload).pipe(
-      tap((res) => {
-        if (res.data) {
+  // =========================================================================
+  // UPDATE OPERATIONS (No create - policies come from application conversion)
+  // =========================================================================
+
+  update(id: string, changes: Partial<Policy>) {
+    this.state.update((s) => ({ ...s, saving: true }));
+
+    return this.http.patch<ApiResponse<Policy>>(`${this.apiUrl}/${id}`, changes).pipe(
+      tap({
+        next: (res) =>
           this.state.update((s) => ({
             ...s,
-            items: s.items.map((p) => (p.id === id ? res.data! : p)),
+            items: s.items.map((item) => (item.id === id ? res.data : item)),
             selected: s.selected?.id === id ? res.data : s.selected,
             saving: false,
-          }));
-        }
-      }),
-      catchError((err) => {
-        this.state.update((s) => ({
-          ...s,
-          saving: false,
-          error: err.error?.message || 'Failed to update policy',
-        }));
-        return of(null);
-      })
-    );
-  }
-
-  delete(id: string): Observable<ApiResponse<null> | null> {
-    this.state.update((s) => ({ ...s, saving: true, error: null }));
-
-    return this.http.delete<ApiResponse<null>>(`${this.apiUrl}/${id}`).pipe(
-      tap(() => {
-        this.state.update((s) => ({
-          ...s,
-          items: s.items.filter((p) => p.id !== id),
-          selected: s.selected?.id === id ? null : s.selected,
-          saving: false,
-        }));
-      }),
-      catchError((err) => {
-        this.state.update((s) => ({
-          ...s,
-          saving: false,
-          error: err.error?.message || 'Failed to delete policy',
-        }));
-        return of(null);
+          })),
+        error: () => this.state.update((s) => ({ ...s, saving: false })),
       })
     );
   }
@@ -244,177 +123,114 @@ export class PolicyStore {
   // STATUS ACTIONS
   // =========================================================================
 
-  activate(id: string): Observable<ApiResponse<Policy> | null> {
-    return this.updateStatus(id, 'activate');
-  }
-
-  suspend(id: string, reason?: string): Observable<ApiResponse<Policy> | null> {
-    return this.updateStatus(id, 'suspend', { reason });
-  }
-
-  cancel(id: string, reason: string, notes?: string): Observable<ApiResponse<Policy> | null> {
-    return this.updateStatus(id, 'cancel', { cancellation_reason: reason, notes });
-  }
-
-  renew(id: string): Observable<ApiResponse<Policy> | null> {
+  activate(id: string) {
     this.state.update((s) => ({ ...s, saving: true }));
 
-    return this.http.post<ApiResponse<Policy>>(`${this.apiUrl}/${id}/renew`, {}).pipe(
-      tap((res) => {
-        if (res.data) {
-          // Add the new policy to the list
-          this.state.update((s) => ({
-            ...s,
-            items: [res.data!, ...s.items],
-            saving: false,
-          }));
-        }
-      }),
-      catchError((err) => {
-        this.state.update((s) => ({
-          ...s,
-          saving: false,
-          error: err.error?.message || 'Failed to renew policy',
-        }));
-        return of(null);
+    return this.http.post<ApiResponse<Policy>>(`${this.apiUrl}/${id}/activate`, {}).pipe(
+      tap({
+        next: (res) => this.updatePolicyInState(id, res.data),
+        error: () => this.state.update((s) => ({ ...s, saving: false })),
       })
     );
   }
 
-  private updateStatus(
-    id: string,
-    action: string,
-    payload?: object
-  ): Observable<ApiResponse<Policy> | null> {
+  suspend(id: string, reason?: string) {
+    this.state.update((s) => ({ ...s, saving: true }));
+
+    return this.http.post<ApiResponse<Policy>>(`${this.apiUrl}/${id}/suspend`, { reason }).pipe(
+      tap({
+        next: (res) => this.updatePolicyInState(id, res.data),
+        error: () => this.state.update((s) => ({ ...s, saving: false })),
+      })
+    );
+  }
+
+  reinstate(id: string) {
+    this.state.update((s) => ({ ...s, saving: true }));
+
+    return this.http.post<ApiResponse<Policy>>(`${this.apiUrl}/${id}/reinstate`, {}).pipe(
+      tap({
+        next: (res) => this.updatePolicyInState(id, res.data),
+        error: () => this.state.update((s) => ({ ...s, saving: false })),
+      })
+    );
+  }
+
+  cancel(id: string, reason: string, effectiveDate?: string) {
     this.state.update((s) => ({ ...s, saving: true }));
 
     return this.http
-      .post<ApiResponse<Policy>>(`${this.apiUrl}/${id}/${action}`, payload || {})
+      .post<ApiResponse<Policy>>(`${this.apiUrl}/${id}/cancel`, {
+        reason,
+        effective_date: effectiveDate,
+      })
       .pipe(
-        tap((res) => {
-          if (res.data) {
-            this.state.update((s) => ({
-              ...s,
-              items: s.items.map((p) => (p.id === id ? res.data! : p)),
-              selected: s.selected?.id === id ? res.data : s.selected,
-              saving: false,
-            }));
-          }
-        }),
-        catchError((err) => {
-          this.state.update((s) => ({
-            ...s,
-            saving: false,
-            error: err.error?.message || `Failed to ${action} policy`,
-          }));
-          return of(null);
+        tap({
+          next: (res) => this.updatePolicyInState(id, res.data),
+          error: () => this.state.update((s) => ({ ...s, saving: false })),
         })
       );
   }
 
   // =========================================================================
-  // MEMBERS
+  // ADDON OPERATIONS
   // =========================================================================
 
-  loadMembers(policyId: string): Observable<ApiResponse<Member[]>> {
-    return this.http.get<ApiResponse<Member[]>>(`${this.apiUrl}/${policyId}/members`);
-  }
-
-  // =========================================================================
-  // ADDONS
-  // =========================================================================
-
-  loadAddons(policyId: string): Observable<ApiResponse<PolicyAddon[]>> {
-    return this.http.get<ApiResponse<PolicyAddon[]>>(`${this.apiUrl}/${policyId}/addons`);
-  }
-
-  addAddon(policyId: string, addonId: string): Observable<ApiResponse<PolicyAddon> | null> {
+  addAddon(policyId: string, addonId: string, addonRateId?: string) {
     this.state.update((s) => ({ ...s, saving: true }));
 
     return this.http
-      .post<ApiResponse<PolicyAddon>>(`${this.apiUrl}/${policyId}/addons`, { addon_id: addonId })
+      .post<ApiResponse<Policy>>(`${this.apiUrl}/${policyId}/addons`, {
+        addon_id: addonId,
+        addon_rate_id: addonRateId,
+      })
       .pipe(
-        finalize(() => this.state.update((s) => ({ ...s, saving: false }))),
-        catchError((err) => {
-          this.state.update((s) => ({
-            ...s,
-            error: err.error?.message || 'Failed to add addon',
-          }));
-          return of(null);
+        tap({
+          next: (res) => this.updatePolicyInState(policyId, res.data),
+          error: () => this.state.update((s) => ({ ...s, saving: false })),
         })
       );
   }
 
-  removeAddon(policyId: string, addonId: string): Observable<ApiResponse<null> | null> {
+  removeAddon(policyId: string, addonId: string) {
+    return this.http
+      .delete<ApiResponse<Policy>>(`${this.apiUrl}/${policyId}/addons/${addonId}`)
+      .pipe(
+        tap({
+          next: (res) => this.updatePolicyInState(policyId, res.data),
+        })
+      );
+  }
+
+  // =========================================================================
+  // PREMIUM
+  // =========================================================================
+
+  calculatePremium(id: string) {
     this.state.update((s) => ({ ...s, saving: true }));
 
-    return this.http.delete<ApiResponse<null>>(`${this.apiUrl}/${policyId}/addons/${addonId}`).pipe(
-      finalize(() => this.state.update((s) => ({ ...s, saving: false }))),
-      catchError((err) => {
-        this.state.update((s) => ({
-          ...s,
-          error: err.error?.message || 'Failed to remove addon',
-        }));
-        return of(null);
+    return this.http.post<ApiResponse<Policy>>(`${this.apiUrl}/${id}/calculate-premium`, {}).pipe(
+      tap({
+        next: (res) => this.updatePolicyInState(id, res.data),
+        error: () => this.state.update((s) => ({ ...s, saving: false })),
       })
     );
   }
 
   // =========================================================================
-  // PROMO CODE
+  // UTILITY METHODS
   // =========================================================================
 
-  applyPromoCode(policyId: string, code: string): Observable<ApiResponse<Policy> | null> {
-    this.state.update((s) => ({ ...s, saving: true }));
-
-    return this.http
-      .post<ApiResponse<Policy>>(`${this.apiUrl}/${policyId}/apply-promo`, { code })
-      .pipe(
-        tap((res) => {
-          if (res.data) {
-            this.state.update((s) => ({
-              ...s,
-              items: s.items.map((p) => (p.id === policyId ? res.data! : p)),
-              selected: s.selected?.id === policyId ? res.data : s.selected,
-              saving: false,
-            }));
-          }
-        }),
-        catchError((err) => {
-          this.state.update((s) => ({
-            ...s,
-            saving: false,
-            error: err.error?.message || 'Invalid promo code',
-          }));
-          return of(null);
-        })
-      );
-  }
-
-  // =========================================================================
-  // CERTIFICATE
-  // =========================================================================
-
-  downloadCertificate(policyId: string): Observable<Blob> {
-    return this.http.get(`${this.apiUrl}/${policyId}/certificate`, {
-      responseType: 'blob',
-    });
-  }
-
-  // =========================================================================
-  // HELPERS
-  // =========================================================================
-
-  clearSelected(): void {
+  clearSelected() {
     this.state.update((s) => ({ ...s, selected: null }));
   }
 
-  clearFilters(): void {
-    this.state.update((s) => ({ ...s, filters: {} }));
-    this.loadAll();
-  }
-
-  clearError(): void {
-    this.state.update((s) => ({ ...s, error: null }));
+  private updatePolicyInState(id: string, data: Policy) {
+    this.state.update((s) => ({
+      ...s,
+      items: s.items.map((item) => (item.id === id ? data : item)),
+      selected: s.selected?.id === id ? data : s.selected,
+      saving: false,
+    }));
   }
 }

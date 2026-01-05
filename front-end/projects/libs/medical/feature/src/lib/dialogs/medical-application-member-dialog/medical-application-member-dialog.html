@@ -1,0 +1,178 @@
+<div class="flex flex-col max-h-[90vh]">
+  <!-- Header -->
+  <div class="flex items-center justify-between px-6 py-4 border-b border-slate-200">
+    <div class="flex items-center gap-3">
+      <div class="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
+        <mat-icon fontSet="material-symbols-rounded" class="!text-primary">
+          {{ isEditMode() ? 'edit' : 'person_add' }}
+        </mat-icon>
+      </div>
+      <div>
+        <h2 class="text-lg font-semibold text-slate-900">
+          {{ isEditMode() ? 'Edit Member' : 'Add Member' }}
+        </h2>
+        <p class="text-sm text-slate-500">Enter member details</p>
+      </div>
+    </div>
+    <button mat-icon-button (click)="cancel()" class="!text-slate-400">
+      <mat-icon fontSet="material-symbols-rounded">close</mat-icon>
+    </button>
+  </div>
+
+  <!-- Content -->
+  <div class="flex-1 overflow-y-auto p-6">
+    <form [formGroup]="form" class="space-y-4">
+      <!-- Member Type & Relationship -->
+      <div class="grid grid-cols-2 gap-4">
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-select placeholder="Member Type" formControlName="member_type">
+            @for (type of memberTypes; track type.value) {
+            <mat-option [value]="type.value">{{ type.label }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        @if (!isPrincipal()) {
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-select placeholder="Relationship" formControlName="relationship">
+            @for (rel of relationships; track rel.value) { @if (rel.value !== 'self') {
+            <mat-option [value]="rel.value">{{ rel.label }}</mat-option>
+            } }
+          </mat-select>
+        </mat-form-field>
+        } @else {
+        <div></div>
+        }
+      </div>
+
+      <!-- Principal Selection for Dependents -->
+      @if (!isPrincipal() && principals.length > 0) {
+      <mat-form-field appearance="outline" class="w-full">
+        <mat-select placeholder="Select Principal Member" formControlName="principal_member_id">
+          @for (principal of principals; track principal.id) {
+          <mat-option [value]="principal.id">
+            {{ principal.full_name || principal.first_name + ' ' + principal.last_name }}
+          </mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+      }
+
+      <!-- Personal Info -->
+      <div class="grid grid-cols-4 gap-4">
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-select placeholder="Title" formControlName="title">
+            <mat-option value="Mr">Mr</mat-option>
+            <mat-option value="Mrs">Mrs</mat-option>
+            <mat-option value="Ms">Ms</mat-option>
+            <mat-option value="Dr">Dr</mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="w-full">
+          <input matInput placeholder="First Name" formControlName="first_name" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="w-full">
+          <input matInput placeholder="Middle Name" formControlName="middle_name" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="w-full">
+          <input matInput placeholder="Last Name" formControlName="last_name" />
+        </mat-form-field>
+      </div>
+
+      <div class="grid grid-cols-3 gap-4">
+        <mat-form-field appearance="outline" class="w-full">
+          <input
+            matInput
+            [matDatepicker]="dobPicker"
+            placeholder="Date of Birth"
+            formControlName="date_of_birth"
+          />
+          <mat-datepicker-toggle matIconSuffix [for]="dobPicker"></mat-datepicker-toggle>
+          <mat-datepicker #dobPicker></mat-datepicker>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-select placeholder="Gender" formControlName="gender">
+            @for (g of genders; track g.value) {
+            <mat-option [value]="g.value">{{ g.label }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-select placeholder="Marital Status" formControlName="marital_status">
+            <mat-option value="single">Single</mat-option>
+            <mat-option value="married">Married</mat-option>
+            <mat-option value="divorced">Divorced</mat-option>
+            <mat-option value="widowed">Widowed</mat-option>
+          </mat-select>
+        </mat-form-field>
+      </div>
+
+      <!-- Identification -->
+      <div class="grid grid-cols-2 gap-4">
+        <mat-form-field appearance="outline" class="w-full">
+          <input matInput placeholder="National ID" formControlName="national_id" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="w-full">
+          <input matInput placeholder="Passport Number" formControlName="passport_number" />
+        </mat-form-field>
+      </div>
+
+      <!-- Contact Info -->
+      <div class="grid grid-cols-2 gap-4">
+        <mat-form-field appearance="outline" class="w-full">
+          <input matInput type="email" placeholder="Email" formControlName="email" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="w-full">
+          <input matInput placeholder="Phone" formControlName="phone" />
+        </mat-form-field>
+      </div>
+
+      <!-- Medical Declaration -->
+      <mat-expansion-panel class="!rounded-lg !shadow-none border border-slate-200">
+        <mat-expansion-panel-header>
+          <mat-panel-title class="!text-sm !font-medium"> Medical Declaration </mat-panel-title>
+        </mat-expansion-panel-header>
+
+        <div class="space-y-4 py-2">
+          <mat-checkbox formControlName="has_pre_existing_conditions">
+            Has pre-existing conditions
+          </mat-checkbox>
+
+          @if (form.get('has_pre_existing_conditions')?.value) {
+          <mat-form-field appearance="outline" class="w-full">
+            <textarea
+              matInput
+              rows="3"
+              placeholder="Describe medical conditions..."
+              formControlName="medical_history_notes"
+            ></textarea>
+          </mat-form-field>
+          }
+        </div>
+      </mat-expansion-panel>
+    </form>
+  </div>
+
+  <!-- Footer -->
+  <div class="flex items-center justify-end gap-3 px-6 py-4 border-t border-slate-200 bg-slate-50">
+    <button mat-stroked-button (click)="cancel()">Cancel</button>
+    <button
+      mat-flat-button
+      color="primary"
+      (click)="save()"
+      [disabled]="form.invalid || isSaving()"
+    >
+      @if (isSaving()) {
+      <mat-icon fontSet="material-symbols-rounded" class="animate-spin">progress_activity</mat-icon>
+      }
+      {{ isEditMode() ? 'Update' : 'Add' }} Member
+    </button>
+  </div>
+</div>

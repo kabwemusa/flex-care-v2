@@ -76,17 +76,17 @@ final class MedicalConstants
     // =========================================================================
     // UNDERWRITING STATUS
     // =========================================================================
-    public const UW_STATUS_PENDING = 'pending';
-    public const UW_STATUS_APPROVED = 'approved';
-    public const UW_STATUS_REFERRED = 'referred';
-    public const UW_STATUS_DECLINED = 'declined';
+    // public const UW_STATUS_PENDING = 'pending';
+    // public const UW_STATUS_APPROVED = 'approved';
+    // public const UW_STATUS_REFERRED = 'referred';
+    // public const UW_STATUS_DECLINED = 'declined';
 
-    public const UW_STATUSES = [
-        self::UW_STATUS_PENDING => 'Pending Review',
-        self::UW_STATUS_APPROVED => 'Approved',
-        self::UW_STATUS_REFERRED => 'Referred',
-        self::UW_STATUS_DECLINED => 'Declined',
-    ];
+    // public const UW_STATUSES = [
+    //     self::UW_STATUS_PENDING => 'Pending Review',
+    //     self::UW_STATUS_APPROVED => 'Approved',
+    //     self::UW_STATUS_REFERRED => 'Referred',
+    //     self::UW_STATUS_DECLINED => 'Declined',
+    // ];
 
     // =========================================================================
     // MEMBER TYPES
@@ -537,15 +537,15 @@ final class MedicalConstants
     // =========================================================================
     // CO-PAY TYPES
     // =========================================================================
-    public const COPAY_TYPE_NONE = 'none';
-    public const COPAY_TYPE_FIXED = 'fixed';
-    public const COPAY_TYPE_PERCENTAGE = 'percentage';
+    // public const COPAY_TYPE_NONE = 'none';
+    // public const COPAY_TYPE_FIXED = 'fixed';
+    // public const COPAY_TYPE_PERCENTAGE = 'percentage';
 
-    public const COPAY_TYPES = [
-        self::COPAY_TYPE_NONE => 'No Co-pay',
-        self::COPAY_TYPE_FIXED => 'Fixed Amount',
-        self::COPAY_TYPE_PERCENTAGE => 'Percentage',
-    ];
+    // public const COPAY_TYPES = [
+    //     self::COPAY_TYPE_NONE => 'No Co-pay',
+    //     self::COPAY_TYPE_FIXED => 'Fixed Amount',
+    //     self::COPAY_TYPE_PERCENTAGE => 'Percentage',
+    // ];
 
     // =========================================================================
     // CODE PREFIXES (for auto-generation)
@@ -619,6 +619,133 @@ final class MedicalConstants
       // =========================================================================
       // DEFAULT VALUES
       // =========================================================================
+
+      
+
+     // =========================================================================
+    // APPLICATION TYPES
+    // =========================================================================
+    public const APPLICATION_TYPE_NEW = 'new_business';
+    public const APPLICATION_TYPE_RENEWAL = 'renewal';
+    public const APPLICATION_TYPE_ADDITION = 'addition';
+
+    public const APPLICATION_TYPES = [
+        self::APPLICATION_TYPE_NEW => 'New Business',
+        self::APPLICATION_TYPE_RENEWAL => 'Renewal',
+        self::APPLICATION_TYPE_ADDITION => 'Addition',
+    ];
+
+    // =========================================================================
+    // APPLICATION STATUS
+    // =========================================================================
+    public const APPLICATION_STATUS_DRAFT = 'draft';
+    public const APPLICATION_STATUS_QUOTED = 'quoted';
+    public const APPLICATION_STATUS_SUBMITTED = 'submitted';
+    public const APPLICATION_STATUS_UNDERWRITING = 'underwriting';
+    public const APPLICATION_STATUS_APPROVED = 'approved';
+    public const APPLICATION_STATUS_DECLINED = 'declined';
+    public const APPLICATION_STATUS_REFERRED = 'referred';
+    public const APPLICATION_STATUS_ACCEPTED = 'accepted';
+    public const APPLICATION_STATUS_CONVERTED = 'converted';
+    public const APPLICATION_STATUS_EXPIRED = 'expired';
+    public const APPLICATION_STATUS_CANCELLED = 'cancelled';
+    public const APPLICATION_STATUS_ON_HOLD = 'on_hold';
+
+    public const APPLICATION_STATUSES = [
+        self::APPLICATION_STATUS_DRAFT => 'Draft',
+        self::APPLICATION_STATUS_QUOTED => 'Quoted',
+        self::APPLICATION_STATUS_SUBMITTED => 'Submitted',
+        self::APPLICATION_STATUS_UNDERWRITING => 'Underwriting',
+        self::APPLICATION_STATUS_APPROVED => 'Approved',
+        self::APPLICATION_STATUS_DECLINED => 'Declined',
+        self::APPLICATION_STATUS_REFERRED => 'Referred',
+        self::APPLICATION_STATUS_ACCEPTED => 'Accepted',
+        self::APPLICATION_STATUS_CONVERTED => 'Converted to Policy',
+        self::APPLICATION_STATUS_EXPIRED => 'Expired',
+        self::APPLICATION_STATUS_CANCELLED => 'Cancelled',
+        self::APPLICATION_STATUS_ON_HOLD => 'On Hold',
+    ];
+
+    // =========================================================================
+    // UNDERWRITING STATUS
+    // =========================================================================
+    public const UW_STATUS_PENDING = 'pending';
+    public const UW_STATUS_IN_PROGRESS = 'in_progress';
+    public const UW_STATUS_APPROVED = 'approved';
+    public const UW_STATUS_REFERRED = 'referred';
+    public const UW_STATUS_DECLINED = 'declined';
+    public const UW_STATUS_TERMS = 'terms'; // Approved with terms (loadings/exclusions)
+
+    public const UW_STATUSES = [
+        self::UW_STATUS_PENDING => 'Pending Review',
+        self::UW_STATUS_IN_PROGRESS => 'In Progress',
+        self::UW_STATUS_APPROVED => 'Approved',
+        self::UW_STATUS_REFERRED => 'Referred',
+        self::UW_STATUS_DECLINED => 'Declined',
+        self::UW_STATUS_TERMS => 'Approved with Terms',
+    ];
+    // =========================================================================
+    // CO-PAY TYPES
+    // =========================================================================
+    public const COPAY_TYPE_NONE = 'none';
+    public const COPAY_TYPE_FIXED = 'fixed';
+    public const COPAY_TYPE_PERCENTAGE = 'percentage';
+
+    public const COPAY_TYPES = [
+        self::COPAY_TYPE_NONE => 'No Co-pay',
+        self::COPAY_TYPE_FIXED => 'Fixed Amount',
+        self::COPAY_TYPE_PERCENTAGE => 'Percentage',
+    ];
+
+    // =========================================================================
+    // CODE PREFIXES (for auto-generation)
+    // =========================================================================
+   
+    
+    // Policy Administration Prefixes
+    public const PREFIX_APPLICATION = 'APP-';
+   
+
+    // =========================================================================
+    // RELATIONSHIPS (for dependents)
+    // =========================================================================
+    public const RELATIONSHIP_WIFE = 'wife';
+    public const RELATIONSHIP_HUSBAND = 'husband';
+    public const RELATIONSHIP_SON = 'son';
+    public const RELATIONSHIP_DAUGHTER = 'daughter';
+    public const RELATIONSHIP_FATHER = 'father';
+    public const RELATIONSHIP_MOTHER = 'mother';
+    public const RELATIONSHIP_PARTNER = 'partner';
+
+    public const RELATIONSHIPS = [
+        self::RELATIONSHIP_WIFE => 'Wife',
+        self::RELATIONSHIP_HUSBAND => 'Husband',
+        self::RELATIONSHIP_SON => 'Son',
+        self::RELATIONSHIP_DAUGHTER => 'Daughter',
+        self::RELATIONSHIP_FATHER => 'Father',
+        self::RELATIONSHIP_MOTHER => 'Mother',
+        self::RELATIONSHIP_PARTNER => 'Partner',
+    ];
+
+    // =========================================================================
+    // APPLICATION SOURCES
+    // =========================================================================
+    public const SOURCE_ONLINE = 'online';
+    public const SOURCE_WALK_IN = 'walk_in';
+    public const SOURCE_AGENT = 'agent';
+    public const SOURCE_BROKER = 'broker';
+    public const SOURCE_REFERRAL = 'referral';
+    public const SOURCE_RENEWAL = 'renewal';
+
+    public const APPLICATION_SOURCES = [
+        self::SOURCE_ONLINE => 'Online',
+        self::SOURCE_WALK_IN => 'Walk-in',
+        self::SOURCE_AGENT => 'Agent',
+        self::SOURCE_BROKER => 'Broker',
+        self::SOURCE_REFERRAL => 'Referral',
+        self::SOURCE_RENEWAL => 'Renewal',
+    ];
+
     
      
 }

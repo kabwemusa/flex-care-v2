@@ -107,7 +107,7 @@
     <div
       class="rounded-xl border border-slate-200 bg-white p-4 hover:border-slate-300 transition-colors"
     >
-      <div class="flex items-start justify-between">
+      <div class="flex items-start justify-between mb-3">
         <div class="flex items-center gap-3">
           <div
             [class]="getAddonTypeClass(pa.addon?.addon_type)"
@@ -127,6 +127,11 @@
               >
                 {{ getAvailabilityLabel(pa.availability) }}
               </span>
+              @if (!pa.is_active) {
+              <span class="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600">
+                Inactive
+              </span>
+              }
             </div>
           </div>
         </div>
@@ -155,8 +160,41 @@
       </div>
 
       @if (pa.addon?.description) {
-      <p class="text-xs text-slate-500 mt-2 line-clamp-2">{{ pa.addon.description }}</p>
+      <p class="text-xs text-slate-500 mb-3 line-clamp-2">{{ pa.addon.description }}</p>
       }
+
+      <!-- Quick Info Grid -->
+      <div class="grid grid-cols-2 gap-3 pt-3 border-t border-slate-100">
+        <!-- Benefits Count -->
+        <div class="flex items-center gap-2">
+          <mat-icon fontSet="material-symbols-rounded" class="!text-blue-500 !text-[16px]">
+            favorite
+          </mat-icon>
+          <div>
+            <div class="text-xs text-slate-500">Benefits</div>
+            <div class="text-sm font-semibold text-slate-900">
+              {{ pa.addon?.addon_benefits_count || 0 }}
+            </div>
+          </div>
+        </div>
+
+        <!-- Pricing Info -->
+        <div class="flex items-center gap-2">
+          <mat-icon fontSet="material-symbols-rounded" class="!text-green-500 !text-[16px]">
+            payments
+          </mat-icon>
+          <div>
+            <div class="text-xs text-slate-500">Pricing</div>
+            @if (pa.addon?.rates && pa.addon.rates.length > 0) {
+            <div class="text-sm font-semibold text-slate-900">
+              {{ pa.addon.rates.length }} rate(s)
+            </div>
+            } @else {
+            <div class="text-xs text-amber-600">Not configured</div>
+            }
+          </div>
+        </div>
+      </div>
     </div>
   </ng-template>
 </div>

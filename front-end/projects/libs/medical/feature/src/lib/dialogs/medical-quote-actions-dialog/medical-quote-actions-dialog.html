@@ -1,0 +1,172 @@
+<!-- libs/medical/feature/src/lib/dialogs/medical-quote-actions-dialog/medical-quote-actions-dialog.html -->
+
+<div class="flex flex-col max-h-[90vh]">
+  <!-- Header -->
+  <div class="flex items-center justify-between border-b border-slate-200 px-6 py-4">
+    <div class="flex items-center gap-3">
+      <div class="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100">
+        <mat-icon fontSet="material-symbols-rounded" class="!text-[24px] text-blue-600"
+          >request_quote</mat-icon
+        >
+      </div>
+      <div>
+        <h2 class="text-lg font-semibold text-slate-900">Quote Actions</h2>
+        <p class="text-sm text-slate-500">{{ data.applicationNumber }}</p>
+      </div>
+    </div>
+    <button mat-icon-button (click)="cancel()" class="!text-slate-400">
+      <mat-icon fontSet="material-symbols-rounded">close</mat-icon>
+    </button>
+  </div>
+
+  <!-- Content -->
+  <mat-tab-group class="flex-1 overflow-hidden">
+    <!-- Download Tab -->
+    <mat-tab label="Download PDF">
+      <div class="p-6">
+        <div class="mb-6 rounded-lg border border-blue-200 bg-blue-50 p-4">
+          <div class="flex gap-3">
+            <mat-icon fontSet="material-symbols-rounded" class="!text-[20px] text-blue-600"
+              >info</mat-icon
+            >
+            <div class="flex-1">
+              <h3 class="text-sm font-medium text-blue-900">Download Quote as PDF</h3>
+              <p class="mt-1 text-sm text-blue-700">
+                Generate a professional quote document that you can save or print. The PDF will
+                include all plan details, premium breakdown, and covered members.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div class="space-y-4">
+          <div class="rounded-lg border border-slate-200 bg-slate-50 p-4">
+            <h4 class="mb-2 text-sm font-medium text-slate-700">Quote will include:</h4>
+            <ul class="space-y-1 text-sm text-slate-600">
+              <li class="flex items-center gap-2">
+                <mat-icon fontSet="material-symbols-rounded" class="!text-[16px] text-green-600"
+                  >check_circle</mat-icon
+                >
+                Customer information
+              </li>
+              <li class="flex items-center gap-2">
+                <mat-icon fontSet="material-symbols-rounded" class="!text-[16px] text-green-600"
+                  >check_circle</mat-icon
+                >
+                Plan details and coverage
+              </li>
+              <li class="flex items-center gap-2">
+                <mat-icon fontSet="material-symbols-rounded" class="!text-[16px] text-green-600"
+                  >check_circle</mat-icon
+                >
+                Member list with individual premiums
+              </li>
+              <li class="flex items-center gap-2">
+                <mat-icon fontSet="material-symbols-rounded" class="!text-[16px] text-green-600"
+                  >check_circle</mat-icon
+                >
+                Complete premium breakdown
+              </li>
+              <li class="flex items-center gap-2">
+                <mat-icon fontSet="material-symbols-rounded" class="!text-[16px] text-green-600"
+                  >check_circle</mat-icon
+                >
+                Policy period and validity dates
+              </li>
+            </ul>
+          </div>
+
+          <button
+            mat-flat-button
+            color="primary"
+            class="w-full"
+            (click)="downloadQuote()"
+            [disabled]="isDownloading()"
+          >
+            @if (isDownloading()) {
+            <mat-spinner diameter="20" class="mr-2"></mat-spinner>
+            Generating PDF...
+            } @else {
+            <mat-icon fontSet="material-symbols-rounded">download</mat-icon>
+            Download Quote PDF
+            }
+          </button>
+        </div>
+      </div>
+    </mat-tab>
+
+    <!-- Email Tab -->
+    <mat-tab label="Email Quote">
+      <form [formGroup]="emailForm" (ngSubmit)="sendEmail()" class="p-6">
+        <div class="mb-6 rounded-lg border border-green-200 bg-green-50 p-4">
+          <div class="flex gap-3">
+            <mat-icon fontSet="material-symbols-rounded" class="!text-[20px] text-green-600"
+              >mail</mat-icon
+            >
+            <div class="flex-1">
+              <h3 class="text-sm font-medium text-green-900">Email Quote to Customer</h3>
+              <p class="mt-1 text-sm text-green-700">
+                Send the quote directly to the customer's email address. They will receive a
+                professionally formatted quote with all details.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div class="space-y-4">
+          <!-- Email Address -->
+          <mat-form-field appearance="outline" class="w-full">
+            <mat-label>Email Address</mat-label>
+            <input
+              matInput
+              type="email"
+              formControlName="email"
+              placeholder="customer@example.com"
+            />
+            <mat-icon matPrefix fontSet="material-symbols-rounded">email</mat-icon>
+            @if (emailForm.get('email')?.hasError('required') && emailForm.get('email')?.touched)
+            {
+            <mat-error>Email address is required</mat-error>
+            } @else if (emailForm.get('email')?.hasError('email') &&
+            emailForm.get('email')?.touched) {
+            <mat-error>Please enter a valid email address</mat-error>
+            }
+          </mat-form-field>
+
+          <!-- Optional Message -->
+          <mat-form-field appearance="outline" class="w-full">
+            <mat-label>Personal Message (Optional)</mat-label>
+            <textarea
+              matInput
+              formControlName="message"
+              rows="4"
+              placeholder="Add a personal message to include with the quote..."
+            ></textarea>
+            <mat-hint>Maximum 1000 characters</mat-hint>
+            @if (emailForm.get('message')?.hasError('maxlength')) {
+            <mat-error>Message cannot exceed 1000 characters</mat-error>
+            }
+          </mat-form-field>
+
+          <div class="flex items-center justify-end gap-3">
+            <button mat-stroked-button type="button" (click)="cancel()">Cancel</button>
+            <button
+              mat-flat-button
+              color="primary"
+              type="submit"
+              [disabled]="emailForm.invalid || isSending()"
+            >
+              @if (isSending()) {
+              <mat-spinner diameter="20" class="mr-2"></mat-spinner>
+              Sending...
+              } @else {
+              <mat-icon fontSet="material-symbols-rounded">send</mat-icon>
+              Send Quote
+              }
+            </button>
+          </div>
+        </div>
+      </form>
+    </mat-tab>
+  </mat-tab-group>
+</div>

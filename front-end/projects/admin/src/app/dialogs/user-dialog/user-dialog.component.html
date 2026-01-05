@@ -1,0 +1,219 @@
+<h2 mat-dialog-title class="!m-0 !flex !items-center !gap-3 !border-b !border-divider !px-6 !py-4">
+  <mat-icon fontSet="material-symbols-rounded" class="!text-primary">{{
+    isEdit ? 'edit' : 'person_add'
+  }}</mat-icon>
+  <span class="!text-lg !font-semibold">{{ isEdit ? 'Edit User' : 'Create New User' }}</span>
+</h2>
+
+<mat-dialog-content class="!px-6 !py-6 !max-h-[70vh] width-[70vw]">
+  <form [formGroup]="userForm" class="space-y-6">
+    <!-- Account Information -->
+    <div>
+      <h3 class="text-sm font-semibold text-slate-700 mb-4 flex items-center gap-2">
+        <mat-icon fontSet="material-symbols-rounded" class="!text-[18px] text-primary"
+          >badge</mat-icon
+        >
+        Account Information
+      </h3>
+
+      <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <mat-form-field appearance="outline" class="!w-full">
+          <input matInput type="email" formControlName="email" placeholder="user@example.com" />
+          <mat-icon matPrefix fontSet="material-symbols-rounded" class="!text-slate-400"
+            >mail</mat-icon
+          >
+          @if (userForm.get('email')?.hasError('required')) {
+          <mat-error>Email is required</mat-error>
+          } @if (userForm.get('email')?.hasError('email')) {
+          <mat-error>Invalid email address</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="!w-full">
+          <input matInput type="text" formControlName="username" placeholder="john.doe" />
+          <mat-icon matPrefix fontSet="material-symbols-rounded" class="!text-slate-400"
+            >person</mat-icon
+          >
+          <mat-hint>Optional - defaults to email</mat-hint>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="!w-full" [class.sm:col-span-2]="!isEdit">
+          <input
+            matInput
+            [type]="hidePassword() ? 'password' : 'text'"
+            formControlName="password"
+            [placeholder]="isEdit ? 'Leave blank to keep current' : 'Enter password'"
+          />
+          <mat-icon matPrefix fontSet="material-symbols-rounded" class="!text-slate-400"
+            >lock</mat-icon
+          >
+          <button
+            mat-icon-button
+            matSuffix
+            type="button"
+            (click)="hidePassword.set(!hidePassword())"
+          >
+            <mat-icon fontSet="material-symbols-rounded">{{
+              hidePassword() ? 'visibility' : 'visibility_off'
+            }}</mat-icon>
+          </button>
+          @if (!isEdit && userForm.get('password')?.hasError('required')) {
+          <mat-error>Password is required</mat-error>
+          } @if (userForm.get('password')?.hasError('minlength')) {
+          <mat-error>Password must be at least 8 characters</mat-error>
+          } @if (!isEdit) {
+          <mat-hint>Minimum 8 characters</mat-hint>
+          }
+        </mat-form-field>
+
+        @if (!isEdit) {
+        <mat-form-field appearance="outline" class="!w-full">
+          <input
+            matInput
+            [type]="hidePassword() ? 'password' : 'text'"
+            formControlName="password_confirmation"
+            placeholder="Re-enter password"
+          />
+          <mat-icon matPrefix fontSet="material-symbols-rounded" class="!text-slate-400"
+            >lock</mat-icon
+          >
+          @if (userForm.get('password_confirmation')?.hasError('required')) {
+          <mat-error>Please confirm password</mat-error>
+          } @if (userForm.hasError('passwordMismatch') &&
+          userForm.get('password_confirmation')?.touched) {
+          <mat-error>Passwords do not match</mat-error>
+          }
+        </mat-form-field>
+        }
+      </div>
+    </div>
+
+    <mat-divider></mat-divider>
+
+    <!-- Status & Permissions -->
+    <div>
+      <h3 class="text-sm font-semibold text-slate-700 mb-4 flex items-center gap-2">
+        <mat-icon fontSet="material-symbols-rounded" class="!text-[18px] text-primary"
+          >settings</mat-icon
+        >
+        Status & Permissions
+      </h3>
+
+      <div class="space-y-4">
+        <div class="flex items-center gap-4">
+          <mat-checkbox formControlName="is_active" color="primary">
+            <span class="text-sm font-medium text-slate-700">Active Account</span>
+          </mat-checkbox>
+          <span class="text-xs text-slate-500">User can log in and access the system</span>
+        </div>
+
+        <div class="flex items-center gap-4">
+          <mat-checkbox formControlName="is_system_admin" color="warn">
+            <span class="text-sm font-medium text-slate-700">System Administrator</span>
+          </mat-checkbox>
+          <span class="text-xs text-slate-500">Full access to all modules and settings</span>
+        </div>
+
+        <div class="flex items-center gap-4">
+          <mat-checkbox formControlName="mfa_enabled" color="accent">
+            <span class="text-sm font-medium text-slate-700">Multi-Factor Authentication</span>
+          </mat-checkbox>
+          <span class="text-xs text-slate-500">Require additional verification on login</span>
+        </div>
+      </div>
+    </div>
+
+    @if (!userForm.get('is_system_admin')?.value) {
+    <mat-divider></mat-divider>
+
+    <!-- Module Access -->
+    <div>
+      <h3 class="text-sm font-semibold text-slate-700 mb-4 flex items-center gap-2">
+        <mat-icon fontSet="material-symbols-rounded" class="!text-[18px] text-primary"
+          >apps</mat-icon
+        >
+        Module Access
+      </h3>
+
+      <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <div
+          class="flex items-center gap-3 rounded-lg border border-slate-200 p-3 hover:bg-slate-50 transition-colors"
+        >
+          <mat-checkbox
+            [checked]="isModuleSelected('medical')"
+            (change)="toggleModule('medical', $event.checked)"
+            color="primary"
+          >
+            <span class="text-sm font-medium text-slate-700">Medical</span>
+          </mat-checkbox>
+        </div>
+
+        <div
+          class="flex items-center gap-3 rounded-lg border border-slate-200 p-3 hover:bg-slate-50 transition-colors"
+        >
+          <mat-checkbox
+            [checked]="isModuleSelected('life')"
+            (change)="toggleModule('life', $event.checked)"
+            color="primary"
+          >
+            <span class="text-sm font-medium text-slate-700">Life</span>
+          </mat-checkbox>
+        </div>
+
+        <div
+          class="flex items-center gap-3 rounded-lg border border-slate-200 p-3 hover:bg-slate-50 transition-colors"
+        >
+          <mat-checkbox
+            [checked]="isModuleSelected('motor')"
+            (change)="toggleModule('motor', $event.checked)"
+            color="primary"
+          >
+            <span class="text-sm font-medium text-slate-700">Motor</span>
+          </mat-checkbox>
+        </div>
+
+        <div
+          class="flex items-center gap-3 rounded-lg border border-slate-200 p-3 hover:bg-slate-50 transition-colors"
+        >
+          <mat-checkbox
+            [checked]="isModuleSelected('travel')"
+            (change)="toggleModule('travel', $event.checked)"
+            color="primary"
+          >
+            <span class="text-sm font-medium text-slate-700">Travel</span>
+          </mat-checkbox>
+        </div>
+      </div>
+    </div>
+    }
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions
+  class="!m-0 !flex !justify-between !border-t !border-divider !bg-slate-50 !px-6 !py-4"
+>
+  <div class="flex gap-2">
+    @if (store.isSaving()) {
+    <div class="flex items-center gap-2 text-sm text-slate-600">
+      <mat-spinner diameter="20"></mat-spinner>
+      <span>Saving...</span>
+    </div>
+    }
+  </div>
+
+  <div class="flex gap-2">
+    <button mat-stroked-button type="button" (click)="onCancel()" [disabled]="store.isSaving()">
+      Cancel
+    </button>
+    <button
+      mat-flat-button
+      color="primary"
+      type="button"
+      (click)="onSave()"
+      [disabled]="!userForm.valid || store.isSaving()"
+    >
+      <mat-icon fontSet="material-symbols-rounded">{{ isEdit ? 'save' : 'add' }}</mat-icon>
+      {{ isEdit ? 'Update User' : 'Create User' }}
+    </button>
+  </div>
+</mat-dialog-actions>

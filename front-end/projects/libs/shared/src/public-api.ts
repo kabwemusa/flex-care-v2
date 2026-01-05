@@ -9,3 +9,4 @@ export * from './lib/services/feedback.service';
 export * from './lib/components/confirmation-dialog/confirmation-dialog';
 export * from './lib/components/skeleton/skeleton';
 export * from './lib/layout/lib-page-header/lib-page-header';
+export * from './lib/utils/navigation-filter';

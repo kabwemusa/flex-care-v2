@@ -15,11 +15,12 @@ use Modules\Medical\Http\Resources\PolicyListResource;
 use Modules\Medical\Http\Resources\PolicyAddonResource;
 use Modules\Medical\Http\Resources\PolicyDocumentResource;
 use Modules\Medical\Services\PolicyService;
-use Modules\Medical\Services\PremiumCalculator;
+use Modules\Medical\Services\PremiumService;
 use Modules\Medical\Constants\MedicalConstants;
 use App\Traits\ApiResponse;
 use Throwable;
 use Exception;
+use Modules\Medical\Http\Resources\MemberResource;
 
 class PolicyController extends Controller
 {
@@ -27,7 +28,7 @@ class PolicyController extends Controller
 
     public function __construct(
         protected PolicyService $policyService,
-        protected PremiumCalculator $premiumCalculator
+        protected PremiumService $premiumCalculator
     ) {}
 
     /**
@@ -99,47 +100,13 @@ class PolicyController extends Controller
         }
     }
 
-    /**
-     * Create a new policy.
-     * POST /v1/medical/policies
-     */
+
+
     public function store(PolicyRequest $request): JsonResponse
     {
         try {
-            $policy = DB::transaction(function () use ($request) {
-                $data = $request->validated();
-                
-                // Set renewal date based on expiry
-                if (!isset($data['renewal_date']) && isset($data['expiry_date'])) {
-                    $data['renewal_date'] = $data['expiry_date'];
-                }
-
-                $policy = Policy::create($data);
-
-                // Add selected addons
-                if ($addons = $request->input('addons')) {
-                    foreach ($addons as $addon) {
-                        $policy->policyAddons()->create([
-                            'addon_id' => $addon['addon_id'],
-                            'addon_rate_id' => $addon['addon_rate_id'] ?? null,
-                            'premium' => $addon['premium'] ?? 0,
-                        ]);
-                    }
-                }
-
-                // Apply promo code if provided
-                if ($promoCode = $request->input('promo_code')) {
-                    $this->policyService->applyPromoCode($policy, $promoCode);
-                }
-
-                // Calculate premiums
-                $this->premiumCalculator->calculate($policy);
-
-                return $policy;
-            });
-
-            $policy->load(['scheme', 'plan', 'group', 'policyAddons.addon']);
-
+            $policy = $this->policyService->createPolicy($request->validated());
+            
             return $this->success(
                 new PolicyResource($policy),
                 'Policy created',
@@ -150,38 +117,141 @@ class PolicyController extends Controller
         }
     }
 
-    /**
-     * Show policy details.
-     * GET /v1/medical/policies/{id}
-     */
     public function show(string $id): JsonResponse
     {
         try {
             $policy = Policy::with([
-                'scheme',
-                'plan.planBenefits.benefit',
-                'rateCard',
-                'group.primaryContact',
-                'principalMember',
-                'members' => fn($q) => $q->orderBy('member_type')->orderBy('created_at'),
-                'policyAddons.addon',
-                'documents' => fn($q) => $q->active()->latest(),
-                'promoCode',
-            ])
-            ->withCount(['members', 'principals' => fn($q) => $q->where('member_type', 'principal')])
-            ->findOrFail($id);
+                'scheme', 'plan', 'rateCard', 'group', 'principalMember',
+                'members' => fn($q) => $q->orderBy('member_type'),
+                'policyAddons.addon'
+            ])->findOrFail($id);
 
-            return $this->success(
-                new PolicyResource($policy),
-                'Policy retrieved'
-            );
-        } catch (ModelNotFoundException $e) {
-            return $this->error('Policy not found', 404);
+            return $this->success(new PolicyResource($policy), 'Policy retrieved');
         } catch (Throwable $e) {
-            return $this->error('Failed to retrieve policy details', 500);
+            return $this->error('Policy not found', 404);
         }
     }
 
+    // =========================================================================
+    // LIFECYCLE ACTIONS
+    // =========================================================================
+
+    public function activate(string $id): JsonResponse
+    {
+        try {
+            $policy = DB::transaction(function () use ($id) {
+                $policy = Policy::findOrFail($id);
+                return $this->policyService->activatePolicy($policy);
+            });
+            return $this->success(new PolicyResource($policy), 'Policy activated');
+        } catch (Throwable $e) {
+            return $this->error($e->getMessage(), 422);
+        }
+    }
+
+    public function suspend(string $id): JsonResponse
+    {
+        try {
+            $policy = DB::transaction(function () use ($id) {
+                $policy = Policy::findOrFail($id);
+                return $this->policyService->suspendPolicy($policy, request('reason', 'Administrative suspension'));
+            });
+            return $this->success(new PolicyResource($policy), 'Policy suspended');
+        } catch (Throwable $e) {
+            return $this->error($e->getMessage(), 422);
+        }
+    }
+
+    public function reinstate(string $id): JsonResponse
+    {
+        try {
+            $policy = DB::transaction(function () use ($id) {
+                $policy = Policy::findOrFail($id);
+                return $this->policyService->reinstatePolicy($policy);
+            });
+            return $this->success(new PolicyResource($policy), 'Policy reinstated');
+        } catch (Throwable $e) {
+            return $this->error($e->getMessage(), 422);
+        }
+    }
+
+    public function cancel(string $id): JsonResponse
+    {
+        try {
+            $policy = DB::transaction(function () use ($id) {
+                $policy = Policy::findOrFail($id);
+                return $this->policyService->cancelPolicy($policy, request('reason', 'Cancelled by user'));
+            });
+            return $this->success(new PolicyResource($policy), 'Policy cancelled');
+        } catch (Throwable $e) {
+            return $this->error($e->getMessage(), 422);
+        }
+    }
+
+    public function renew(string $id): JsonResponse
+    {
+        try {
+            $newPolicy = DB::transaction(function () use ($id) {
+                $policy = Policy::findOrFail($id);
+                return $this->policyService->renewPolicy($policy, request()->all());
+            });
+            return $this->success(new PolicyResource($newPolicy), 'Policy renewed', 201);
+        } catch (Throwable $e) {
+            return $this->error($e->getMessage(), 500);
+        }
+    }
+
+    // =========================================================================
+    // MID-TERM ADJUSTMENTS (MEMBERS)
+    // =========================================================================
+
+    public function addMember(string $id): JsonResponse
+    {
+        try {
+            $request = request();
+            // Validate minimal member data here or via FormRequest
+            $data = $request->validate([
+                'first_name' => 'required|string',
+                'last_name' => 'required|string',
+                'date_of_birth' => 'required|date',
+                'member_type' => 'required|string',
+                'gender' => 'required|in:M,F',
+                'join_date' => 'nullable|date',
+                'relationship' => 'nullable|string'
+                // ... add other fields as necessary
+            ]);
+
+            $member = $this->policyService->addMemberToPolicy(Policy::findOrFail($id), $data);
+
+            return $this->success(new MemberResource($member), 'Member added to policy', 201);
+        } catch (Throwable $e) {
+            return $this->error($e->getMessage(), 422);
+        }
+    }
+
+    public function terminateMember(string $id, string $memberId): JsonResponse
+    {
+        try {
+            $request = request();
+            $request->validate([
+                'reason' => 'required|string',
+                'date' => 'nullable|date'
+            ]);
+
+            $member = $this->policyService->terminateMemberFromPolicy(
+                Policy::findOrFail($id), 
+                $memberId, 
+                $request->input('reason'),
+                $request->input('date')
+            );
+
+            return $this->success(new MemberResource($member), 'Member terminated from policy');
+        } catch (Throwable $e) {
+            return $this->error($e->getMessage(), 422);
+        }
+    }
+
+   
     /**
      * Update policy.
      * PUT /v1/medical/policies/{id}
@@ -250,167 +320,7 @@ class PolicyController extends Controller
     // STATUS MANAGEMENT
     // =========================================================================
 
-    /**
-     * Activate policy.
-     * POST /v1/medical/policies/{id}/activate
-     */
-    public function activate(string $id): JsonResponse
-    {
-        try {
-            $policy = DB::transaction(function () use ($id) {
-                $policy = Policy::findOrFail($id);
-
-                if (!$policy->canActivate()) {
-                    throw new Exception('Policy cannot be activated. Check underwriting status and payment.', 422);
-                }
-
-                $policy->activate();
-
-                // Activate all pending members
-                $policy->members()->pending()->update([
-                    'status' => MedicalConstants::MEMBER_STATUS_ACTIVE,
-                    'status_changed_at' => now(),
-                ]);
-
-                return $policy->fresh();
-            });
-
-            return $this->success(
-                new PolicyResource($policy),
-                'Policy activated'
-            );
-        } catch (ModelNotFoundException $e) {
-            return $this->error('Policy not found', 404);
-        } catch (Throwable $e) {
-            $code = $e->getCode() === 422 ? 422 : 500;
-            return $this->error($e->getMessage(), $code);
-        }
-    }
-
-    /**
-     * Suspend policy.
-     * POST /v1/medical/policies/{id}/suspend
-     */
-    public function suspend(string $id): JsonResponse
-    {
-        try {
-            $policy = DB::transaction(function () use ($id) {
-                $policy = Policy::findOrFail($id);
-
-                if (!$policy->is_active) {
-                    throw new Exception('Only active policies can be suspended', 422);
-                }
-
-                $policy->suspend(request('reason'));
-
-                // Suspend all active members
-                $policy->members()->active()->update([
-                    'status' => MedicalConstants::MEMBER_STATUS_SUSPENDED,
-                    'status_changed_at' => now(),
-                    'status_reason' => 'Policy suspended',
-                ]);
-
-                return $policy->fresh();
-            });
-
-            return $this->success(
-                new PolicyResource($policy),
-                'Policy suspended'
-            );
-        } catch (ModelNotFoundException $e) {
-            return $this->error('Policy not found', 404);
-        } catch (Throwable $e) {
-            $code = $e->getCode() === 422 ? 422 : 500;
-            return $this->error($e->getMessage(), $code);
-        }
-    }
-
-    /**
-     * Cancel policy.
-     * POST /v1/medical/policies/{id}/cancel
-     */
-    public function cancel(string $id): JsonResponse
-    {
-        try {
-            $policy = DB::transaction(function () use ($id) {
-                $policy = Policy::findOrFail($id);
-
-                if (in_array($policy->status, [MedicalConstants::POLICY_STATUS_CANCELLED, MedicalConstants::POLICY_STATUS_EXPIRED])) {
-                    throw new Exception('Policy is already cancelled or expired', 422);
-                }
-
-                $reason = request('reason', 'Cancellation requested');
-                $policy->cancel($reason);
-
-                // Terminate all members
-                $policy->members()
-                    ->whereNotIn('status', [MedicalConstants::MEMBER_STATUS_TERMINATED, MedicalConstants::MEMBER_STATUS_DECEASED])
-                    ->update([
-                        'status' => MedicalConstants::MEMBER_STATUS_TERMINATED,
-                        'status_changed_at' => now(),
-                        'terminated_at' => now(),
-                        'termination_reason' => 'policy_cancelled',
-                        'cover_end_date' => now(),
-                        'card_status' => MedicalConstants::CARD_STATUS_BLOCKED,
-                    ]);
-
-                return $policy->fresh();
-            });
-
-            return $this->success(
-                new PolicyResource($policy),
-                'Policy cancelled'
-            );
-        } catch (ModelNotFoundException $e) {
-            return $this->error('Policy not found', 404);
-        } catch (Throwable $e) {
-            $code = $e->getCode() === 422 ? 422 : 500;
-            return $this->error($e->getMessage(), $code);
-        }
-    }
-
-    /**
-     * Reinstate suspended policy.
-     * POST /v1/medical/policies/{id}/reinstate
-     */
-    public function reinstate(string $id): JsonResponse
-    {
-        try {
-            $policy = DB::transaction(function () use ($id) {
-                $policy = Policy::findOrFail($id);
-
-                if ($policy->status !== MedicalConstants::POLICY_STATUS_SUSPENDED) {
-                    throw new Exception('Only suspended policies can be reinstated', 422);
-                }
-
-                $policy->status = MedicalConstants::POLICY_STATUS_ACTIVE;
-                $policy->save();
-
-                // Reactivate suspended members
-                $policy->members()
-                    ->where('status', MedicalConstants::MEMBER_STATUS_SUSPENDED)
-                    ->where('status_reason', 'Policy suspended')
-                    ->update([
-                        'status' => MedicalConstants::MEMBER_STATUS_ACTIVE,
-                        'status_changed_at' => now(),
-                        'status_reason' => null,
-                    ]);
-
-                return $policy->fresh();
-            });
-
-            return $this->success(
-                new PolicyResource($policy),
-                'Policy reinstated'
-            );
-        } catch (ModelNotFoundException $e) {
-            return $this->error('Policy not found', 404);
-        } catch (Throwable $e) {
-            $code = $e->getCode() === 422 ? 422 : 500;
-            return $this->error($e->getMessage(), $code);
-        }
-    }
-
+    
     // =========================================================================
     // UNDERWRITING
     // =========================================================================
@@ -507,40 +417,6 @@ class PolicyController extends Controller
         }
     }
 
-    // =========================================================================
-    // RENEWAL
-    // =========================================================================
-
-    /**
-     * Renew policy.
-     * POST /v1/medical/policies/{id}/renew
-     */
-    public function renew(string $id): JsonResponse
-    {
-        try {
-            $newPolicy = DB::transaction(function () use ($id) {
-                $policy = Policy::findOrFail($id);
-
-                if (!$policy->canBeRenewed()) {
-                    throw new Exception('Policy cannot be renewed', 422);
-                }
-
-                return $this->policyService->renewPolicy($policy, request()->all());
-            });
-
-            return $this->success(
-                new PolicyResource($newPolicy),
-                'Policy renewed',
-                201
-            );
-        } catch (ModelNotFoundException $e) {
-            return $this->error('Policy not found', 404);
-        } catch (Throwable $e) {
-            $code = $e->getCode() === 422 ? 422 : 500;
-            return $this->error($e->getMessage(), $code);
-        }
-    }
-
     /**
      * Get policies due for renewal.
      * GET /v1/medical/policies/for-renewal
@@ -585,7 +461,7 @@ class PolicyController extends Controller
                 $addon = $policy->policyAddons()->create($request->validated());
 
                 // Recalculate premiums
-                $this->premiumCalculator->calculate($policy);
+                $this->premiumCalculator->calculatePolicyPremium($policy);
 
                 return $addon;
             });
@@ -617,7 +493,7 @@ class PolicyController extends Controller
                 $policyAddon->delete();
 
                 // Recalculate premiums
-                $this->premiumCalculator->calculate($policy);
+                $this->premiumCalculator->calculatePolicyPremium($policy);
             });
 
             return $this->success(null, 'Addon removed');
@@ -709,7 +585,7 @@ class PolicyController extends Controller
         try {
             $policy = Policy::with(['members', 'policyAddons.addon'])->findOrFail($id);
 
-            $breakdown = $this->premiumCalculator->calculateWithBreakdown($policy);
+            $breakdown = $this->premiumCalculator->calculatePolicyPremium($policy);
 
             return $this->success($breakdown, 'Premium calculated');
         } catch (ModelNotFoundException $e) {
@@ -743,3 +619,5 @@ class PolicyController extends Controller
         }
     }
 }
+
+

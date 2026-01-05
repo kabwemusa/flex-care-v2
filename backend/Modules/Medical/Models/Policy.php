@@ -4,7 +4,6 @@ namespace Modules\Medical\Models;
 
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\HasOne;
 use Modules\Medical\Constants\MedicalConstants;
 
 class Policy extends BaseModel
@@ -13,12 +12,16 @@ class Policy extends BaseModel
 
     protected $fillable = [
         'policy_number',
+        'application_id',
         'scheme_id',
         'plan_id',
         'rate_card_id',
         'policy_type',
         'group_id',
         'principal_member_id',
+        'holder_name',
+        'holder_email',
+        'holder_phone',
         'inception_date',
         'expiry_date',
         'renewal_date',
@@ -41,6 +44,8 @@ class Policy extends BaseModel
         'underwriting_notes',
         'underwritten_by',
         'underwritten_at',
+        'suspended_at',
+        'suspension_reason',
         'cancelled_at',
         'cancellation_reason',
         'cancellation_notes',
@@ -48,6 +53,7 @@ class Policy extends BaseModel
         'previous_policy_id',
         'renewed_to_policy_id',
         'renewal_count',
+        'source',
         'sales_agent_id',
         'broker_id',
         'commission_rate',
@@ -55,7 +61,8 @@ class Policy extends BaseModel
         'promo_code_id',
         'applied_discounts',
         'applied_loadings',
-        'source',
+        'issued_at',
+        'issued_by',
         'metadata',
         'notes',
     ];
@@ -77,45 +84,40 @@ class Policy extends BaseModel
         'principal_count' => 'integer',
         'dependent_count' => 'integer',
         'underwritten_at' => 'datetime',
+        'suspended_at' => 'date',
         'cancelled_at' => 'date',
-        'renewal_count' => 'integer',
         'commission_rate' => 'decimal:2',
         'commission_amount' => 'decimal:2',
         'applied_discounts' => 'array',
         'applied_loadings' => 'array',
+        'issued_at' => 'datetime',
         'metadata' => 'array',
     ];
 
     protected $attributes = [
-        'policy_term_months' => MedicalConstants::DEFAULT_POLICY_TERM_MONTHS,
+        'status' => MedicalConstants::POLICY_STATUS_ACTIVE,
+        'underwriting_status' => MedicalConstants::UW_STATUS_APPROVED,
+        'policy_term_months' => 12,
         'is_auto_renew' => true,
-        'currency' => MedicalConstants::DEFAULT_CURRENCY,
-        'base_premium' => 0,
-        'addon_premium' => 0,
-        'loading_amount' => 0,
-        'discount_amount' => 0,
-        'total_premium' => 0,
-        'tax_amount' => 0,
-        'gross_premium' => 0,
-        'member_count' => 0,
-        'principal_count' => 0,
-        'dependent_count' => 0,
-        'status' => MedicalConstants::POLICY_STATUS_DRAFT,
-        'underwriting_status' => MedicalConstants::UW_STATUS_PENDING,
+        'billing_frequency' => MedicalConstants::BILLING_MONTHLY,
+        'currency' => 'ZMW',
         'renewal_count' => 0,
     ];
 
     // =========================================================================
-    // BOOT - Auto-generate policy number
+    // CODE GENERATION
     // =========================================================================
 
-    protected static function boot(): void
+    protected static function booted()
     {
         parent::boot();
 
-        static::creating(function (self $policy) {
-            if (empty($policy->policy_number)) {
-                $policy->policy_number = $policy->generatePolicyNumber();
+        static::creating(function ($model) {
+            if (empty($model->policy_number)) {
+                $model->policy_number = $model->generatePolicyNumber();
+            }
+            if (empty($model->issued_at)) {
+                $model->issued_at = now();
             }
         });
     }
@@ -124,14 +126,28 @@ class Policy extends BaseModel
     {
         $prefix = MedicalConstants::PREFIX_POLICY;
         $year = date('Y');
-        $sequence = static::whereYear('created_at', $year)->count() + 1;
         
-        return sprintf('%s-%s-%06d', $prefix, $year, $sequence);
+        $lastNumber = static::where('policy_number', 'like', "{$prefix}{$year}-%")
+            ->orderByRaw('CAST(SUBSTRING(policy_number, -6) AS UNSIGNED) DESC')
+            ->value('policy_number');
+
+        if ($lastNumber) {
+            $sequence = (int) substr($lastNumber, -6) + 1;
+        } else {
+            $sequence = 1;
+        }
+
+        return sprintf('%s%s-%06d', $prefix, $year, $sequence);
     }
 
     // =========================================================================
     // RELATIONSHIPS
     // =========================================================================
+
+    public function application(): BelongsTo
+    {
+        return $this->belongsTo(Application::class, 'application_id');
+    }
 
     public function scheme(): BelongsTo
     {
@@ -158,39 +174,6 @@ class Policy extends BaseModel
         return $this->belongsTo(Member::class, 'principal_member_id');
     }
 
-    public function members(): HasMany
-    {
-        return $this->hasMany(Member::class, 'policy_id');
-    }
-
-    public function activeMembers(): HasMany
-    {
-        return $this->hasMany(Member::class, 'policy_id')
-                    ->where('status', MedicalConstants::MEMBER_STATUS_ACTIVE);
-    }
-
-    public function principals(): HasMany
-    {
-        return $this->hasMany(Member::class, 'policy_id')
-                    ->where('member_type', MedicalConstants::MEMBER_TYPE_PRINCIPAL);
-    }
-
-    public function dependents(): HasMany
-    {
-        return $this->hasMany(Member::class, 'policy_id')
-                    ->where('member_type', '!=', MedicalConstants::MEMBER_TYPE_PRINCIPAL);
-    }
-
-    public function policyAddons(): HasMany
-    {
-        return $this->hasMany(PolicyAddon::class, 'policy_id');
-    }
-
-    public function documents(): HasMany
-    {
-        return $this->hasMany(PolicyDocument::class, 'policy_id');
-    }
-
     public function promoCode(): BelongsTo
     {
         return $this->belongsTo(PromoCode::class, 'promo_code_id');
@@ -201,33 +184,90 @@ class Policy extends BaseModel
         return $this->belongsTo(self::class, 'previous_policy_id');
     }
 
-    public function renewedPolicy(): BelongsTo
+    public function renewedToPolicy(): BelongsTo
     {
         return $this->belongsTo(self::class, 'renewed_to_policy_id');
+    }
+
+    public function members(): HasMany
+    {
+        return $this->hasMany(Member::class, 'policy_id');
+    }
+
+    public function activeMembers(): HasMany
+    {
+        return $this->members()->where('status', MedicalConstants::MEMBER_STATUS_ACTIVE);
+    }
+
+    public function principals(): HasMany
+    {
+        return $this->members()->where('member_type', MedicalConstants::MEMBER_TYPE_PRINCIPAL);
+    }
+
+    public function dependents(): HasMany
+    {
+        return $this->members()->where('member_type', '!=', MedicalConstants::MEMBER_TYPE_PRINCIPAL);
+    }
+
+    public function policyAddons(): HasMany
+    {
+        return $this->hasMany(PolicyAddon::class, 'policy_id');
+    }
+
+    public function activeAddons(): HasMany
+    {
+        return $this->policyAddons()->where('is_active', true);
+    }
+
+    public function documents(): HasMany
+    {
+        return $this->hasMany(PolicyDocument::class, 'policy_id');
     }
 
     // =========================================================================
     // SCOPES
     // =========================================================================
 
-    public function scopeDraft($query)
-    {
-        return $query->where('status', MedicalConstants::POLICY_STATUS_DRAFT);
-    }
-
     public function scopeActive($query)
     {
         return $query->where('status', MedicalConstants::POLICY_STATUS_ACTIVE);
     }
 
-    public function scopePendingPayment($query)
+    public function scopeSuspended($query)
     {
-        return $query->where('status', MedicalConstants::POLICY_STATUS_PENDING_PAYMENT);
+        return $query->where('status', MedicalConstants::POLICY_STATUS_SUSPENDED);
+    }
+
+    public function scopeCancelled($query)
+    {
+        return $query->where('status', MedicalConstants::POLICY_STATUS_CANCELLED);
+    }
+
+    public function scopeExpired($query)
+    {
+        return $query->where('status', MedicalConstants::POLICY_STATUS_EXPIRED);
+    }
+
+    public function scopeExpiringSoon($query, int $days = 30)
+    {
+        return $query->where('status', MedicalConstants::POLICY_STATUS_ACTIVE)
+            ->whereBetween('expiry_date', [now(), now()->addDays($days)]);
+    }
+
+    public function scopeForRenewal($query, int $daysBeforeExpiry = 60)
+    {
+        return $query->where('status', MedicalConstants::POLICY_STATUS_ACTIVE)
+            ->where('is_auto_renew', true)
+            ->whereBetween('expiry_date', [now(), now()->addDays($daysBeforeExpiry)])
+            ->whereNull('renewed_to_policy_id');
     }
 
     public function scopeCorporate($query)
     {
-        return $query->where('policy_type', MedicalConstants::POLICY_TYPE_CORPORATE);
+        return $query->whereIn('policy_type', [
+            MedicalConstants::POLICY_TYPE_CORPORATE,
+            MedicalConstants::POLICY_TYPE_SME,
+        ]);
     }
 
     public function scopeIndividual($query)
@@ -238,40 +278,16 @@ class Policy extends BaseModel
         ]);
     }
 
-    public function scopeExpiringWithin($query, int $days)
+    public function scopeForGroup($query, string $groupId)
+    {
+        return $query->where('group_id', $groupId);
+    }
+
+    public function scopeInForce($query)
     {
         return $query->where('status', MedicalConstants::POLICY_STATUS_ACTIVE)
-                     ->whereBetween('expiry_date', [now(), now()->addDays($days)]);
-    }
-
-    public function scopeExpired($query)
-    {
-        return $query->where('expiry_date', '<', now())
-                     ->where('status', '!=', MedicalConstants::POLICY_STATUS_RENEWED);
-    }
-
-    public function scopeForRenewal($query)
-    {
-        return $query->where('status', MedicalConstants::POLICY_STATUS_ACTIVE)
-                     ->where('is_auto_renew', true)
-                     ->where('expiry_date', '<=', now()->addDays(30));
-    }
-
-    public function scopeSearch($query, string $term)
-    {
-        return $query->where(function ($q) use ($term) {
-            $q->where('policy_number', 'LIKE', "%{$term}%")
-              ->orWhereHas('members', fn($m) => 
-                  $m->where('member_number', 'LIKE', "%{$term}%")
-                    ->orWhere('first_name', 'LIKE', "%{$term}%")
-                    ->orWhere('last_name', 'LIKE', "%{$term}%")
-                    ->orWhere('national_id', 'LIKE', "%{$term}%")
-              )
-              ->orWhereHas('group', fn($g) => 
-                  $g->where('name', 'LIKE', "%{$term}%")
-                    ->orWhere('code', 'LIKE', "%{$term}%")
-              );
-        });
+            ->where('inception_date', '<=', now())
+            ->where('expiry_date', '>=', now());
     }
 
     // =========================================================================
@@ -281,11 +297,6 @@ class Policy extends BaseModel
     public function getStatusLabelAttribute(): string
     {
         return MedicalConstants::POLICY_STATUSES[$this->status] ?? $this->status;
-    }
-
-    public function getUnderwritingStatusLabelAttribute(): string
-    {
-        return MedicalConstants::UW_STATUSES[$this->underwriting_status] ?? $this->underwriting_status;
     }
 
     public function getPolicyTypeLabelAttribute(): string
@@ -298,78 +309,112 @@ class Policy extends BaseModel
         return MedicalConstants::BILLING_FREQUENCIES[$this->billing_frequency] ?? $this->billing_frequency;
     }
 
-    public function getIsDraftAttribute(): bool
-    {
-        return $this->status === MedicalConstants::POLICY_STATUS_DRAFT;
-    }
-
     public function getIsActiveAttribute(): bool
     {
         return $this->status === MedicalConstants::POLICY_STATUS_ACTIVE;
     }
 
-    public function getIsCorporateAttribute(): bool
+    public function getIsSuspendedAttribute(): bool
     {
-        return $this->policy_type === MedicalConstants::POLICY_TYPE_CORPORATE;
+        return $this->status === MedicalConstants::POLICY_STATUS_SUSPENDED;
+    }
+
+    public function getIsCancelledAttribute(): bool
+    {
+        return $this->status === MedicalConstants::POLICY_STATUS_CANCELLED;
     }
 
     public function getIsExpiredAttribute(): bool
     {
-        return $this->expiry_date->isPast();
+        return $this->status === MedicalConstants::POLICY_STATUS_EXPIRED 
+            || ($this->expiry_date && $this->expiry_date->isPast());
     }
 
-    public function getIsExpiringAttribute(): bool
+    public function getIsRenewedAttribute(): bool
     {
-        return $this->expiry_date->between(now(), now()->addDays(30));
+        return $this->renewed_to_policy_id !== null;
     }
 
-    public function getDaysToExpiryAttribute(): int
+    public function getIsCorporateAttribute(): bool
     {
+        return in_array($this->policy_type, [
+            MedicalConstants::POLICY_TYPE_CORPORATE,
+            MedicalConstants::POLICY_TYPE_SME,
+        ]);
+    }
+
+    public function getIsIndividualAttribute(): bool
+    {
+        return in_array($this->policy_type, [
+            MedicalConstants::POLICY_TYPE_INDIVIDUAL,
+            MedicalConstants::POLICY_TYPE_FAMILY,
+        ]);
+    }
+
+    public function getIsInForceAttribute(): bool
+    {
+        return $this->is_active
+            && $this->inception_date <= now()
+            && $this->expiry_date >= now();
+    }
+
+    public function getDaysToExpiryAttribute(): ?int
+    {
+        if (!$this->expiry_date) return null;
         return max(0, now()->diffInDays($this->expiry_date, false));
-    }
-
-    public function getPolicyHolderNameAttribute(): string
-    {
-        if ($this->is_corporate && $this->group) {
-            return $this->group->display_name;
-        }
-
-        return $this->principalMember?->full_name ?? 'N/A';
     }
 
     public function getMonthlyPremiumAttribute(): float
     {
         return match($this->billing_frequency) {
-            MedicalConstants::BILLING_MONTHLY => $this->gross_premium,
+            MedicalConstants::BILLING_MONTHLY => (float) $this->gross_premium,
             MedicalConstants::BILLING_QUARTERLY => round($this->gross_premium / 3, 2),
             MedicalConstants::BILLING_SEMI_ANNUAL => round($this->gross_premium / 6, 2),
             MedicalConstants::BILLING_ANNUAL => round($this->gross_premium / 12, 2),
-            default => $this->gross_premium,
+            default => (float) $this->gross_premium,
         };
     }
 
     public function getAnnualPremiumAttribute(): float
     {
         return match($this->billing_frequency) {
-            MedicalConstants::BILLING_MONTHLY => $this->gross_premium * 12,
-            MedicalConstants::BILLING_QUARTERLY => $this->gross_premium * 4,
-            MedicalConstants::BILLING_SEMI_ANNUAL => $this->gross_premium * 2,
-            MedicalConstants::BILLING_ANNUAL => $this->gross_premium,
-            default => $this->gross_premium,
+            MedicalConstants::BILLING_MONTHLY => round($this->gross_premium * 12, 2),
+            MedicalConstants::BILLING_QUARTERLY => round($this->gross_premium * 4, 2),
+            MedicalConstants::BILLING_SEMI_ANNUAL => round($this->gross_premium * 2, 2),
+            MedicalConstants::BILLING_ANNUAL => (float) $this->gross_premium,
+            default => (float) $this->gross_premium,
         };
+    }
+
+    public function getPolicyHolderNameAttribute(): string
+    {
+        if ($this->holder_name) {
+            return $this->holder_name;
+        }
+
+        if ($this->is_corporate && $this->group) {
+            return $this->group->name;
+        }
+
+        if ($this->principalMember) {
+            return $this->principalMember->full_name;
+        }
+
+        return 'Unknown';
+    }
+
+    public function getDisplayNameAttribute(): string
+    {
+        return $this->policy_number . ' - ' . $this->policy_holder_name;
     }
 
     // =========================================================================
     // METHODS
     // =========================================================================
 
-    public function calculatePremium(): void
-    {
-        $this->total_premium = $this->base_premium + $this->addon_premium + $this->loading_amount - $this->discount_amount;
-        // Tax calculation would go here based on business rules
-        $this->gross_premium = $this->total_premium + $this->tax_amount;
-    }
-
+    /**
+     * Update member counts.
+     */
     public function updateMemberCounts(): void
     {
         $this->member_count = $this->members()->count();
@@ -378,96 +423,162 @@ class Policy extends BaseModel
         $this->save();
     }
 
-    public function activate(): bool
+    /**
+     * Recalculate premiums from members.
+     */
+    public function recalculatePremiums(): void
     {
-        if (!$this->canActivate()) {
+        $this->base_premium = $this->activeMembers()->sum('premium');
+        $this->loading_amount = $this->activeMembers()->sum('loading_amount');
+        $this->addon_premium = $this->activeAddons()->sum('premium');
+        
+        $this->total_premium = $this->base_premium + $this->addon_premium + $this->loading_amount - $this->discount_amount;
+        
+        $taxRate = config('medical.tax_rate', 0);
+        $this->tax_amount = round($this->total_premium * $taxRate, 2);
+        
+        $this->gross_premium = $this->total_premium + $this->tax_amount;
+        
+        $this->save();
+    }
+
+    /**
+     * Suspend the policy.
+     */
+    public function suspend(string $reason): bool
+    {
+        $this->status = MedicalConstants::POLICY_STATUS_SUSPENDED;
+        $this->suspended_at = now();
+        $this->suspension_reason = $reason;
+        
+        // Suspend all active members
+        $this->activeMembers()->update([
+            'status' => MedicalConstants::MEMBER_STATUS_SUSPENDED,
+            'status_changed_at' => now(),
+            'status_reason' => 'Policy suspended',
+        ]);
+        
+        return $this->save();
+    }
+
+    /**
+     * Reinstate the policy.
+     */
+    public function reinstate(): bool
+    {
+        if ($this->status !== MedicalConstants::POLICY_STATUS_SUSPENDED) {
             return false;
         }
 
         $this->status = MedicalConstants::POLICY_STATUS_ACTIVE;
+        $this->suspended_at = null;
+        $this->suspension_reason = null;
+        
+        // Reactivate suspended members
+        $this->members()
+            ->where('status', MedicalConstants::MEMBER_STATUS_SUSPENDED)
+            ->update([
+                'status' => MedicalConstants::MEMBER_STATUS_ACTIVE,
+                'status_changed_at' => now(),
+                'status_reason' => 'Policy reinstated',
+            ]);
         
         return $this->save();
     }
 
-    public function canActivate(): bool
-    {
-        return in_array($this->status, [
-            MedicalConstants::POLICY_STATUS_DRAFT,
-            MedicalConstants::POLICY_STATUS_PENDING_PAYMENT,
-        ]) && $this->underwriting_status === MedicalConstants::UW_STATUS_APPROVED;
-    }
-
-    public function suspend(string $reason): bool
-    {
-        $this->status = MedicalConstants::POLICY_STATUS_SUSPENDED;
-        if ($reason) {
-            $this->notes = ($this->notes ? $this->notes . "\n" : '') . "Suspended: {$reason}";
-        }
-        
-        return $this->save();
-    }
-
-    public function cancel(string $reason, ?string $cancelledBy = null): bool
+    /**
+     * Cancel the policy.
+     */
+    public function cancel(string $reason, ?string $cancelledBy, ?string $notes = null): bool
     {
         $this->status = MedicalConstants::POLICY_STATUS_CANCELLED;
         $this->cancelled_at = now();
         $this->cancellation_reason = $reason;
+        $this->cancellation_notes = $notes;
         $this->cancelled_by = $cancelledBy;
         
-        return $this->save();
-    }
-
-    public function markExpired(): bool
-    {
-        $this->status = MedicalConstants::POLICY_STATUS_EXPIRED;
-        
-        return $this->save();
-    }
-
-    public function approve(?string $approvedBy = null, string $notes): bool
-    {
-        $this->underwriting_status = MedicalConstants::UW_STATUS_APPROVED;
-        $this->underwritten_by = $approvedBy;
-        $this->underwritten_at = now();
-        
-        if ($notes) {
-            $this->underwriting_notes = $notes;
-        }
-        
-        return $this->save();
-    }
-
-    public function decline(string $reason, ?string $declinedBy = null): bool
-    {
-        $this->underwriting_status = MedicalConstants::UW_STATUS_DECLINED;
-        $this->underwriting_notes = $reason;
-        $this->underwritten_by = $declinedBy;
-        $this->underwritten_at = now();
-        
-        return $this->save();
-    }
-
-    public function refer(string $reason, ?string $referredBy = null): bool
-    {
-        $this->underwriting_status = MedicalConstants::UW_STATUS_REFERRED;
-        $this->underwriting_notes = $reason;
-        $this->underwritten_by = $referredBy;
-        $this->underwritten_at = now();
-        
-        return $this->save();
-    }
-
-    public function canAddMember(): bool
-    {
-        return in_array($this->status, [
-            MedicalConstants::POLICY_STATUS_DRAFT,
-            MedicalConstants::POLICY_STATUS_ACTIVE,
+        // Terminate all members
+        $this->activeMembers()->update([
+            'status' => MedicalConstants::MEMBER_STATUS_TERMINATED,
+            'terminated_at' => now(),
+            'termination_reason' => 'policy_cancelled',
+            'termination_notes' => 'Policy cancelled: ' . $reason,
         ]);
+        
+        // Block all cards
+        $this->members()->update([
+            'card_status' => MedicalConstants::CARD_STATUS_BLOCKED,
+        ]);
+        
+        return $this->save();
     }
 
-    public function canBeRenewed(): bool
+    /**
+     * Set the principal member.
+     */
+    public function setPrincipalMember(Member $member): void
     {
-        return $this->status === MedicalConstants::POLICY_STATUS_ACTIVE
-            && $this->renewed_to_policy_id === null;
+        $this->principal_member_id = $member->id;
+        $this->holder_name = $member->full_name;
+        $this->holder_email = $member->email;
+        $this->holder_phone = $member->mobile ?? $member->phone;
+        $this->save();
+    }
+
+    /**
+     * Create policy from an approved application.
+     */
+    public static function createFromApplication(Application $application, string $issuedBy): self
+    {
+        if (!$application->can_be_converted) {
+            throw new \Exception('Application cannot be converted to policy');
+        }
+
+        $expiryDate = $application->proposed_end_date 
+            ?? $application->proposed_start_date->copy()->addMonths($application->policy_term_months)->subDay();
+
+        $policy = new self([
+            'application_id' => $application->id,
+            'scheme_id' => $application->scheme_id,
+            'plan_id' => $application->plan_id,
+            'rate_card_id' => $application->rate_card_id,
+            'policy_type' => $application->policy_type,
+            'group_id' => $application->group_id,
+            'holder_name' => $application->applicant_name,
+            'holder_email' => $application->contact_email,
+            'holder_phone' => $application->contact_phone,
+            'inception_date' => $application->proposed_start_date,
+            'expiry_date' => $expiryDate,
+            'renewal_date' => $expiryDate,
+            'policy_term_months' => $application->policy_term_months,
+            'billing_frequency' => $application->billing_frequency,
+            'currency' => $application->currency,
+            'base_premium' => $application->base_premium,
+            'addon_premium' => $application->addon_premium,
+            'loading_amount' => $application->loading_amount,
+            'discount_amount' => $application->discount_amount,
+            'total_premium' => $application->total_premium,
+            'tax_amount' => $application->tax_amount,
+            'gross_premium' => $application->gross_premium,
+            'member_count' => $application->member_count,
+            'principal_count' => $application->principal_count,
+            'dependent_count' => $application->dependent_count,
+            'status' => MedicalConstants::POLICY_STATUS_ACTIVE,
+            'underwriting_status' => $application->underwriting_status,
+            'underwriting_notes' => $application->underwriting_notes,
+            'underwritten_by' => $application->underwriter_id,
+            'underwritten_at' => $application->underwriting_completed_at,
+            'source' => $application->source,
+            'sales_agent_id' => $application->sales_agent_id,
+            'broker_id' => $application->broker_id,
+            'commission_rate' => $application->commission_rate,
+            'promo_code_id' => $application->promo_code_id,
+            'applied_discounts' => $application->applied_discounts,
+            'issued_by' => $issuedBy,
+        ]);
+
+        $policy->save();
+
+        return $policy;
     }
 }

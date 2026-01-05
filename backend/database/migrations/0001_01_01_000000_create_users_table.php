@@ -11,14 +11,24 @@ return new class extends Migration
      */
     public function up(): void
     {
+        // IAM Users table - Central authentication for all modules
         Schema::create('users', function (Blueprint $table) {
-            $table->id();
-            $table->string('name');
+            $table->uuid('id')->primary();
             $table->string('email')->unique();
-            $table->timestamp('email_verified_at')->nullable();
+            $table->string('username')->unique()->nullable();
             $table->string('password');
+            $table->boolean('mfa_enabled')->default(false);
+            $table->string('mfa_secret')->nullable();
+            $table->boolean('is_active')->default(true);
+            $table->boolean('is_system_admin')->default(false)->comment('God mode - access to all modules');
+            $table->timestamp('last_login_at')->nullable();
+            $table->string('last_login_ip', 45)->nullable();
             $table->rememberToken();
             $table->timestamps();
+            $table->softDeletes();
+
+            $table->index('email');
+            $table->index('is_active');
         });
 
         Schema::create('password_reset_tokens', function (Blueprint $table) {

@@ -9,9 +9,13 @@ return new class extends Migration
     /**
      * Corporate Groups & Contacts
      * 
+     * Corporate groups are companies/organizations that may purchase group policies.
+     * They are created INDEPENDENTLY of quotes/policies - a group can exist without
+     * having any active policy (prospect).
+     * 
      * Tables:
-     * - med_corporate_groups: Companies/organizations that purchase group policies
-     * - med_group_contacts: HR contacts, brokers, administrators for a group
+     * - med_corporate_groups: Companies/organizations
+     * - med_group_contacts: HR contacts, brokers, administrators
      */
     public function up(): void
     {
@@ -20,11 +24,11 @@ return new class extends Migration
         // =====================================================================
         Schema::create('med_corporate_groups', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->string('code', 20)->unique();
+            $table->string('code', 20)->unique(); // GRP-2025-XXXXXX
             $table->string('name');
             $table->string('trading_name')->nullable();
-            $table->string('registration_number', 50)->nullable();
-            $table->string('tax_number', 50)->nullable();
+            $table->string('registration_number', 50)->nullable(); // Company reg
+            $table->string('tax_number', 50)->nullable(); // TPIN/VAT
             
             // Industry & Size
             $table->string('industry', 100)->nullable();
@@ -40,21 +44,21 @@ return new class extends Migration
             $table->text('physical_address')->nullable();
             $table->string('city', 100)->nullable();
             $table->string('province', 100)->nullable();
-            $table->string('country', 3)->default('ZMW');
+            $table->string('country', 3)->default('ZM');
             $table->string('postal_code', 20)->nullable();
             
-            // Billing
+            // Billing Defaults (can be overridden per policy)
             $table->string('billing_email')->nullable();
             $table->text('billing_address')->nullable();
             $table->string('payment_terms', 20)->default('30_days'); // immediate, 15_days, 30_days, 60_days
-            $table->string('preferred_payment_method', 20)->nullable(); // bank_transfer, direct_debit, cheque
+            $table->string('preferred_payment_method', 20)->nullable();
             
             // Relationship Management
-            $table->uuid('account_manager_id')->nullable(); // FK to users
-            $table->uuid('broker_id')->nullable(); // FK to brokers table if exists
+            $table->uuid('account_manager_id')->nullable();
+            $table->uuid('broker_id')->nullable();
             $table->decimal('broker_commission_rate', 5, 2)->nullable();
             
-            // Status
+            // Status (independent of policies)
             $table->string('status', 20)->default('prospect'); // prospect, active, suspended, terminated
             $table->date('onboarded_at')->nullable();
             $table->text('notes')->nullable();
@@ -64,7 +68,6 @@ return new class extends Migration
             
             $table->index('status');
             $table->index('industry');
-            $table->index('account_manager_id');
         });
 
         // =====================================================================
@@ -84,10 +87,8 @@ return new class extends Migration
             
             // Portal Access
             $table->boolean('has_portal_access')->default(false);
-            $table->uuid('user_id')->nullable(); // FK to users table for portal login
-            
-            // Permissions (what this contact can do)
-            $table->json('permissions')->nullable(); // ['view_members', 'add_members', 'view_claims', 'view_invoices']
+            $table->uuid('user_id')->nullable();
+            $table->json('permissions')->nullable();
             
             $table->boolean('is_primary')->default(false);
             $table->boolean('is_active')->default(true);
@@ -96,7 +97,6 @@ return new class extends Migration
             $table->timestamps();
             
             $table->index(['group_id', 'contact_type']);
-            $table->index('email');
         });
     }
 

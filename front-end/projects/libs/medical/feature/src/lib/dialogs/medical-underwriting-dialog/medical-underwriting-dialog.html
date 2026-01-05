@@ -1,0 +1,287 @@
+<div class="flex flex-col max-h-[90vh] max-w-[70vw]">
+  <!-- Header -->
+  <div class="flex items-center justify-between px-6 py-4 border-b border-slate-200">
+    <div class="flex items-center gap-3">
+      <div class="flex h-10 w-10 items-center justify-center rounded-full bg-amber-100">
+        <mat-icon fontSet="material-symbols-rounded" class="!text-amber-600">policy</mat-icon>
+      </div>
+      <div>
+        <h2 class="text-lg font-semibold text-slate-900">Underwrite Member</h2>
+        <p class="text-sm text-slate-500">{{ memberName }}</p>
+      </div>
+    </div>
+    <button mat-icon-button (click)="cancel()" class="!text-slate-400">
+      <mat-icon fontSet="material-symbols-rounded">close</mat-icon>
+    </button>
+  </div>
+
+  <!-- Content -->
+  <div class="flex-1 overflow-y-auto p-6">
+    <!-- Member Summary -->
+    <div class="rounded-lg border border-slate-200 p-4 mb-6">
+      <div class="grid grid-cols-3 gap-4 text-sm">
+        <div>
+          <span class="text-slate-500">Age:</span>
+          <span class="ml-2 font-medium">{{ member.age }} years</span>
+        </div>
+        <div>
+          <span class="text-slate-500">Gender:</span>
+          <span class="ml-2 font-medium">{{ member.gender === 'M' ? 'Male' : 'Female' }}</span>
+        </div>
+        <div>
+          <span class="text-slate-500">Base Premium:</span>
+          <span class="ml-2 font-medium">{{ formatCurrency(member.base_premium) }}</span>
+        </div>
+      </div>
+
+      @if (member.has_pre_existing_conditions) {
+      <div class="mt-3 pt-3 border-t border-slate-100">
+        <div class="flex items-center gap-2 text-amber-600 mb-2">
+          <mat-icon fontSet="material-symbols-rounded" class="!text-[18px]">warning</mat-icon>
+          <span class="text-sm font-medium">Pre-existing conditions declared</span>
+        </div>
+        @if (member.declared_conditions?.length) {
+        <div class="flex flex-wrap gap-2">
+          @for (cond of member.declared_conditions; track $index) {
+          <span
+            class="text-xs bg-amber-50 text-amber-700 px-2 py-1 rounded-full border border-amber-200"
+          >
+            {{ cond.name }}
+          </span>
+          }
+        </div>
+        } @if (member.medical_history_notes) {
+        <p class="text-sm text-slate-600 mt-2">{{ member.medical_history_notes }}</p>
+        }
+      </div>
+      }
+    </div>
+
+    <form [formGroup]="form" class="space-y-6">
+      <!-- Decision -->
+      <div>
+        <label class="block text-sm font-medium text-slate-700 mb-3">Underwriting Decision</label>
+        <mat-radio-group formControlName="decision" class="flex gap-6">
+          <mat-radio-button value="approve" color="primary">
+            <span class="text-green-600 font-medium">Approve</span>
+          </mat-radio-button>
+          <mat-radio-button value="terms" color="primary">
+            <span class="text-amber-600 font-medium">Approve with Terms</span>
+          </mat-radio-button>
+          <mat-radio-button value="decline" color="primary">
+            <span class="text-red-600 font-medium">Decline</span>
+          </mat-radio-button>
+        </mat-radio-group>
+      </div>
+
+      <!-- Loadings Section -->
+      @if (form.get('decision')?.value === 'terms') {
+      <mat-expansion-panel
+        [expanded]="true"
+        class="!rounded-lg !shadow-none border border-amber-200 bg-amber-50"
+      >
+        <mat-expansion-panel-header>
+          <mat-panel-title class="!text-sm !font-medium text-amber-800">
+            <mat-icon fontSet="material-symbols-rounded" class="!text-[18px] mr-2"
+              >trending_up</mat-icon
+            >
+            Premium Loadings ({{ loadingsArray.length }})
+          </mat-panel-title>
+        </mat-expansion-panel-header>
+
+        <div class="space-y-3 py-2">
+          @for (loading of loadingsArray.controls; track $index; let i = $index) {
+          <div class="bg-white rounded-lg border border-amber-200 p-3" [formGroup]="$any(loading)">
+            <div class="flex items-start justify-between mb-2">
+              <span class="text-sm font-medium text-slate-700">Loading #{{ i + 1 }}</span>
+              <button
+                mat-icon-button
+                (click)="removeLoading(i)"
+                class="!w-6 !h-6 !text-slate-400 hover:!text-red-600"
+              >
+                <mat-icon fontSet="material-symbols-rounded" class="!text-[16px]">close</mat-icon>
+              </button>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+              <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+                <input matInput placeholder="Condition Name" formControlName="condition_name" />
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+                <input matInput placeholder="ICD-10 Code (optional)" formControlName="icd10_code" />
+              </mat-form-field>
+            </div>
+
+            <div class="grid grid-cols-3 gap-3">
+              <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+                <mat-select placeholder="Loading Type" formControlName="loading_type">
+                  @for (type of loadingTypes; track type.value) {
+                  <mat-option [value]="type.value">{{ type.label }}</mat-option>
+                  }
+                </mat-select>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+                <input
+                  matInput
+                  type="number"
+                  [placeholder]="
+                    loading.get('loading_type')?.value === 'percentage'
+                      ? 'Percentage (%)'
+                      : 'Amount'
+                  "
+                  formControlName="value"
+                />
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+                <mat-select placeholder="Duration" formControlName="duration_type">
+                  @for (dur of durationTypes; track dur.value) {
+                  <mat-option [value]="dur.value">{{ dur.label }}</mat-option>
+                  }
+                </mat-select>
+              </mat-form-field>
+            </div>
+
+            @if (loading.get('duration_type')?.value === 'temporary') {
+            <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+              <input
+                matInput
+                type="number"
+                placeholder="Duration (months)"
+                formControlName="duration_months"
+              />
+            </mat-form-field>
+            }
+          </div>
+          }
+
+          <button
+            mat-stroked-button
+            type="button"
+            (click)="addLoading()"
+            class="w-full !border-amber-300 !text-amber-700"
+          >
+            <mat-icon fontSet="material-symbols-rounded">add</mat-icon>
+            Add Loading
+          </button>
+        </div>
+      </mat-expansion-panel>
+
+      <!-- Exclusions Section -->
+      <mat-expansion-panel class="!rounded-lg !shadow-none border border-red-200 bg-red-50">
+        <mat-expansion-panel-header>
+          <mat-panel-title class="!text-sm !font-medium text-red-800">
+            <mat-icon fontSet="material-symbols-rounded" class="!text-[18px] mr-2">block</mat-icon>
+            Exclusions ({{ exclusionsArray.length }})
+          </mat-panel-title>
+        </mat-expansion-panel-header>
+
+        <div class="space-y-3 py-2">
+          @for (exclusion of exclusionsArray.controls; track $index; let i = $index) {
+          <div class="bg-white rounded-lg border border-red-200 p-3" [formGroup]="$any(exclusion)">
+            <div class="flex items-start justify-between mb-2">
+              <span class="text-sm font-medium text-slate-700">Exclusion #{{ i + 1 }}</span>
+              <button
+                mat-icon-button
+                (click)="removeExclusion(i)"
+                class="!w-6 !h-6 !text-slate-400 hover:!text-red-600"
+              >
+                <mat-icon fontSet="material-symbols-rounded" class="!text-[16px]">close</mat-icon>
+              </button>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+              <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+                <input matInput placeholder="Exclusion Name" formControlName="exclusion_name" />
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+                <mat-select placeholder="Exclusion Type" formControlName="exclusion_type">
+                  <mat-option value="condition">Specific Condition</mat-option>
+                  <mat-option value="benefit">Benefit Category</mat-option>
+                  <mat-option value="procedure">Procedure</mat-option>
+                  <mat-option value="body_part">Body Part</mat-option>
+                </mat-select>
+              </mat-form-field>
+            </div>
+
+            <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+              <textarea
+                matInput
+                rows="2"
+                placeholder="Description"
+                formControlName="description"
+              ></textarea>
+            </mat-form-field>
+
+            <div class="flex items-center gap-4">
+              <mat-checkbox formControlName="is_permanent">Permanent Exclusion</mat-checkbox>
+
+              @if (!exclusion.get('is_permanent')?.value) {
+              <mat-form-field appearance="outline" class="flex-1" subscriptSizing="dynamic">
+                <input
+                  matInput
+                  [matDatepicker]="endDatePicker"
+                  placeholder="End Date"
+                  formControlName="end_date"
+                />
+                <mat-datepicker-toggle matIconSuffix [for]="endDatePicker"></mat-datepicker-toggle>
+                <mat-datepicker #endDatePicker></mat-datepicker>
+              </mat-form-field>
+              }
+            </div>
+          </div>
+          }
+
+          <button
+            mat-stroked-button
+            type="button"
+            (click)="addExclusion()"
+            class="w-full !border-red-300 !text-red-700"
+          >
+            <mat-icon fontSet="material-symbols-rounded">add</mat-icon>
+            Add Exclusion
+          </button>
+        </div>
+      </mat-expansion-panel>
+      }
+
+      <!-- Notes -->
+      <mat-form-field appearance="outline" class="w-full">
+        <textarea
+          matInput
+          rows="3"
+          placeholder="Underwriting Notes"
+          formControlName="notes"
+        ></textarea>
+      </mat-form-field>
+    </form>
+  </div>
+
+  <!-- Footer -->
+  <div class="flex items-center justify-between px-6 py-4 border-t border-slate-200 bg-slate-50">
+    <div class="text-sm text-slate-500">
+      @if (form.get('decision')?.value === 'terms' && loadingsArray.length > 0) {
+      <span class="text-amber-600"> {{ loadingsArray.length }} loading(s) will be applied </span>
+      }
+    </div>
+    <div class="flex items-center gap-3">
+      <button mat-stroked-button (click)="cancel()">Cancel</button>
+      <button
+        mat-flat-button
+        [color]="form.get('decision')?.value === 'decline' ? 'warn' : 'primary'"
+        (click)="save()"
+        [disabled]="form.invalid || isSaving()"
+      >
+        @if (isSaving()) {
+        <mat-icon fontSet="material-symbols-rounded" class="animate-spin"
+          >progress_activity</mat-icon
+        >
+        } @switch (form.get('decision')?.value) { @case ('approve') { Approve Member } @case
+        ('terms') { Approve with Terms } @case ('decline') { Decline Member } }
+      </button>
+    </div>
+  </div>
+</div>

@@ -310,6 +310,13 @@
                     >
                     <span>Edit Plan</span>
                   </button>
+                  <button mat-menu-item (click)="openQuickQuote(plan)">
+                    <mat-icon fontSet="material-symbols-rounded" class="!text-slate-500"
+                      >calculate</mat-icon
+                    >
+                    <span>Quick Quote</span>
+                  </button>
+                  <mat-divider></mat-divider>
                   <button mat-menu-item (click)="clonePlan(plan)">
                     <mat-icon fontSet="material-symbols-rounded" class="!text-slate-500"
                       >content_copy</mat-icon

@@ -164,6 +164,32 @@ class PlanController extends Controller
     }
 
     /**
+     * Activate/deactivate a plan.
+     * POST /v1/medical/plans/{id}/activate
+     */
+    public function activate(string $id): JsonResponse
+    {
+        try {
+            $plan = Plan::findOrFail($id);
+
+            // Toggle the is_active status
+            $plan->is_active = !$plan->is_active;
+            $plan->save();
+
+            $action = $plan->is_active ? 'activated' : 'deactivated';
+
+            return $this->success(
+                new PlanResource($plan->fresh(['scheme'])),
+                "Plan {$action} successfully"
+            );
+        } catch (ModelNotFoundException $e) {
+            return $this->error('Plan not found', 404);
+        } catch (Throwable $e) {
+            return $this->error('Failed to update plan status: ' . $e->getMessage(), 500);
+        }
+    }
+
+    /**
      * Clone a plan.
      * POST /v1/medical/plans/{id}/clone
      */
@@ -272,6 +298,58 @@ class PlanController extends Controller
             );
         } catch (Throwable $e) {
             return $this->error('Failed to retrieve plans for scheme', 500);
+        }
+    }
+
+    /**
+     * Export plan to PDF.
+     * GET /v1/medical/plans/{id}/export-pdf
+     */
+    public function exportPdf(string $id)
+    {
+        try {
+            $plan = Plan::with([
+                'scheme',
+                'planBenefits.benefit.category',
+                'planBenefits.memberLimits',
+                'planAddons.addon.addonBenefits.benefit',
+                'rateCards' => fn($q) => $q->where('is_active', true)->latest('effective_from'),
+                'exclusions',
+                'waitingPeriods',
+            ])
+            ->withCount(['planBenefits', 'planAddons'])
+            ->findOrFail($id);
+
+            // Prepare PDF data
+            $pdfData = [
+                'plan' => $plan,
+                'generated_at' => now()->format('F d, Y'),
+                'generated_by' => 'System Administrator', // You can get from auth user
+            ];
+
+            // For now, return JSON with all plan data
+            // In production, you would use a PDF library like DomPDF or Snappy
+            return response()->json([
+                'success' => true,
+                'message' => 'PDF export data prepared',
+                'data' => $pdfData,
+                'download_url' => '/api/v1/medical/plans/' . $id . '/export-pdf',
+            ]);
+
+            // Example with DomPDF (uncomment when library is installed):
+            // $pdf = PDF::loadView('medical::pdf.plan-detail', $pdfData);
+            // return $pdf->download($plan->code . '_plan_details.pdf');
+
+        } catch (ModelNotFoundException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Plan not found'
+            ], 404);
+        } catch (Throwable $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to generate PDF: ' . $e->getMessage()
+            ], 500);
         }
     }
 

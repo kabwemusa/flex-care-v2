@@ -1,4 +1,4 @@
-<div class="flex max-h-[90vh] w-full flex-col overflow-hidden bg-white sm:w-[500px]">
+<div class="flex max-h-[90vh] w-full flex-col overflow-hidden bg-white sm:w-[700px]">
   <!-- Header -->
   <div class="flex items-center justify-between border-b border-slate-100 px-6 py-4">
     <div class="flex items-center gap-3">
@@ -24,107 +24,224 @@
 
   <!-- Content -->
   <div class="flex-1 overflow-y-auto p-6">
-    <form [formGroup]="form" class="space-y-5">
-      <!-- Availability -->
-      <div class="flex flex-col gap-1.5">
-        <label class="text-sm font-medium text-slate-700">Availability</label>
-        <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
-          <mat-select formControlName="availability">
-            <mat-select-trigger>
-              @if (form.get('availability')?.value; as avail) {
-              <span class="flex items-center gap-2">
-                <mat-icon
-                  fontSet="material-symbols-rounded"
-                  [class]="getAvailabilityIconClass(avail)"
-                  class="!text-[18px]"
-                >
-                  {{ getAvailabilityIcon(avail) }}
-                </mat-icon>
-                <span>{{ getAvailabilityLabel(avail) }}</span>
-              </span>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <!-- Left Column - Configuration Form -->
+      <div>
+        <h3 class="text-sm font-semibold text-slate-900 mb-4">Configuration</h3>
+        <form [formGroup]="form" class="space-y-5">
+          <!-- Availability -->
+          <div class="flex flex-col gap-1.5">
+            <label class="text-sm font-medium text-slate-700">Availability</label>
+            <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+              <mat-select formControlName="availability">
+                <mat-select-trigger>
+                  @if (form.get('availability')?.value; as avail) {
+                  <span class="flex items-center gap-2">
+                    <mat-icon
+                      fontSet="material-symbols-rounded"
+                      [class]="getAvailabilityIconClass(avail)"
+                      class="!text-[18px]"
+                    >
+                      {{ getAvailabilityIcon(avail) }}
+                    </mat-icon>
+                    <span>{{ getAvailabilityLabel(avail) }}</span>
+                  </span>
+                  }
+                </mat-select-trigger>
+                @for (avail of availabilityOptions; track avail.value) {
+                <mat-option [value]="avail.value">
+                  <div class="flex items-center gap-2">
+                    <mat-icon
+                      fontSet="material-symbols-rounded"
+                      [class]="getAvailabilityIconClass(avail.value)"
+                      class="!text-[18px]"
+                    >
+                      {{ getAvailabilityIcon(avail.value) }}
+                    </mat-icon>
+                    <div class="flex flex-col">
+                      <span>{{ avail.label }}</span>
+                      <span class="text-xs text-slate-400">{{ avail.description }}</span>
+                    </div>
+                  </div>
+                </mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+          </div>
+
+          <!-- Info Box based on availability -->
+          @switch (form.get('availability')?.value) { @case ('included') {
+          <div class="rounded-lg bg-green-50 border border-green-100 p-4">
+            <div class="flex gap-3">
+              <mat-icon fontSet="material-symbols-rounded" class="!text-green-500">info</mat-icon>
+              <p class="text-sm text-green-700">
+                This addon is included in the plan at no additional cost. Members automatically get
+                this coverage.
+              </p>
+            </div>
+          </div>
+          } @case ('mandatory') {
+          <div class="rounded-lg bg-blue-50 border border-blue-100 p-4">
+            <div class="flex gap-3">
+              <mat-icon fontSet="material-symbols-rounded" class="!text-blue-500">info</mat-icon>
+              <p class="text-sm text-blue-700">
+                This addon is required. Members must have this coverage and pay the additional
+                premium.
+              </p>
+            </div>
+          </div>
+          } @case ('optional') {
+          <div class="rounded-lg bg-purple-50 border border-purple-100 p-4">
+            <div class="flex gap-3">
+              <mat-icon fontSet="material-symbols-rounded" class="!text-purple-500">info</mat-icon>
+              <p class="text-sm text-purple-700">
+                Members can choose to add this coverage for an additional premium.
+              </p>
+            </div>
+          </div>
+          } @case ('conditional') {
+          <div class="rounded-lg bg-amber-50 border border-amber-100 p-4">
+            <div class="flex gap-3">
+              <mat-icon fontSet="material-symbols-rounded" class="!text-amber-500">info</mat-icon>
+              <p class="text-sm text-amber-700">
+                This addon is available based on specific criteria (age, member type, etc.).
+              </p>
+            </div>
+          </div>
+          } }
+
+          <!-- Sort Order -->
+          <div class="flex flex-col gap-1.5">
+            <label class="text-sm font-medium text-slate-700">Sort Order</label>
+            <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+              <input matInput type="number" formControlName="sort_order" min="0" />
+            </mat-form-field>
+            <p class="text-xs text-slate-400">Lower numbers appear first</p>
+          </div>
+
+          <!-- Active Toggle -->
+          <div
+            class="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50/50 p-4"
+          >
+            <div class="flex flex-col">
+              <span class="text-sm font-semibold text-slate-900">Active</span>
+              <span class="text-xs text-slate-500">Make this addon available on the plan</span>
+            </div>
+            <mat-slide-toggle formControlName="is_active" color="primary"></mat-slide-toggle>
+          </div>
+        </form>
+      </div>
+
+      <!-- Right Column - Addon Details -->
+      <div class="space-y-4">
+        <h3 class="text-sm font-semibold text-slate-900 mb-4">Addon Details</h3>
+
+        <!-- Description -->
+        @if (data.planAddon.addon?.description) {
+        <div class="rounded-lg border border-slate-200 p-4">
+          <div class="text-xs font-medium text-slate-500 mb-2">Description</div>
+          <p class="text-sm text-slate-700">{{ data.planAddon.addon?.description }}</p>
+        </div>
+        }
+
+        <!-- Benefits -->
+        <div class="rounded-lg border border-slate-200 p-4">
+          <div class="flex items-center justify-between mb-3">
+            <div class="text-xs font-medium text-slate-500">Addon Benefits</div>
+            <span class="text-sm font-bold text-blue-600">
+              {{ data.planAddon.addon?.addon_benefits_count || 0 }}
+            </span>
+          </div>
+          @if ((data.planAddon.addon?.addon_benefits?.length ?? 0) > 0) {
+          <div class="space-y-2">
+            @for (ab of (data.planAddon.addon?.addon_benefits ?? []).slice(0, 5); track ab.id) {
+            <div class="flex items-center gap-2 text-sm">
+              <mat-icon fontSet="material-symbols-rounded" class="!text-blue-500 !text-[16px]">
+                check_circle
+              </mat-icon>
+              <span class="text-slate-700 flex-1">{{ ab.benefit?.name }}</span>
+              @if (ab.display_value) {
+              <span class="text-xs text-slate-500">{{ ab.display_value }}</span>
               }
-            </mat-select-trigger>
-            @for (avail of availabilityOptions; track avail.value) {
-            <mat-option [value]="avail.value">
-              <div class="flex items-center gap-2">
-                <mat-icon
-                  fontSet="material-symbols-rounded"
-                  [class]="getAvailabilityIconClass(avail.value)"
-                  class="!text-[18px]"
-                >
-                  {{ getAvailabilityIcon(avail.value) }}
-                </mat-icon>
-                <div class="flex flex-col">
-                  <span>{{ avail.label }}</span>
-                  <span class="text-xs text-slate-400">{{ avail.description }}</span>
-                </div>
-              </div>
-            </mat-option>
+            </div>
+            } @if ((data.planAddon.addon?.addon_benefits?.length ?? 0) > 5) {
+            <p class="text-xs text-slate-400 pt-2">
+              + {{ (data.planAddon.addon?.addon_benefits?.length ?? 0) - 5 }} more benefits
+            </p>
             }
-          </mat-select>
-        </mat-form-field>
-      </div>
+          </div>
+          } @else {
+          <p class="text-sm text-slate-400">No benefits configured</p>
+          }
+        </div>
 
-      <!-- Info Box based on availability -->
-      @switch (form.get('availability')?.value) { @case ('included') {
-      <div class="rounded-lg bg-green-50 border border-green-100 p-4">
-        <div class="flex gap-3">
-          <mat-icon fontSet="material-symbols-rounded" class="!text-green-500">info</mat-icon>
-          <p class="text-sm text-green-700">
-            This addon is included in the plan at no additional cost. Members automatically get this
-            coverage.
-          </p>
+        <!-- Pricing Rates -->
+        <div class="rounded-lg border border-slate-200 p-4">
+          <div class="flex items-center justify-between mb-3">
+            <div class="text-xs font-medium text-slate-500">Pricing Rates</div>
+            <span class="text-sm font-bold text-green-600">
+              {{ data.planAddon.addon?.rates?.length || 0 }}
+            </span>
+          </div>
+          @if (data.planAddon.addon?.rates) {
+          <div class="space-y-2">
+            @for (rate of data.planAddon.addon?.rates; track rate.id) {
+            <div class="rounded-lg bg-slate-50 p-3">
+              <div class="flex items-center justify-between mb-1">
+                <span class="text-xs font-medium text-slate-700">
+                  {{ rate.is_global ? 'Global Rate' : 'Plan-Specific' }}
+                </span>
+                @if (rate.is_active) {
+                <span
+                  class="rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700"
+                >
+                  Active
+                </span>
+                } @else {
+                <span
+                  class="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600"
+                >
+                  Inactive
+                </span>
+                }
+              </div>
+              @switch (rate.pricing_type) { @case ('fixed') {
+              <div class="text-sm font-semibold text-slate-900">
+                ZMW {{ rate.amount | number : '1.2-2' }}
+              </div>
+              <div class="text-xs text-slate-500">Fixed amount</div>
+              } @case ('per_member') {
+              <div class="text-sm font-semibold text-slate-900">
+                ZMW {{ rate.amount | number : '1.2-2' }} / member
+              </div>
+              <div class="text-xs text-slate-500">Per member pricing</div>
+              } @case ('percentage') {
+              <div class="text-sm font-semibold text-slate-900">
+                {{ rate.percentage }}% of {{ rate.percentage_basis }}
+              </div>
+              <div class="text-xs text-slate-500">Percentage based</div>
+              } @case ('age_rated') {
+              <div class="text-sm font-semibold text-slate-900">Age-rated</div>
+              <div class="text-xs text-slate-500">Varies by member age</div>
+              } }
+            </div>
+            }
+          </div>
+          } @else {
+          <div class="rounded-lg bg-amber-50 border border-amber-100 p-3">
+            <div class="flex items-center gap-2">
+              <mat-icon fontSet="material-symbols-rounded" class="!text-amber-500 !text-[18px]">
+                warning
+              </mat-icon>
+              <p class="text-sm text-amber-700">
+                No pricing rates configured. Please configure rates in the Addon Catalog.
+              </p>
+            </div>
+          </div>
+          }
         </div>
       </div>
-      } @case ('mandatory') {
-      <div class="rounded-lg bg-blue-50 border border-blue-100 p-4">
-        <div class="flex gap-3">
-          <mat-icon fontSet="material-symbols-rounded" class="!text-blue-500">info</mat-icon>
-          <p class="text-sm text-blue-700">
-            This addon is required. Members must have this coverage and pay the additional premium.
-          </p>
-        </div>
-      </div>
-      } @case ('optional') {
-      <div class="rounded-lg bg-purple-50 border border-purple-100 p-4">
-        <div class="flex gap-3">
-          <mat-icon fontSet="material-symbols-rounded" class="!text-purple-500">info</mat-icon>
-          <p class="text-sm text-purple-700">
-            Members can choose to add this coverage for an additional premium.
-          </p>
-        </div>
-      </div>
-      } @case ('conditional') {
-      <div class="rounded-lg bg-amber-50 border border-amber-100 p-4">
-        <div class="flex gap-3">
-          <mat-icon fontSet="material-symbols-rounded" class="!text-amber-500">info</mat-icon>
-          <p class="text-sm text-amber-700">
-            This addon is available based on specific criteria (age, member type, etc.).
-          </p>
-        </div>
-      </div>
-      } }
-
-      <!-- Sort Order -->
-      <div class="flex flex-col gap-1.5">
-        <label class="text-sm font-medium text-slate-700">Sort Order</label>
-        <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
-          <input matInput type="number" formControlName="sort_order" min="0" />
-        </mat-form-field>
-        <p class="text-xs text-slate-400">Lower numbers appear first</p>
-      </div>
-
-      <!-- Active Toggle -->
-      <div
-        class="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50/50 p-4"
-      >
-        <div class="flex flex-col">
-          <span class="text-sm font-semibold text-slate-900">Active</span>
-          <span class="text-xs text-slate-500">Make this addon available on the plan</span>
-        </div>
-        <mat-slide-toggle formControlName="is_active" color="primary"></mat-slide-toggle>
-      </div>
-    </form>
+    </div>
   </div>
 
   <!-- Footer -->

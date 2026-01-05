@@ -1,0 +1,211 @@
+<div class="space-y-4">
+  <!-- Header -->
+  <div class="flex items-center justify-between">
+    <div>
+      <h3 class="text-lg font-semibold text-slate-900">Plan Exclusions</h3>
+      <p class="text-sm text-slate-500">Conditions and treatments not covered by this plan</p>
+    </div>
+    <button mat-flat-button color="primary" (click)="openAddDialog()">
+      <mat-icon fontSet="material-symbols-rounded">add</mat-icon>
+      Add Exclusion
+    </button>
+  </div>
+
+  <!-- Loading -->
+  @if (store.isLoading()) {
+  <div class="flex items-center justify-center py-12">
+    <mat-spinner diameter="32"></mat-spinner>
+  </div>
+  } @else { @if (exclusions().length > 0) {
+  <!-- Grouped by Type -->
+  <div class="space-y-4">
+    <!-- Absolute Exclusions -->
+    @if (absoluteExclusions().length > 0) {
+    <div class="space-y-2">
+      <h4 class="text-sm font-medium text-slate-700 flex items-center gap-2">
+        <mat-icon fontSet="material-symbols-rounded" class="!text-red-500 !text-[18px]"
+          >cancel</mat-icon
+        >
+        Absolute Exclusions (Never Covered)
+      </h4>
+      <div class="grid grid-cols-1 gap-3">
+        @for (exclusion of absoluteExclusions(); track exclusion.id) {
+        <ng-container
+          *ngTemplateOutlet="exclusionCard; context: { $implicit: exclusion }"
+        ></ng-container>
+        }
+      </div>
+    </div>
+    }
+
+    <!-- Time-Limited Exclusions -->
+    @if (timeLimitedExclusions().length > 0) {
+    <div class="space-y-2">
+      <h4 class="text-sm font-medium text-slate-700 flex items-center gap-2">
+        <mat-icon fontSet="material-symbols-rounded" class="!text-blue-500 !text-[18px]"
+          >schedule</mat-icon
+        >
+        Time-Limited Exclusions
+      </h4>
+      <div class="grid grid-cols-1 gap-3">
+        @for (exclusion of timeLimitedExclusions(); track exclusion.id) {
+        <ng-container
+          *ngTemplateOutlet="exclusionCard; context: { $implicit: exclusion }"
+        ></ng-container>
+        }
+      </div>
+    </div>
+    }
+
+    <!-- Conditional Exclusions -->
+    @if (conditionalExclusions().length > 0) {
+    <div class="space-y-2">
+      <h4 class="text-sm font-medium text-slate-700 flex items-center gap-2">
+        <mat-icon fontSet="material-symbols-rounded" class="!text-amber-500 !text-[18px]"
+          >rule</mat-icon
+        >
+        Conditional Exclusions
+      </h4>
+      <div class="grid grid-cols-1 gap-3">
+        @for (exclusion of conditionalExclusions(); track exclusion.id) {
+        <ng-container
+          *ngTemplateOutlet="exclusionCard; context: { $implicit: exclusion }"
+        ></ng-container>
+        }
+      </div>
+    </div>
+    }
+
+    <!-- Pre-existing Related Exclusions -->
+    @if (preExistingExclusions().length > 0) {
+    <div class="space-y-2">
+      <h4 class="text-sm font-medium text-slate-700 flex items-center gap-2">
+        <mat-icon fontSet="material-symbols-rounded" class="!text-purple-500 !text-[18px]"
+          >history</mat-icon
+        >
+        Pre-existing Related
+      </h4>
+      <div class="grid grid-cols-1 gap-3">
+        @for (exclusion of preExistingExclusions(); track exclusion.id) {
+        <ng-container
+          *ngTemplateOutlet="exclusionCard; context: { $implicit: exclusion }"
+        ></ng-container>
+        }
+      </div>
+    </div>
+    }
+  </div>
+  } @else {
+  <!-- Empty State -->
+  <div class="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-8 text-center">
+    <div class="flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 mx-auto mb-4">
+      <mat-icon fontSet="material-symbols-rounded" class="!text-slate-400">block</mat-icon>
+    </div>
+    <h4 class="text-sm font-medium text-slate-900">No Exclusions Defined</h4>
+    <p class="text-sm text-slate-500 mt-1 max-w-sm mx-auto">
+      Define conditions, treatments, or services that are not covered by this plan.
+    </p>
+    <button mat-flat-button color="primary" class="mt-4" (click)="openAddDialog()">
+      <mat-icon fontSet="material-symbols-rounded">add</mat-icon>
+      Add First Exclusion
+    </button>
+  </div>
+  } }
+
+  <!-- Exclusion Card Template -->
+  <ng-template #exclusionCard let-exclusion>
+    <div
+      class="rounded-xl border bg-white p-4 hover:border-slate-300 transition-colors"
+      [class.border-slate-200]="exclusion.is_active"
+      [class.border-slate-100]="!exclusion.is_active"
+      [class.opacity-60]="!exclusion.is_active"
+    >
+      <div class="flex items-start justify-between gap-4">
+        <div class="flex items-start gap-3 flex-1">
+          <div
+            [class]="getExclusionTypeClass(exclusion.exclusion_type)"
+            class="flex h-10 w-10 items-center justify-center rounded-full shrink-0"
+          >
+            <mat-icon fontSet="material-symbols-rounded" class="!text-[20px]">
+              {{ getExclusionTypeIcon(exclusion.exclusion_type) }}
+            </mat-icon>
+          </div>
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center gap-2 flex-wrap">
+              <span class="font-medium text-slate-900">{{ exclusion.name }}</span>
+              @if (!exclusion.is_active) {
+              <span class="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600">
+                Inactive
+              </span>
+              }
+            </div>
+
+            <div class="flex items-center gap-2 mt-1 flex-wrap">
+              <span class="text-xs text-slate-500">{{ exclusion.code }}</span>
+              <span class="text-xs text-slate-300">•</span>
+              <span
+                [class]="getExclusionTypeClass(exclusion.exclusion_type)"
+                class="rounded-full px-2 py-0.5 text-xs font-medium"
+              >
+                {{ getExclusionTypeLabel(exclusion.exclusion_type) }}
+              </span>
+
+              @if (exclusion.is_benefit_specific && exclusion.benefit) {
+              <span class="text-xs text-slate-300">•</span>
+              <span class="text-xs text-slate-500 flex items-center gap-1">
+                <mat-icon fontSet="material-symbols-rounded" class="!text-[14px]"
+                  >link</mat-icon
+                >
+                {{ exclusion.benefit.name }}
+              </span>
+              } @else if (exclusion.is_general) {
+              <span class="text-xs text-slate-300">•</span>
+              <span class="text-xs text-slate-500 flex items-center gap-1">
+                <mat-icon fontSet="material-symbols-rounded" class="!text-[14px]"
+                  >public</mat-icon
+                >
+                General (All Benefits)
+              </span>
+              }
+
+              @if (exclusion.exclusion_period_days) {
+              <span class="text-xs text-slate-300">•</span>
+              <span class="text-xs text-blue-600 font-medium">
+                {{ exclusion.exclusion_period_days }} days
+              </span>
+              }
+            </div>
+
+            @if (exclusion.description) {
+            <p class="text-sm text-slate-600 mt-2 line-clamp-2">
+              {{ exclusion.description }}
+            </p>
+            }
+          </div>
+        </div>
+
+        <button mat-icon-button [matMenuTriggerFor]="excMenu" class="!text-slate-400 shrink-0">
+          <mat-icon fontSet="material-symbols-rounded">more_vert</mat-icon>
+        </button>
+
+        <mat-menu #excMenu="matMenu">
+          <button mat-menu-item (click)="openEditDialog(exclusion)">
+            <mat-icon fontSet="material-symbols-rounded" class="!text-slate-500">edit</mat-icon>
+            <span>Edit</span>
+          </button>
+          <button mat-menu-item (click)="toggleStatus(exclusion)">
+            <mat-icon fontSet="material-symbols-rounded" class="!text-slate-500">
+              {{ exclusion.is_active ? 'block' : 'check_circle' }}
+            </mat-icon>
+            <span>{{ exclusion.is_active ? 'Deactivate' : 'Activate' }}</span>
+          </button>
+          <mat-divider></mat-divider>
+          <button mat-menu-item class="!text-red-600" (click)="removeExclusion(exclusion)">
+            <mat-icon fontSet="material-symbols-rounded" class="!text-red-600">delete</mat-icon>
+            <span>Delete</span>
+          </button>
+        </mat-menu>
+      </div>
+    </div>
+  </ng-template>
+</div>

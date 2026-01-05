@@ -152,6 +152,32 @@ class SchemeController extends Controller
     }
 
     /**
+     * Activate/deactivate a scheme.
+     * POST /v1/medical/schemes/{id}/activate
+     */
+    public function activate(string $id): JsonResponse
+    {
+        try {
+            $scheme = Scheme::findOrFail($id);
+
+            // Toggle the is_active status
+            $scheme->is_active = !$scheme->is_active;
+            $scheme->save();
+
+            $action = $scheme->is_active ? 'activated' : 'deactivated';
+
+            return $this->success(
+                new SchemeResource($scheme),
+                "Scheme {$action} successfully"
+            );
+        } catch (ModelNotFoundException $e) {
+            return $this->error('Scheme not found', 404);
+        } catch (Throwable $e) {
+            return $this->error('Failed to update scheme status: ' . $e->getMessage(), 500);
+        }
+    }
+
+    /**
      * Get schemes for dropdown/select.
      * GET /v1/medical/schemes/dropdown
      */

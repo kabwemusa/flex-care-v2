@@ -1,5 +1,4 @@
 // libs/medical/feature/src/lib/policies/medical-policies-list.ts
-// Medical Policies List Component - Aligned with Plans/Schemes patterns
 
 import {
   Component,
@@ -31,15 +30,13 @@ import { MatInputModule } from '@angular/material/input';
 import { MatDrawer, MatSidenavModule } from '@angular/material/sidenav';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { MatTabsModule } from '@angular/material/tabs';
 
 // Domain Imports
 import {
   PolicyStore,
   Policy,
-  POLICY_TYPES,
   POLICY_STATUSES,
-  BILLING_FREQUENCIES,
+  POLICY_TYPES,
   getLabelByValue,
   getStatusConfig,
   formatCurrency,
@@ -68,7 +65,6 @@ import { MedicalPolicyDialog } from '../dialogs/medical-policy-dialog/medical-po
     MatSidenavModule,
     MatChipsModule,
     MatProgressSpinnerModule,
-    MatTabsModule,
     PageHeaderComponent,
   ],
   templateUrl: './medical-policies-list.html',
@@ -79,17 +75,7 @@ export class MedicalPoliciesList implements OnInit, AfterViewInit {
   private readonly feedback = inject(FeedbackService);
 
   // Table
-  displayedColumns = [
-    'status',
-    'policy_number',
-    'type',
-    'plan',
-    'holder',
-    'members',
-    'premium',
-    'expiry',
-    'actions',
-  ];
+  displayedColumns = ['status', 'policy_number', 'holder', 'plan', 'dates', 'premium', 'actions'];
   dataSource = new MatTableDataSource<Policy>([]);
 
   @ViewChild(MatPaginator) paginator!: MatPaginator;
@@ -105,15 +91,30 @@ export class MedicalPoliciesList implements OnInit, AfterViewInit {
   selectedPolicy = signal<Policy | null>(null);
 
   // Constants
-  readonly POLICY_TYPES = POLICY_TYPES;
   readonly POLICY_STATUSES = POLICY_STATUSES;
-  readonly BILLING_FREQUENCIES = BILLING_FREQUENCIES;
+  readonly POLICY_TYPES = POLICY_TYPES;
   readonly getLabelByValue = getLabelByValue;
   readonly formatCurrency = formatCurrency;
 
-  // Computed
-  hasActiveFilters = computed(
+  // Computed Logic
+  readonly hasActiveFilters = computed(
     () => this.searchTerm() !== '' || this.statusFilter() !== '' || this.typeFilter() !== ''
+  );
+
+  // Local KPIs
+  readonly totalPremiumVolume = computed(() =>
+    this.store.activePolicies().reduce((sum, p) => sum + (p.gross_premium || 0), 0)
+  );
+
+  readonly upcomingRenewals = computed(
+    () =>
+      this.store.policies().filter((p) => {
+        if (!p.expiry_date || p.status !== 'active') return false;
+        const expiry = new Date(p.expiry_date);
+        const today = new Date();
+        const diffDays = Math.ceil((expiry.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+        return diffDays <= 30 && diffDays >= 0;
+      }).length
   );
 
   constructor() {
@@ -125,7 +126,7 @@ export class MedicalPoliciesList implements OnInit, AfterViewInit {
 
   ngOnInit(): void {
     this.store.loadAll();
-    this.store.loadStats();
+    // this.store.loadStats();
     this.setupFilter();
   }
 
@@ -138,13 +139,19 @@ export class MedicalPoliciesList implements OnInit, AfterViewInit {
     this.dataSource.filterPredicate = (data: Policy, filter: string) => {
       const searchData = JSON.parse(filter);
 
+      // Text search
       const textMatch =
         !searchData.search ||
         data.policy_number.toLowerCase().includes(searchData.search) ||
-        (data.policy_holder_name?.toLowerCase().includes(searchData.search) ?? false) ||
-        (data.plan?.name.toLowerCase().includes(searchData.search) ?? false);
+        data.holder_name?.toLowerCase().includes(searchData.search) ||
+        data.holder_email?.toLowerCase().includes(searchData.search) ||
+        data.scheme?.name?.toLowerCase().includes(searchData.search) ||
+        (data.group?.name?.toLowerCase().includes(searchData.search) ?? false);
 
+      // Status filter
       const statusMatch = !searchData.status || data.status === searchData.status;
+
+      // Type filter
       const typeMatch = !searchData.type || data.policy_type === searchData.type;
 
       return textMatch && statusMatch && typeMatch;
@@ -164,6 +171,7 @@ export class MedicalPoliciesList implements OnInit, AfterViewInit {
     }
   }
 
+  // Filter Handlers
   onSearchChange(value: string): void {
     this.searchTerm.set(value);
     this.applyFilter();
@@ -192,7 +200,7 @@ export class MedicalPoliciesList implements OnInit, AfterViewInit {
   }
 
   // =========================================================================
-  // DRAWER
+  // DRAWER & DIALOGS
   // =========================================================================
 
   viewDetails(policy: Policy): void {
@@ -209,10 +217,6 @@ export class MedicalPoliciesList implements OnInit, AfterViewInit {
     this.selectedPolicy.set(null);
   }
 
-  // =========================================================================
-  // DIALOGS
-  // =========================================================================
-
   openDialog(policy?: Policy): void {
     const dialogRef = this.dialog.open(MedicalPolicyDialog, {
       width: '70vw',
@@ -225,7 +229,6 @@ export class MedicalPoliciesList implements OnInit, AfterViewInit {
     dialogRef.afterClosed().subscribe((result) => {
       if (result) {
         this.store.loadAll();
-        this.store.loadStats();
         this.feedback.success(
           policy ? 'Policy updated successfully' : 'Policy created successfully'
         );
@@ -234,123 +237,63 @@ export class MedicalPoliciesList implements OnInit, AfterViewInit {
   }
 
   // =========================================================================
-  // STATUS ACTIONS (with confirmations)
+  // ACTIONS
   // =========================================================================
 
   async activatePolicy(policy: Policy, event?: Event): Promise<void> {
     event?.stopPropagation();
-
-    const confirmed = await this.feedback.confirm(
-      'Activate Policy',
-      `Are you sure you want to activate policy "${policy.policy_number}"? Coverage will become effective.`
-    );
-
-    if (confirmed) {
+    if (
+      await this.feedback.confirm('Activate Policy', `Activate policy ${policy.policy_number}?`)
+    ) {
       this.store.activate(policy.id).subscribe({
-        next: (res) => {
-          if (res) this.feedback.success('Policy activated successfully');
-        },
-        error: (err) => {
-          this.feedback.error(err.error?.message || 'Failed to activate policy');
-        },
+        next: () => this.feedback.success('Policy activated'),
+        error: (err) => this.feedback.error(err.error?.message),
       });
     }
   }
 
   async suspendPolicy(policy: Policy, event?: Event): Promise<void> {
     event?.stopPropagation();
+    // In a real app, you might pop a dialog to ask for a reason
+    const reason = 'Administrative suspension';
+    if (await this.feedback.confirm('Suspend Policy', `Suspend policy ${policy.policy_number}?`)) {
+      this.store.suspend(policy.id, reason).subscribe({
+        next: () => this.feedback.success('Policy suspended'),
+        error: (err) => this.feedback.error(err.error?.message),
+      });
+    }
+  }
 
-    const confirmed = await this.feedback.confirm(
-      'Suspend Policy',
-      `Are you sure you want to suspend policy "${policy.policy_number}"? Coverage will be temporarily paused.`
-    );
-
-    if (confirmed) {
-      this.store.suspend(policy.id).subscribe({
-        next: (res) => {
-          if (res) this.feedback.success('Policy suspended successfully');
-        },
-        error: (err) => {
-          this.feedback.error(err.error?.message || 'Failed to suspend policy');
-        },
+  async reinstatePolicy(policy: Policy, event?: Event): Promise<void> {
+    event?.stopPropagation();
+    if (
+      await this.feedback.confirm('Reinstate Policy', `Reinstate policy ${policy.policy_number}?`)
+    ) {
+      this.store.reinstate(policy.id).subscribe({
+        next: () => this.feedback.success('Policy reinstated'),
+        error: (err) => this.feedback.error(err.error?.message),
       });
     }
   }
 
   async cancelPolicy(policy: Policy, event?: Event): Promise<void> {
     event?.stopPropagation();
-
-    const confirmed = await this.feedback.confirm(
-      'Cancel Policy',
-      `Are you sure you want to cancel policy "${policy.policy_number}"? This action cannot be undone and all coverage will be terminated.`
-    );
-
-    if (confirmed) {
-      this.store.cancel(policy.id, 'customer_request').subscribe({
-        next: (res) => {
-          if (res) {
-            this.feedback.success('Policy cancelled successfully');
-            if (this.selectedPolicy()?.id === policy.id) {
-              this.closeDrawer();
-            }
-          }
+    // In real app, prompt for reason and effective date
+    const reason = 'Client request';
+    if (
+      await this.feedback.confirm(
+        'Cancel Policy',
+        `Are you sure you want to cancel policy ${policy.policy_number}? This action is permanent.`
+      )
+    ) {
+      this.store.cancel(policy.id, reason).subscribe({
+        next: () => {
+          this.feedback.success('Policy cancelled');
+          if (this.selectedPolicy()?.id === policy.id) this.closeDrawer();
         },
-        error: (err) => {
-          this.feedback.error(err.error?.message || 'Failed to cancel policy');
-        },
+        error: (err) => this.feedback.error(err.error?.message),
       });
     }
-  }
-
-  async renewPolicy(policy: Policy, event?: Event): Promise<void> {
-    event?.stopPropagation();
-
-    const confirmed = await this.feedback.confirm(
-      'Renew Policy',
-      `This will create a new policy for the next term. Proceed with renewal for "${policy.policy_number}"?`
-    );
-
-    if (confirmed) {
-      this.store.renew(policy.id).subscribe({
-        next: (res) => {
-          if (res) {
-            this.feedback.success('Policy renewed successfully');
-            this.store.loadAll();
-          }
-        },
-        error: (err) => {
-          this.feedback.error(err.error?.message || 'Failed to renew policy');
-        },
-      });
-    }
-  }
-
-  // =========================================================================
-  // CERTIFICATE
-  // =========================================================================
-
-  downloadCertificate(policy: Policy, event?: Event): void {
-    event?.stopPropagation();
-
-    if (policy.status !== 'active') {
-      this.feedback.error('Certificate is only available for active policies');
-      return;
-    }
-
-    this.store.downloadCertificate(policy.id).subscribe({
-      next: (blob) => {
-        const url = window.URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `certificate-${policy.policy_number}.pdf`;
-        link.click();
-        window.URL.revokeObjectURL(url);
-        this.feedback.success('Certificate downloaded');
-      },
-      error: (err) => {
-        this.feedback.error(err.error?.message || 'Failed to download certificate');
-      },
-    });
   }
 
   // =========================================================================
@@ -366,34 +309,11 @@ export class MedicalPoliciesList implements OnInit, AfterViewInit {
     const config = getStatusConfig(POLICY_STATUSES, status);
     if (!config) return 'bg-slate-400';
     const match = config.bgColor.match(/bg-(\w+)-\d+/);
-    if (match) {
-      return `bg-${match[1]}-500`;
-    }
-    return 'bg-slate-400';
-  }
-
-  getTypeIcon(type: string): string {
-    return POLICY_TYPES.find((t) => t.value === type)?.icon || 'description';
-  }
-
-  getDaysToExpiry(policy: Policy): { days: number; class: string } {
-    if (!policy.expiry_date) return { days: 0, class: 'text-slate-500' };
-
-    const today = new Date();
-    const expiry = new Date(policy.expiry_date);
-    const days = Math.ceil((expiry.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-
-    let cssClass = 'text-green-600';
-    if (days <= 0) cssClass = 'text-red-600';
-    else if (days <= 30) cssClass = 'text-amber-600';
-    else if (days <= 60) cssClass = 'text-orange-500';
-
-    return { days, class: cssClass };
+    return match ? `bg-${match[1]}-500` : 'bg-slate-400';
   }
 
   exportToCsv(): void {
     const data = this.dataSource.filteredData;
-
     if (data.length === 0) {
       this.feedback.error('No data to export');
       return;
@@ -401,31 +321,26 @@ export class MedicalPoliciesList implements OnInit, AfterViewInit {
 
     const headers = [
       'Policy #',
-      'Type',
-      'Plan',
       'Holder',
+      'Scheme',
+      'Plan',
       'Status',
-      'Members',
+      'Inception',
       'Premium',
-      'Expiry',
+      'Type',
     ];
+    const rows = data.map((p) => [
+      p.policy_number,
+      `"${p.holder_name}"`,
+      `"${p.scheme?.name || ''}"`,
+      `"${p.plan?.name || ''}"`,
+      p.status,
+      p.inception_date,
+      p.gross_premium,
+      p.policy_type,
+    ]);
 
-    const csvContent = [
-      headers.join(','),
-      ...data.map((p) =>
-        [
-          `"${p.policy_number}"`,
-          `"${getLabelByValue(POLICY_TYPES, p.policy_type)}"`,
-          `"${p.plan?.name || ''}"`,
-          `"${p.policy_holder_name || ''}"`,
-          `"${p.status}"`,
-          p.members_count || 0,
-          p.net_premium || 0,
-          `"${p.expiry_date || ''}"`,
-        ].join(',')
-      ),
-    ].join('\n');
-
+    const csvContent = [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
     const blob = new Blob([csvContent], { type: 'text/csv' });
     const url = window.URL.createObjectURL(blob);
     const link = document.createElement('a');

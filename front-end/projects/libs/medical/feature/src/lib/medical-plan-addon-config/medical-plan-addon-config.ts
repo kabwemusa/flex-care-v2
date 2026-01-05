@@ -8,7 +8,6 @@ import {
   OnChanges,
   SimpleChanges,
   inject,
-  signal,
   computed,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
@@ -26,15 +25,14 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 // Domain Imports
 import {
   PlanAddon,
-  Addon,
   AddonCatalogStore,
-  ADDON_TYPES,
   ADDON_AVAILABILITY,
   getLabelByValue,
 } from 'medical-data';
 
 import { FeedbackService } from 'shared';
 import { MedicalAddAddonPlanDialog } from '../dialogs/medical-add-addon-plan-dialog/medical-add-addon-plan-dialog';
+import { PlanAddonConfigDialog } from '../dialogs/medical-plan-addon-config-dialog/medical-plan-addon-config-dialog';
 
 @Component({
   selector: 'lib-plan-addon-config',
@@ -88,18 +86,18 @@ export class MedicalPlanAddonConfig implements OnInit, OnChanges {
 
   getAddonTypeIcon(type: string): string {
     const icons: Record<string, string> = {
-      rider: 'add_circle',
-      top_up: 'trending_up',
-      standalone: 'extension',
+      optional: 'add_circle',
+      mandatory: 'verified',
+      conditional: 'rule',
     };
     return icons[type] || 'extension';
   }
 
   getAddonTypeClass(type: string): string {
     const classes: Record<string, string> = {
-      rider: 'bg-purple-100 text-purple-600',
-      top_up: 'bg-blue-100 text-blue-600',
-      standalone: 'bg-teal-100 text-teal-600',
+      optional: 'bg-purple-100 text-purple-600',
+      mandatory: 'bg-blue-100 text-blue-600',
+      conditional: 'bg-teal-100 text-teal-600',
     };
     return classes[type] || 'bg-slate-100 text-slate-600';
   }
@@ -138,7 +136,7 @@ export class MedicalPlanAddonConfig implements OnInit, OnChanges {
   }
 
   openConfigDialog(planAddon: PlanAddon) {
-    const dialogRef = this.dialog.open(MedicalPlanAddonConfig, {
+    const dialogRef = this.dialog.open(PlanAddonConfigDialog, {
       maxWidth: '70vw',
       maxHeight: '90vh',
       data: { planAddon, planId: this.planId },

@@ -1,477 +1,189 @@
-<!-- libs/medical/feature/src/lib/dialogs/medical-member-dialog/medical-member-dialog.html -->
-<!-- Medical Member Dialog - Aligned with Plan/Scheme Dialog patterns -->
-
-<div class="flex flex-col h-full w-[70vw] min-w-[70vw] max-h-[90vh]">
-  <!-- Dialog Header -->
-  <div
-    class="flex items-center justify-between gap-4 border-b border-slate-100 px-6 py-4 bg-slate-50 shrink-0"
-  >
+<div class="flex flex-col h-full w-[700px] max-h-[90vh]">
+  <!-- Header -->
+  <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50">
     <div class="flex items-center gap-3">
-      <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-100">
-        <mat-icon fontSet="material-symbols-rounded" class="!text-blue-600">
-          {{ isEdit ? 'edit_document' : 'person_add' }}
+      <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-indigo-100">
+        <mat-icon fontSet="material-symbols-rounded" class="!text-indigo-600">
+          {{ isEdit ? 'person_edit' : 'person_add' }}
         </mat-icon>
       </div>
       <div>
-        <h2 class="text-lg font-semibold tracking-tight text-slate-900">
-          {{ isEdit ? 'Edit Member' : 'Add New Member' }}
+        <h2 class="text-lg font-semibold text-slate-900">
+          {{ isEdit ? 'Edit Member' : 'Register New Member' }}
         </h2>
         <p class="text-xs text-slate-500">
-          {{
-            isEdit ? 'Update member information' : 'Register a new member with policy assignment'
-          }}
+          {{ isEdit ? 'Update member details' : 'Add a principal or dependent' }}
         </p>
       </div>
     </div>
-
-    <button
-      mat-icon-button
-      (click)="dialogRef.close()"
-      class="!text-slate-400 hover:!text-slate-700"
-    >
+    <button mat-icon-button (click)="dialogRef.close()" class="!text-slate-400">
       <mat-icon fontSet="material-symbols-rounded">close</mat-icon>
     </button>
   </div>
 
-  <!-- Stepper Content -->
-  <div class="flex-1 overflow-y-auto">
-    <mat-stepper
-      #stepper
-      [linear]="!isEdit"
-      [selectedIndex]="currentStep()"
-      (selectionChange)="onStepChange($event.selectedIndex)"
-      class="!bg-transparent"
-    >
-      <!-- Step 1: Personal Information -->
-      <mat-step [stepControl]="personalForm" label="Personal Info">
-        <form [formGroup]="personalForm" class="p-6 space-y-5">
-          <p class="text-sm text-slate-500 mb-4">
-            Enter the member's personal details. Fields marked with * are required.
-          </p>
+  <!-- Content -->
+  <div class="flex-1 overflow-y-auto p-6">
+    <form [formGroup]="form" class="space-y-6">
+      <!-- Context Section -->
+      <div class="space-y-4">
+        <h3 class="text-sm font-medium text-slate-700 flex items-center gap-2">
+          <mat-icon fontSet="material-symbols-rounded" class="!text-[18px] text-slate-400"
+            >policy</mat-icon
+          >
+          Membership Context
+        </h3>
 
-          <!-- Member Type -->
-          <div class="flex flex-col gap-1.5">
-            <label class="text-sm font-medium text-slate-700">
-              Member Type <span class="text-red-500">*</span>
-            </label>
-            <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
-              <mat-select formControlName="member_type">
-                @for (type of MEMBER_TYPES; track type.value) {
-                <mat-option [value]="type.value">
-                  <span class="flex items-center gap-2">
-                    <mat-icon fontSet="material-symbols-rounded" class="!text-[18px]">{{
-                      type.icon
-                    }}</mat-icon>
-                    {{ type.label }}
-                    <span class="text-slate-400 text-xs">- {{ type.description }}</span>
-                  </span>
-                </mat-option>
-                }
-              </mat-select>
-              <mat-icon matSuffix fontSet="material-symbols-rounded" class="!text-slate-400"
-                >badge</mat-icon
-              >
-              @if (personalForm.get('member_type')?.hasError('required')) {
-              <mat-error>Member type is required</mat-error>
+        <div class="grid grid-cols-2 gap-4">
+          <mat-form-field appearance="outline" subscriptSizing="dynamic" class="w-full">
+            <mat-select formControlName="policy_id" placeholder="Select Policy">
+              @for (policy of activePolicies(); track policy.id) {
+              <mat-option [value]="policy.id">
+                {{ policy.policy_number }} - {{ policy.holder_name }}
+              </mat-option>
               }
-            </mat-form-field>
-            <p class="text-xs text-slate-400">Select the type of member being added</p>
-          </div>
+            </mat-select>
+            <mat-icon matSuffix fontSet="material-symbols-rounded" class="!text-slate-400"
+              >policy</mat-icon
+            >
+          </mat-form-field>
 
-          <!-- Relationship (for dependents) -->
-          @if (personalForm.get('member_type')?.value !== 'principal') {
-          <div class="flex flex-col gap-1.5">
-            <label class="text-sm font-medium text-slate-700">Relationship to Principal</label>
-            <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
-              <mat-select formControlName="relationship">
-                @for (rel of filteredRelationships(); track rel.value) {
-                <mat-option [value]="rel.value">{{ rel.label }}</mat-option>
-                }
-              </mat-select>
-            </mat-form-field>
-          </div>
-          }
+          <mat-form-field appearance="outline" subscriptSizing="dynamic" class="w-full">
+            <mat-select formControlName="member_type" placeholder="Member Type">
+              @for (type of MEMBER_TYPES; track type.value) {
+              <mat-option [value]="type.value">{{ type.label }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+        </div>
 
-          <!-- Name Fields -->
-          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div class="flex flex-col gap-1.5">
-              <label class="text-sm font-medium text-slate-700">Title</label>
-              <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
-                <mat-select formControlName="title">
-                  <mat-option value="Mr">Mr</mat-option>
-                  <mat-option value="Mrs">Mrs</mat-option>
-                  <mat-option value="Ms">Ms</mat-option>
-                  <mat-option value="Miss">Miss</mat-option>
-                  <mat-option value="Dr">Dr</mat-option>
-                </mat-select>
-              </mat-form-field>
-            </div>
-
-            <div class="flex flex-col gap-1.5">
-              <label class="text-sm font-medium text-slate-700">
-                First Name <span class="text-red-500">*</span>
-              </label>
-              <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
-                <input matInput formControlName="first_name" placeholder="John" />
-                @if (personalForm.get('first_name')?.hasError('required')) {
-                <mat-error>First name is required</mat-error>
-                }
-              </mat-form-field>
-            </div>
-
-            <div class="flex flex-col gap-1.5">
-              <label class="text-sm font-medium text-slate-700">
-                Last Name <span class="text-red-500">*</span>
-              </label>
-              <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
-                <input matInput formControlName="last_name" placeholder="Doe" />
-                @if (personalForm.get('last_name')?.hasError('required')) {
-                <mat-error>Last name is required</mat-error>
-                }
-              </mat-form-field>
-            </div>
-          </div>
-
-          <!-- Middle Name -->
-          <div class="flex flex-col gap-1.5">
-            <label class="text-sm font-medium text-slate-700">Middle Name</label>
-            <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
-              <input matInput formControlName="middle_name" placeholder="Optional" />
-            </mat-form-field>
-          </div>
-
-          <!-- Gender, DOB, Marital Status -->
-          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div class="flex flex-col gap-1.5">
-              <label class="text-sm font-medium text-slate-700">
-                Gender <span class="text-red-500">*</span>
-              </label>
-              <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
-                <mat-select formControlName="gender">
-                  @for (gender of GENDERS; track gender.value) {
-                  <mat-option [value]="gender.value">{{ gender.label }}</mat-option>
-                  }
-                </mat-select>
-                @if (personalForm.get('gender')?.hasError('required')) {
-                <mat-error>Gender is required</mat-error>
-                }
-              </mat-form-field>
-            </div>
-
-            <div class="flex flex-col gap-1.5">
-              <label class="text-sm font-medium text-slate-700">
-                Date of Birth <span class="text-red-500">*</span>
-              </label>
-              <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
-                <input matInput [matDatepicker]="dobPicker" formControlName="date_of_birth" />
-                <mat-datepicker-toggle matSuffix [for]="dobPicker"></mat-datepicker-toggle>
-                <mat-datepicker #dobPicker></mat-datepicker>
-                @if (personalForm.get('date_of_birth')?.hasError('required')) {
-                <mat-error>Date of birth is required</mat-error>
-                }
-              </mat-form-field>
-              <p class="text-xs text-slate-400">Used for age-based pricing</p>
-            </div>
-
-            <div class="flex flex-col gap-1.5">
-              <label class="text-sm font-medium text-slate-700">Marital Status</label>
-              <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
-                <mat-select formControlName="marital_status">
-                  @for (status of MARITAL_STATUSES; track status.value) {
-                  <mat-option [value]="status.value">{{ status.label }}</mat-option>
-                  }
-                </mat-select>
-              </mat-form-field>
-            </div>
-          </div>
-
-          <!-- ID Type & Number -->
-          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div class="flex flex-col gap-1.5">
-              <label class="text-sm font-medium text-slate-700">ID Type</label>
-              <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
-                <mat-select formControlName="id_type">
-                  @for (type of ID_TYPES; track type.value) {
-                  <mat-option [value]="type.value">{{ type.label }}</mat-option>
-                  }
-                </mat-select>
-              </mat-form-field>
-            </div>
-
-            <div class="flex flex-col gap-1.5 sm:col-span-2">
-              <label class="text-sm font-medium text-slate-700">ID Number</label>
-              <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
-                <input matInput formControlName="id_number" placeholder="e.g., 123456/78/1" />
-                <mat-icon matSuffix fontSet="material-symbols-rounded" class="!text-slate-400"
-                  >badge</mat-icon
-                >
-              </mat-form-field>
-              <p class="text-xs text-slate-400">National ID or selected document number</p>
-            </div>
-          </div>
-        </form>
-      </mat-step>
-
-      <!-- Step 2: Contact Details -->
-      <mat-step [stepControl]="contactForm" label="Contact">
-        <form [formGroup]="contactForm" class="p-6 space-y-5">
-          <p class="text-sm text-slate-500 mb-4">
-            Contact information for correspondence and card delivery.
-          </p>
-
-          <!-- Email & Mobile -->
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div class="flex flex-col gap-1.5">
-              <label class="text-sm font-medium text-slate-700">Email Address</label>
-              <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
-                <input
-                  matInput
-                  type="email"
-                  formControlName="email"
-                  placeholder="john.doe@example.com"
-                />
-                <mat-icon matSuffix fontSet="material-symbols-rounded" class="!text-slate-400"
-                  >mail</mat-icon
-                >
-                @if (contactForm.get('email')?.hasError('email')) {
-                <mat-error>Enter a valid email address</mat-error>
-                }
-              </mat-form-field>
-            </div>
-
-            <div class="flex flex-col gap-1.5">
-              <label class="text-sm font-medium text-slate-700">Mobile Number</label>
-              <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
-                <input matInput formControlName="mobile" placeholder="+260 97 XXXXXXX" />
-                <mat-icon matSuffix fontSet="material-symbols-rounded" class="!text-slate-400"
-                  >phone_android</mat-icon
-                >
-              </mat-form-field>
-            </div>
-          </div>
-
-          <!-- Phone & City -->
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div class="flex flex-col gap-1.5">
-              <label class="text-sm font-medium text-slate-700">Phone Number</label>
-              <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
-                <input matInput formControlName="phone" placeholder="+260 211 XXXXXX" />
-                <mat-icon matSuffix fontSet="material-symbols-rounded" class="!text-slate-400"
-                  >call</mat-icon
-                >
-              </mat-form-field>
-            </div>
-
-            <div class="flex flex-col gap-1.5">
-              <label class="text-sm font-medium text-slate-700">City/Town</label>
-              <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
-                <input matInput formControlName="city" placeholder="e.g., Lusaka" />
-                <mat-icon matSuffix fontSet="material-symbols-rounded" class="!text-slate-400"
-                  >location_city</mat-icon
-                >
-              </mat-form-field>
-            </div>
-          </div>
-
-          <!-- Province -->
-          <div class="flex flex-col gap-1.5">
-            <label class="text-sm font-medium text-slate-700">Province</label>
-            <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
-              <mat-select formControlName="province" placeholder="Select province">
-                <mat-option value="">Select Province</mat-option>
-                @for (province of PROVINCES; track province.value) {
-                <mat-option [value]="province.value">{{ province.label }}</mat-option>
-                }
-              </mat-select>
-              <mat-icon matSuffix fontSet="material-symbols-rounded" class="!text-slate-400"
-                >map</mat-icon
-              >
-            </mat-form-field>
-          </div>
-
-          <!-- Physical Address -->
-          <div class="flex flex-col gap-1.5">
-            <label class="text-sm font-medium text-slate-700">Physical Address</label>
-            <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
-              <textarea
-                matInput
-                formControlName="address"
-                rows="2"
-                placeholder="Street address, building name, etc."
-              ></textarea>
-            </mat-form-field>
-          </div>
-        </form>
-      </mat-step>
-
-      <!-- Step 3: Policy & Employment -->
-      <mat-step [stepControl]="policyForm" label="Policy">
-        <form [formGroup]="policyForm" class="p-6 space-y-5">
-          <p class="text-sm text-slate-500 mb-4">
-            Link to a policy and add employment details (for corporate members).
-          </p>
-
-          <!-- Policy Selection Section -->
-          <div class="rounded-lg border border-blue-200 bg-blue-50 p-4 space-y-4">
-            <h4 class="font-medium text-blue-900 flex items-center gap-2">
-              <mat-icon fontSet="material-symbols-rounded" class="!text-blue-600 !text-[20px]"
-                >description</mat-icon
-              >
-              Policy Assignment
-            </h4>
-
-            <div class="flex flex-col gap-1.5">
-              <label class="text-sm font-medium text-slate-700">Select Policy</label>
-              <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
-                <mat-select formControlName="policy_id" placeholder="Select a policy">
-                  <mat-option value="">Select a policy...</mat-option>
-                  @for (policy of policies(); track policy.id) {
-                  <mat-option [value]="policy.id">
-                    {{ policy.policy_number }} - {{ policy.plan?.name || 'No Plan' }}
-                  </mat-option>
-                  }
-                </mat-select>
-              </mat-form-field>
-              <p class="text-xs text-slate-400">The policy this member will be covered under</p>
-            </div>
-
-            <div class="flex flex-col gap-1.5">
-              <label class="text-sm font-medium text-slate-700">Effective Date</label>
-              <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
-                <input
-                  matInput
-                  [matDatepicker]="effectivePicker"
-                  formControlName="effective_date"
-                />
-                <mat-datepicker-toggle matSuffix [for]="effectivePicker"></mat-datepicker-toggle>
-                <mat-datepicker #effectivePicker></mat-datepicker>
-              </mat-form-field>
-              <p class="text-xs text-slate-400">When coverage begins for this member</p>
-            </div>
-          </div>
-
-          <!-- Employment Section -->
-          <div class="rounded-lg border border-slate-200 bg-slate-50 p-4 space-y-4">
-            <h4 class="font-medium text-slate-900 flex items-center gap-2">
-              <mat-icon fontSet="material-symbols-rounded" class="!text-slate-500 !text-[20px]"
-                >work</mat-icon
-              >
-              Employment Details
-              <span class="text-xs text-slate-400 font-normal"
-                >(Optional - for corporate members)</span
-              >
-            </h4>
-
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div class="flex flex-col gap-1.5">
-                <label class="text-sm font-medium text-slate-700">Employee Number</label>
-                <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
-                  <input matInput formControlName="employee_number" placeholder="EMP001" />
-                </mat-form-field>
-              </div>
-
-              <div class="flex flex-col gap-1.5">
-                <label class="text-sm font-medium text-slate-700">Department</label>
-                <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
-                  <input
-                    matInput
-                    formControlName="department"
-                    placeholder="e.g., Human Resources"
-                  />
-                </mat-form-field>
-              </div>
-
-              <div class="flex flex-col gap-1.5">
-                <label class="text-sm font-medium text-slate-700">Job Title</label>
-                <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
-                  <input matInput formControlName="job_title" placeholder="e.g., Senior Manager" />
-                </mat-form-field>
-              </div>
-
-              <div class="flex flex-col gap-1.5">
-                <label class="text-sm font-medium text-slate-700">Employment Date</label>
-                <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
-                  <input matInput [matDatepicker]="empPicker" formControlName="employment_date" />
-                  <mat-datepicker-toggle matSuffix [for]="empPicker"></mat-datepicker-toggle>
-                  <mat-datepicker #empPicker></mat-datepicker>
-                </mat-form-field>
-              </div>
-            </div>
-          </div>
-
-          <!-- Notes -->
-          <div class="flex flex-col gap-1.5">
-            <label class="text-sm font-medium text-slate-700">Notes</label>
-            <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
-              <textarea
-                matInput
-                formControlName="notes"
-                rows="2"
-                placeholder="Any additional notes about this member..."
-              ></textarea>
-            </mat-form-field>
-          </div>
-        </form>
-      </mat-step>
-    </mat-stepper>
-  </div>
-
-  <!-- Dialog Footer -->
-  <div
-    class="flex items-center justify-between gap-4 border-t border-slate-100 px-6 py-4 bg-slate-50 shrink-0"
-  >
-    <!-- Step Indicator -->
-    <div class="flex items-center gap-2 text-sm text-slate-500">
-      <span>Step {{ currentStep() + 1 }} of 3</span>
-      <div class="flex items-center gap-1">
-        @for (step of [0, 1, 2]; track step) {
-        <span
-          class="h-1.5 w-1.5 rounded-full transition-colors"
-          [class]="
-            step === currentStep()
-              ? 'bg-primary'
-              : step < currentStep()
-              ? 'bg-green-500'
-              : 'bg-slate-300'
-          "
-        ></span>
+        @if (!isPrincipal()) {
+        <mat-form-field appearance="outline" subscriptSizing="dynamic" class="w-full">
+          <mat-select formControlName="relationship" placeholder="Relationship to Principal">
+            @for (rel of RELATIONSHIPS; track rel.value) { @if (rel.value !== 'self') {
+            <mat-option [value]="rel.value">{{ rel.label }}</mat-option>
+            } }
+          </mat-select>
+        </mat-form-field>
         }
       </div>
-    </div>
 
-    <!-- Action Buttons -->
-    <div class="flex items-center gap-2">
-      <button mat-button (click)="dialogRef.close()" class="!text-slate-600">Cancel</button>
+      <mat-divider></mat-divider>
 
-      @if (currentStep() > 0) {
-      <button mat-stroked-button (click)="previousStep()" class="!border-slate-200">
-        <mat-icon fontSet="material-symbols-rounded">arrow_back</mat-icon>
-        Back
-      </button>
-      } @if (currentStep() < 2) {
-      <button
-        mat-flat-button
-        color="primary"
-        (click)="nextStep()"
-        [disabled]="!canProceedToNextStep()"
-      >
-        Next
-        <mat-icon fontSet="material-symbols-rounded">arrow_forward</mat-icon>
-      </button>
-      } @if (currentStep() === 2) {
-      <button
-        mat-flat-button
-        color="primary"
-        (click)="save()"
-        [disabled]="store.isSaving() || !isFormValid()"
-      >
-        @if (store.isSaving()) {
-        <mat-spinner diameter="20" class="mr-2"></mat-spinner>
+      <!-- Personal Details -->
+      <div class="space-y-4">
+        <h3 class="text-sm font-medium text-slate-700 flex items-center gap-2">
+          <mat-icon fontSet="material-symbols-rounded" class="!text-[18px] text-slate-400"
+            >person</mat-icon
+          >
+          Personal Details
+        </h3>
+
+        <div class="grid grid-cols-2 gap-4">
+          <mat-form-field appearance="outline" subscriptSizing="dynamic" class="w-full">
+            <input matInput formControlName="first_name" placeholder="First Name" />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" subscriptSizing="dynamic" class="w-full">
+            <input matInput formControlName="last_name" placeholder="Last Name" />
+          </mat-form-field>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <mat-form-field appearance="outline" subscriptSizing="dynamic" class="w-full">
+            <mat-select formControlName="gender" placeholder="Gender">
+              @for (g of GENDERS; track g.value) {
+              <mat-option [value]="g.value">{{ g.label }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" subscriptSizing="dynamic" class="w-full">
+            <input
+              matInput
+              [matDatepicker]="dobPicker"
+              formControlName="date_of_birth"
+              placeholder="Date of Birth"
+            />
+            <mat-datepicker-toggle matSuffix [for]="dobPicker"></mat-datepicker-toggle>
+            <mat-datepicker #dobPicker></mat-datepicker>
+          </mat-form-field>
+        </div>
+
+        @if (calculatedAge() !== null) {
+        <p class="text-sm text-slate-500">Age: {{ calculatedAge() }} years</p>
         }
-        <mat-icon fontSet="material-symbols-rounded">{{ isEdit ? 'save' : 'person_add' }}</mat-icon>
-        {{ isEdit ? 'Update Member' : 'Add Member' }}
-      </button>
+
+        <div class="grid grid-cols-2 gap-4">
+          <mat-form-field appearance="outline" subscriptSizing="dynamic" class="w-full">
+            <input matInput formControlName="national_id" placeholder="National ID / NRC" />
+            <mat-icon matSuffix fontSet="material-symbols-rounded" class="!text-slate-400"
+              >badge</mat-icon
+            >
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" subscriptSizing="dynamic" class="w-full">
+            <input matInput formControlName="passport_number" placeholder="Passport (Optional)" />
+          </mat-form-field>
+        </div>
+      </div>
+
+      <mat-divider></mat-divider>
+
+      <!-- Contact Details -->
+      <div class="space-y-4">
+        <h3 class="text-sm font-medium text-slate-700 flex items-center gap-2">
+          <mat-icon fontSet="material-symbols-rounded" class="!text-[18px] text-slate-400"
+            >contact_phone</mat-icon
+          >
+          Contact Details
+        </h3>
+
+        <div class="grid grid-cols-2 gap-4">
+          <mat-form-field appearance="outline" subscriptSizing="dynamic" class="w-full">
+            <input matInput type="email" formControlName="email" placeholder="Email Address" />
+            <mat-icon matSuffix fontSet="material-symbols-rounded" class="!text-slate-400"
+              >mail</mat-icon
+            >
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" subscriptSizing="dynamic" class="w-full">
+            <input matInput formControlName="phone" placeholder="Phone Number" />
+            <mat-icon matSuffix fontSet="material-symbols-rounded" class="!text-slate-400"
+              >call</mat-icon
+            >
+          </mat-form-field>
+        </div>
+
+        <mat-form-field appearance="outline" subscriptSizing="dynamic" class="w-full">
+          <textarea
+            matInput
+            formControlName="address"
+            rows="2"
+            placeholder="Physical Address"
+          ></textarea>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" subscriptSizing="dynamic" class="w-full">
+          <input matInput formControlName="city" placeholder="City / Town" />
+        </mat-form-field>
+      </div>
+    </form>
+  </div>
+
+  <!-- Footer -->
+  <div class="flex items-center justify-end gap-3 px-6 py-4 border-t border-slate-100 bg-slate-50">
+    <button mat-button (click)="dialogRef.close()" class="!text-slate-600">Cancel</button>
+    <button
+      mat-flat-button
+      color="primary"
+      (click)="save()"
+      [disabled]="isSaving() || form.invalid"
+    >
+      @if (isSaving()) {
+      <mat-spinner diameter="20" class="mr-2"></mat-spinner>
       }
-    </div>
+      <mat-icon fontSet="material-symbols-rounded">{{ isEdit ? 'save' : 'person_add' }}</mat-icon>
+      {{ isEdit ? 'Update' : 'Create' }} Member
+    </button>
   </div>
 </div>

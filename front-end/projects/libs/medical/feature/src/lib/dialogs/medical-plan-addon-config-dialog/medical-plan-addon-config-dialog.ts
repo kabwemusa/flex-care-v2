@@ -1,7 +1,7 @@
 // libs/medical/ui/src/lib/dialogs/plan-addon-config-dialog/plan-addon-config-dialog.ts
 
 import { Component, inject, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, DecimalPipe } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MAT_DIALOG_DATA, MatDialogRef, MatDialogModule } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -23,6 +23,7 @@ interface DialogData {
   standalone: true,
   imports: [
     CommonModule,
+    DecimalPipe,
     ReactiveFormsModule,
     MatDialogModule,
     MatFormFieldModule,

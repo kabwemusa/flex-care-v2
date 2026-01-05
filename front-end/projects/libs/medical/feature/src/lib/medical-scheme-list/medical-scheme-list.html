@@ -1,8 +1,8 @@
 <!-- libs/medical/ui/src/lib/schemes/medical-schemes.component.html -->
 
-<mat-drawer-container class="h-full">
+<mat-drawer-container class="h-screen">
   <!-- Main Content -->
-  <mat-drawer-content>
+  <mat-drawer-content class="overflow-auto">
     <div class="bg-white p-6 md:p-10 min-h-[80vh] shadow-sm">
       <lib-page-header
         title="Medical Schemes"
@@ -82,10 +82,10 @@
       >
         <!-- Filters Bar -->
         <div
-          class="flex flex-col gap-4 border-b border-slate-100 p-4 sm:flex-row sm:items-center sm:justify-between"
+          class="flex flex-col gap-4 border-b border-slate-100 p-4 sm:flex-row sm:items-start sm:justify-between"
         >
           <!-- Search -->
-          <div class="relative w-full sm:w-72">
+          <div class="relative w-full sm:w-72 sm:mt-1">
             <mat-icon
               fontSet="material-symbols-rounded"
               class="absolute left-3 top-1/2 -translate-y-1/2 !text-[20px] text-slate-400"
@@ -101,21 +101,50 @@
           </div>
 
           <!-- Filter Dropdowns -->
-          <div class="flex items-center gap-2 flex-wrap">
-            <mat-form-field appearance="outline" subscriptSizing="dynamic" class="!w-44">
+          <div class="flex items-start gap-2 flex-wrap">
+            <mat-form-field
+              appearance="outline"
+              subscriptSizing="dynamic"
+              class="modern-filter-select w-56"
+            >
               <mat-select
-                placeholder="All Segments"
                 [value]="selectedSegment()"
                 (selectionChange)="filterBySegment($event.value)"
+                panelClass="modern-select-panel"
+                placeholder="All Segments"
               >
-                <mat-option value="">All Segments</mat-option>
+                <mat-select-trigger>
+                  <div class="flex items-center gap-2 text-gray-700">
+                    @if (selectedSegment()) { @let current = getSegmentDetails(selectedSegment());
+                    <mat-icon fontSet="material-symbols-rounded" class="!text-[20px] text-gray-500">
+                      {{ current?.icon }}
+                    </mat-icon>
+                    <span class="text-sm font-medium">{{ current?.label }}</span>
+                    } @else {
+                    <mat-icon fontSet="material-symbols-rounded" class="!text-[20px] text-gray-400">
+                      apps
+                    </mat-icon>
+                    <span class="text-sm font-medium text-gray-600">All Segments</span>
+                    }
+                  </div>
+                </mat-select-trigger>
+
+                <mat-option value="">
+                  <span class="text-gray-500">All Segments</span>
+                </mat-option>
+
                 @for (segment of marketSegments; track segment.value) {
                 <mat-option [value]="segment.value">
-                  <div class="flex items-center gap-2">
-                    <mat-icon fontSet="material-symbols-rounded" class="!text-[18px]">{{
-                      segment.icon
-                    }}</mat-icon>
-                    <span>{{ segment.label }}</span>
+                  <div class="flex items-center gap-2 group">
+                    <mat-icon
+                      fontSet="material-symbols-rounded"
+                      class="!text-[18px] text-gray-400 group-hover:text-primary transition-colors"
+                    >
+                      {{ segment.icon }}
+                    </mat-icon>
+                    <span class="text-sm text-gray-700 group-hover:text-gray-900">
+                      {{ segment.label }}
+                    </span>
                   </div>
                 </mat-option>
                 }
@@ -125,7 +154,7 @@
             @if (selectedSegment() || searchQuery()) {
             <button
               mat-stroked-button
-              class="!border-slate-200 !text-slate-600"
+              class="!border-slate-200 !text-slate-600 !h-10 !mt-1"
               (click)="clearFilters()"
             >
               <mat-icon fontSet="material-symbols-rounded">clear</mat-icon>
@@ -357,9 +386,14 @@
   </mat-drawer-content>
 
   <!-- Detail Drawer -->
-  <mat-drawer #detailDrawer mode="over" position="end" class="!w-full sm:!w-[100vh] !bg-white">
+  <mat-drawer
+    #detailDrawer
+    mode="over"
+    position="end"
+    class="!w-full sm:!w-[600px] !bg-white !h-screen"
+  >
     @if (selectedScheme(); as scheme) {
-    <div class="flex flex-col h-full">
+    <div class="flex flex-col h-screen">
       <!-- Drawer Header -->
       <div class="flex items-center justify-between border-b border-slate-100 px-6 py-4">
         <div class="flex items-center gap-3">
