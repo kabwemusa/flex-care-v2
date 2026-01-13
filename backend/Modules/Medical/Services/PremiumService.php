@@ -9,10 +9,8 @@ use Modules\Medical\Models\Member;
 use Modules\Medical\Models\RateCard;
 use Modules\Medical\Models\PlanAddon;
 use Modules\Medical\Models\Addon;
-use Modules\Medical\Models\AddonRate;
 use Modules\Medical\Constants\MedicalConstants;
-use Illuminate\Support\Collection;
-use Carbon\Carbon;
+
 
 class PremiumService
 {
@@ -30,7 +28,7 @@ class PremiumService
             'rateCard.entries',
             'rateCard.tiers',
             'activeMembers', // Scope: active members only
-            'activeAddons.addon.rates',
+            'activeAddons.addon',
             'plan'
         ]);
 
@@ -102,7 +100,7 @@ class PremiumService
         $totalPremium = $basePremium + $addonPremium + $loadingAmount - $discountAmount;
         
         // Tax
-        $taxRate = config('medical.tax_rate', 0.0); // e.g., 0.16 for VAT
+        $taxRate = config('medical.tax_rate', 0.05); // e.g., 0.16 for VAT
         $taxAmount = round($totalPremium * $taxRate, 2);
         $grossPremium = $totalPremium + $taxAmount;
 
@@ -153,7 +151,7 @@ class PremiumService
 
         foreach ($policy->members as $member) {
             // Skip terminated members for premium calculation if you only want active billing
-            if ($member->status === \Modules\Medical\Constants\MedicalConstants::MEMBER_STATUS_TERMINATED) {
+            if ($member->status === MedicalConstants::MEMBER_STATUS_TERMINATED) {
                 continue;
             }
 
@@ -384,7 +382,7 @@ class PremiumService
     // =========================================================================
 
     /**
-     * Calculate specific addon price.
+     * Calculate specific addon price using simplified addon pricing.
      */
     public function calculateAddonPremium(Addon $addon, string $planId, float $basePremium, int $memberCount): array
     {
@@ -397,32 +395,13 @@ class PremiumService
             return ['success' => true, 'premium' => 0, 'is_included' => true];
         }
 
-        // 2. Find active rate
-        $rate = AddonRate::where('addon_id', $addon->id)
-            ->where('plan_id', $planId)
-            ->active()
-            ->effective()
-            ->orderByDesc('effective_from')
-            ->first();
-
-        if (!$rate) {
-            // Fallback to global rate if exists? 
-            // For now, fail safely.
-            return ['success' => false, 'message' => 'No rate found'];
+        // 2. Check if addon is active and effective
+        if (!$addon->is_active || !$addon->is_effective) {
+            return ['success' => false, 'message' => 'Addon is not active or effective'];
         }
 
-        $amount = 0;
-        switch ($rate->pricing_type) {
-            case 'fixed':
-                $amount = $rate->amount;
-                break;
-            case 'per_member':
-                $amount = $rate->amount * $memberCount;
-                break;
-            case 'percentage':
-                $amount = $basePremium * ($rate->percentage / 100);
-                break;
-        }
+        // 3. Calculate premium using addon's built-in method
+        $amount = $addon->calculatePremium($memberCount, $basePremium);
 
         return ['success' => true, 'premium' => round($amount, 2), 'is_included' => false];
     }
@@ -437,16 +416,36 @@ class PremiumService
         if (empty($loadings)) return 0;
 
         $total = 0;
+        
         foreach ($loadings as $loading) {
-            $val = (float)($loading['value'] ?? 0);
-            $type = $loading['type'] ?? 'fixed';
+            // If loading_amount is already calculated (from LoadingRule), use it directly
+            if (isset($loading['loading_amount'])) {
+                $total += (float) $loading['loading_amount'];
+                continue;
+            }
 
-            if ($type === 'percentage') {
-                $total += $basePremium * ($val / 100);
+            // If loading_rule_id is provided, look up and use LoadingRule
+            if (!empty($loading['loading_rule_id'])) {
+                $rule = \Modules\Medical\Models\LoadingRule::find($loading['loading_rule_id']);
+                if ($rule) {
+                    // Use LoadingRule's calculateLoading method (handles min/max caps)
+                    $total += $rule->calculateLoading($basePremium);
+                    continue;
+                }
+            }
+
+            // Fallback: Manual calculation (backward compatibility)
+            // Support both 'type' and 'loading_type' for compatibility
+            $loadingType = $loading['loading_type'] ?? $loading['type'] ?? 'fixed';
+            $value = (float) ($loading['value'] ?? $loading['loading_value'] ?? 0);
+
+            if ($loadingType === 'percentage') {
+                $total += round($basePremium * ($value / 100), 2);
             } else {
-                $total += $val;
+                $total += $value;
             }
         }
+        
         return round($total, 2);
     }
 
@@ -515,5 +514,28 @@ class PremiumService
             // Default to monthly if frequency is unknown or invalid
             default => round($annualAmount / 12, 2),
         };
+    }
+
+    /**
+     * Convert premium from one frequency to another.
+     * e.g. 100 Monthly -> 1200 Annual OR 1200 Annual -> 100 Monthly
+     *
+     * @param float $premium The premium amount in the source frequency
+     * @param string $fromFrequency The current frequency
+     * @param string $toFrequency The target frequency
+     * @return float The converted premium amount
+     */
+    public function convertFrequency(float $premium, string $fromFrequency, string $toFrequency): float
+    {
+        // If frequencies are the same, no conversion needed
+        if ($fromFrequency === $toFrequency) {
+            return round($premium, 2);
+        }
+
+        // First, convert to annual
+        $annualPremium = $this->annualize($premium, $fromFrequency);
+
+        // Then convert to target frequency
+        return $this->periodize($annualPremium, $toFrequency);
     }
 }

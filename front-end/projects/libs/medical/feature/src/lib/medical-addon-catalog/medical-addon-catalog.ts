@@ -61,7 +61,7 @@ export class MedicalAddonsCatalog implements OnInit, AfterViewInit {
   private readonly dialog = inject(MatDialog);
   private readonly feedback = inject(FeedbackService);
 
-  displayedColumns = ['status', 'name', 'type', 'benefits', 'plans', 'actions'];
+  displayedColumns = ['status', 'name', 'type', 'pricing', 'plans', 'actions'];
   dataSource = new MatTableDataSource<Addon>([]);
 
   @ViewChild(MatPaginator) paginator!: MatPaginator;

@@ -24,15 +24,29 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
       })
     : req;
 
-  // Handle the request and catch 401 errors
+  // Handle the request and catch errors
   return next(authReq).pipe(
     catchError((error) => {
       if (error.status === 401) {
-        // Token expired or invalid - logout and redirect to login
-        authService.logout().subscribe({
-          next: () => router.navigate(['/login']),
-          error: () => router.navigate(['/login']),
-        });
+        const errorCode = error.error?.error_code;
+
+        // Check if it's a session expiration error
+        if (errorCode === 'SESSION_EXPIRED' || errorCode === 'SESSION_INACTIVE') {
+          // Clear local auth state and redirect to login
+          localStorage.clear();
+          router.navigate(['/login'], {
+            queryParams: {
+              expired: true,
+              reason: errorCode === 'SESSION_INACTIVE' ? 'inactivity' : 'timeout',
+            },
+          });
+        } else {
+          // General 401 - token expired or invalid
+          authService.logout().subscribe({
+            next: () => router.navigate(['/login']),
+            error: () => router.navigate(['/login']),
+          });
+        }
       }
       return throwError(() => error);
     })

@@ -34,7 +34,7 @@ class GroupResource extends JsonResource
             // =====================================================
             // PRIMARY CONTACT (ALIGNED)
             // =====================================================
-            'primary_contact' => new GroupContactResource(
+            'primary_contact' =>  GroupContactResource::make(
                 $this->whenLoaded('primaryContact')
             ),
 
@@ -64,11 +64,21 @@ class GroupResource extends JsonResource
             ),
 
             // =====================================================
+            // APPLICATIONS (Prospect Members)
+            // =====================================================
+            'applications' => ApplicationResource::collection(
+                $this->whenLoaded('applications')
+            ),
+
+            // =====================================================
             // STATS
             // =====================================================
             'stats' => [
                 'total_policies' => $this->policies_count ?? 0,
                 'active_policies' => $this->active_policies_count ?? 0,
+                'total_applications' => $this->applications_count ?? 0,
+                'policies_by_plan' => $this->getPoliciesByPlanStats(),
+                'applications_by_plan' => $this->getApplicationsByPlanStats(),
             ],
 
             // =====================================================
@@ -77,5 +87,65 @@ class GroupResource extends JsonResource
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
         ];
+    }
+
+    /**
+     * Get policy count grouped by plan
+     */
+    private function getPoliciesByPlanStats(): array
+    {
+        if (!$this->relationLoaded('policies')) {
+            return [];
+        }
+
+        $stats = [];
+        foreach ($this->policies as $policy) {
+            if ($policy->relationLoaded('plan') && $policy->plan) {
+                $planKey = $policy->plan->id;
+
+                if (!isset($stats[$planKey])) {
+                    $stats[$planKey] = [
+                        'plan_id' => $policy->plan->id,
+                        'plan_code' => $policy->plan->code,
+                        'plan_name' => $policy->plan->name,
+                        'count' => 0,
+                    ];
+                }
+
+                $stats[$planKey]['count']++;
+            }
+        }
+
+        return array_values($stats);
+    }
+
+    /**
+     * Get application count grouped by plan
+     */
+    private function getApplicationsByPlanStats(): array
+    {
+        if (!$this->relationLoaded('applications')) {
+            return [];
+        }
+
+        $stats = [];
+        foreach ($this->applications as $application) {
+            if ($application->relationLoaded('plan') && $application->plan) {
+                $planKey = $application->plan->id;
+
+                if (!isset($stats[$planKey])) {
+                    $stats[$planKey] = [
+                        'plan_id' => $application->plan->id,
+                        'plan_code' => $application->plan->code,
+                        'plan_name' => $application->plan->name,
+                        'count' => 0,
+                    ];
+                }
+
+                $stats[$planKey]['count']++;
+            }
+        }
+
+        return array_values($stats);
     }
 }

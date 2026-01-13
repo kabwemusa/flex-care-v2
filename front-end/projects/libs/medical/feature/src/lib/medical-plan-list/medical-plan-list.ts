@@ -298,7 +298,7 @@ export class MedicalPlanList implements OnInit, AfterViewInit {
 
   openQuickQuote(plan: MedicalPlan) {
     this.dialog.open(MedicalQuickQuoteDialog, {
-      width: '800px',
+      maxWidth: '70vw',
       maxHeight: '90vh',
       data: { planId: plan.id, plan },
       disableClose: true,

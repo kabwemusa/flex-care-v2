@@ -24,14 +24,21 @@ class CheckMedicalPermission
 
         if (!$user) {
             return response()->json([
+                'success' => false,
                 'message' => 'Unauthenticated.',
             ], 401);
         }
 
+        // System admins bypass all permission checks
+        if ($user->is_system_admin) {
+            return $next($request);
+        }
+
         // Check if user has the specific permission
-        if (!$user->can($permission)) {
+        if (!$user->hasPermissionTo($permission, 'medical')) {
             return response()->json([
-                'message' => 'You do not have permission to perform this action.',
+                'success' => false,
+                'message' => 'Unauthorized. You do not have permission to perform this action.',
                 'required_permission' => $permission,
             ], 403);
         }

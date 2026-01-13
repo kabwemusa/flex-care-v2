@@ -10,10 +10,12 @@
         Export
       </button>
 
+      @if (canPerformAction('create')) {
       <button mat-flat-button color="primary" class="!rounded-lg" (click)="openUserDialog()">
         <mat-icon fontSet="material-symbols-rounded">person_add</mat-icon>
         New User
       </button>
+      }
     </div>
   </lib-page-header>
 
@@ -305,27 +307,48 @@
               #menu="matMenu"
               class="!rounded-xl !border !border-slate-200 !shadow-lg !bg-white"
             >
+              @if (canPerformAction('edit')) {
               <button mat-menu-item (click)="openUserDialog(user)">
                 <mat-icon fontSet="material-symbols-rounded" class="!text-slate-500">edit</mat-icon>
                 <span>Edit User</span>
               </button>
+              }
+
+              @if (canPerformAction('manage_roles')) {
               <button mat-menu-item (click)="openRoleDialog(user)">
                 <mat-icon fontSet="material-symbols-rounded" class="!text-slate-500"
                   >badge</mat-icon
                 >
                 <span>Assign Roles</span>
               </button>
+              }
+
+              @if (canPerformAction('edit')) {
               <button mat-menu-item (click)="openModuleAccessDialog(user)">
                 <mat-icon fontSet="material-symbols-rounded" class="!text-slate-500">apps</mat-icon>
                 <span>Module Access</span>
               </button>
+              }
+
+              @if (canPerformAction('reset_password')) {
+              <button mat-menu-item (click)="resetPassword(user)">
+                <mat-icon fontSet="material-symbols-rounded" class="!text-slate-500">lock_reset</mat-icon>
+                <span>Reset Password</span>
+              </button>
+              }
+
               <mat-divider class="!my-1 opacity-50"></mat-divider>
+
+              @if (canPerformAction('toggle_status')) {
               <button mat-menu-item (click)="toggleUserStatus(user)">
                 <mat-icon fontSet="material-symbols-rounded" class="!text-slate-500">
                   {{ user.is_active ? 'block' : 'check_circle' }}
                 </mat-icon>
                 <span>{{ user.is_active ? 'Deactivate' : 'Activate' }}</span>
               </button>
+              }
+
+              @if (canPerformAction('delete') && !user.is_active) {
               <button
                 mat-menu-item
                 class="!text-red-600 hover:!bg-red-50"
@@ -334,6 +357,7 @@
                 <mat-icon fontSet="material-symbols-rounded" class="!text-red-500">delete</mat-icon>
                 <span>Delete User</span>
               </button>
+              }
             </mat-menu>
           </td>
         </ng-container>

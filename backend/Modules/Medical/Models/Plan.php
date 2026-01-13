@@ -130,6 +130,16 @@ class Plan extends BaseModel
         return $this->hasMany(AddonRate::class, 'plan_id');
     }
 
+    public function applications(): HasMany
+    {
+        return $this->hasMany(Application::class, 'plan_id');
+    }
+
+    public function policies(): HasMany
+    {
+        return $this->hasMany(Policy::class, 'plan_id');
+    }
+
     // =========================================================================
     // SCOPES
     // =========================================================================
@@ -168,13 +178,19 @@ class Plan extends BaseModel
     // ACCESSORS
     // =========================================================================
 
-    public function getPlanTypeLabelAttribute(): string
+    public function getPlanTypeLabelAttribute(): ?string
     {
+        if (!$this->plan_type) {
+            return null;
+        }
         return MedicalConstants::PLAN_TYPES[$this->plan_type] ?? $this->plan_type;
     }
 
-    public function getNetworkTypeLabelAttribute(): string
+    public function getNetworkTypeLabelAttribute(): ?string
     {
+        if (!$this->network_type) {
+            return null;
+        }
         return MedicalConstants::NETWORK_TYPES[$this->network_type] ?? $this->network_type;
     }
 

@@ -1,179 +1,174 @@
-<!-- libs/medical/feature/src/lib/dialogs/medical-quick-quote-dialog/medical-quick-quote-dialog.html -->
-
-<div class="flex flex-col max-h-[90vh] max-w-[70vw]">
-  <!-- Header -->
-  <div class="flex items-center justify-between px-6 py-4 border-b border-slate-200">
+<div class="flex flex-col h-[700px] w-[900px] max-w-[95vw] max-h-[90vh] bg-white overflow-hidden">
+  <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-white z-20">
     <div class="flex items-center gap-3">
-      <div class="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
-        <mat-icon fontSet="material-symbols-rounded" class="!text-primary">calculate</mat-icon>
+      <div
+        class="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600"
+      >
+        <mat-icon fontSet="material-symbols-rounded">calculate</mat-icon>
       </div>
       <div>
-        <h2 class="text-lg font-semibold text-slate-900">Quick Quote</h2>
-        <p class="text-sm text-slate-500">Calculate premium without creating an application</p>
+        <h2 class="text-lg font-bold text-slate-900 leading-tight">Quick Quote</h2>
+        <p class="text-xs font-medium text-slate-500">Instant premium estimation</p>
       </div>
     </div>
-    <button mat-icon-button (click)="cancel()" class="!text-slate-400">
+    <button
+      mat-icon-button
+      (click)="cancel()"
+      class="!text-slate-400 hover:!text-slate-600 hover:!bg-slate-50 transition-colors"
+    >
       <mat-icon fontSet="material-symbols-rounded">close</mat-icon>
     </button>
   </div>
 
-  <!-- Content -->
-  <div class="flex-1 overflow-y-auto p-6">
+  <div class="flex-1 overflow-hidden relative">
     @if (!quote()) {
-    <!-- Quote Input Form -->
-    <form [formGroup]="memberForm" class="space-y-6">
-      <!-- Plan Selection -->
-      <div>
-        <label class="block text-sm font-medium text-slate-700 mb-2">
-          Select Plan <span class="text-red-500">*</span>
-        </label>
-        <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
-          <mat-select formControlName="plan_id" required>
-            @for (plan of plans(); track plan.id) {
-            <mat-option [value]="plan.id">
-              {{ plan.name }}
-              <span class="text-xs text-slate-500">({{ plan.scheme?.name }})</span>
-            </mat-option>
-            }
-          </mat-select>
-          @if (memberForm.get('plan_id')?.hasError('required') &&
-          memberForm.get('plan_id')?.touched) {
-          <mat-error>Plan is required</mat-error>
-          }
-        </mat-form-field>
-      </div>
-
-      <!-- Members Section -->
-      <div>
-        <div class="mb-4 flex items-center justify-between">
-          <label class="block text-sm font-medium text-slate-700">Members to Cover</label>
-          <button
-            mat-stroked-button
-            type="button"
-            (click)="addMember()"
-            class="!border-primary !text-primary"
-          >
-            <mat-icon fontSet="material-symbols-rounded">add</mat-icon>
-            Add Member
-          </button>
+    <div class="h-full overflow-y-auto p-6 md:p-8">
+      <form [formGroup]="memberForm" class="max-w-2xl mx-auto space-y-8">
+        <div class="space-y-3">
+          <label class="text-sm font-semibold text-slate-900 flex items-center gap-2">
+            1. Choose a Plan
+            <span class="text-red-500">*</span>
+          </label>
+          <mat-form-field appearance="fill" class="minimal-input w-full" bscriptSizing="dynamic">
+            <mat-select formControlName="plan_id" placeholder="Select an insurance plan">
+              <!-- <mat-option>
+                <ngx-mat-select-search placeholderLabel="Search plans..." noEntriesFoundLabel="No plans found"></ngx-mat-select-search>
+              </mat-option> -->
+              @for (plan of plans(); track plan.id) {
+              <mat-option [value]="plan.id">
+                <div class="flex items-center justify-between w-full gap-4">
+                  <span class="font-medium">{{ plan.name }}</span>
+                  <span class="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded-md">{{
+                    plan.scheme?.name
+                  }}</span>
+                </div>
+              </mat-option>
+              }
+            </mat-select>
+            <mat-icon matPrefix fontSet="material-symbols-rounded">health_and_safety</mat-icon>
+          </mat-form-field>
         </div>
 
-        <div formArrayName="members" class="space-y-3">
-          @for (member of membersArray.controls; track $index; let i = $index) {
-          <div [formGroupName]="i" class="rounded-lg border border-slate-200 p-4">
-            <div class="mb-3 flex items-center justify-between">
-              <span class="text-sm font-medium text-slate-700">Member {{ i + 1 }}</span>
+        <div class="space-y-3">
+          <div class="flex items-center justify-between">
+            <label class="text-sm font-semibold text-slate-900">2. Add Members</label>
+            <span class="text-xs font-medium text-slate-500 bg-slate-100 px-2 py-1 rounded-full">
+              {{ membersArray.length }} Added
+            </span>
+          </div>
+
+          <div formArrayName="members" class="space-y-4">
+            @for (member of membersArray.controls; track $index; let i = $index) {
+            <div
+              [formGroupName]="i"
+              class="group relative flex gap-4 items-start p-4 rounded-xl border border-slate-200 bg-slate-50/50 hover:border-indigo-200 hover:bg-white hover:shadow-sm transition-all duration-200"
+            >
               @if (membersArray.length > 1) {
               <button
-                mat-icon-button
                 type="button"
                 (click)="removeMember(i)"
-                class="!w-6 !h-6 !text-slate-400 hover:!text-red-600"
+                class="absolute -top-2 -right-2 bg-white border border-slate-200 shadow-sm text-slate-400 hover:text-red-600 hover:border-red-100 p-1 rounded-full opacity-0 group-hover:opacity-100 transition-all z-10"
               >
-                <mat-icon fontSet="material-symbols-rounded" class="!text-[16px]">close</mat-icon>
+                <mat-icon fontSet="material-symbols-rounded">close</mat-icon>
               </button>
               }
+
+              <div
+                class="flex-shrink-0 mt-3 w-6 h-6 rounded-full bg-slate-200 text-slate-600 flex items-center justify-center text-xs font-bold"
+              >
+                {{ i + 1 }}
+              </div>
+
+              <div class="flex-1 grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <mat-form-field
+                  appearance="fill"
+                  class="minimal-input w-full"
+                  subscriptSizing="dynamic"
+                >
+                  <mat-label>Type</mat-label>
+                  <mat-select formControlName="member_type">
+                    @for (type of memberTypes; track type.value) {
+                    <mat-option [value]="type.value">{{ type.label }}</mat-option>
+                    }
+                  </mat-select>
+                </mat-form-field>
+
+                <mat-form-field appearance="fill" class="minimal-input" subscriptSizing="dynamic">
+                  <mat-label>Age</mat-label>
+                  <input matInput type="number" formControlName="age" min="0" max="100" />
+                  <span matSuffix class="text-xs text-slate-400 mr-2">Yrs</span>
+                </mat-form-field>
+
+                <mat-form-field appearance="fill" class="minimal-input" subscriptSizing="dynamic">
+                  <mat-label>Gender</mat-label>
+                  <mat-select formControlName="gender">
+                    <mat-option value="M">Male</mat-option>
+                    <mat-option value="F">Female</mat-option>
+                  </mat-select>
+                </mat-form-field>
+              </div>
             </div>
-
-            <div class="grid grid-cols-3 gap-3">
-              <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
-                <!-- <mat-label>Member Type</mat-label> -->
-                <mat-select formControlName="member_type">
-                  @for (type of memberTypes; track type.value) {
-                  <mat-option [value]="type.value">{{ type.label }}</mat-option>
-                  }
-                </mat-select>
-              </mat-form-field>
-
-              <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
-                <!-- <mat-label>Age</mat-label> -->
-                <input matInput type="number" formControlName="age" min="0" max="100" />
-                @if ($any(member).get('age')?.hasError('required') &&
-                $any(member).get('age')?.touched) {
-                <mat-error>Age is required</mat-error>
-                } @else if ($any(member).get('age')?.hasError('min') ||
-                $any(member).get('age')?.hasError('max')) {
-                <mat-error>Age must be between 0 and 100</mat-error>
-                }
-              </mat-form-field>
-
-              <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
-                <!-- <mat-label>Gender</mat-label> -->
-                <mat-select formControlName="gender">
-                  <mat-option value="M">Male</mat-option>
-                  <mat-option value="F">Female</mat-option>
-                </mat-select>
-              </mat-form-field>
-            </div>
+            }
           </div>
-          }
+
+          <button
+            type="button"
+            (click)="addMember()"
+            class="w-full py-3 border-2 border-dashed border-slate-200 rounded-xl text-slate-500 font-medium hover:border-indigo-300 hover:text-indigo-600 hover:bg-indigo-50 transition-all flex items-center justify-center gap-2"
+          >
+            <mat-icon fontSet="material-symbols-rounded">add_circle</mat-icon>
+            Add Another Member
+          </button>
         </div>
-      </div>
-    </form>
+      </form>
+    </div>
     } @else {
-    <!-- Quote Results -->
-    <div class="space-y-6">
-      <!-- Plan Info -->
-      <div class="rounded-lg border border-slate-200 p-4">
-        <h3 class="mb-3 text-sm font-medium text-slate-900">{{ quote()!.plan.name }}</h3>
-        <div class="grid grid-cols-2 gap-3 text-sm">
-          <div>
-            <span class="text-slate-500">Plan Code:</span>
-            <span class="ml-2 font-medium text-slate-900">{{ quote()!.plan.code }}</span>
-          </div>
-          <div>
-            <span class="text-slate-500">Rate Card:</span>
-            <span class="ml-2 font-medium text-slate-900"
-              >{{ quote()!.rate_card.code }} v{{ quote()!.rate_card.version }}</span
+
+    <div class="flex flex-col md:flex-row h-full">
+      <div class="flex-1 overflow-y-auto p-6 bg-white">
+        <div class="mb-6 pb-6 border-b border-slate-100">
+          <div class="flex items-center gap-2 mb-1">
+            <span
+              class="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-indigo-50 text-indigo-700 border border-indigo-100"
             >
+              Selected Plan
+            </span>
           </div>
-          <div>
-            <span class="text-slate-500">Valid Until:</span>
-            <span class="ml-2 font-medium text-slate-900">{{
-              formatDate(quote()!.valid_until)
-            }}</span>
-          </div>
-          <div>
-            <span class="text-slate-500">Billing:</span>
-            <span class="ml-2 font-medium text-slate-900">{{
-              getBillingLabel(quote()!.frequency)
-            }}</span>
+          <h3 class="text-2xl font-bold text-slate-900">{{ quote()!.plan.name }}</h3>
+          <div class="flex gap-4 mt-2 text-sm text-slate-500">
+            <span class="flex items-center gap-1">
+              <mat-icon fontSet="material-symbols-rounded">tag</mat-icon>
+              {{ quote()!.plan.code }}
+            </span>
+            <span class="flex items-center gap-1">
+              <mat-icon fontSet="material-symbols-rounded">calendar_today</mat-icon>
+              Valid until {{ formatDate(quote()!.valid_until) }}
+            </span>
           </div>
         </div>
-      </div>
 
-      <!-- Members Table -->
-      <div>
-        <label class="block text-sm font-medium text-slate-700 mb-3">Covered Members</label>
-        <div class="rounded-lg border border-slate-200 overflow-hidden">
-          <table class="w-full">
-            <thead class="border-b border-slate-200 bg-slate-50">
+        <h4 class="text-sm font-bold text-slate-900 mb-3">Member Breakdown</h4>
+        <div class="border border-slate-200 rounded-lg overflow-hidden mb-6">
+          <table class="w-full text-sm">
+            <thead class="bg-slate-50 text-slate-500 font-semibold border-b border-slate-200">
               <tr>
-                <th class="px-4 py-2 text-left text-xs font-semibold uppercase text-slate-500">
-                  Member Type
-                </th>
-                <th class="px-4 py-2 text-left text-xs font-semibold uppercase text-slate-500">
-                  Age
-                </th>
-                <th class="px-4 py-2 text-left text-xs font-semibold uppercase text-slate-500">
-                  Gender
-                </th>
-                <th class="px-4 py-2 text-right text-xs font-semibold uppercase text-slate-500">
-                  Premium
-                </th>
+                <th class="px-4 py-3 text-left">Member</th>
+                <th class="px-4 py-3 text-left">Details</th>
+                <th class="px-4 py-3 text-right">Premium</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody class="divide-y divide-slate-100">
               @for (member of quote()!.members; track $index) {
-              <tr class="border-b border-slate-100 last:border-b-0">
-                <td class="px-4 py-3 text-sm text-slate-700">
-                  {{ getMemberTypeLabel(member.member_type) }}
+              <tr class="hover:bg-slate-50/50 transition-colors">
+                <td class="px-4 py-3">
+                  <div class="font-medium text-slate-900">
+                    {{ getMemberTypeLabel(member.member_type) }}
+                  </div>
                 </td>
-                <td class="px-4 py-3 text-sm text-slate-700">{{ member.age }} years</td>
-                <td class="px-4 py-3 text-sm text-slate-700">
-                  {{ member.gender === 'M' ? 'Male' : 'Female' }}
+                <td class="px-4 py-3 text-slate-500">
+                  {{ member.age }} yrs • {{ member.gender === 'M' ? 'Male' : 'Female' }}
                 </td>
-                <td class="px-4 py-3 text-right text-sm font-medium text-slate-900">
+                <td class="px-4 py-3 text-right font-medium text-slate-900">
                   {{ formatCurrency(member.premium, quote()!.currency) }}
                 </td>
               </tr>
@@ -183,11 +178,16 @@
         </div>
       </div>
 
-      <!-- Premium Breakdown -->
-      <div class="rounded-lg border border-slate-200 bg-slate-50 p-4">
-        <label class="block text-sm font-medium text-slate-700 mb-3">Premium Breakdown</label>
-        <div class="space-y-2">
-          <div class="flex justify-between text-sm">
+      <div
+        class="w-full md:w-80 bg-slate-50 border-l border-slate-200 p-6 flex flex-col h-full shadow-[inset_10px_0_20px_-20px_rgba(0,0,0,0.1)]"
+      >
+        <h4 class="text-sm font-bold text-slate-900 mb-4 flex items-center gap-2">
+          <mat-icon fontSet="material-symbols-rounded">receipt_long</mat-icon>
+          Quote Summary
+        </h4>
+
+        <div class="space-y-3 text-sm flex-1">
+          <div class="flex justify-between">
             <span class="text-slate-500">Base Premium</span>
             <span class="font-medium text-slate-900">{{
               formatCurrency(quote()!.base_premium, quote()!.currency)
@@ -195,38 +195,33 @@
           </div>
 
           @if (quote()!.addon_premium > 0) {
-          <div class="flex justify-between text-sm">
-            <span class="text-slate-500">Add-on Premium</span>
-            <span class="font-medium text-slate-900">{{
-              formatCurrency(quote()!.addon_premium, quote()!.currency)
-            }}</span>
-          </div>
-          } @if (quote()!.total_discount > 0) {
-          <div class="flex justify-between text-sm">
-            <span class="text-green-600">Discounts</span>
-            <span class="font-medium text-green-600"
-              >-{{ formatCurrency(quote()!.total_discount, quote()!.currency) }}</span
+          <div class="flex justify-between">
+            <span class="text-slate-500">Add-ons</span>
+            <span class="font-medium text-slate-900"
+              >+{{ formatCurrency(quote()!.addon_premium, quote()!.currency) }}</span
             >
           </div>
           } @if (quote()!.total_loading > 0) {
-          <div class="flex justify-between text-sm">
-            <span class="text-amber-600">Loadings</span>
-            <span class="font-medium text-amber-600">{{
-              formatCurrency(quote()!.total_loading, quote()!.currency)
-            }}</span>
+          <div class="flex justify-between text-amber-600">
+            <span>Loadings</span>
+            <span>+{{ formatCurrency(quote()!.total_loading, quote()!.currency) }}</span>
+          </div>
+          } @if (quote()!.total_discount > 0) {
+          <div class="flex justify-between text-green-600">
+            <span>Discounts</span>
+            <span>-{{ formatCurrency(quote()!.total_discount, quote()!.currency) }}</span>
           </div>
           }
+        </div>
 
-          <mat-divider class="!my-3"></mat-divider>
-
-          <div class="flex justify-between">
-            <span class="font-medium text-slate-900">Total Premium</span>
-            <span class="text-lg font-bold text-primary">{{
-              formatCurrency(quote()!.final_premium, quote()!.currency)
-            }}</span>
+        <div class="mt-6 pt-6 border-t border-slate-200 border-dashed">
+          <div class="flex justify-between items-end mb-1">
+            <span class="text-sm font-bold text-slate-700">Total Premium</span>
+            <span class="text-2xl font-bold text-indigo-600 leading-none">
+              {{ formatCurrency(quote()!.final_premium, quote()!.currency) }}
+            </span>
           </div>
-
-          <div class="text-center text-xs text-slate-500">
+          <div class="text-right text-xs text-slate-500">
             per {{ getBillingLabel(quote()!.frequency).toLowerCase() }}
           </div>
         </div>
@@ -235,49 +230,39 @@
     }
   </div>
 
-  <!-- Footer -->
-  <div class="flex items-center justify-between px-6 py-4 border-t border-slate-200 bg-slate-50">
+  <div class="px-6 py-4 border-t border-slate-200 bg-white flex items-center justify-between z-20">
     @if (!quote()) {
-    <div class="text-sm text-slate-500">
-      {{ membersArray.length }} member{{ membersArray.length === 1 ? '' : 's' }} added
-    </div>
-    <div class="flex items-center gap-2">
-      <button mat-button type="button" (click)="cancel()" class="!text-slate-600">Cancel</button>
+    <div class="text-sm text-slate-500 font-medium">Step 1 of 2</div>
+    <div class="flex gap-3">
+      <button mat-button (click)="cancel()" class="!text-slate-600 !font-medium">Cancel</button>
       <button
         mat-flat-button
         color="primary"
         (click)="calculateQuote()"
         [disabled]="memberForm.invalid || isCalculating()"
+        class="!rounded-lg !px-6 !h-10"
       >
         @if (isCalculating()) {
-        <mat-icon fontSet="material-symbols-rounded" class="animate-spin"
-          >progress_activity</mat-icon
-        >
-        Calculating... } @else {
-        <mat-icon fontSet="material-symbols-rounded">calculate</mat-icon>
-        Calculate Quote }
+        <mat-spinner diameter="20" class="mr-2"></mat-spinner>
+        Calculating... } @else { Calculate Quote }
       </button>
     </div>
     } @else {
-    <button mat-stroked-button (click)="quote.set(null)" class="!border-slate-200">
+    <button mat-button (click)="quote.set(null)" class="!text-slate-500 hover:!text-slate-800">
       <mat-icon fontSet="material-symbols-rounded">arrow_back</mat-icon>
-      New Quote
+      Edit Details
     </button>
-    <div class="flex items-center gap-2">
-      <button mat-button (click)="cancel()" class="!text-slate-600">Close</button>
+    <div class="flex gap-3">
       <button
         mat-flat-button
         color="primary"
         (click)="convertToApplication()"
         [disabled]="isConverting()"
+        class="!rounded-lg !px-6 !h-10 !bg-indigo-600 hover:!bg-indigo-700 shadow-lg shadow-indigo-200"
       >
         @if (isConverting()) {
-        <mat-icon fontSet="material-symbols-rounded" class="animate-spin"
-          >progress_activity</mat-icon
-        >
-        Converting... } @else {
-        <mat-icon fontSet="material-symbols-rounded">description</mat-icon>
-        Convert to Application }
+        <mat-spinner diameter="20" class="mr-2"></mat-spinner>
+        Processing... } @else { Convert to Application }
       </button>
     </div>
     }

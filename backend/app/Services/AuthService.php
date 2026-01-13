@@ -23,8 +23,33 @@ class AuthService
             ->orWhere('username', $credentials['email'])
             ->first();
 
+        // Check if account is locked before validating password
+        if ($user && $user->isLocked()) {
+            $minutesRemaining = now()->diffInMinutes($user->locked_until);
+            throw ValidationException::withMessages([
+                'email' => ["Your account is locked due to multiple failed login attempts. Please try again in {$minutesRemaining} minutes."],
+            ]);
+        }
+
         // Validate credentials
         if (!$user || !Hash::check($credentials['password'], $user->password)) {
+            // Increment failed login attempts if user exists
+            if ($user) {
+                $user->incrementFailedLoginAttempts();
+                $user->refresh(); // Reload to get updated failed_login_attempts
+
+                $maxAttempts = config('password.lockout.max_attempts', 5);
+                $remainingAttempts = max(0, $maxAttempts - $user->failed_login_attempts);
+                $warningThreshold = ceil($maxAttempts * 0.75); // 75% threshold
+
+                // Show warning if attempts >= 75% of max attempts
+                if ($user->failed_login_attempts >= $warningThreshold && $remainingAttempts > 0) {
+                    throw ValidationException::withMessages([
+                        'email' => ["The provided credentials are incorrect. Warning: You have {$remainingAttempts} login attempt(s) remaining before your account is locked."],
+                    ]);
+                }
+            }
+
             throw ValidationException::withMessages([
                 'email' => ['The provided credentials are incorrect.'],
             ]);
@@ -36,6 +61,14 @@ class AuthService
                 'email' => ['Your account has been deactivated. Please contact support.'],
             ]);
         }
+
+        // Reset failed login attempts on successful login
+        $user->resetFailedLoginAttempts();
+
+        // Check if password has expired
+        $passwordExpired = $user->passwordExpired();
+        $passwordExpiringSoon = $user->passwordExpiringSoon();
+        $daysUntilExpiration = $user->daysUntilPasswordExpires();
 
         // Record login activity
         $user->recordLogin(request()->ip());
@@ -64,13 +97,21 @@ class AuthService
             return $permissions->pluck('name')->toArray();
         })->toArray();
 
-        return [
+        $response = [
             'user' => $user,
             'token' => $token,
             'modules' => $moduleCodes,
             'roles' => $rolesByGuard,
             'permissions' => $permissionsByGuard,
+            'password_status' => [
+                'expired' => $passwordExpired,
+                'expiring_soon' => $passwordExpiringSoon,
+                'days_until_expiration' => $daysUntilExpiration,
+                'force_change' => $user->force_password_change,
+            ],
         ];
+
+        return $response;
     }
 
     /**

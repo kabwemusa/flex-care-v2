@@ -25,7 +25,13 @@ return Application::configure(basePath: dirname(__DIR__))
             'permission' => \Spatie\Permission\Middleware\PermissionMiddleware::class,
             'role_or_permission' => \Spatie\Permission\Middleware\RoleOrPermissionMiddleware::class,
             'medical.permission' => \Modules\Medical\Http\Middleware\CheckMedicalPermission::class,
+            'session.check' => \App\Http\Middleware\CheckSessionExpiration::class,
         ]);
+
+        // Apply session expiration check to all authenticated API routes
+        // $middleware->prependToGroup('api', [
+        //     \App\Http\Middleware\CheckSessionExpiration::class,
+        // ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

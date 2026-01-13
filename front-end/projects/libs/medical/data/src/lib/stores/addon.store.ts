@@ -4,13 +4,7 @@ import { HttpClient } from '@angular/common/http';
 import { computed, inject, Injectable, signal } from '@angular/core';
 import { tap } from 'rxjs';
 import { ApiResponse } from '../models/api-reponse';
-import {
-  Addon,
-  AddonBenefit,
-  AddonRate,
-  PlanAddon,
-  DropdownOption,
-} from '../models/medical-interfaces';
+import { Addon, PlanAddon, DropdownOption } from '../models/medical-interfaces';
 
 interface AddonState {
   items: Addon[];
@@ -147,29 +141,8 @@ export class AddonCatalogStore {
     );
   }
 
-  // =========================================================================
-  // ADDON BENEFITS
-  // =========================================================================
-  addBenefit(addonId: string, benefit: Partial<AddonBenefit>) {
-    return this.http.post<ApiResponse<AddonBenefit>>(`${this.apiUrl}/${addonId}/benefits`, benefit);
-  }
-
   removeBenefit(addonBenefitId: string) {
     return this.http.delete<ApiResponse<void>>(`/api/v1/medical/addon-benefits/${addonBenefitId}`);
-  }
-
-  // =========================================================================
-  // ADDON RATES
-  // =========================================================================
-  addRate(addonId: string, rate: Partial<AddonRate>) {
-    return this.http.post<ApiResponse<AddonRate>>(`${this.apiUrl}/${addonId}/rates`, rate);
-  }
-
-  activateRate(rateId: string) {
-    return this.http.post<ApiResponse<AddonRate>>(
-      `/api/v1/medical/addon-rates/${rateId}/activate`,
-      {}
-    );
   }
 
   // =========================================================================

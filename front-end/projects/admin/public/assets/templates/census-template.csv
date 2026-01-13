@@ -1,0 +1,12 @@
+first_name,last_name,date_of_birth,gender,email,phone,id_number,employee_number,member_type,relationship,principal_employee_number
+John,Doe,1985-06-15,M,john.doe@company.com,+1234567890,ID123456,EMP001,principal,,
+Jane,Doe,1987-03-20,F,jane.doe@company.com,+1234567891,ID123457,,spouse,spouse,EMP001
+Jimmy,Doe,2010-05-10,M,,,ID123458,,child,child,EMP001
+Sarah,Smith,1990-08-25,F,sarah.smith@company.com,+1234567892,ID123459,EMP002,principal,,
+Tom,Smith,2015-02-14,M,,,ID123460,,child,child,EMP002
+Michael,Johnson,1978-11-30,M,michael.j@company.com,+1234567893,ID123461,EMP003,principal,,
+Lisa,Johnson,1980-05-18,F,lisa.j@company.com,+1234567894,ID123462,,spouse,spouse,EMP003
+Emma,Johnson,2012-09-22,F,,,ID123463,,child,child,EMP003
+David,Brown,1992-03-08,M,david.brown@company.com,+1234567895,ID123464,EMP004,principal,,
+Robert,Wilson,1988-07-14,M,robert.w@company.com,+1234567896,ID123465,EMP005,principal,,
+Mary,Wilson,1990-12-25,F,mary.w@company.com,+1234567897,ID123466,,spouse,spouse,EMP005

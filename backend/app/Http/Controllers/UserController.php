@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Rules\Password;
 use Illuminate\Validation\ValidationException;
 use Spatie\Permission\Models\Role;
 class UserController extends Controller
@@ -67,10 +68,25 @@ class UserController extends Controller
     public function store(Request $request): JsonResponse
     {
         try {
+            // Build password validation rules based on config
+            $passwordRule = Password::min(config('password.strength.min_length', 8));
+
+            if (config('password.strength.require_uppercase', true)) {
+                $passwordRule->mixedCase();
+            }
+
+            if (config('password.strength.require_numbers', true)) {
+                $passwordRule->numbers();
+            }
+
+            if (config('password.strength.require_special', true)) {
+                $passwordRule->symbols();
+            }
+
             $validated = $request->validate([
                 'email' => 'required|email|unique:users,email',
                 'username' => 'nullable|string|unique:users,username',
-                'password' => 'required|string|min:8',
+                'password' => ['required', 'string', $passwordRule],
                 'is_system_admin' => 'boolean',
                 'is_active' => 'boolean',
                 'mfa_enabled' => 'boolean',
@@ -80,15 +96,20 @@ class UserController extends Controller
 
             DB::beginTransaction();
 
-            // Hash password
-            $validated['password'] = Hash::make($validated['password']);
-
-            // Extract module access
+            // Extract password and module access
+            $password = $validated['password'];
             $moduleAccess = $validated['module_access'] ?? [];
             unset($validated['module_access']);
 
+            // Hash password temporarily for user creation
+            $validated['password'] = Hash::make($password);
+
             // Create user
             $user = User::create($validated);
+
+            // Set password with expiration and force password change for new users
+            $user->setPasswordWithExpiration($password);
+            $user->update(['force_password_change' => true]);
 
             // Assign module access
             if (!empty($moduleAccess) && !$user->is_system_admin) {

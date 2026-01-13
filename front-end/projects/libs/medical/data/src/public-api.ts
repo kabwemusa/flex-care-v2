@@ -17,3 +17,4 @@ export * from './lib/stores/member.store';
 export * from './lib/stores/group.store';
 export * from './lib/stores/application.store';
 export * from './lib/stores/plan-exclusion.store';
+export * from './lib/stores/quote.store';

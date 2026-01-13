@@ -144,100 +144,66 @@
         </div>
         }
 
-        <!-- Benefits -->
+        <!-- Pricing -->
         <div class="rounded-lg border border-slate-200 p-4">
-          <div class="flex items-center justify-between mb-3">
-            <div class="text-xs font-medium text-slate-500">Addon Benefits</div>
-            <span class="text-sm font-bold text-blue-600">
-              {{ data.planAddon.addon?.addon_benefits_count || 0 }}
-            </span>
-          </div>
-          @if ((data.planAddon.addon?.addon_benefits?.length ?? 0) > 0) {
-          <div class="space-y-2">
-            @for (ab of (data.planAddon.addon?.addon_benefits ?? []).slice(0, 5); track ab.id) {
-            <div class="flex items-center gap-2 text-sm">
-              <mat-icon fontSet="material-symbols-rounded" class="!text-blue-500 !text-[16px]">
-                check_circle
-              </mat-icon>
-              <span class="text-slate-700 flex-1">{{ ab.benefit?.name }}</span>
-              @if (ab.display_value) {
-              <span class="text-xs text-slate-500">{{ ab.display_value }}</span>
+          <div class="text-xs font-medium text-slate-500 mb-3">Pricing</div>
+          @if (data.planAddon.addon) {
+            <div class="rounded-lg bg-slate-50 p-3 space-y-2">
+              <div class="flex items-center justify-between">
+                <span class="text-xs text-slate-600">Type</span>
+                <span class="text-xs font-medium text-slate-900">
+                  {{ data.planAddon.addon.pricing_type_label }}
+                </span>
+              </div>
+              @switch (data.planAddon.addon.pricing_type) {
+                @case ('fixed') {
+                  <div class="flex items-center justify-between">
+                    <span class="text-xs text-slate-600">Amount</span>
+                    <span class="text-sm font-semibold text-green-600">
+                      {{ data.planAddon.addon.currency }} {{ data.planAddon.addon.amount | number : '1.2-2' }}
+                    </span>
+                  </div>
+                  <div class="text-xs text-slate-500">Fixed amount per policy</div>
+                }
+                @case ('per_member') {
+                  <div class="flex items-center justify-between">
+                    <span class="text-xs text-slate-600">Amount</span>
+                    <span class="text-sm font-semibold text-green-600">
+                      {{ data.planAddon.addon.currency }} {{ data.planAddon.addon.amount | number : '1.2-2' }}
+                    </span>
+                  </div>
+                  <div class="text-xs text-slate-500">Per member pricing</div>
+                }
+                @case ('percentage') {
+                  <div class="flex items-center justify-between">
+                    <span class="text-xs text-slate-600">Percentage</span>
+                    <span class="text-sm font-semibold text-green-600">
+                      {{ data.planAddon.addon.percentage }}%
+                    </span>
+                  </div>
+                  @if (data.planAddon.addon.percentage_basis) {
+                    <div class="flex items-center justify-between">
+                      <span class="text-xs text-slate-600">Basis</span>
+                      <span class="text-xs font-medium text-slate-900">
+                        {{ data.planAddon.addon.percentage_basis === 'base_premium' ? 'Base Premium' : 'Total Premium' }}
+                      </span>
+                    </div>
+                  }
+                  <div class="text-xs text-slate-500">Percentage of premium</div>
+                }
               }
             </div>
-            } @if ((data.planAddon.addon?.addon_benefits?.length ?? 0) > 5) {
-            <p class="text-xs text-slate-400 pt-2">
-              + {{ (data.planAddon.addon?.addon_benefits?.length ?? 0) - 5 }} more benefits
-            </p>
-            }
-          </div>
           } @else {
-          <p class="text-sm text-slate-400">No benefits configured</p>
-          }
-        </div>
-
-        <!-- Pricing Rates -->
-        <div class="rounded-lg border border-slate-200 p-4">
-          <div class="flex items-center justify-between mb-3">
-            <div class="text-xs font-medium text-slate-500">Pricing Rates</div>
-            <span class="text-sm font-bold text-green-600">
-              {{ data.planAddon.addon?.rates?.length || 0 }}
-            </span>
-          </div>
-          @if (data.planAddon.addon?.rates) {
-          <div class="space-y-2">
-            @for (rate of data.planAddon.addon?.rates; track rate.id) {
-            <div class="rounded-lg bg-slate-50 p-3">
-              <div class="flex items-center justify-between mb-1">
-                <span class="text-xs font-medium text-slate-700">
-                  {{ rate.is_global ? 'Global Rate' : 'Plan-Specific' }}
-                </span>
-                @if (rate.is_active) {
-                <span
-                  class="rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700"
-                >
-                  Active
-                </span>
-                } @else {
-                <span
-                  class="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600"
-                >
-                  Inactive
-                </span>
-                }
+            <div class="rounded-lg bg-amber-50 border border-amber-100 p-3">
+              <div class="flex items-center gap-2">
+                <mat-icon fontSet="material-symbols-rounded" class="!text-amber-500 !text-[18px]">
+                  warning
+                </mat-icon>
+                <p class="text-sm text-amber-700">
+                  No pricing configured. Please configure pricing in the Addon Catalog.
+                </p>
               </div>
-              @switch (rate.pricing_type) { @case ('fixed') {
-              <div class="text-sm font-semibold text-slate-900">
-                ZMW {{ rate.amount | number : '1.2-2' }}
-              </div>
-              <div class="text-xs text-slate-500">Fixed amount</div>
-              } @case ('per_member') {
-              <div class="text-sm font-semibold text-slate-900">
-                ZMW {{ rate.amount | number : '1.2-2' }} / member
-              </div>
-              <div class="text-xs text-slate-500">Per member pricing</div>
-              } @case ('percentage') {
-              <div class="text-sm font-semibold text-slate-900">
-                {{ rate.percentage }}% of {{ rate.percentage_basis }}
-              </div>
-              <div class="text-xs text-slate-500">Percentage based</div>
-              } @case ('age_rated') {
-              <div class="text-sm font-semibold text-slate-900">Age-rated</div>
-              <div class="text-xs text-slate-500">Varies by member age</div>
-              } }
             </div>
-            }
-          </div>
-          } @else {
-          <div class="rounded-lg bg-amber-50 border border-amber-100 p-3">
-            <div class="flex items-center gap-2">
-              <mat-icon fontSet="material-symbols-rounded" class="!text-amber-500 !text-[18px]">
-                warning
-              </mat-icon>
-              <p class="text-sm text-amber-700">
-                No pricing rates configured. Please configure rates in the Addon Catalog.
-              </p>
-            </div>
-          </div>
           }
         </div>
       </div>

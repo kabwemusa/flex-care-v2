@@ -7,9 +7,12 @@ use Illuminate\Http\JsonResponse;
 use Modules\Medical\Models\Plan;
 use Modules\Medical\Models\RateCard;
 use Modules\Medical\Http\Requests\QuoteRequest;
+use Modules\Medical\Http\Requests\GroupQuoteRequest;
+use Modules\Medical\Http\Resources\GroupQuoteResource;
 use Modules\Medical\Services\PremiumService;
 use Modules\Medical\Services\DiscountService;
 use Modules\Medical\Services\LoadingService;
+use Modules\Medical\Services\GroupQuoteService;
 use App\Traits\ApiResponse;
 
 class QuoteController extends Controller
@@ -19,7 +22,8 @@ class QuoteController extends Controller
     public function __construct(
         protected PremiumService $premiumCalculator,
         protected DiscountService $discountService,
-        protected LoadingService $loadingService
+        protected LoadingService $loadingService,
+        protected GroupQuoteService $groupQuoteService
     ) {}
 
     /**
@@ -30,6 +34,7 @@ class QuoteController extends Controller
     {
         $plan = Plan::with(['scheme', 'rateCards'])
             ->findOrFail($request->plan_id);
+            
 
         // Get the active and effective rate card
         $rateCard = $plan->rateCards
@@ -299,5 +304,36 @@ class QuoteController extends Controller
             'converted_premium' => $converted,
             'converted_frequency' => $validated['to_frequency'],
         ], 'Premium converted');
+    }
+
+    /**
+     * Generate a comprehensive group quote with tier and volume discount information.
+     * POST /v1/medical/group-quotes
+     */
+    public function groupQuote(GroupQuoteRequest $request): JsonResponse
+    {
+        try {
+            $quoteData = $this->groupQuoteService->generateGroupQuote(
+                $request->group_id,
+                $request->plan_id,
+                $request->members,
+                [
+                    'rate_card_id' => $request->rate_card_id,
+                    'billing_frequency' => $request->billing_frequency ?? 'monthly',
+                    'addons' => $request->addons ?? [],
+                    'discount_codes' => $request->discount_codes ?? [],
+                    'show_tier_breakdown' => $request->boolean('show_tier_breakdown', true),
+                    'show_volume_discounts' => $request->boolean('show_volume_discounts', true),
+                    'include_next_tier_info' => $request->boolean('include_next_tier_info', true),
+                ]
+            );
+
+            return $this->success(
+                new GroupQuoteResource($quoteData),
+                'Group quote generated successfully'
+            );
+        } catch (\Exception $e) {
+            return $this->error('Failed to generate group quote: ' . $e->getMessage(), 500);
+        }
     }
 }

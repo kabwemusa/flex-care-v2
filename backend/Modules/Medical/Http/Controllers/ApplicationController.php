@@ -804,7 +804,7 @@ class ApplicationController extends Controller
                     throw new Exception('Invalid decision. Must be: approve, decline, or terms', 422);
                 }
 
-                $underwriterId = request('underwriter_id') ?? 'system';
+                $underwriterId = request('underwriter_id') ?? auth()->id();
                 $loadings = request('loadings', []);
                 $exclusions = request('exclusions', []);
                 $notes = request('notes');
@@ -1204,6 +1204,209 @@ class ApplicationController extends Controller
             return $this->success($stats, 'Statistics retrieved');
         } catch (Throwable $e) {
             return $this->error('Failed to retrieve statistics', 500);
+        }
+    }
+
+    // =========================================================================
+    // CORPORATE CENSUS IMPORT
+    // =========================================================================
+
+    /**
+     * Import census file (CSV/Excel) for corporate groups.
+     * POST /v1/medical/applications/import-census
+     *
+     * This validates and previews the census data without creating members.
+     * Use the separate endpoint to create application with imported members.
+     */
+    public function importCensus(\Modules\Medical\Http\Requests\CensusBulkImportRequest $request): JsonResponse
+    {
+        try {
+            $censusService = app(\Modules\Medical\Services\CensusImportService::class);
+
+            // Parse and validate the file
+            $result = $censusService->parseCensusFile($request->file('file'));
+
+            // If validate_only mode, return preview
+            if ($request->boolean('validate_only')) {
+                return $this->success(
+                    new \Modules\Medical\Http\Resources\CensusImportResource($result),
+                    'Census file validated'
+                );
+            }
+
+            // If validation failed, return errors
+            if (!$result['success']) {
+                return $this->error(
+                    'Census file validation failed',
+                    422,
+                    ['validation_errors' => $result['errors']]
+                );
+            }
+
+            // Store parsed data in session or cache for later use
+            $cacheKey = 'census_import_' . $request->user()->id . '_' . time();
+            cache()->put($cacheKey, [
+                'group_id' => $request->group_id,
+                'data' => $result['data'],
+                'summary' => $result['summary'],
+            ], now()->addHours(2)); // Cache for 2 hours
+
+            return $this->success([
+                'import_key' => $cacheKey,
+                'summary' => $result['summary'],
+                'preview' => array_slice($result['data'], 0, 5), // First 5 rows as preview
+            ], 'Census imported successfully. Use the import_key to create application.');
+
+        } catch (Throwable $e) {
+            return $this->error('Failed to import census: ' . $e->getMessage(), 500);
+        }
+    }
+
+    /**
+     * Create application from imported census.
+     * POST /v1/medical/applications/create-from-census
+     *
+     * Uses the cached census data from importCensus to create an application with bulk members.
+     */
+    public function createFromCensus(HttpRequest $request): JsonResponse
+    {
+        try {
+            $validated = $request->validate([
+                'import_key' => 'required|string',
+                'scheme_id' => 'required|exists:med_schemes,id',
+                'plan_id' => 'required|exists:med_plans,id',
+                'rate_card_id' => 'required|exists:med_rate_cards,id',
+                'inception_date' => 'required|date|after_or_equal:today',
+                'billing_frequency' => 'required|in:' . implode(',', array_keys(MedicalConstants::BILLING_FREQUENCIES)),
+            ]);
+
+            // Retrieve cached census data
+            $censusData = cache()->get($validated['import_key']);
+
+            if (!$censusData) {
+                return $this->error('Census data not found or expired. Please re-upload the file.', 404);
+            }
+
+            $application = DB::transaction(function () use ($validated, $censusData) {
+                $censusService = app(\Modules\Medical\Services\CensusImportService::class);
+
+                // Transform census data to member format
+                $membersData = $censusService->transformToMemberData(
+                    $censusData['data'],
+                    $censusData['group_id']
+                );
+
+                // Create application
+                $applicationData = [
+                    'application_type' => MedicalConstants::APPLICATION_TYPE_NEW,
+                    'policy_type' => MedicalConstants::POLICY_TYPE_CORPORATE,
+                    'scheme_id' => $validated['scheme_id'],
+                    'plan_id' => $validated['plan_id'],
+                    'rate_card_id' => $validated['rate_card_id'],
+                    'group_id' => $censusData['group_id'],
+                    'inception_date' => $validated['inception_date'],
+                    'billing_frequency' => $validated['billing_frequency'],
+                    'status' => MedicalConstants::APPLICATION_STATUS_DRAFT,
+                ];
+
+                $application = $this->applicationService->createApplication($applicationData);
+
+                // Bulk create members
+                foreach ($membersData as $memberData) {
+                    $this->applicationService->addMember($application->id, $memberData);
+                }
+
+                // Calculate premium
+                // $this->applicationService->calculatePremium($application->id);
+
+                // Clear cache
+                cache()->forget($validated['import_key']);
+
+                return $application;
+            });
+
+            // Load with relationships
+            $application->load([
+                'scheme',
+                'plan',
+                'group',
+                'activeMembers' => fn($q) => $q->orderBy('member_type'),
+            ]);
+
+            return $this->success(
+                new ApplicationResource($application),
+                'Application created from census with ' . count($application->activeMembers) . ' members',
+                201
+            );
+
+        } catch (Throwable $e) {
+            return $this->error('Failed to create application from census: ' . $e->getMessage(), 500);
+        }
+    }
+
+    /**
+     * Create multiple applications from imported census based on plan mapping.
+     * POST /v1/medical/applications/create-multi-plan-from-census
+     *
+     * This supports multi-plan groups where different employees get different plans
+     * based on salary_band, department, or job_title.
+     */
+    public function createMultiPlanFromCensus(HttpRequest $request): JsonResponse
+    {
+        try {
+            $validated = $request->validate([
+                'import_key' => 'required|string',
+                'group_id' => 'required|exists:med_corporate_groups,id',
+                'scheme_id' => 'required|exists:med_schemes,id',
+                'rate_card_id' => 'required|exists:med_rate_cards,id',
+                'inception_date' => 'required|date|after_or_equal:today',
+                'billing_frequency' => 'required|in:' . implode(',', array_keys(MedicalConstants::BILLING_FREQUENCIES)),
+                'plan_mapping' => 'required|array|min:1',
+                'plan_mapping.*' => 'required|exists:med_plans,id',
+                'mapping_type' => 'required|in:salary_band,department,job_title',
+            ]);
+
+            // Retrieve cached census data
+            $censusData = cache()->get($validated['import_key']);
+
+            if (!$censusData) {
+                return $this->error('Census data not found or expired. Please re-upload the file.', 404);
+            }
+
+            // Use PlanAssignmentService for multi-plan creation
+            $planAssignmentService = app(\Modules\Medical\Services\PlanAssignmentService::class);
+            $censusService = app(\Modules\Medical\Services\CensusImportService::class);
+
+            // Transform census data to member format
+            $membersData = $censusService->transformToMemberData(
+                $censusData['data'],
+                $censusData['group_id']
+            );
+
+            // Create multiple applications based on plan mapping
+            $result = $planAssignmentService->assignMembersToPlans(
+                $membersData,
+                $validated['plan_mapping'],
+                $validated['group_id'],
+                [
+                    'scheme_id' => $validated['scheme_id'],
+                    'rate_card_id' => $validated['rate_card_id'],
+                    'inception_date' => $validated['inception_date'],
+                    'billing_frequency' => $validated['billing_frequency'],
+                ]
+            );
+
+            // Clear cache
+            cache()->forget($validated['import_key']);
+
+            return $this->success(
+                $result,
+                "{$result['plans_used']} applications created from census with {$result['total_members']} members",
+                201
+            );
+
+        } catch (Throwable $e) {
+            return $this->error('Failed to create applications from census: ' . $e->getMessage(), 500);
         }
     }
 }

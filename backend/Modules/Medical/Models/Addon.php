@@ -16,6 +16,11 @@ class Addon extends BaseModel
         'addon_type',
         'description',
         'terms_conditions',
+        'pricing_type',
+        'currency',
+        'amount',
+        'percentage',
+        'percentage_basis',
         'is_active',
         'effective_from',
         'effective_to',
@@ -24,6 +29,8 @@ class Addon extends BaseModel
     ];
 
     protected $casts = [
+        'amount' => 'decimal:2',
+        'percentage' => 'decimal:2',
         'is_active' => 'boolean',
         'effective_from' => 'date',
         'effective_to' => 'date',
@@ -32,6 +39,8 @@ class Addon extends BaseModel
 
     protected $attributes = [
         'addon_type' => MedicalConstants::ADDON_TYPE_OPTIONAL,
+        'pricing_type' => MedicalConstants::ADDON_PRICING_FIXED,
+        'currency' => MedicalConstants::DEFAULT_CURRENCY,
         'is_active' => true,
         'sort_order' => 0,
     ];
@@ -49,23 +58,6 @@ class Addon extends BaseModel
     // RELATIONSHIPS
     // =========================================================================
 
-    public function addonBenefits(): HasMany
-    {
-        return $this->hasMany(AddonBenefit::class, 'addon_id');
-    }
-
-    public function benefits(): HasManyThrough
-    {
-        return $this->hasManyThrough(
-            Benefit::class,
-            AddonBenefit::class,
-            'addon_id',
-            'id',
-            'id',
-            'benefit_id'
-        );
-    }
-
     public function planAddons(): HasMany
     {
         return $this->hasMany(PlanAddon::class, 'addon_id');
@@ -81,11 +73,6 @@ class Addon extends BaseModel
             'id',
             'plan_id'
         );
-    }
-
-    public function rates(): HasMany
-    {
-        return $this->hasMany(AddonRate::class, 'addon_id');
     }
 
     // =========================================================================
@@ -121,10 +108,15 @@ class Addon extends BaseModel
         return MedicalConstants::ADDON_TYPES[$this->addon_type] ?? $this->addon_type;
     }
 
+    public function getPricingTypeLabelAttribute(): string
+    {
+        return MedicalConstants::ADDON_PRICING_TYPES[$this->pricing_type] ?? $this->pricing_type;
+    }
+
     public function getIsEffectiveAttribute(): bool
     {
         $today = now()->toDateString();
-        
+
         if ($this->effective_from !== null && $this->effective_from > $today) {
             return false;
         }
@@ -146,6 +138,21 @@ class Addon extends BaseModel
         return $this->addon_type === MedicalConstants::ADDON_TYPE_OPTIONAL;
     }
 
+    public function getIsFixedAttribute(): bool
+    {
+        return $this->pricing_type === MedicalConstants::ADDON_PRICING_FIXED;
+    }
+
+    public function getIsPerMemberAttribute(): bool
+    {
+        return $this->pricing_type === MedicalConstants::ADDON_PRICING_PER_MEMBER;
+    }
+
+    public function getIsPercentageAttribute(): bool
+    {
+        return $this->pricing_type === MedicalConstants::ADDON_PRICING_PERCENTAGE;
+    }
+
     // =========================================================================
     // METHODS
     // =========================================================================
@@ -158,22 +165,15 @@ class Addon extends BaseModel
             ->exists();
     }
 
-    public function getActiveRateForPlan(?string $planId = null): ?AddonRate
-    {
-        $query = $this->rates()
-            ->where('is_active', true)
-            ->effective();
-
-        if ($planId !== null) {
-            // Prefer plan-specific rate, fallback to global
-            $planRate = (clone $query)->where('plan_id', $planId)->first();
-            
-            if ($planRate) {
-                return $planRate;
-            }
-        }
-
-        // Return global rate (no plan_id)
-        return $query->whereNull('plan_id')->first();
+    public function calculatePremium(
+        int $memberCount = 1,
+        float $basePremium = 0
+    ): float {
+        return match($this->pricing_type) {
+            MedicalConstants::ADDON_PRICING_FIXED => (float) $this->amount,
+            MedicalConstants::ADDON_PRICING_PER_MEMBER => (float) ($this->amount * $memberCount),
+            MedicalConstants::ADDON_PRICING_PERCENTAGE => round($basePremium * ($this->percentage / 100), 2),
+            default => 0,
+        };
     }
 }

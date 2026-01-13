@@ -408,9 +408,46 @@ class Policy extends BaseModel
         return $this->policy_number . ' - ' . $this->policy_holder_name;
     }
 
+    public function getIsExpiringAttribute(): bool
+    {
+        if (!$this->expiry_date) return false;
+        $daysToExpiry = $this->days_to_expiry;
+        return $daysToExpiry !== null && $daysToExpiry <= 60 && $daysToExpiry > 0;
+    }
+
     // =========================================================================
     // METHODS
     // =========================================================================
+
+    /**
+     * Check if policy can be renewed.
+     */
+    public function canBeRenewed(): bool
+    {
+        // Policy must be active or expiring
+        if (!in_array($this->status, [
+            MedicalConstants::POLICY_STATUS_ACTIVE,
+            MedicalConstants::POLICY_STATUS_EXPIRED
+        ])) {
+            return false;
+        }
+
+        // Policy should not already be renewed
+        if ($this->renewed_to_policy_id) {
+            return false;
+        }
+
+        // Policy should be within renewal window (60 days before expiry or expired within 30 days)
+        if ($this->expiry_date) {
+            $daysToExpiry = $this->days_to_expiry;
+            if ($daysToExpiry === null) return false;
+
+            // Can renew 60 days before expiry or up to 30 days after expiry
+            return $daysToExpiry <= 60 && $daysToExpiry >= -30;
+        }
+
+        return false;
+    }
 
     /**
      * Update member counts.

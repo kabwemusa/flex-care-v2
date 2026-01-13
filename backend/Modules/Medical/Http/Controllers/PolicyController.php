@@ -10,6 +10,7 @@ use Modules\Medical\Models\Policy;
 use Modules\Medical\Models\PolicyDocument;
 use Modules\Medical\Http\Requests\PolicyRequest;
 use Modules\Medical\Http\Requests\PolicyAddonRequest;
+use Modules\Medical\Http\Requests\AddMemberToPolicyRequest;
 use Modules\Medical\Http\Resources\PolicyResource;
 use Modules\Medical\Http\Resources\PolicyListResource;
 use Modules\Medical\Http\Resources\PolicyAddonResource;
@@ -122,13 +123,14 @@ class PolicyController extends Controller
         try {
             $policy = Policy::with([
                 'scheme', 'plan', 'rateCard', 'group', 'principalMember',
-                'members' => fn($q) => $q->orderBy('member_type'),
+                'members' => fn($q) => $q->with(['loadings', 'exclusions', 'dependents'])
+                    ->orderBy('member_type'),
                 'policyAddons.addon'
             ])->findOrFail($id);
 
             return $this->success(new PolicyResource($policy), 'Policy retrieved');
         } catch (Throwable $e) {
-            return $this->error('Policy not found', 404);
+            return $this->error('Policy not found'.$e->getMessage(), 404);
         }
     }
 
@@ -205,27 +207,39 @@ class PolicyController extends Controller
     // MID-TERM ADJUSTMENTS (MEMBERS)
     // =========================================================================
 
-    public function addMember(string $id): JsonResponse
+    /**
+     * Add a member to an active policy (mid-term addition).
+     * POST /v1/medical/policies/{id}/members
+     */
+    public function addMember(AddMemberToPolicyRequest $request, string $id): JsonResponse
     {
         try {
-            $request = request();
-            // Validate minimal member data here or via FormRequest
-            $data = $request->validate([
-                'first_name' => 'required|string',
-                'last_name' => 'required|string',
-                'date_of_birth' => 'required|date',
-                'member_type' => 'required|string',
-                'gender' => 'required|in:M,F',
-                'join_date' => 'nullable|date',
-                'relationship' => 'nullable|string'
-                // ... add other fields as necessary
-            ]);
+            $policy = Policy::findOrFail($id);
 
-            $member = $this->policyService->addMemberToPolicy(Policy::findOrFail($id), $data);
+            // Extract validated data
+            $memberData = $request->validated();
+            $effectiveDate = $memberData['effective_date'];
 
-            return $this->success(new MemberResource($member), 'Member added to policy', 201);
-        } catch (Throwable $e) {
+            // Remove effective_date from member data as it's passed separately
+            unset($memberData['effective_date']);
+
+            // Add member with pro-rata calculation
+            $member = $this->policyService->addMemberToPolicy($policy, $memberData, $effectiveDate);
+
+            // Load relationships for complete response
+            $member->load(['loadings', 'exclusions', 'dependents']);
+
+            return $this->success(
+                new MemberResource($member),
+                'Member added to policy successfully',
+                201
+            );
+        } catch (ModelNotFoundException $e) {
+            return $this->error('Policy not found', 404);
+        } catch (Exception $e) {
             return $this->error($e->getMessage(), 422);
+        } catch (Throwable $e) {
+            return $this->error('Failed to add member: ' . $e->getMessage(), 500);
         }
     }
 

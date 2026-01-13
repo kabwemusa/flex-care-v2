@@ -1,0 +1,542 @@
+<!-- Census Upload Dialog -->
+<div class="census-upload-dialog">
+  <!-- Header -->
+  <div class="dialog-header px-6 py-4 border-b border-slate-200">
+    <div class="flex items-center justify-between">
+      <div>
+        <h2 class="text-xl font-semibold text-slate-900">Import Employee Census</h2>
+        <p class="text-sm text-slate-600 mt-1">{{ data.group_name }}</p>
+      </div>
+      <button mat-icon-button (click)="cancel()" class="!text-slate-400 hover:!text-slate-600">
+        <mat-icon fontSet="material-symbols-rounded">close</mat-icon>
+      </button>
+    </div>
+
+    <!-- Step Indicator -->
+    <div class="flex items-center gap-4 mt-4">
+      <div class="flex items-center gap-2">
+        <div
+          class="w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium"
+          [class]="
+            currentStep() === 'upload' ? 'bg-primary-600 text-white' : 'bg-green-100 text-green-700'
+          "
+        >
+          @if (currentStep() === 'upload') { 1 } @else {
+          <mat-icon fontSet="material-symbols-rounded" class="!text-base">check</mat-icon>
+          }
+        </div>
+        <span class="text-sm font-medium text-slate-700">Upload</span>
+      </div>
+      <div class="h-0.5 w-12 bg-slate-200"></div>
+      <div class="flex items-center gap-2">
+        <div
+          class="w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium"
+          [class]="
+            currentStep() === 'preview'
+              ? 'bg-primary-600 text-white'
+              : currentStep() === 'configure'
+              ? 'bg-green-100 text-green-700'
+              : 'bg-slate-100 text-slate-400'
+          "
+        >
+          @if (currentStep() === 'preview') { 2 } @else if (currentStep() === 'configure') {
+          <mat-icon fontSet="material-symbols-rounded" class="!text-base">check</mat-icon>
+          } @else { 2 }
+        </div>
+        <span
+          class="text-sm font-medium"
+          [class]="currentStep() !== 'upload' ? 'text-slate-700' : 'text-slate-400'"
+          >Preview</span
+        >
+      </div>
+      <div class="h-0.5 w-12 bg-slate-200"></div>
+      @if (enableMultiPlan()) {
+      <div class="flex items-center gap-2">
+        <div
+          class="w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium"
+          [class]="
+            currentStep() === 'plan-mapping'
+              ? 'bg-primary-600 text-white'
+              : currentStep() === 'configure'
+              ? 'bg-green-100 text-green-700'
+              : 'bg-slate-100 text-slate-400'
+          "
+        >
+          @if (currentStep() === 'plan-mapping') { 3 } @else if (currentStep() === 'configure') {
+          <mat-icon fontSet="material-symbols-rounded" class="!text-base">check</mat-icon>
+          } @else { 3 }
+        </div>
+        <span
+          class="text-sm font-medium"
+          [class]="
+            currentStep() === 'plan-mapping' || currentStep() === 'configure'
+              ? 'text-slate-700'
+              : 'text-slate-400'
+          "
+          >Plan Mapping</span
+        >
+      </div>
+      <div class="h-0.5 w-12 bg-slate-200"></div>
+      }
+      <div class="flex items-center gap-2">
+        <div
+          class="w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium"
+          [class]="
+            currentStep() === 'configure'
+              ? 'bg-primary-600 text-white'
+              : 'bg-slate-100 text-slate-400'
+          "
+        >
+          {{ enableMultiPlan() ? '4' : '3' }}
+        </div>
+        <span
+          class="text-sm font-medium"
+          [class]="currentStep() === 'configure' ? 'text-slate-700' : 'text-slate-400'"
+          >Configure</span
+        >
+      </div>
+    </div>
+  </div>
+
+  <!-- Content -->
+  <div class="dialog-content p-6" style="min-height: 400px; max-height: 60vh; overflow-y: auto">
+    <!-- Step 1: Upload -->
+    @if (currentStep() === 'upload') {
+    <div class="upload-step">
+      <div
+        class="border-2 border-dashed rounded-lg p-8 text-center transition-colors"
+        [class]="
+          isDragOver()
+            ? 'border-primary-400 bg-primary-50'
+            : 'border-slate-300 bg-slate-50 hover:border-slate-400'
+        "
+        (drop)="onFileDrop($event)"
+        (dragover)="onDragOver($event)"
+        (dragleave)="onDragLeave($event)"
+      >
+        @if (!selectedFile()) {
+        <mat-icon fontSet="material-symbols-rounded" class="!text-6xl text-slate-400 mb-4"
+          >upload_file</mat-icon
+        >
+        <h3 class="text-lg font-medium text-slate-900 mb-2">Drop your census file here</h3>
+        <p class="text-sm text-slate-600 mb-4">or click to browse</p>
+
+        <input
+          type="file"
+          #fileInput
+          accept=".csv,.xlsx,.xls"
+          (change)="onFileSelected($event)"
+          class="hidden"
+        />
+
+        <button
+          mat-stroked-button
+          color="primary"
+          (click)="fileInput.click()"
+          class="!border-primary-200"
+        >
+          <mat-icon fontSet="material-symbols-rounded">folder_open</mat-icon>
+          Browse Files
+        </button>
+
+        <p class="text-xs text-slate-500 mt-4">Supports CSV, Excel (.xlsx, .xls) • Max 10MB</p>
+        } @else {
+        <mat-icon fontSet="material-symbols-rounded" class="!text-6xl text-green-600 mb-4"
+          >check_circle</mat-icon
+        >
+        <h3 class="text-lg font-medium text-slate-900 mb-2">{{ selectedFile()!.name }}</h3>
+        <p class="text-sm text-slate-600 mb-4">
+          {{ (selectedFile()!.size / 1024 / 1024).toFixed(2) }} MB
+        </p>
+
+        <div class="flex gap-2 justify-center">
+          <button mat-stroked-button (click)="backToUpload()" [disabled]="uploading()">
+            <mat-icon fontSet="material-symbols-rounded">refresh</mat-icon>
+            Change File
+          </button>
+
+          <button mat-flat-button color="primary" (click)="uploadCensus()" [disabled]="uploading()">
+            @if (uploading()) {
+            <mat-spinner diameter="20" class="mr-2"></mat-spinner>
+            } @else {
+            <mat-icon fontSet="material-symbols-rounded">cloud_upload</mat-icon>
+            }
+            {{ uploading() ? 'Validating...' : 'Validate & Continue' }}
+          </button>
+        </div>
+        }
+      </div>
+
+      <!-- Download Template -->
+      <div class="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+        <div class="flex items-start gap-3">
+          <mat-icon fontSet="material-symbols-rounded" class="!text-blue-600">info</mat-icon>
+          <div class="flex-1">
+            <h4 class="font-medium text-blue-900 mb-1">Need a template?</h4>
+            <p class="text-sm text-blue-700 mb-2">
+              Download our census template with sample data and column headers.
+            </p>
+            <button
+              type="button"
+              (click)="downloadTemplate()"
+              class="text-sm text-blue-600 hover:underline cursor-pointer bg-transparent border-0 p-0"
+            >
+              <mat-icon fontSet="material-symbols-rounded" class="!text-base align-middle mr-1"
+                >download</mat-icon
+              >
+              Download CSV Template
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+    }
+
+    <!-- Step 2: Preview -->
+    @if (currentStep() === 'preview' && importResult()) {
+    <div class="preview-step">
+      <!-- Summary Cards -->
+      <div class="grid grid-cols-3 gap-4 mb-6">
+        <div class="rounded-lg border border-slate-200 p-4">
+          <div class="text-sm text-slate-600">Total Members</div>
+          <div class="text-2xl font-bold text-slate-900 mt-1">
+            {{ importResult()!.summary.total_rows }}
+          </div>
+        </div>
+        <div class="rounded-lg border border-green-200 bg-green-50 p-4">
+          <div class="text-sm text-green-700">Valid</div>
+          <div class="text-2xl font-bold text-green-900 mt-1">
+            {{ importResult()!.summary.valid_rows }}
+          </div>
+        </div>
+        <div class="rounded-lg border border-red-200 bg-red-50 p-4">
+          <div class="text-sm text-red-700">Invalid</div>
+          <div class="text-2xl font-bold text-red-900 mt-1">
+            {{ importResult()!.summary.invalid_rows }}
+          </div>
+        </div>
+      </div>
+
+      <!-- Member Type Breakdown -->
+      <div class="mb-6">
+        <h4 class="text-sm font-medium text-slate-700 mb-3">Member Types</h4>
+        <div class="flex gap-2 flex-wrap">
+          @for (item of getMemberTypeBreakdown(); track item.type) {
+          <mat-chip class="!bg-slate-100 !text-slate-700">
+            {{ item.type }}: {{ item.count }}
+          </mat-chip>
+          }
+        </div>
+      </div>
+
+      <!-- Preview Table -->
+      <div class="mb-4">
+        <h4 class="text-sm font-medium text-slate-700 mb-3">Preview (First 5 rows)</h4>
+        <div class="rounded-lg border border-slate-200 overflow-hidden">
+          <table mat-table [dataSource]="importResult()!.preview" class="w-full">
+            <ng-container matColumnDef="name">
+              <th mat-header-cell *matHeaderCellDef class="!bg-slate-50 !font-semibold">Name</th>
+              <td mat-cell *matCellDef="let row">{{ row.first_name }} {{ row.last_name }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="dob">
+              <th mat-header-cell *matHeaderCellDef class="!bg-slate-50 !font-semibold">DOB</th>
+              <td mat-cell *matCellDef="let row">{{ row.date_of_birth }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="gender">
+              <th mat-header-cell *matHeaderCellDef class="!bg-slate-50 !font-semibold">Gender</th>
+              <td mat-cell *matCellDef="let row">{{ row.gender }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="member_type">
+              <th mat-header-cell *matHeaderCellDef class="!bg-slate-50 !font-semibold">Type</th>
+              <td mat-cell *matCellDef="let row">{{ row.member_type }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="employee_number">
+              <th mat-header-cell *matHeaderCellDef class="!bg-slate-50 !font-semibold">
+                Employee #
+              </th>
+              <td mat-cell *matCellDef="let row">{{ row.employee_number || '—' }}</td>
+            </ng-container>
+
+            <tr mat-header-row *matHeaderRowDef="previewColumns"></tr>
+            <tr mat-row *matRowDef="let row; columns: previewColumns"></tr>
+          </table>
+        </div>
+      </div>
+
+      <!-- Errors (if any) -->
+      @if (importResult()!.summary.has_errors) {
+      <div class="p-4 bg-red-50 border border-red-200 rounded-lg">
+        <div class="flex items-start gap-2">
+          <mat-icon fontSet="material-symbols-rounded" class="!text-red-600">error</mat-icon>
+          <div>
+            <h4 class="font-medium text-red-900 mb-1">Validation Errors Found</h4>
+            <p class="text-sm text-red-700">
+              Please correct the errors in your file and re-upload.
+            </p>
+          </div>
+        </div>
+      </div>
+      }
+
+      <!-- Multi-Plan Option -->
+      @if (!importResult()!.summary.has_errors) {
+      <div class="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+        <div class="flex items-start gap-3">
+          <mat-icon fontSet="material-symbols-rounded" class="!text-blue-600"
+            >account_tree</mat-icon
+          >
+          <div class="flex-1">
+            <div class="flex items-center justify-between">
+              <div>
+                <h4 class="font-medium text-blue-900 mb-1">Multiple Plans per Group</h4>
+                <p class="text-sm text-blue-700">
+                  Assign different plans based on salary band, department, or job title (e.g.,
+                  C-Suite, Management, Staff)
+                </p>
+              </div>
+              <button
+                mat-flat-button
+                [color]="enableMultiPlan() ? 'primary' : ''"
+                (click)="toggleMultiPlan()"
+                class="ml-4"
+              >
+                {{ enableMultiPlan() ? 'Enabled' : 'Enable' }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+      }
+    </div>
+    } @if (currentStep() === 'configure') {
+    <div class="configure-step">
+      <form [formGroup]="applicationForm" class="space-y-4">
+        <!-- Scheme Selection -->
+        <mat-form-field appearance="fill" subscriptSizing="dynamic" class="w-full minimal-input">
+          <mat-label>Medical Scheme</mat-label>
+          <mat-select formControlName="scheme_id">
+            @for (scheme of schemes(); track scheme.id) {
+            <mat-option [value]="scheme.id">{{ scheme.name }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <!-- Plan Selection (Single Plan Only) -->
+        @if (!enableMultiPlan()) {
+        <mat-form-field appearance="fill" subscriptSizing="dynamic" class="w-full minimal-input">
+          <mat-label>Medical Plan</mat-label>
+          <mat-select formControlName="plan_id">
+            @for (plan of plans(); track plan.id) {
+            <mat-option [value]="plan.id">{{ plan.name }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+        } @else {
+        <div class="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+          <div class="flex items-start gap-2">
+            <mat-icon fontSet="material-symbols-rounded" class="!text-blue-600">info</mat-icon>
+            <div class="text-sm text-blue-900">
+              <strong>Multiple Plans:</strong>
+              {{ uniqueValues().length }} plan{{ uniqueValues().length !== 1 ? 's' : '' }} will be
+              used based on your {{ mappingType() }} mapping.
+            </div>
+          </div>
+        </div>
+        }
+
+        <!-- Rate Card Selection -->
+        <mat-form-field appearance="fill" subscriptSizing="dynamic" class="w-full minimal-input">
+          <mat-label>Rate Card</mat-label>
+          <mat-select formControlName="rate_card_id">
+            @for (rateCard of rateCards(); track rateCard.id) {
+            <mat-option [value]="rateCard.id">{{ rateCard.name }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <!-- Inception Date -->
+        <mat-form-field appearance="fill" class="w-full minimal-input">
+          <mat-label>Inception date</mat-label>
+          <input matInput [matDatepicker]="startPicker" formControlName="inception_date" />
+          <mat-datepicker-toggle matIconSuffix [for]="startPicker"></mat-datepicker-toggle>
+          <mat-datepicker #startPicker></mat-datepicker>
+        </mat-form-field>
+
+        <!-- Billing Frequency -->
+        <mat-form-field appearance="fill" subscriptSizing="dynamic" class="w-full minimal-input">
+          <mat-label>Billing Frequency</mat-label>
+          <mat-select formControlName="billing_frequency">
+            @for (freq of billingFrequencies; track freq.value) {
+            <mat-option [value]="freq.value">{{ freq.label }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+      </form>
+
+      <!-- Summary Info -->
+      <div class="mt-6 p-4 bg-slate-50 border border-slate-200 rounded-lg">
+        <h4 class="font-medium text-slate-900 mb-2">Application Summary</h4>
+        <div class="text-sm text-slate-700 space-y-1">
+          <div>
+            Members to be added:
+            <span class="font-medium">{{ importResult()?.summary?.valid_rows }}</span>
+          </div>
+          <div>
+            Corporate Group: <span class="font-medium">{{ data.group_name }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    }
+
+    <!-- Step 3: Plan Mapping (Multi-Plan) -->
+    @if (currentStep() === 'plan-mapping') {
+    <div class="plan-mapping-step">
+      <div class="mb-6">
+        <h3 class="text-lg font-semibold text-slate-900 mb-2">Map Employee Tiers to Plans</h3>
+        <p class="text-sm text-slate-600">
+          Assign a medical plan to each employee tier. Members will be automatically grouped into
+          separate applications based on your mapping.
+        </p>
+      </div>
+
+      <!-- Mapping Type Selection -->
+      <mat-form-field appearance="fill" subscriptSizing="dynamic" class="w-full minimal-input mb-6">
+        <mat-label>Map By</mat-label>
+        <mat-select [(ngModel)]="mappingType" (selectionChange)="onMappingTypeChange()">
+          <mat-option value="salary_band">Salary Band</mat-option>
+          <mat-option value="department">Department</mat-option>
+          <mat-option value="job_title">Job Title</mat-option>
+        </mat-select>
+        <mat-hint>Select which field to use for plan assignment</mat-hint>
+      </mat-form-field>
+
+      <!-- Mapping Table -->
+      <div class="space-y-4">
+        <h4 class="text-sm font-medium text-slate-700">Plan Assignments</h4>
+
+        @if (uniqueValues().length === 0) {
+        <div class="p-6 text-center bg-slate-50 border border-slate-200 rounded-lg">
+          <mat-icon fontSet="material-symbols-rounded" class="!text-4xl text-slate-400 mb-2"
+            >warning</mat-icon
+          >
+          <p class="text-sm text-slate-600">
+            No {{ mappingType() }} values found in census data. Please select a different mapping
+            type.
+          </p>
+        </div>
+        } @else { @for (value of uniqueValues(); track value) {
+        <div
+          class="flex items-center gap-4 p-4 border border-slate-200 rounded-lg bg-white hover:border-primary-300 transition-colors"
+        >
+          <div class="flex-1">
+            <div class="font-medium text-slate-900">{{ value }}</div>
+            <div class="text-sm text-slate-600">
+              {{ memberCountByValue()[value] }} member{{
+                memberCountByValue()[value] !== 1 ? 's' : ''
+              }}
+            </div>
+          </div>
+          <mat-icon fontSet="material-symbols-rounded" class="!text-slate-400"
+            >arrow_forward</mat-icon
+          >
+          <div class="flex-1">
+            <mat-form-field
+              appearance="fill"
+              subscriptSizing="dynamic"
+              class="w-full minimal-input"
+            >
+              <mat-label>Select Plan</mat-label>
+              <mat-select
+                [value]="planMapping()[value]"
+                (selectionChange)="updatePlanMapping(value, $event.value)"
+              >
+                @for (plan of plans(); track plan.id) {
+                <mat-option [value]="plan.id">{{ plan.name }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+          </div>
+        </div>
+        } }
+      </div>
+
+      <!-- Info Card -->
+      <div class="mt-6 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+        <div class="flex items-start gap-2">
+          <mat-icon fontSet="material-symbols-rounded" class="!text-amber-600">info</mat-icon>
+          <div class="text-sm text-amber-900">
+            <strong>Note:</strong> Each plan mapping will create a separate application. All
+            applications will share the same scheme, rate card, and inception date.
+          </div>
+        </div>
+      </div>
+    </div>
+    }
+
+    <!-- Step 3/4: Configure -->
+  </div>
+
+  <!-- Footer -->
+  <div class="dialog-footer px-6 py-4 border-t border-slate-200 flex items-center justify-between">
+    <div>
+      @if (currentStep() === 'preview') {
+      <button mat-stroked-button (click)="backToUpload()">
+        <mat-icon fontSet="material-symbols-rounded">arrow_back</mat-icon>
+        Back to Upload
+      </button>
+      } @if (currentStep() === 'plan-mapping') {
+      <button mat-stroked-button (click)="backToPreview()">
+        <mat-icon fontSet="material-symbols-rounded">arrow_back</mat-icon>
+        Back to Preview
+      </button>
+      } @if (currentStep() === 'configure') {
+      <button
+        mat-stroked-button
+        (click)="enableMultiPlan() ? backToPlanMapping() : backToPreview()"
+      >
+        <mat-icon fontSet="material-symbols-rounded">arrow_back</mat-icon>
+        Back
+      </button>
+      }
+    </div>
+
+    <div class="flex gap-2">
+      <button mat-stroked-button (click)="cancel()" [disabled]="uploading() || creating()">
+        Cancel
+      </button>
+
+      @if (currentStep() === 'preview' && !importResult()?.summary?.has_errors) {
+      <button mat-flat-button color="primary" (click)="goToConfiguration()">
+        Continue
+        <mat-icon fontSet="material-symbols-rounded">arrow_forward</mat-icon>
+      </button>
+      } @if (currentStep() === 'plan-mapping') {
+      <button mat-flat-button color="primary" (click)="goToConfigure()">
+        Continue to Configuration
+        <mat-icon fontSet="material-symbols-rounded">arrow_forward</mat-icon>
+      </button>
+      } @if (currentStep() === 'configure') {
+      <button
+        mat-flat-button
+        color="primary"
+        (click)="createApplication()"
+        [disabled]="applicationForm.invalid || creating()"
+      >
+        @if (creating()) {
+        <mat-spinner diameter="20" class="mr-2"></mat-spinner>
+        Creating... } @else {
+        <ng-container>
+          <mat-icon fontSet="material-symbols-rounded">check</mat-icon>
+          Create {{ enableMultiPlan() ? 'Applications' : 'Application' }}
+        </ng-container>
+        }
+      </button>
+      }
+    </div>
+  </div>
+</div>

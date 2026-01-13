@@ -213,23 +213,27 @@
               </td>
             </ng-container>
 
-            <!-- Benefits Column -->
-            <ng-container matColumnDef="benefits">
+            <!-- Pricing Column -->
+            <ng-container matColumnDef="pricing">
               <th
                 mat-header-cell
                 *matHeaderCellDef
-                class="!bg-slate-50 !px-6 !py-3 text-xs font-semibold uppercase tracking-wider text-slate-500 !w-32"
+                class="!bg-slate-50 !px-6 !py-3 text-xs font-semibold uppercase tracking-wider text-slate-500 !w-40"
               >
-                Benefits
+                Pricing
               </th>
               <td mat-cell *matCellDef="let addon" class="!px-6 !py-4">
-                <div class="flex items-center gap-2">
-                  <span
-                    class="flex h-6 w-6 items-center justify-center rounded-md bg-blue-50 text-xs font-medium text-blue-700"
-                  >
-                    {{ addon.addon_benefits_count || 0 }}
-                  </span>
-                  <span class="text-xs text-slate-500">benefits</span>
+                <div class="text-sm">
+                  @if (addon.pricing_type === 'fixed') {
+                    <span class="font-medium text-slate-900">{{ addon.currency }} {{ addon.amount | number:'1.2-2' }}</span>
+                    <span class="text-xs text-slate-500 ml-1">flat</span>
+                  } @else if (addon.pricing_type === 'per_member') {
+                    <span class="font-medium text-slate-900">{{ addon.currency }} {{ addon.amount | number:'1.2-2' }}</span>
+                    <span class="text-xs text-slate-500 ml-1">/member</span>
+                  } @else if (addon.pricing_type === 'percentage') {
+                    <span class="font-medium text-slate-900">{{ addon.percentage }}%</span>
+                    <span class="text-xs text-slate-500 ml-1">of premium</span>
+                  }
                 </div>
               </td>
             </ng-container>
@@ -411,30 +415,33 @@
         </div>
         }
 
-        <!-- Benefits Summary -->
+        <!-- Pricing Summary -->
         <div class="rounded-lg border border-slate-200 p-4">
-          <div class="flex items-center justify-between mb-3">
-            <h3 class="text-sm font-medium text-slate-500">Addon Benefits</h3>
-            <span class="text-2xl font-bold text-blue-600">{{
-              addon.addon_benefits_count || 0
-            }}</span>
-          </div>
-          @if (addon.addon_benefits && addon.addon_benefits.length > 0) {
-          <div class="space-y-2">
-            @for (ab of addon.addon_benefits.slice(0, 5); track ab.id) {
-            <div class="flex items-center justify-between text-sm">
-              <span class="text-slate-700">{{ ab.benefit?.name }}</span>
-              <span class="text-slate-500">{{ ab.display_value || 'Configured' }}</span>
+          <h3 class="text-sm font-medium text-slate-500 mb-3">Pricing</h3>
+          <div class="space-y-3">
+            <div class="flex items-center justify-between">
+              <span class="text-sm text-slate-600">Pricing Type</span>
+              <span class="text-sm font-medium text-slate-900">{{ addon.pricing_type_label }}</span>
             </div>
-            } @if (addon.addon_benefits.length > 5) {
-            <p class="text-xs text-slate-400 pt-2">
-              + {{ addon.addon_benefits.length - 5 }} more benefits
-            </p>
+            @if (addon.pricing_type === 'fixed' || addon.pricing_type === 'per_member') {
+              <div class="flex items-center justify-between">
+                <span class="text-sm text-slate-600">Amount</span>
+                <span class="text-lg font-bold text-blue-600">{{ addon.currency }} {{ addon.amount | number:'1.2-2' }}</span>
+              </div>
+            }
+            @if (addon.pricing_type === 'percentage') {
+              <div class="flex items-center justify-between">
+                <span class="text-sm text-slate-600">Percentage</span>
+                <span class="text-lg font-bold text-blue-600">{{ addon.percentage }}%</span>
+              </div>
+              @if (addon.percentage_basis) {
+                <div class="flex items-center justify-between">
+                  <span class="text-sm text-slate-600">Basis</span>
+                  <span class="text-sm text-slate-900">{{ addon.percentage_basis === 'base_premium' ? 'Base Premium' : 'Total Premium' }}</span>
+                </div>
+              }
             }
           </div>
-          } @else {
-          <p class="text-sm text-slate-400">No benefits configured yet.</p>
-          }
         </div>
 
         <!-- Plans Using This Addon -->
@@ -449,29 +456,6 @@
             This addon is configured in {{ addon.plan_addons_count || 0 }} plan(s).
           </p>
         </div>
-
-        <!-- Rates -->
-        @if (addon.rates && addon.rates.length > 0) {
-        <div class="rounded-lg border border-slate-200 p-4">
-          <h3 class="text-sm font-medium text-slate-500 mb-3">Pricing</h3>
-          <div class="space-y-2">
-            @for (rate of addon.rates; track rate.id) {
-            <div class="flex items-center justify-between text-sm rounded-md bg-slate-50 p-2">
-              <span class="text-slate-700">
-                @if (rate.is_global) { Global Rate } @else { Plan-specific }
-              </span>
-              <span class="text-slate-900 font-medium">
-                @if (rate.pricing_type === 'fixed') { ZMW {{ rate.amount | number }}
-                } @else if (rate.pricing_type === 'percentage') {
-                {{ rate.percentage }}% } @else {
-                {{ rate.pricing_type_label }}
-                }
-              </span>
-            </div>
-            }
-          </div>
-        </div>
-        }
       </div>
 
       <!-- Drawer Footer -->

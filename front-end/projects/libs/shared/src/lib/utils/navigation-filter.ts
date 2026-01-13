@@ -51,10 +51,9 @@ function canAccessNavItem(item: NavItem, authService: AuthService): boolean {
     return false;
   }
 
-  // Check permission requirements
+  // Check permission requirements using isAllowed (auto-detects guard from permission format)
   if (item.requiredPermissions && item.requiredPermissions.length > 0) {
-    const guard = (item.guard as any) || 'web';
-    const hasPermission = authService.hasAnyPermission(item.requiredPermissions, guard);
+    const hasPermission = authService.isAllowedAny(item.requiredPermissions);
     if (!hasPermission) {
       return false;
     }

@@ -105,10 +105,17 @@ class GroupController extends Controller
         try {
             $group = Group::with([
                 'contacts',
-                'policies' => fn($q) => $q->latest()->limit(10),
+                'primaryContact',
+                'policies' => fn($q) => $q->latest()->limit(10)->with('plan:id,name,code'),
                 'activePolicies',
+                'applications' => fn($q) => $q->latest()->with([
+                    'scheme:id,name,code',
+                    'plan:id,name,code',
+                    'rateCard:id,name,code',
+                    'activeMembers' => fn($m) => $m->orderBy('member_type')
+                ]),
             ])
-            ->withCount(['policies', 'contacts'])
+            ->withCount(['policies', 'contacts', 'applications'])
             ->findOrFail($id);
 
             return $this->success(
@@ -118,7 +125,7 @@ class GroupController extends Controller
         } catch (ModelNotFoundException $e) {
             return $this->error('Group not found', 404);
         } catch (Throwable $e) {
-            return $this->error('Failed to retrieve group details', 500);
+            return $this->error('Failed to retrieve group details'.$e->getMessage(), 500);
         }
     }
 
@@ -212,7 +219,7 @@ class GroupController extends Controller
         try {
             $group = DB::transaction(function () use ($id) {
                 $group = Group::findOrFail($id);
-                $group->suspend(request('reason'));
+                // $group->suspend(request('reason'));
                 return $group->fresh();
             });
 

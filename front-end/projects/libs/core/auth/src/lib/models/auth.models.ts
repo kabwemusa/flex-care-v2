@@ -36,6 +36,13 @@ export interface PermissionsByGuard {
   travel?: string[];
 }
 
+export interface PasswordStatus {
+  expired: boolean;
+  expiring_soon: boolean;
+  days_until_expiration: number | null;
+  force_change: boolean;
+}
+
 export interface UserContext {
   user: User;
   modules: ModuleCode[];
@@ -55,9 +62,17 @@ export interface LoginResponse {
     user: User;
     token: string;
     modules: ModuleCode[];
-    roles: string[];
-    permissions: string[];
+    roles: RolesByGuard;
+    permissions: PermissionsByGuard;
+    password_status: PasswordStatus;
   };
+}
+
+export interface ChangePasswordRequest {
+  current_password?: string;
+  password: string;
+  password_confirmation: string;
+  force_change?: boolean;
 }
 
 export interface AuthState {

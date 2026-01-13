@@ -203,6 +203,27 @@ export class PolicyStore {
   }
 
   // =========================================================================
+  // MEMBER OPERATIONS
+  // =========================================================================
+
+  addMember(policyId: string, memberData: Partial<Member>) {
+    this.state.update((s) => ({ ...s, saving: true }));
+
+    return this.http
+      .post<ApiResponse<Member>>(`${this.apiUrl}/${policyId}/members`, memberData)
+      .pipe(
+        tap({
+          next: () => {
+            // Reload policy to get updated member list and counts
+            this.loadOne(policyId).subscribe();
+            this.state.update((s) => ({ ...s, saving: false }));
+          },
+          error: () => this.state.update((s) => ({ ...s, saving: false })),
+        })
+      );
+  }
+
+  // =========================================================================
   // PREMIUM
   // =========================================================================
 

@@ -1,0 +1,10 @@
+/* libs/medical/feature/src/lib/medical-policies-list/medical-policies-list.css */
+
+:host ::ng-deep .minimal-input .mat-mdc-form-field-subscript-wrapper {
+  height: 0;
+  margin-top: 0;
+}
+
+:host ::ng-deep .minimal-input .mat-mdc-text-field-wrapper {
+  padding-bottom: 0;
+}

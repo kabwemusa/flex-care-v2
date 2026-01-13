@@ -13,7 +13,8 @@ use Modules\Medical\Models\Member;
 class PolicyService
 {
     public function __construct(
-        protected PremiumService $premiumService
+        protected PremiumService $premiumService,
+        protected ProRatingService $proRatingService
     ) {}
 
     /**
@@ -192,59 +193,92 @@ public function cancelPolicy(Policy $policy, string $reason): Policy
 
 /**
  * Add a member to an active policy (Mid-term addition).
+ *
+ * @param Policy $policy The policy to add the member to
+ * @param array $memberData Member information
+ * @param Carbon|string|null $effectiveDate When coverage starts (defaults to today)
+ * @return Member The created member with pro-rated premium
+ * @throws Exception If validation fails
  */
-public function addMemberToPolicy(Policy $policy, array $memberData): Member
+public function addMemberToPolicy(Policy $policy, array $memberData, Carbon|string|null $effectiveDate = null): Member
 {
-    if (!$policy->is_active) {
-        throw new Exception('Cannot add members to inactive policy');
+    // Validate policy is active
+    if ($policy->status !== MedicalConstants::POLICY_STATUS_ACTIVE) {
+        throw new Exception('Cannot add members to inactive policy. Policy status: ' . $policy->status);
     }
 
-    return DB::transaction(function () use ($policy, $memberData) {
-        $startDate = isset($memberData['join_date']) 
-            ? Carbon::parse($memberData['join_date']) 
-            : now();
+    // Parse effective date
+    $effectiveDate = $effectiveDate ? Carbon::parse($effectiveDate) : Carbon::today();
 
-        // Ensure start date is within policy term
-        if ($startDate->lt($policy->inception_date)) $startDate = $policy->inception_date;
-        if ($startDate->gt($policy->expiry_date)) throw new Exception("Join date cannot be after policy expiry");
+    // Validate effective date using ProRatingService
+    $validation = $this->proRatingService->validateEffectiveDate(
+        $effectiveDate,
+        $policy->inception_date,
+        $policy->expiry_date,
+        30 // Minimum 30 days coverage
+    );
 
+    if (!$validation['valid']) {
+        throw new Exception($validation['message']);
+    }
+
+    return DB::transaction(function () use ($policy, $memberData, $effectiveDate) {
         // Create Member
         $member = new Member($memberData);
         $member->policy_id = $policy->id;
         $member->scheme_id = $policy->scheme_id;
         $member->plan_id = $policy->plan_id;
         $member->status = MedicalConstants::MEMBER_STATUS_ACTIVE;
-        $member->cover_start_date = $startDate;
+        $member->cover_start_date = $effectiveDate;
         $member->cover_end_date = $policy->expiry_date;
-        
-        // Calculate age at join date for accurate pricing
-        $member->age_at_inception = $member->date_of_birth->diffInYears($startDate);
-        
+
+        // Calculate age at effective date for accurate pricing
+        $member->age_at_inception = $member->date_of_birth->diffInYears($effectiveDate);
+
         $member->save();
 
         // Calculate Premium
-        // 1. Get Full Annual/Term Premium
-        $basePremium = $this->premiumService->calculatePolicyMemberPremium($member, $policy);
-        
-        // 2. Prorate if joining mid-term
-        $totalDays = $policy->inception_date->diffInDays($policy->expiry_date);
-        $daysCovered = $startDate->diffInDays($policy->expiry_date);
-        
-        if ($totalDays > 0 && $daysCovered < $totalDays) {
-            // Apply proration factor
-            $factor = $daysCovered / $totalDays;
-            $proratedPremium = round($basePremium * $factor, 2);
-            
-            // Update member with prorated amount for this term
-            $member->base_premium = $proratedPremium;
-            $member->total_premium = $proratedPremium; // + loadings if any
-            $member->save();
+        // 1. Get Full Annual Premium from rate card
+        $annualPremium = $this->premiumService->calculatePolicyMemberPremium($member, $policy);
+
+        // 2. Apply pro-rata calculation using ProRatingService
+        $proratedPremium = $this->proRatingService->calculateProRata(
+            $annualPremium,
+            $effectiveDate,
+            $policy->expiry_date
+        );
+
+        // Calculate days for transparency
+        $daysRemaining = $this->proRatingService->calculateDaysRemaining($effectiveDate, $policy->expiry_date);
+
+        // Update member with prorated premium
+        $member->base_premium = $proratedPremium;
+        $member->total_premium = $proratedPremium; // + loadings if any
+
+        // Store pro-rating metadata for audit trail
+        $member->premium_notes = json_encode([
+            'annual_premium' => $annualPremium,
+            'prorated_premium' => $proratedPremium,
+            'effective_date' => $effectiveDate->toDateString(),
+            'days_remaining' => $daysRemaining,
+            'pro_rata_method' => 'daily',
+            'calculated_at' => now()->toISOString()
+        ]);
+
+        $member->save();
+
+        // Update Policy member counts
+        $policy->increment('member_count');
+        if ($member->member_type === MedicalConstants::MEMBER_TYPE_PRINCIPAL) {
+            $policy->increment('principal_count');
+        } else {
+            $policy->increment('dependent_count');
         }
 
         // Update Policy Totals
         $this->premiumService->calculatePolicyPremium($policy);
 
-        return $member;
+        return $member->fresh();
     });
 }
 

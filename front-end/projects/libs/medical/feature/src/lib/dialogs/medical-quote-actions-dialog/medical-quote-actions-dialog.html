@@ -85,11 +85,11 @@
           >
             @if (isDownloading()) {
             <mat-spinner diameter="20" class="mr-2"></mat-spinner>
-            Generating PDF...
-            } @else {
-            <mat-icon fontSet="material-symbols-rounded">download</mat-icon>
-            Download Quote PDF
-            }
+            Generating PDF... } @else {
+            <ng-template>
+              <mat-icon fontSet="material-symbols-rounded">download</mat-icon>
+            </ng-template>
+            Download Quote PDF }
           </button>
         </div>
       </div>
@@ -124,8 +124,7 @@
               placeholder="customer@example.com"
             />
             <mat-icon matPrefix fontSet="material-symbols-rounded">email</mat-icon>
-            @if (emailForm.get('email')?.hasError('required') && emailForm.get('email')?.touched)
-            {
+            @if (emailForm.get('email')?.hasError('required') && emailForm.get('email')?.touched) {
             <mat-error>Email address is required</mat-error>
             } @else if (emailForm.get('email')?.hasError('email') &&
             emailForm.get('email')?.touched) {
@@ -158,11 +157,12 @@
             >
               @if (isSending()) {
               <mat-spinner diameter="20" class="mr-2"></mat-spinner>
-              Sending...
-              } @else {
-              <mat-icon fontSet="material-symbols-rounded">send</mat-icon>
-              Send Quote
-              }
+              Sending... } @else {
+              <ng-template>
+                <mat-icon fontSet="material-symbols-rounded">send</mat-icon>
+              </ng-template>
+              <!-- <mat-icon fontSet="material-symbols-rounded">send</mat-icon> -->
+              Send Quote }
             </button>
           </div>
         </div>

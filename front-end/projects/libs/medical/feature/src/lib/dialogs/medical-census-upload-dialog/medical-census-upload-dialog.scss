@@ -1,0 +1,79 @@
+.census-upload-dialog {
+  display: flex;
+  flex-direction: column;
+  width: 700px;
+  max-width: 90vw;
+
+  .dialog-header {
+    background: linear-gradient(to bottom, #ffffff, #f8fafc);
+  }
+
+  .dialog-content {
+    flex: 1;
+    overflow-y: auto;
+
+    // Upload Step
+    .upload-step {
+      .border-dashed {
+        transition: all 0.2s ease;
+        cursor: pointer;
+
+        &:hover {
+          border-color: var(--primary-500);
+          background-color: var(--primary-50);
+        }
+      }
+    }
+
+    // Preview Step
+    .preview-step {
+      .mat-mdc-table {
+        font-size: 0.875rem;
+
+        .mat-mdc-header-cell {
+          background-color: #f8fafc;
+          font-weight: 600;
+          color: #334155;
+        }
+
+        .mat-mdc-cell {
+          padding: 0.75rem 1rem;
+        }
+      }
+    }
+
+    // Configure Step
+    .configure-step {
+      form {
+        .mat-mdc-form-field {
+          width: 100%;
+        }
+      }
+    }
+  }
+
+  .dialog-footer {
+    background: #f8fafc;
+  }
+}
+
+// Step Indicator Animations
+.step-indicator {
+  .step-circle {
+    transition: all 0.3s ease;
+  }
+}
+
+// Drag and Drop Animations
+.drag-over {
+  animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.8;
+  }
+}

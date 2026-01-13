@@ -76,11 +76,13 @@ export class MedicalAddonCatalogDialog implements OnInit {
       description: [this.data?.description || ''],
     });
 
-    // Step 2: Pricing (for new addon, just collect default pricing type)
+    // Step 2: Pricing
     this.pricingForm = this.fb.group({
-      default_pricing_type: ['fixed'],
-      default_amount: [null, [Validators.min(0)]],
-      default_percentage: [null, [Validators.min(0), Validators.max(100)]],
+      pricing_type: [this.data?.pricing_type || 'fixed', Validators.required],
+      currency: [this.data?.currency || 'ZMW'],
+      amount: [this.data?.amount || null, [Validators.min(0)]],
+      percentage: [this.data?.percentage || null, [Validators.min(0), Validators.max(100)]],
+      percentage_basis: [this.data?.percentage_basis || 'base_premium'],
     });
 
     // Step 3: Settings
@@ -150,9 +152,11 @@ export class MedicalAddonCatalogDialog implements OnInit {
     if (!this.isFormValid) return;
 
     const settingsValues = this.settingsForm.value;
+    const pricingValues = this.pricingForm.value;
 
     const result: Partial<Addon> = {
       ...this.basicForm.value,
+      ...pricingValues,
       effective_from: settingsValues.effective_from?.toISOString().split('T')[0] || null,
       effective_to: settingsValues.effective_to?.toISOString().split('T')[0] || null,
       sort_order: settingsValues.sort_order,

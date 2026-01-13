@@ -112,33 +112,22 @@
         </form>
       </mat-step>
 
-      <!-- Step 2: Default Pricing -->
-      <mat-step [stepControl]="pricingForm" label="Pricing" [optional]="true">
+      <!-- Step 2: Pricing -->
+      <mat-step [stepControl]="pricingForm" label="Pricing">
         <form [formGroup]="pricingForm" class="p-6 space-y-5">
           <p class="text-sm text-slate-500 mb-4">
-            Configure default pricing for this addon. You can set specific rates per plan later.
+            Configure pricing for this addon. This will be used across all plans.
           </p>
 
-          <div class="rounded-lg bg-blue-50 border border-blue-100 p-4 mb-6">
-            <div class="flex gap-3">
-              <mat-icon fontSet="material-symbols-rounded" class="!text-blue-500">info</mat-icon>
-              <div>
-                <p class="text-sm font-medium text-blue-900">Pricing Note</p>
-                <p class="text-xs text-blue-700 mt-1">
-                  Detailed rates (per plan, age-rated, etc.) can be configured after creating the
-                  addon.
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <!-- Default Pricing Type -->
+          <!-- Pricing Type -->
           <div class="flex flex-col gap-1.5">
-            <label class="text-sm font-medium text-slate-700">Default Pricing Type</label>
+            <label class="text-sm font-medium text-slate-700">
+              Pricing Type <span class="text-red-500">*</span>
+            </label>
             <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
-              <mat-select formControlName="default_pricing_type">
+              <mat-select formControlName="pricing_type">
                 <mat-select-trigger>
-                  @if (pricingForm.get('default_pricing_type')?.value; as pt) {
+                  @if (pricingForm.get('pricing_type')?.value; as pt) {
                   <span>{{ getPricingTypeLabel(pt) }}</span>
                   }
                 </mat-select-trigger>
@@ -149,37 +138,58 @@
             </mat-form-field>
           </div>
 
-          <!-- Conditional Amount/Percentage -->
-          @if (pricingForm.get('default_pricing_type')?.value === 'fixed' ||
-          pricingForm.get('default_pricing_type')?.value === 'per_member') {
+          <!-- Currency -->
           <div class="flex flex-col gap-1.5">
-            <label class="text-sm font-medium text-slate-700">Default Amount</label>
+            <label class="text-sm font-medium text-slate-700">Currency</label>
             <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
-              <span matTextPrefix class="text-slate-400 mr-1">ZMW</span>
+              <input matInput formControlName="currency" placeholder="ZMW" />
+            </mat-form-field>
+          </div>
+
+          <!-- Conditional Amount/Percentage -->
+          @if (pricingForm.get('pricing_type')?.value === 'fixed' ||
+          pricingForm.get('pricing_type')?.value === 'per_member') {
+          <div class="flex flex-col gap-1.5">
+            <label class="text-sm font-medium text-slate-700">
+              Amount <span class="text-red-500">*</span>
+            </label>
+            <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+              <span matTextPrefix class="text-slate-400 mr-1">{{ pricingForm.get('currency')?.value || 'ZMW' }}</span>
               <input
                 matInput
                 type="number"
-                formControlName="default_amount"
+                formControlName="amount"
                 min="0"
                 placeholder="e.g. 150"
               />
             </mat-form-field>
           </div>
-          } @if (pricingForm.get('default_pricing_type')?.value === 'percentage') {
+          } @if (pricingForm.get('pricing_type')?.value === 'percentage') {
           <div class="flex flex-col gap-1.5">
-            <label class="text-sm font-medium text-slate-700">Default Percentage</label>
+            <label class="text-sm font-medium text-slate-700">
+              Percentage <span class="text-red-500">*</span>
+            </label>
             <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
               <input
                 matInput
                 type="number"
-                formControlName="default_percentage"
+                formControlName="percentage"
                 min="0"
                 max="100"
                 placeholder="e.g. 10"
               />
               <span matTextSuffix class="text-slate-400">%</span>
             </mat-form-field>
-            <p class="text-xs text-slate-400">Percentage of base premium</p>
+          </div>
+
+          <div class="flex flex-col gap-1.5">
+            <label class="text-sm font-medium text-slate-700">Percentage Basis</label>
+            <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+              <mat-select formControlName="percentage_basis">
+                <mat-option value="base_premium">Base Premium</mat-option>
+                <mat-option value="total_premium">Total Premium</mat-option>
+              </mat-select>
+            </mat-form-field>
           </div>
           }
         </form>

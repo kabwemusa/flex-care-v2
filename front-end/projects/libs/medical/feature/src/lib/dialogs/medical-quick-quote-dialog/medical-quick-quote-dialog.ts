@@ -22,6 +22,7 @@ import {
   getLabelByValue,
 } from 'medical-data';
 import { FeedbackService } from 'shared';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 
 export interface QuickQuoteDialogData {
   planId?: string;
@@ -60,6 +61,7 @@ interface QuoteResult {
     MatInputModule,
     MatSelectModule,
     MatDividerModule,
+    MatProgressSpinnerModule,
   ],
   templateUrl: './medical-quick-quote-dialog.html',
 })

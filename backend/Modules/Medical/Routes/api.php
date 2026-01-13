@@ -101,6 +101,7 @@ Route::prefix('v1/medical')
 
     // Addon Benefits
     Route::post('addons/{addon}/benefits', [AddonController::class, 'addBenefit']);
+    Route::put('addon-benefits/{addonBenefit}', [AddonController::class, 'updateBenefit']);
     Route::delete('addon-benefits/{addonBenefit}', [AddonController::class, 'removeBenefit']);
 
     // Addon Rates
@@ -148,6 +149,7 @@ Route::prefix('v1/medical')
     // =========================================================================
     Route::post('quotes', [QuoteController::class, 'generate']);
     Route::post('quotes/compare', [QuoteController::class, 'compare']);
+    Route::post('group-quotes', [QuoteController::class, 'groupQuote']);
     Route::get('plans/{plan}/quick-quote', [QuoteController::class, 'quickQuote']);
     Route::post('quotes/convert-frequency', [QuoteController::class, 'convertFrequency']);
     
@@ -185,6 +187,9 @@ Route::prefix('v1/medical')
         Route::put('/{groupId}/contacts/{contactId}', [GroupController::class, 'updateContact']);
         Route::delete('/{groupId}/contacts/{contactId}', [GroupController::class, 'removeContact']);
         Route::post('/{groupId}/contacts/{contactId}/primary', [GroupController::class, 'setPrimaryContact']);
+
+        // Plan Distribution
+        Route::get('/{id}/plan-distribution', [GroupController::class, 'planDistribution']);
     });
 
     // =========================================================================
@@ -195,8 +200,14 @@ Route::prefix('v1/medical')
         Route::get('/', [ApplicationController::class, 'index']);
         Route::post('/', [ApplicationController::class, 'store']);
         Route::get('/stats', [ApplicationController::class, 'stats']);
+
+        // Corporate Census Import
+        Route::post('/import-census', [ApplicationController::class, 'importCensus']);
+        Route::post('/create-from-census', [ApplicationController::class, 'createFromCensus']);
+        Route::post('/create-multi-plan-from-census', [ApplicationController::class, 'createMultiPlanFromCensus']);
+
         Route::get('/{id}', [ApplicationController::class, 'show']);
-        Route::put('/{id}', [ApplicationController::class, 'update']);
+        Route::patch('/{id}', [ApplicationController::class, 'update']);
         Route::delete('/{id}', [ApplicationController::class, 'destroy']);
 
         // Workflow Actions
@@ -267,7 +278,11 @@ Route::prefix('v1/medical')
         
         // Premium
         Route::post('/{id}/calculate-premium', [PolicyController::class, 'calculatePremium']);
-        
+
+        // Members (mid-term additions/removals)
+        Route::post('/{id}/members', [PolicyController::class, 'addMember']);
+        Route::delete('/{id}/members/{memberId}', [PolicyController::class, 'removeMember']);
+
         // Addons (mid-term modifications)
         Route::post('/{id}/addons', [PolicyController::class, 'addAddon']);
         Route::delete('/{id}/addons/{addonId}', [PolicyController::class, 'removeAddon']);
@@ -303,6 +318,9 @@ Route::prefix('v1/medical')
         Route::post('/{id}/issue-card', [MemberController::class, 'issueCard']);
         Route::post('/{id}/activate-card', [MemberController::class, 'activateCard']);
         Route::post('/{id}/block-card', [MemberController::class, 'blockCard']);
+
+        // Plan Management
+        Route::post('/{id}/change-plan', [MemberController::class, 'changePlan']);
         
         // Eligibility
         Route::get('/{id}/eligibility', [MemberController::class, 'checkEligibility']);

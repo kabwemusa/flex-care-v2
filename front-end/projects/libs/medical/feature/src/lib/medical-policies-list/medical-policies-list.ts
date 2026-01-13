@@ -18,7 +18,6 @@ import { FormsModule } from '@angular/forms';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
 import { MatSort, MatSortModule } from '@angular/material/sort';
-import { MatDialog } from '@angular/material/dialog';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
@@ -30,6 +29,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatDrawer, MatSidenavModule } from '@angular/material/sidenav';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatDialog } from '@angular/material/dialog';
 
 // Domain Imports
 import {
@@ -42,7 +42,7 @@ import {
   formatCurrency,
 } from 'medical-data';
 import { FeedbackService, PageHeaderComponent } from 'shared';
-import { MedicalPolicyDialog } from '../dialogs/medical-policy-dialog/medical-policy-dialog';
+import { MedicalAddMemberToPolicyDialog } from '../dialogs/medical-add-member-to-policy-dialog/medical-add-member-to-policy-dialog';
 
 @Component({
   selector: 'lib-medical-policies-list',
@@ -71,8 +71,8 @@ import { MedicalPolicyDialog } from '../dialogs/medical-policy-dialog/medical-po
 })
 export class MedicalPoliciesList implements OnInit, AfterViewInit {
   readonly store = inject(PolicyStore);
-  private readonly dialog = inject(MatDialog);
   private readonly feedback = inject(FeedbackService);
+  private readonly dialog = inject(MatDialog);
 
   // Table
   displayedColumns = ['status', 'policy_number', 'holder', 'plan', 'dates', 'premium', 'actions'];
@@ -204,11 +204,12 @@ export class MedicalPoliciesList implements OnInit, AfterViewInit {
   // =========================================================================
 
   viewDetails(policy: Policy): void {
-    this.store.loadOne(policy.id).subscribe((res) => {
-      if (res?.data) {
-        this.selectedPolicy.set(res.data);
+    this.store.loadOne(policy.id).subscribe({
+      next: () => {
+        this.selectedPolicy.set(this.store.selectedPolicy());
         this.detailDrawer.open();
-      }
+      },
+      error: () => this.feedback.error('Failed to load policy details'),
     });
   }
 
@@ -217,24 +218,57 @@ export class MedicalPoliciesList implements OnInit, AfterViewInit {
     this.selectedPolicy.set(null);
   }
 
-  openDialog(policy?: Policy): void {
-    const dialogRef = this.dialog.open(MedicalPolicyDialog, {
-      width: '70vw',
-      minWidth: '70vw',
+  openAddMemberDialog(policy: Policy): void {
+    const dialogRef = this.dialog.open(MedicalAddMemberToPolicyDialog, {
+      width: '60vw',
+      minWidth: '60vw',
       maxHeight: '90vh',
       data: { policy },
       disableClose: true,
+      panelClass: ['responsive-dialog', 'bg-white'],
+      autoFocus: false,
     });
 
     dialogRef.afterClosed().subscribe((result) => {
-      if (result) {
-        this.store.loadAll();
-        this.feedback.success(
-          policy ? 'Policy updated successfully' : 'Policy created successfully'
-        );
-      }
+      if (!result) return;
+
+      this.store.addMember(policy.id, result).subscribe({
+        next: () => {
+          this.feedback.success('Member added successfully with pro-rated premium');
+          // Reload the policy details in drawer
+          this.store.loadOne(policy.id).subscribe({
+            next: () => {
+              this.selectedPolicy.set(this.store.selectedPolicy());
+            },
+          });
+        },
+        error: (err) => {
+          this.feedback.error(err?.error?.message ?? 'Failed to add member');
+        },
+      });
     });
   }
+
+  // Note: Policies are created via application conversion, not directly
+  // This method kept for reference but should not be used
+  // openDialog(policy?: Policy): void {
+  //   const dialogRef = this.dialog.open(MedicalPolicyDialog, {
+  //     width: '70vw',
+  //     minWidth: '70vw',
+  //     maxHeight: '90vh',
+  //     data: { policy },
+  //     disableClose: true,
+  //   });
+
+  //   dialogRef.afterClosed().subscribe((result) => {
+  //     if (result) {
+  //       this.store.loadAll();
+  //       this.feedback.success(
+  //         policy ? 'Policy updated successfully' : 'Policy created successfully'
+  //       );
+  //     }
+  //   });
+  // }
 
   // =========================================================================
   // ACTIONS
@@ -246,20 +280,30 @@ export class MedicalPoliciesList implements OnInit, AfterViewInit {
       await this.feedback.confirm('Activate Policy', `Activate policy ${policy.policy_number}?`)
     ) {
       this.store.activate(policy.id).subscribe({
-        next: () => this.feedback.success('Policy activated'),
-        error: (err) => this.feedback.error(err.error?.message),
+        next: () => {
+          this.feedback.success('Policy activated');
+          if (this.selectedPolicy()?.id === policy.id) {
+            this.selectedPolicy.set({ ...this.selectedPolicy()!, status: 'active' });
+          }
+        },
+        error: (err) => this.feedback.error(err?.error?.message ?? 'Failed to activate policy'),
       });
     }
   }
 
   async suspendPolicy(policy: Policy, event?: Event): Promise<void> {
     event?.stopPropagation();
-    // In a real app, you might pop a dialog to ask for a reason
     const reason = 'Administrative suspension';
     if (await this.feedback.confirm('Suspend Policy', `Suspend policy ${policy.policy_number}?`)) {
       this.store.suspend(policy.id, reason).subscribe({
-        next: () => this.feedback.success('Policy suspended'),
-        error: (err) => this.feedback.error(err.error?.message),
+        next: () => {
+          this.feedback.success('Policy suspended');
+          // Update drawer if this policy is currently being viewed
+          if (this.selectedPolicy()?.id === policy.id) {
+            this.selectedPolicy.set({ ...this.selectedPolicy()!, status: 'suspended' });
+          }
+        },
+        error: (err) => this.feedback.error(err?.error?.message ?? 'Failed to suspend policy'),
       });
     }
   }
@@ -270,15 +314,19 @@ export class MedicalPoliciesList implements OnInit, AfterViewInit {
       await this.feedback.confirm('Reinstate Policy', `Reinstate policy ${policy.policy_number}?`)
     ) {
       this.store.reinstate(policy.id).subscribe({
-        next: () => this.feedback.success('Policy reinstated'),
-        error: (err) => this.feedback.error(err.error?.message),
+        next: () => {
+          this.feedback.success('Policy reinstated');
+          if (this.selectedPolicy()?.id === policy.id) {
+            this.selectedPolicy.set({ ...this.selectedPolicy()!, status: 'active' });
+          }
+        },
+        error: (err) => this.feedback.error(err?.error?.message ?? 'Failed to reinstate policy'),
       });
     }
   }
 
   async cancelPolicy(policy: Policy, event?: Event): Promise<void> {
     event?.stopPropagation();
-    // In real app, prompt for reason and effective date
     const reason = 'Client request';
     if (
       await this.feedback.confirm(
@@ -289,9 +337,11 @@ export class MedicalPoliciesList implements OnInit, AfterViewInit {
       this.store.cancel(policy.id, reason).subscribe({
         next: () => {
           this.feedback.success('Policy cancelled');
-          if (this.selectedPolicy()?.id === policy.id) this.closeDrawer();
+          if (this.selectedPolicy()?.id === policy.id) {
+            this.closeDrawer();
+          }
         },
-        error: (err) => this.feedback.error(err.error?.message),
+        error: (err) => this.feedback.error(err?.error?.message ?? 'Failed to cancel policy'),
       });
     }
   }

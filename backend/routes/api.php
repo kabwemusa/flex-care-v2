@@ -4,6 +4,7 @@ use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Auth\ModuleAccessController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\RoleController;
+use App\Http\Controllers\PasswordController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -28,13 +29,18 @@ Route::prefix('auth')->group(function () {
 // PROTECTED ROUTES (Authentication Required)
 // =========================================================================
 
-Route::middleware('auth:sanctum')->group(function () {
+Route::middleware(['auth:sanctum', 'session.check'])->group(function () {
 
     // Auth Management
     Route::prefix('auth')->group(function () {
         Route::post('/logout', [AuthController::class, 'logout'])->name('auth.logout');
         Route::get('/me', [AuthController::class, 'me'])->name('auth.me');
         Route::post('/refresh', [AuthController::class, 'refresh'])->name('auth.refresh');
+    });
+
+    // Password Management
+    Route::prefix('password')->group(function () {
+        Route::post('/change', [PasswordController::class, 'changePassword'])->name('password.change');
     });
 
     // Module Access Management (Admin only)
@@ -56,6 +62,14 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('users/{id}/deactivate', [UserController::class, 'deactivate'])->name('users.deactivate');
         Route::post('users/{id}/roles', [UserController::class, 'assignRoles'])->name('users.assign-roles');
         Route::get('users/{id}/permissions', [UserController::class, 'permissions'])->name('users.permissions');
+
+        // Admin-only password actions
+        Route::post('users/{id}/force-password-change', [PasswordController::class, 'forcePasswordChange'])
+            ->name('users.force-password-change')
+            ->middleware('role:System Administrator');
+        Route::post('users/{id}/reset-password', [PasswordController::class, 'resetPassword'])
+            ->name('users.reset-password')
+            ->middleware('role:System Administrator');
     });
 
     // =========================================================================

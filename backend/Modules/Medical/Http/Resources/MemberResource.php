@@ -109,7 +109,7 @@ class MemberResource extends JsonResource
             'declared_conditions' => $this->declared_conditions,
             
             // Eligibility
-            'can_make_claim' => $this->canMakeClaim(),
+            // 'can_make_claim' => $this->canMakeClaim(),
             
             // Counts
             'dependents_count' => $this->whenCounted('dependents'),

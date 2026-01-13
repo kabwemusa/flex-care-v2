@@ -14,7 +14,9 @@ export * from './lib/medical-rate-card-detail/medical-rate-card-detail';
 export * from './lib/medical-discount-list/medical-discount-list';
 export * from './lib/medical-loading-rule-list/medical-loading-rule-list';
 export * from './lib/medical-groups-list/medical-groups-list';
+export * from './lib/medical-group-detail/medical-group-detail';
 export * from './lib/medical-policies-list/medical-policies-list';
+export * from './lib/medical-policy-detail/medical-policy-detail';
 export * from './lib/medical-members-list/medical-members-list';
 export * from './lib/medical-application-list/medical-application-list';
 export * from './lib/medical-application-detail/medical-application-detail';
@@ -23,4 +25,7 @@ export * from './lib/dialogs/medical-application-referral-dialog/medical-applica
 export * from './lib/dialogs/medical-quote-actions-dialog/medical-quote-actions-dialog';
 export * from './lib/dialogs/medical-underwriting-dialog/medical-underwriting-dialog';
 export * from './lib/dialogs/medical-quick-quote-dialog/medical-quick-quote-dialog';
+export * from './lib/dialogs/medical-census-upload-dialog/medical-census-upload-dialog';
+export * from './lib/dialogs/medical-group-quote-dialog/medical-group-quote-dialog';
 export * from './lib/components/application-documents/application-documents';
+export * from './lib/medical-group-detail/medical-group-detail';

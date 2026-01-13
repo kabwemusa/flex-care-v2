@@ -2,6 +2,7 @@
 
 import { Component, inject, OnInit, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { HttpClient } from '@angular/common/http';
 import { MAT_DIALOG_DATA, MatDialogRef, MatDialogModule } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
@@ -15,7 +16,6 @@ import { MatChipsModule } from '@angular/material/chips';
 
 import {
   Addon,
-  AddonRate,
   AddonCatalogStore,
   ADDON_TYPES,
   ADDON_PRICING_TYPES,
@@ -52,6 +52,7 @@ export class MedicalApplicationAddonDialog implements OnInit {
   readonly dialogRef = inject(MatDialogRef<MedicalApplicationAddonDialog>);
   readonly data = inject<DialogData>(MAT_DIALOG_DATA);
   readonly store = inject(AddonCatalogStore);
+  private readonly http = inject(HttpClient);
   private readonly feedback = inject(FeedbackService);
 
   readonly addonTypes = ADDON_TYPES;
@@ -60,7 +61,6 @@ export class MedicalApplicationAddonDialog implements OnInit {
   searchQuery = signal('');
   selectedType = signal('');
   selectedAddon = signal<Addon | null>(null);
-  selectedRateId = signal<string | null>(null);
   isLoading = signal(true);
   availableAddons = signal<Addon[]>([]);
 
@@ -85,39 +85,21 @@ export class MedicalApplicationAddonDialog implements OnInit {
     return addons;
   });
 
-  addonRates = computed(() => {
-    const addon = this.selectedAddon();
-    if (!addon || !addon.rates) return [];
-
-    // Filter active and effective rates
-    return addon.rates.filter((r) => r.is_active && r.is_effective);
-  });
-
-  selectedRate = computed(() => {
-    const rateId = this.selectedRateId();
-    const rates = this.addonRates();
-    if (!rateId || rates.length === 0) return null;
-    return rates.find((r) => r.id === rateId) || null;
-  });
-
   estimatedPremium = computed(() => {
-    const rate = this.selectedRate();
-    if (!rate) return 0;
+    const addon = this.selectedAddon();
+    if (!addon) return 0;
 
     const memberCount = this.data.memberCount;
     const basePremium = this.data.basePremium;
 
-    switch (rate.pricing_type) {
+    switch (addon.pricing_type) {
       case 'fixed':
-        return rate.amount || 0;
+        return addon.amount || 0;
       case 'per_member':
-        return (rate.amount || 0) * memberCount;
+        return (addon.amount || 0) * memberCount;
       case 'percentage':
-        const basis = rate.percentage_basis === 'total_premium' ? basePremium : basePremium;
-        return Math.round(basis * ((rate.percentage || 0) / 100) * 100) / 100;
-      case 'age_rated':
-        // For age-rated, show a note that calculation depends on member ages
-        return 0;
+        const basis = addon.percentage_basis === 'total_premium' ? basePremium : basePremium;
+        return Math.round(basis * ((addon.percentage || 0) / 100) * 100) / 100;
       default:
         return 0;
     }
@@ -129,17 +111,25 @@ export class MedicalApplicationAddonDialog implements OnInit {
 
   private loadAvailableAddons() {
     this.isLoading.set(true);
-    this.store.loadAvailableAddons(this.data.planId).subscribe({
+
+    // Load plan addons directly via HTTP (configured addons for this plan)
+    this.http.get<any>(`/api/v1/medical/plans/${this.data.planId}/addons`).subscribe({
       next: (res) => {
-        // Filter out already added addons
-        const available = res.data.filter((a) => !this.data.existingAddonIds.includes(a.id));
+        const planAddons = res.data || [];
+
+        // Extract addons from plan addons and filter out already added ones
+        const available = planAddons
+          .filter((pa: any) => pa.addon && !this.data.existingAddonIds.includes(pa.addon_id))
+          .map((pa: any) => pa.addon)
+          .filter((addon: any) => addon !== null && addon !== undefined);
+
         this.availableAddons.set(available);
         this.isLoading.set(false);
       },
       error: () => {
         this.feedback.error('Failed to load available addons');
         this.isLoading.set(false);
-      },
+      }
     });
   }
 
@@ -149,21 +139,10 @@ export class MedicalApplicationAddonDialog implements OnInit {
 
   selectAddon(addon: Addon) {
     this.selectedAddon.set(addon);
-
-    // Auto-select the first active rate if available
-    const rates = addon.rates?.filter((r) => r.is_active && r.is_effective) || [];
-    if (rates.length > 0) {
-      // Prefer plan-specific rates over global rates
-      const planSpecificRate = rates.find((r) => r.is_plan_specific);
-      this.selectedRateId.set(planSpecificRate?.id || rates[0].id);
-    } else {
-      this.selectedRateId.set(null);
-    }
   }
 
   backToList() {
     this.selectedAddon.set(null);
-    this.selectedRateId.set(null);
   }
 
   getAddonTypeLabel(value: string): string {
@@ -199,16 +178,16 @@ export class MedicalApplicationAddonDialog implements OnInit {
     }).format(amount);
   }
 
-  getRatePricingDescription(rate: AddonRate): string {
-    switch (rate.pricing_type) {
+  getPricingDescription(addon: Addon): string {
+    switch (addon.pricing_type) {
       case 'fixed':
-        return `ZMW ${this.formatPremium(rate.amount || 0)} (one-time)`;
+        return `${addon.currency || 'ZMW'} ${this.formatPremium(addon.amount || 0)} (flat rate)`;
       case 'per_member':
-        return `ZMW ${this.formatPremium(rate.amount || 0)} per member`;
+        return `${addon.currency || 'ZMW'} ${this.formatPremium(addon.amount || 0)} per member`;
       case 'percentage':
-        return `${rate.percentage}% of ${rate.percentage_basis === 'total_premium' ? 'total premium' : 'base premium'}`;
-      case 'age_rated':
-        return 'Age-rated pricing';
+        return `${addon.percentage}% of ${
+          addon.percentage_basis === 'total_premium' ? 'total premium' : 'base premium'
+        }`;
       default:
         return 'Unknown pricing';
     }
@@ -216,27 +195,17 @@ export class MedicalApplicationAddonDialog implements OnInit {
 
   canAdd(): boolean {
     const addon = this.selectedAddon();
-    const rateId = this.selectedRateId();
-
-    // Must have addon selected
-    if (!addon) return false;
-
-    // If addon has rates, must select one
-    const rates = this.addonRates();
-    if (rates.length > 0 && !rateId) return false;
-
-    return true;
+    // Must have addon selected and be active
+    return !!addon && addon.is_active;
   }
 
   addAddon() {
     const addon = this.selectedAddon();
-    const rateId = this.selectedRateId();
 
     if (!this.canAdd() || !addon) return;
 
     this.dialogRef.close({
       addonId: addon.id,
-      addonRateId: rateId,
     });
   }
 }

@@ -13,7 +13,7 @@
     <div class="rounded-lg border border-slate-200 bg-slate-50 p-4">
       <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
         <!-- Document Type -->
-        <mat-form-field appearance="outline" subscriptSizing="dynamic" class="w-full">
+        <mat-form-field appearance="fill" subscriptSizing="dynamic" class="w-full minimal-input">
           <mat-label>Document Type</mat-label>
           <mat-select formControlName="document_type">
             @for (type of documentTypes; track type.value) {
@@ -23,13 +23,13 @@
         </mat-form-field>
 
         <!-- Title -->
-        <mat-form-field appearance="outline" subscriptSizing="dynamic" class="w-full">
+        <mat-form-field appearance="fill" subscriptSizing="dynamic" class="w-full minimal-input">
           <mat-label>Title/Description</mat-label>
           <input matInput formControlName="title" placeholder="Enter document title" />
         </mat-form-field>
 
         <!-- Member (Optional) -->
-        <mat-form-field appearance="outline" subscriptSizing="dynamic" class="w-full">
+        <mat-form-field appearance="fill" subscriptSizing="dynamic" class="w-full minimal-input">
           <mat-label>Related to Member (Optional)</mat-label>
           <mat-select formControlName="application_member_id">
             <mat-option value="">Application Level</mat-option>

@@ -1,7 +1,7 @@
 import { Component, signal, computed, inject } from '@angular/core';
 import { NavItem, Shell, filterNavigation } from 'shared';
 import { RouterModule } from '@angular/router';
-import { AuthService } from 'core-auth';
+import { AuthService, MEDICAL_PERMISSIONS, MODULES } from 'core-auth';
 
 @Component({
   selector: 'lib-medical-main',
@@ -34,21 +34,19 @@ export class MedicalMain {
     {
       label: 'Product Setup',
       icon: 'category',
-      requiredModule: 'medical',
+      requiredModule: MODULES.MEDICAL,
       children: [
         {
           href: '/schemes',
           label: 'Schemes',
           icon: 'account_tree',
-          guard: 'medical',
-          requiredPermissions: ['view schemes'],
+          requiredPermissions: [MEDICAL_PERMISSIONS.SCHEMES_VIEW],
         },
         {
           href: '/plans',
           label: 'Plans',
           icon: 'description',
-          guard: 'medical',
-          requiredPermissions: ['view plans'],
+          requiredPermissions: [MEDICAL_PERMISSIONS.PLANS_VIEW],
         },
         {
           label: 'Plan Configuration',
@@ -57,14 +55,12 @@ export class MedicalMain {
             {
               href: '/benefits',
               label: 'Benefits Catalog',
-              guard: 'medical',
-              requiredPermissions: ['view benefits'],
+              requiredPermissions: [MEDICAL_PERMISSIONS.PLANS_VIEW], // Using plans as proxy since no separate benefits permission
             },
             {
               href: '/addons',
               label: 'Add-ons Catalog',
-              guard: 'medical',
-              requiredPermissions: ['view addons'],
+              requiredPermissions: [MEDICAL_PERMISSIONS.ADDONS_VIEW],
             },
           ],
         },
@@ -73,70 +69,63 @@ export class MedicalMain {
     {
       label: 'Pricing & Rating',
       icon: 'payments',
-      requiredModule: 'medical',
+      requiredModule: MODULES.MEDICAL,
       children: [
         {
           href: '/rate-cards',
           label: 'Rate Cards',
           icon: 'calculate',
-          guard: 'medical',
-          requiredPermissions: ['view rate cards'],
+          requiredPermissions: [MEDICAL_PERMISSIONS.RATE_CARDS_VIEW],
         },
         {
           href: '/discounts',
           label: 'Discount Rules',
           icon: 'local_offer',
-          guard: 'medical',
-          requiredPermissions: ['view discounts'],
+          requiredPermissions: [MEDICAL_PERMISSIONS.PREMIUM_VIEW], // Using premium as proxy
         },
         {
           href: '/loading-rule',
           label: 'Loading Rules',
           icon: 'trending_up',
-          guard: 'medical',
-          requiredPermissions: ['view loading rules'],
+          requiredPermissions: [MEDICAL_PERMISSIONS.UNDERWRITING_VIEW], // Using underwriting as proxy
         },
       ],
     },
     {
       label: 'Sales & Underwriting',
       icon: 'assignment',
-      requiredModule: 'medical',
+      requiredModule: MODULES.MEDICAL,
       children: [
         {
           href: '/applications',
           label: 'Applications',
           icon: 'post_add',
-          guard: 'medical',
-          requiredPermissions: ['view applications'],
+          requiredPermissions: [MEDICAL_PERMISSIONS.APPLICATIONS_VIEW],
         },
         {
           href: '/groups',
           label: 'Corporate Groups',
           icon: 'business',
-          guard: 'medical',
-          requiredPermissions: ['view groups'],
+          requiredPermissions: [MEDICAL_PERMISSIONS.GROUPS_VIEW],
         },
       ],
     },
     {
       label: 'Policy Management',
       icon: 'shield',
-      requiredModule: 'medical',
+      requiredModule: MODULES.MEDICAL,
       children: [
         {
           href: '/policies',
           label: 'Policies',
           icon: 'policy',
-          guard: 'medical',
-          requiredPermissions: ['view policies'],
+          requiredPermissions: [MEDICAL_PERMISSIONS.POLICIES_VIEW],
         },
         {
           href: '/members',
           label: 'Members',
           icon: 'group',
-          guard: 'medical',
-          requiredPermissions: ['view members'],
+          requiredPermissions: [MEDICAL_PERMISSIONS.MEMBERS_VIEW],
         },
       ],
     },

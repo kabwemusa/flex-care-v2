@@ -12,9 +12,10 @@ class PolicyResource extends JsonResource
         return [
             'id' => $this->id,
             'policy_number' => $this->policy_number,
+            'application_id' => $this->application_id,
             'policy_type' => $this->policy_type,
             'policy_type_label' => $this->policy_type_label,
-            
+
             // Product
             'scheme_id' => $this->scheme_id,
             'plan_id' => $this->plan_id,
@@ -22,11 +23,16 @@ class PolicyResource extends JsonResource
             'scheme' => new SchemeResource($this->whenLoaded('scheme')),
             'plan' => new PlanResource($this->whenLoaded('plan')),
             'rate_card' => new RateCardResource($this->whenLoaded('rateCard')),
-            
+
             // Corporate
             'group_id' => $this->group_id,
             'group' => new GroupResource($this->whenLoaded('group')),
             'is_corporate' => $this->is_corporate,
+
+            // Policy Holder Information
+            'holder_name' => $this->holder_name,
+            'holder_email' => $this->holder_email,
+            'holder_phone' => $this->holder_phone,
             'policy_holder_name' => $this->policy_holder_name,
             
             // Principal
@@ -69,16 +75,28 @@ class PolicyResource extends JsonResource
             'status_label' => $this->status_label,
             'is_draft' => $this->is_draft,
             'is_active' => $this->is_active,
-            
-            // Underwriting
+            'is_suspended' => $this->is_suspended,
+            'is_cancelled' => $this->is_cancelled,
+            'is_in_force' => $this->is_in_force,
+
+            // Issuance (Application Conversion)
+            'issued_at' => $this->issued_at?->toDateTimeString(),
+            'issued_by' => $this->issued_by,
+
+            // Underwriting (Inherited from Application)
             'underwriting_status' => $this->underwriting_status,
             'underwriting_status_label' => $this->underwriting_status_label,
             'underwriting_notes' => $this->underwriting_notes,
             'underwritten_by' => $this->underwritten_by,
-            'underwritten_at' => $this->underwritten_at,
+            'underwritten_at' => $this->underwritten_at?->toDateTimeString(),
             
+            // Suspension
+            'suspended_at' => $this->suspended_at?->toDateString(),
+            'suspension_reason' => $this->suspension_reason,
+
             // Cancellation
             'cancelled_at' => $this->cancelled_at?->toDateString(),
+            'cancelled_by' => $this->cancelled_by,
             'cancellation_reason' => $this->cancellation_reason,
             'cancellation_notes' => $this->cancellation_notes,
             

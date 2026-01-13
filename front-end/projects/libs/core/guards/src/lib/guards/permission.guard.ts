@@ -65,7 +65,6 @@ export const anyPermissionGuard: CanActivateFn = (route: ActivatedRouteSnapshot)
   const router = inject(Router);
 
   const requiredPermissions = route.data['permissions'] as string[];
-  const guard = (route.data['guard'] as keyof PermissionsByGuard) || 'web';
 
   if (!requiredPermissions || !Array.isArray(requiredPermissions)) {
     console.error('Any permission guard requires "permissions" array in route data');
@@ -77,11 +76,12 @@ export const anyPermissionGuard: CanActivateFn = (route: ActivatedRouteSnapshot)
     return true;
   }
 
-  if (authService.hasAnyPermission(requiredPermissions, guard)) {
+  // Use isAllowedAny which auto-detects guard from permission format
+  if (authService.isAllowedAny(requiredPermissions)) {
     return true;
   }
 
-  console.warn(`Access denied: Missing permissions [${requiredPermissions.join(', ')}] for guard "${guard}"`);
+  console.warn(`Access denied: Missing permissions [${requiredPermissions.join(', ')}]`);
   router.navigate(['/']);
   return false;
 };

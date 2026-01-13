@@ -1,0 +1,328 @@
+<!-- libs/medical/feature/src/lib/dialogs/medical-add-member-to-policy-dialog/medical-add-member-to-policy-dialog.html -->
+
+<div class="flex max-h-[90vh] w-[60vw] min-w-[60vw] flex-col overflow-hidden bg-white">
+  <!-- Header -->
+  <div class="flex items-center justify-between border-b border-slate-100 px-6 py-4">
+    <div class="flex items-center gap-3">
+      <div
+        class="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary"
+      >
+        <mat-icon fontSet="material-symbols-rounded">person_add</mat-icon>
+      </div>
+      <div>
+        <h2 class="text-lg font-semibold tracking-tight text-slate-900">Add Member to Policy</h2>
+        <p class="text-xs text-slate-500">Add a new member with pro-rated premium calculation</p>
+      </div>
+    </div>
+
+    <button mat-icon-button (click)="cancel()" class="!text-slate-400 hover:!text-slate-700">
+      <mat-icon fontSet="material-symbols-rounded">close</mat-icon>
+    </button>
+  </div>
+
+  <!-- Policy Info Banner -->
+  <div class="border-b border-slate-100 bg-slate-50 px-6 py-3">
+    <div class="flex items-center justify-between text-sm">
+      <div class="flex items-center gap-4">
+        <span class="text-slate-600">Policy:</span>
+        <span class="font-medium text-slate-900">{{ data.policy.policy_number }}</span>
+      </div>
+      <div class="flex items-center gap-4">
+        <span class="text-slate-600">Expiry:</span>
+        <span class="font-medium text-slate-900">
+          {{ data.policy.expiry_date | date : 'MMM dd, yyyy' }}
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Form Content -->
+  <div class="flex-1 overflow-y-auto p-6">
+    <form [formGroup]="memberForm" class="space-y-6">
+      <!-- Coverage Details Section -->
+      <div class="space-y-4">
+        <h3 class="text-sm font-semibold text-slate-700 flex items-center gap-2">
+          <mat-icon fontSet="material-symbols-rounded" class="!text-base">calendar_month</mat-icon>
+          Coverage Details
+        </h3>
+
+        <div class="grid grid-cols-2 gap-4">
+          <!-- Effective Date -->
+          <div class="flex flex-col gap-1.5">
+            <label class="text-sm font-medium text-slate-700">
+              Effective Date <span class="text-red-500">*</span>
+            </label>
+            <mat-form-field
+              appearance="fill"
+              class="w-full minimal-input"
+              subscriptSizing="dynamic"
+            >
+              <mat-label>Effective date</mat-label>
+
+              <input
+                matInput
+                [matDatepicker]="effectivePicker"
+                formControlName="effective_date"
+                [min]="minEffectiveDate"
+                [max]="maxEffectiveDate"
+              />
+
+              <mat-datepicker-toggle matIconSuffix [for]="effectivePicker"> </mat-datepicker-toggle>
+
+              <mat-datepicker #effectivePicker></mat-datepicker>
+
+              @if (memberForm.get('effective_date')?.hasError('required')) {
+              <mat-error>Effective date is required</mat-error>
+              }
+            </mat-form-field>
+          </div>
+
+          <!-- Member Type -->
+          <div class="flex flex-col gap-1.5">
+            <label class="text-sm font-medium text-slate-700">
+              Member Type <span class="text-red-500">*</span>
+            </label>
+            <mat-form-field
+              appearance="fill"
+              class="w-full minimal-input"
+              subscriptSizing="dynamic"
+            >
+              <mat-select formControlName="member_type" placeholder="Select type">
+                @for (type of memberTypes; track type.value) {
+                <mat-option [value]="type.value">{{ type.label }}</mat-option>
+                }
+              </mat-select>
+              @if (memberForm.get('member_type')?.hasError('required')) {
+              <mat-error>Member type is required</mat-error>
+              }
+            </mat-form-field>
+          </div>
+        </div>
+
+        <!-- Pro-Rata Calculation Display -->
+        @if (daysRemaining() > 0) {
+        <div class="rounded-lg border border-blue-100 bg-blue-50/50 p-4">
+          <div class="mb-2 flex items-center gap-2 text-sm font-medium text-blue-900">
+            <mat-icon fontSet="material-symbols-rounded" class="!text-base">calculate</mat-icon>
+            Premium Calculation
+          </div>
+          <div class="grid grid-cols-3 gap-4 text-sm">
+            <div>
+              <div class="text-xs text-blue-600">Days Remaining</div>
+              <div class="mt-1 font-semibold text-blue-900">{{ daysRemaining() }} days</div>
+            </div>
+            <div>
+              <div class="text-xs text-blue-600">Estimated Annual</div>
+              <div class="mt-1 font-semibold text-blue-900">
+                {{ annualPremium() | currency }}
+              </div>
+            </div>
+            <div>
+              <div class="text-xs text-blue-600">Pro-Rated Premium</div>
+              <div class="mt-1 font-semibold text-green-700">
+                {{ proratedPremium() | currency }}
+              </div>
+            </div>
+          </div>
+          <div class="mt-2 text-xs text-blue-700">
+            Note: Final premium will be calculated based on actual rate card and any medical
+            loadings.
+          </div>
+        </div>
+        }
+      </div>
+
+      <!-- Personal Information Section -->
+      <div class="space-y-4">
+        <h3 class="text-sm font-semibold text-slate-700 flex items-center gap-2">
+          <mat-icon fontSet="material-symbols-rounded" class="!text-base">person</mat-icon>
+          Personal Information
+        </h3>
+
+        <div class="grid grid-cols-4 gap-4">
+          <mat-form-field appearance="fill" class="minimal-input" subscriptSizing="dynamic">
+            <mat-label>Title</mat-label>
+            <mat-select formControlName="title">
+              @for (title of titleOptions; track title) {
+              <mat-option [value]="title">{{ title }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field
+            appearance="fill"
+            class="col-span-3 minimal-input"
+            subscriptSizing="dynamic"
+          >
+            <mat-label>First Name *</mat-label>
+            <input matInput formControlName="first_name" placeholder="Enter first name" />
+            @if (memberForm.get('first_name')?.hasError('required')) {
+            <mat-error>First name is required</mat-error>
+            }
+          </mat-form-field>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <mat-form-field appearance="fill" class="minimal-input" subscriptSizing="dynamic">
+            <mat-label>Middle Name</mat-label>
+            <input matInput formControlName="middle_name" placeholder="Enter middle name" />
+          </mat-form-field>
+
+          <mat-form-field appearance="fill" class="minimal-input" subscriptSizing="dynamic">
+            <mat-label>Last Name *</mat-label>
+            <input matInput formControlName="last_name" placeholder="Enter last name" />
+            @if (memberForm.get('last_name')?.hasError('required')) {
+            <mat-error>Last name is required</mat-error>
+            }
+          </mat-form-field>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <mat-form-field appearance="fill" class="minimal-input" subscriptSizing="dynamic">
+            <mat-label>Date of Birth *</mat-label>
+            <input
+              matInput
+              [matDatepicker]="dobPicker"
+              formControlName="date_of_birth"
+              placeholder="Select date"
+            />
+            <mat-datepicker-toggle matIconSuffix [for]="dobPicker"></mat-datepicker-toggle>
+            <mat-datepicker #dobPicker></mat-datepicker>
+            @if (memberForm.get('date_of_birth')?.hasError('required')) {
+            <mat-error>Date of birth is required</mat-error>
+            }
+          </mat-form-field>
+
+          <mat-form-field appearance="fill" class="minimal-input" subscriptSizing="dynamic">
+            <mat-label>Gender *</mat-label>
+            <mat-select formControlName="gender">
+              <mat-option value="M">Male</mat-option>
+              <mat-option value="F">Female</mat-option>
+            </mat-select>
+            @if (memberForm.get('gender')?.hasError('required')) {
+            <mat-error>Gender is required</mat-error>
+            }
+          </mat-form-field>
+        </div>
+      </div>
+
+      <!-- Identification Section -->
+      <div class="space-y-4">
+        <h3 class="text-sm font-semibold text-slate-700 flex items-center gap-2">
+          <mat-icon fontSet="material-symbols-rounded" class="!text-base">badge</mat-icon>
+          Identification
+        </h3>
+
+        <div class="grid grid-cols-2 gap-4">
+          <mat-form-field appearance="fill" class="minimal-input" subscriptSizing="dynamic">
+            <mat-label>National ID</mat-label>
+            <input matInput formControlName="national_id" placeholder="Enter national ID" />
+          </mat-form-field>
+
+          <mat-form-field appearance="fill" class="minimal-input" subscriptSizing="dynamic">
+            <mat-label>Passport Number</mat-label>
+            <input matInput formControlName="passport_number" placeholder="Enter passport number" />
+          </mat-form-field>
+        </div>
+      </div>
+
+      <!-- Contact Information Section -->
+      <div class="space-y-4">
+        <h3 class="text-sm font-semibold text-slate-700 flex items-center gap-2">
+          <mat-icon fontSet="material-symbols-rounded" class="!text-base">contact_mail</mat-icon>
+          Contact Information
+        </h3>
+
+        <div class="grid grid-cols-2 gap-4">
+          <mat-form-field appearance="fill" class="minimal-input" subscriptSizing="dynamic">
+            <mat-label>Email</mat-label>
+            <input matInput type="email" formControlName="email" placeholder="Enter email" />
+            @if (memberForm.get('email')?.hasError('email')) {
+            <mat-error>Please enter a valid email</mat-error>
+            }
+          </mat-form-field>
+
+          <mat-form-field appearance="fill" class="minimal-input" subscriptSizing="dynamic">
+            <mat-label>Phone</mat-label>
+            <input matInput formControlName="phone" placeholder="Enter phone number" />
+          </mat-form-field>
+        </div>
+
+        <mat-form-field appearance="fill" class="w-full minimal-input" subscriptSizing="dynamic">
+          <mat-label>Mobile</mat-label>
+          <input matInput formControlName="mobile" placeholder="Enter mobile number" />
+        </mat-form-field>
+      </div>
+
+      <!-- Employment Section (for corporate policies) -->
+      @if (isCorporatePolicy) {
+      <div class="space-y-4">
+        <h3 class="text-sm font-semibold text-slate-700 flex items-center gap-2">
+          <mat-icon fontSet="material-symbols-rounded" class="!text-base">work</mat-icon>
+          Employment Details
+        </h3>
+
+        <div class="grid grid-cols-2 gap-4">
+          <mat-form-field appearance="fill" class="minimal-input" subscriptSizing="dynamic">
+            <mat-label>Employee Number</mat-label>
+            <input matInput formControlName="employee_number" placeholder="Enter employee number" />
+          </mat-form-field>
+
+          <mat-form-field appearance="fill" class="minimal-input" subscriptSizing="dynamic">
+            <mat-label>Job Title</mat-label>
+            <input matInput formControlName="job_title" placeholder="Enter job title" />
+          </mat-form-field>
+        </div>
+
+        <mat-form-field appearance="fill" class="w-full minimal-input" subscriptSizing="dynamic">
+          <mat-label>Department</mat-label>
+          <input matInput formControlName="department" placeholder="Enter department" />
+        </mat-form-field>
+      </div>
+      }
+
+      <!-- Medical Declaration Section -->
+      <div class="space-y-4">
+        <h3 class="text-sm font-semibold text-slate-700 flex items-center gap-2">
+          <mat-icon fontSet="material-symbols-rounded" class="!text-base"
+            >medical_information</mat-icon
+          >
+          Medical Declaration
+        </h3>
+
+        <mat-checkbox formControlName="has_pre_existing_conditions" color="primary">
+          Has pre-existing medical conditions
+        </mat-checkbox>
+
+        @if (memberForm.get('has_pre_existing_conditions')?.value) {
+        <mat-form-field appearance="fill" class="w-full minimal-input" subscriptSizing="dynamic">
+          <mat-label>Medical History Notes</mat-label>
+          <textarea
+            matInput
+            formControlName="medical_history_notes"
+            rows="3"
+            placeholder="Describe any pre-existing conditions..."
+          ></textarea>
+        </mat-form-field>
+        }
+      </div>
+    </form>
+  </div>
+
+  <!-- Footer Actions -->
+  <div
+    class="flex items-center justify-end gap-3 border-t border-slate-100 bg-slate-50/50 px-6 py-4"
+  >
+    <button mat-button (click)="cancel()" class="!text-slate-600">Cancel</button>
+    <button
+      mat-raised-button
+      color="primary"
+      (click)="save()"
+      [disabled]="!isFormValid"
+      class="!px-6"
+    >
+      <mat-icon fontSet="material-symbols-rounded" class="!text-base mr-1">person_add</mat-icon>
+      Add Member
+    </button>
+  </div>
+</div>

@@ -390,6 +390,12 @@ class ApplicationMember extends BaseModel
 
     /**
      * Calculate total loading amount from applied loadings.
+     * 
+     * This method now properly handles:
+     * - LoadingRule-based loadings (uses rule's calculateLoading method)
+     * - Manual loadings (backward compatibility)
+     * - Percentage vs fixed calculations
+     * - Min/max caps from LoadingRule
      */
     protected function calculateLoadingAmount(): float
     {
@@ -398,15 +404,37 @@ class ApplicationMember extends BaseModel
         }
 
         $totalLoading = 0;
+        $basePremium = (float) $this->base_premium;
+
         foreach ($this->applied_loadings as $loading) {
-            if (($loading['loading_type'] ?? '') === 'percentage') {
-                $totalLoading += round($this->base_premium * (($loading['value'] ?? 0) / 100), 2);
+            // If loading_amount is already calculated (from LoadingRule), use it directly
+            if (isset($loading['loading_amount'])) {
+                $totalLoading += (float) $loading['loading_amount'];
+                continue;
+            }
+
+            // If loading_rule_id is provided, look up and use LoadingRule
+            if (!empty($loading['loading_rule_id'])) {
+                $rule = \Modules\Medical\Models\LoadingRule::find($loading['loading_rule_id']);
+                if ($rule) {
+                    // Use LoadingRule's calculateLoading method (handles min/max caps)
+                    $totalLoading += $rule->calculateLoading($basePremium);
+                    continue;
+                }
+            }
+
+            // Fallback: Manual calculation (backward compatibility)
+            $loadingType = $loading['loading_type'] ?? 'fixed';
+            $value = (float) ($loading['value'] ?? $loading['loading_value'] ?? 0);
+
+            if ($loadingType === 'percentage') {
+                $totalLoading += round($basePremium * ($value / 100), 2);
             } else {
-                $totalLoading += (float) ($loading['value'] ?? 0);
+                $totalLoading += $value;
             }
         }
 
-        return $totalLoading;
+        return round($totalLoading, 2);
     }
 
     /**
@@ -461,11 +489,43 @@ class ApplicationMember extends BaseModel
 
     /**
      * Add a loading.
+     * 
+     * If loading_rule_id is provided, the loading will be enriched with LoadingRule data.
+     * Otherwise, it will be stored as a manual loading.
      */
     public function addLoading(array $loading): void
     {
         $loadings = $this->applied_loadings ?? [];
-        $loading['id'] = uniqid('load_');
+        
+        // If loading_rule_id is provided, enrich with LoadingRule data
+        if (!empty($loading['loading_rule_id'])) {
+            $rule = \Modules\Medical\Models\LoadingRule::find($loading['loading_rule_id']);
+            if ($rule) {
+                $calculatedAmount = $rule->calculateLoading($this->base_premium);
+                $loading = array_merge($loading, [
+                    'condition_name' => $rule->condition_name,
+                    'icd10_code' => $rule->icd10_code,
+                    'loading_type' => $rule->loading_type,
+                    'loading_value' => $rule->loading_value,
+                    'loading_amount' => $calculatedAmount,
+                    'min_loading' => $rule->min_loading,
+                    'max_loading' => $rule->max_loading,
+                    'duration_type' => $loading['duration_type'] ?? $rule->duration_type,
+                ]);
+            }
+        } else {
+            // Manual loading: ensure loading_type is set and calculate amount
+            $loadingType = $loading['loading_type'] ?? 'fixed';
+            $value = (float) ($loading['value'] ?? $loading['loading_value'] ?? 0);
+            
+            if ($loadingType === 'percentage') {
+                $loading['loading_amount'] = round($this->base_premium * ($value / 100), 2);
+            } else {
+                $loading['loading_amount'] = $value;
+            }
+        }
+        
+        $loading['id'] = $loading['id'] ?? uniqid('load_');
         $loading['applied_at'] = now()->toISOString();
         $loadings[] = $loading;
         

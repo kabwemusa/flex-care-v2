@@ -285,6 +285,31 @@ export class UserManagementStore {
   }
 
   /**
+   * Reset user password (admin only)
+   */
+  resetPassword(userId: string) {
+    this.state.update((s) => ({ ...s, saving: true }));
+
+    return this.http.post<ApiResponse<{ temporary_password: string; user: UserListItem }>>(
+      `${this.apiUrl}/${userId}/reset-password`,
+      {}
+    ).pipe(
+      tap({
+        next: (res) =>
+          this.state.update((s) => ({
+            ...s,
+            users: s.users.map((u) => (u.id === userId ? res.data.user : u)),
+            selectedUser: s.selectedUser?.id === userId
+              ? { ...s.selectedUser, ...res.data.user }
+              : s.selectedUser,
+            saving: false,
+          })),
+        error: () => this.state.update((s) => ({ ...s, saving: false })),
+      })
+    );
+  }
+
+  /**
    * Clear selected user
    */
   clearSelected() {

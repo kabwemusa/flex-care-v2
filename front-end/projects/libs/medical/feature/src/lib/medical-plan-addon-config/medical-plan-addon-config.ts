@@ -23,12 +23,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatTooltipModule } from '@angular/material/tooltip';
 
 // Domain Imports
-import {
-  PlanAddon,
-  AddonCatalogStore,
-  ADDON_AVAILABILITY,
-  getLabelByValue,
-} from 'medical-data';
+import { PlanAddon, AddonCatalogStore, ADDON_AVAILABILITY, getLabelByValue } from 'medical-data';
 
 import { FeedbackService } from 'shared';
 import { MedicalAddAddonPlanDialog } from '../dialogs/medical-add-addon-plan-dialog/medical-add-addon-plan-dialog';
@@ -156,6 +151,9 @@ export class MedicalPlanAddonConfig implements OnInit, OnChanges {
       });
     });
   }
+
+  // Removed: Benefits are no longer managed separately
+  // openBenefitsDialog(planAddon: PlanAddon) { ... }
 
   async toggleStatus(planAddon: PlanAddon) {
     const action = planAddon.is_active ? 'disable' : 'enable';

@@ -7,7 +7,7 @@ import { ApiResponse, CorporateGroup, GroupContact } from '../models/medical-int
 
 interface GroupState {
   items: CorporateGroup[];
-  selected: CorporateGroup | null;
+  selected: CorporateGroup | any;
   loading: boolean;
   saving: boolean;
 }

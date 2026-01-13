@@ -1,8 +1,15 @@
 // libs/medical/ui/src/lib/dialogs/loading-rule-dialog/loading-rule-dialog.ts
 
-import { Component, inject, OnInit, ViewChild } from '@angular/core';
+import {
+  Component,
+  inject,
+  OnInit,
+  ViewChild,
+  AfterViewInit,
+  ChangeDetectorRef,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, FormGroup, FormArray, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MAT_DIALOG_DATA, MatDialogRef, MatDialogModule } from '@angular/material/dialog';
 import { MatStepper, MatStepperModule } from '@angular/material/stepper';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -35,8 +42,10 @@ import { LoadingRule, LOADING_TYPES, DURATION_TYPES, CONDITION_CATEGORIES } from
   ],
   templateUrl: `./medical-loading-rule-dialog.html`,
 })
-export class LoadingRuleDialog implements OnInit {
+export class LoadingRuleDialog implements OnInit, AfterViewInit {
   private readonly fb = inject(FormBuilder);
+  private readonly cdr = inject(ChangeDetectorRef); // 1. Inject ChangeDetectorRef
+
   readonly dialogRef = inject(MatDialogRef<LoadingRuleDialog>);
   readonly data = inject<LoadingRule | null>(MAT_DIALOG_DATA);
 
@@ -57,6 +66,13 @@ export class LoadingRuleDialog implements OnInit {
   ngOnInit() {
     this.isEditMode = !!this.data?.id;
     this.initForms();
+  }
+
+  // 2. Implement ngAfterViewInit
+  ngAfterViewInit() {
+    // 3. Force change detection to resolve NG0100
+    // This updates the template with the correct stepper state immediately after initialization
+    this.cdr.detectChanges();
   }
 
   private initForms() {
@@ -146,6 +162,7 @@ export class LoadingRuleDialog implements OnInit {
       icd10_code: condition.icd10_code?.toUpperCase() || null,
       related_icd_codes: relatedIcdCodes,
       loading_type: loading.loading_type,
+      // Ensure we don't send null for loading_value if backend expects a number, or vice versa
       loading_value: loading.loading_type !== 'exclusion' ? loading.loading_value : null,
       min_loading: loading.min_loading || null,
       max_loading: loading.max_loading || null,

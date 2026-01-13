@@ -83,6 +83,30 @@ lib-skeleton {
 //   );
 // }
 
-.error-snackbar {
-  background-color: red;
+/* Minimal Input Style (Underline Only) */
+.mat-mdc-form-field.minimal-input {
+  /* 1. Make the container background transparent */
+  .mat-mdc-text-field-wrapper {
+    background-color: transparent !important;
+  }
+
+  /* 2. Remove the grey overlay that appears on hover/focus */
+  .mat-mdc-form-field-focus-overlay {
+    opacity: 0 !important;
+  }
+
+  /* 3. Remove rounded top corners and adjust padding for a raw look */
+  .mdc-text-field {
+    border-radius: 0 !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+  }
+
+  /* 4. Ensure the bottom line (underline) remains visible and colored */
+  .mdc-line-ripple {
+    &::before,
+    &::after {
+      border-bottom-width: 1px !important; /* Make the default line thinner if desired */
+    }
+  }
 }

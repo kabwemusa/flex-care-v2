@@ -15,12 +15,16 @@ import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatExpansionModule } from '@angular/material/expansion';
 import { MatDividerModule } from '@angular/material/divider';
+import { MatCheckboxModule } from '@angular/material/checkbox';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 
 import {
   ApplicationStore,
   Application,
   ApplicationMember,
   ApplicationAddon,
+  PlanAddon,
+  Addon,
   APPLICATION_STATUSES,
   UNDERWRITING_STATUSES,
   MEMBER_TYPES,
@@ -32,7 +36,6 @@ import {
 import { MedicalApplicationDialog } from '../dialogs/medical-application-dialog/medical-application-dialog';
 import { MedicalApplicationMemberDialog } from '../dialogs/medical-application-member-dialog/medical-application-member-dialog';
 import { MedicalUnderwritingDialog } from '../dialogs/medical-underwriting-dialog/medical-underwriting-dialog';
-import { MedicalApplicationAddonDialog } from '../dialogs/medical-application-addon-dialog/medical-application-addon-dialog';
 import { MedicalApplicationReferralDialog } from '../dialogs/medical-application-referral-dialog/medical-application-referral-dialog';
 import { MedicalQuoteActionsDialog } from '../dialogs/medical-quote-actions-dialog/medical-quote-actions-dialog';
 import { ApplicationDocumentsComponent } from '../components/application-documents/application-documents';
@@ -55,6 +58,8 @@ import { FeedbackService } from 'shared';
     MatSnackBarModule,
     MatExpansionModule,
     MatDividerModule,
+    MatCheckboxModule,
+    MatProgressSpinnerModule,
     ApplicationDocumentsComponent,
   ],
   templateUrl: './medical-application-detail.html',
@@ -74,6 +79,16 @@ export class MedicalApplicationDetail implements OnInit {
   readonly addons = computed(() => this.store.addons());
   readonly isLoading = computed(() => this.store.isLoading());
   readonly isSaving = computed(() => this.store.isSaving());
+
+  // Plan addons (from store)
+  readonly planAddons = computed(() => this.store.planAddons());
+  readonly isLoadingPlanAddons = computed(() => this.store.isLoadingPlanAddons());
+
+  // Selected addon IDs (for checkbox state)
+  readonly selectedAddonIds = computed(() => {
+    const addons = this.addons();
+    return new Set(addons.map(a => a.addon_id));
+  });
 
   // Computed for members table
   readonly principalMembers = computed(() => this.members().filter((m) => m.is_principal));
@@ -108,6 +123,12 @@ export class MedicalApplicationDetail implements OnInit {
       next: () => {
         this.memberDataSource.data = this.store.members();
         this.addonDataSource.data = this.store.addons();
+
+        // Load plan addons after application is loaded
+        const app = this.application();
+        if (app?.plan_id) {
+          this.store.loadPlanAddons(app.plan_id);
+        }
       },
     });
   }
@@ -354,7 +375,7 @@ export class MedicalApplicationDetail implements OnInit {
     dialogRef.afterClosed().subscribe((result) => {
       if (result) {
         this.loadApplication();
-        this.snackBar.open('Member added successfully', 'Close', { duration: 3000 });
+        this.feedback.success('Member added successfully');
       }
     });
   }
@@ -373,7 +394,7 @@ export class MedicalApplicationDetail implements OnInit {
     dialogRef.afterClosed().subscribe((result) => {
       if (result) {
         this.loadApplication();
-        this.snackBar.open('Member updated successfully', 'Close', { duration: 3000 });
+        this.feedback.success('Member updated successfully');
       }
     });
   }
@@ -386,12 +407,10 @@ export class MedicalApplicationDetail implements OnInit {
       this.store.removeMember(app.id, member.id).subscribe({
         next: () => {
           this.loadApplication();
-          this.snackBar.open('Member removed', 'Close', { duration: 3000 });
+          this.feedback.success('Member removed');
         },
         error: (err) => {
-          this.snackBar.open(err.error?.message || 'Failed to remove member', 'Close', {
-            duration: 5000,
-          });
+          this.feedback.error(err.error?.message || 'Failed to remove member');
         },
       });
     }
@@ -420,55 +439,82 @@ export class MedicalApplicationDetail implements OnInit {
   // ADDON OPERATIONS
   // =========================================================================
 
-  addAddon() {
+  /**
+   * Toggle addon on/off based on checkbox
+   */
+  toggleAddon(planAddon: PlanAddon, checked: boolean) {
     const app = this.application();
     if (!app) return;
 
-    const existingAddonIds = app.addons?.map((a) => a.addon_id) || [];
+    // Prevent unchecking mandatory addons
+    if (planAddon.is_mandatory && !checked) {
+      this.snackBar.open('Mandatory addons cannot be removed', 'Close', { duration: 3000 });
+      return;
+    }
 
-    const dialogRef = this.dialog.open(MedicalApplicationAddonDialog, {
-      maxWidth: '90vw',
-      data: {
-        planId: app.plan_id,
-        memberCount: app.member_count || 0,
-        basePremium: app.base_premium || 0,
-        existingAddonIds,
-      },
-    });
+    if (!this.canEdit()) {
+      this.snackBar.open('Application cannot be edited in current status', 'Close', { duration: 3000 });
+      return;
+    }
 
-    dialogRef.afterClosed().subscribe((result) => {
-      if (result) {
-        this.store.addAddon(app.id, result.addonId, result.addonRateId).subscribe({
-          next: () => {
-            this.loadApplication();
-            this.snackBar.open('Addon added successfully', 'Close', { duration: 3000 });
-          },
-          error: (err) => {
-            this.snackBar.open(err.error?.message || 'Failed to add addon', 'Close', {
-              duration: 5000,
-            });
-          },
-        });
-      }
-    });
-  }
-
-  removeAddon(addon: ApplicationAddon) {
-    const app = this.application();
-    if (!app) return;
-
-    if (confirm(`Remove ${addon.addon_name || 'this addon'} from the application?`)) {
-      this.store.removeAddon(app.id, addon.id).subscribe({
+    if (checked) {
+      // Add addon
+      this.store.addAddon(app.id, planAddon.addon_id).subscribe({
         next: () => {
           this.loadApplication();
-          this.snackBar.open('Addon removed', 'Close', { duration: 3000 });
+          this.feedback.success(`${planAddon.addon?.name} added`);
         },
         error: (err) => {
-          this.snackBar.open(err.error?.message || 'Failed to remove addon', 'Close', {
-            duration: 5000,
-          });
+          this.feedback.error(err.error?.message || 'Failed to add addon');
         },
       });
+    } else {
+      // Find the ApplicationAddon record to remove
+      const appAddon = this.addons().find(a => a.addon_id === planAddon.addon_id);
+      if (!appAddon) return;
+
+      // Remove addon
+      this.store.removeAddon(app.id, appAddon.id).subscribe({
+        next: () => {
+          this.loadApplication();
+          this.feedback.success(`${planAddon.addon?.name} removed`);
+        },
+        error: (err) => {
+          this.feedback.error(err.error?.message || 'Failed to remove addon');
+        },
+      });
+    }
+  }
+
+  /**
+   * Check if addon is currently selected
+   */
+  isAddonSelected(addonId: string): boolean {
+    return this.selectedAddonIds().has(addonId);
+  }
+
+  /**
+   * Calculate estimated premium for an addon
+   */
+  calculateEstimatedPremium(addon: Addon | undefined): number {
+    if (!addon) return 0;
+
+    const app = this.application();
+    if (!app) return 0;
+
+    const memberCount = app.member_count || 0;
+    const basePremium = app.base_premium || 0;
+
+    switch (addon.pricing_type) {
+      case 'fixed':
+        return addon.amount || 0;
+      case 'per_member':
+        return (addon.amount || 0) * memberCount;
+      case 'percentage':
+        const basis = addon.percentage_basis === 'total_premium' ? app.total_premium : basePremium;
+        return Math.round((basis || 0) * ((addon.percentage || 0) / 100) * 100) / 100;
+      default:
+        return 0;
     }
   }
 

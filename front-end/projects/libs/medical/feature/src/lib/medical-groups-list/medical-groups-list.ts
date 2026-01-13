@@ -46,6 +46,8 @@ import {
 } from 'medical-data';
 import { FeedbackService, PageHeaderComponent } from 'shared';
 import { MedicalGroupDialog } from '../dialogs/medical-group-dialog/medical-group-dialog';
+import { MedicalCensusUploadDialog } from '../dialogs/medical-census-upload-dialog/medical-census-upload-dialog';
+import { MedicalGroupQuoteDialog } from '../dialogs/medical-group-quote-dialog/medical-group-quote-dialog';
 
 @Component({
   selector: 'lib-medical-groups-list',
@@ -92,7 +94,7 @@ export class MedicalGroupsList implements OnInit, AfterViewInit {
   sizeFilter = signal('');
 
   // Selected item for drawer
-  selectedGroup = signal<CorporateGroup | null>(null);
+  selectedGroup = signal<CorporateGroup | any>(null);
 
   // Constants
   readonly GROUP_STATUSES = GROUP_STATUSES;
@@ -210,6 +212,7 @@ export class MedicalGroupsList implements OnInit, AfterViewInit {
       if (res?.data) {
         this.selectedGroup.set(res.data);
         this.detailDrawer.open();
+        // console.log(this.selectedGroup());
       }
     });
   }
@@ -225,7 +228,6 @@ export class MedicalGroupsList implements OnInit, AfterViewInit {
 
   openDialog(group?: CorporateGroup): void {
     const dialogRef = this.dialog.open(MedicalGroupDialog, {
-      width: '70vw',
       minWidth: '70vw',
       maxHeight: '90vh',
       data: { group },
@@ -238,6 +240,56 @@ export class MedicalGroupsList implements OnInit, AfterViewInit {
         this.feedback.success(
           group ? 'Client updated successfully' : 'Client created successfully'
         );
+      }
+    });
+  }
+
+  openCensusUpload(group: CorporateGroup, event?: Event): void {
+    event?.stopPropagation();
+
+    const dialogRef = this.dialog.open(MedicalCensusUploadDialog, {
+      width: '700px',
+      maxWidth: '90vw',
+      maxHeight: '90vh',
+      data: {
+        group_id: group.id,
+        group_name: group.name,
+      },
+      disableClose: true,
+    });
+
+    dialogRef.afterClosed().subscribe((result) => {
+      if (result) {
+        this.feedback.success(
+          `Application created successfully with ${result.members?.length || 0} members`
+        );
+        // Optionally navigate to application detail
+        // this.router.navigate(['/medical/applications', result.id]);
+      }
+    });
+  }
+
+  openGroupQuote(group: CorporateGroup, event?: Event): void {
+    event?.stopPropagation();
+
+    // First, need to load members from census or application
+    // For now, we'll show a message to upload census first
+    const dialogRef = this.dialog.open(MedicalGroupQuoteDialog, {
+      width: '800px',
+      maxWidth: '90vw',
+      maxHeight: '90vh',
+      data: {
+        group_id: group.id,
+        group_name: group.name,
+        members: [], // TODO: Load from census or application
+      },
+      disableClose: true,
+    });
+
+    dialogRef.afterClosed().subscribe((result) => {
+      if (result?.accepted) {
+        this.feedback.success('Quote accepted! Ready to create application.');
+        // Optionally auto-create application from quote
       }
     });
   }

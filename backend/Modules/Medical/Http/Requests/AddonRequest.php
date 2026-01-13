@@ -23,19 +23,19 @@ class AddonRequest extends FormRequest
                 'string',
                 Rule::in(array_keys(MedicalConstants::ADDON_TYPES)),
             ],
+            'pricing_type' => [
+                'required',
+                'string',
+                Rule::in(array_keys(MedicalConstants::ADDON_PRICING_TYPES)),
+            ],
+            'currency' => 'nullable|string|max:10',
+            'amount' => 'required_if:pricing_type,fixed,per_member|nullable|numeric|min:0',
+            'percentage' => 'required_if:pricing_type,percentage|nullable|numeric|min:0|max:100',
+            'percentage_basis' => 'nullable|string|in:base_premium,total_premium',
             'effective_from' => 'nullable|date',
             'effective_to' => 'nullable|date|after:effective_from',
             'sort_order' => 'nullable|integer|min:0',
             'is_active' => 'nullable|boolean',
-            
-            // Addon benefits
-            'benefits' => 'nullable|array',
-            'benefits.*.benefit_id' => 'required|exists:med_benefits,id',
-            'benefits.*.limit_amount' => 'nullable|numeric|min:0',
-            'benefits.*.limit_count' => 'nullable|integer|min:0',
-            'benefits.*.limit_days' => 'nullable|integer|min:0',
-            'benefits.*.waiting_period_days' => 'nullable|integer|min:0',
-            'benefits.*.display_value' => 'nullable|string|max:100',
         ];
     }
 }

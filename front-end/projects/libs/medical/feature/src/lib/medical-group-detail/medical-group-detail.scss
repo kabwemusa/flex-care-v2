@@ -1,0 +1,105 @@
+.group-detail-page {
+  min-height: 100vh;
+  background-color: #f8fafc;
+
+  .page-content {
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+
+  // Member type chips
+  .member-type-principal {
+    background-color: #dcfce7 !important;
+    color: #166534 !important;
+  }
+
+  .member-type-spouse {
+    background-color: #dbeafe !important;
+    color: #1e40af !important;
+  }
+
+  .member-type-child {
+    background-color: #fae8ff !important;
+    color: #86198f !important;
+  }
+
+  .member-type-parent {
+    background-color: #fed7aa !important;
+    color: #9a3412 !important;
+  }
+
+  .member-type-other {
+    background-color: #e5e7eb !important;
+    color: #374151 !important;
+  }
+
+  // Status chips
+  .status-pending {
+    background-color: #fef3c7 !important;
+    color: #92400e !important;
+  }
+
+  .status-approved {
+    background-color: #dcfce7 !important;
+    color: #166534 !important;
+  }
+
+  .status-declined {
+    background-color: #fee2e2 !important;
+    color: #991b1b !important;
+  }
+
+  .status-terms {
+    background-color: #dbeafe !important;
+    color: #1e40af !important;
+  }
+
+  // Table styles
+  table {
+    mat-header-cell {
+      font-weight: 600;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.025em;
+      color: #64748b;
+    }
+
+    mat-cell {
+      font-size: 0.875rem;
+    }
+
+    mat-row {
+      cursor: default;
+      transition: background-color 0.2s;
+
+      &:hover {
+        background-color: #f8fafc;
+      }
+    }
+  }
+
+  // Card styles
+  mat-card {
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+
+    mat-card-content {
+      &:last-child {
+        padding-bottom: 1rem;
+      }
+    }
+  }
+
+  // Empty state
+  .empty-state {
+    padding: 4rem 2rem;
+    text-align: center;
+
+    mat-icon {
+      font-size: 4rem;
+      width: 4rem;
+      height: 4rem;
+      color: #cbd5e1;
+    }
+  }
+}

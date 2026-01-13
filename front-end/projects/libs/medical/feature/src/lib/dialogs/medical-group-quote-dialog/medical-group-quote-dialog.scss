@@ -1,0 +1,47 @@
+.group-quote-dialog {
+  display: flex;
+  flex-direction: column;
+  width: 800px;
+  max-width: 90vw;
+
+  .dialog-header {
+    background: linear-gradient(to bottom, #ffffff, #f8fafc);
+  }
+
+  .dialog-content {
+    flex: 1;
+    overflow-y: auto;
+  }
+
+  .dialog-footer {
+    background: #f8fafc;
+  }
+
+  // Tier progress bar animation
+  .h-2 {
+    position: relative;
+    overflow: hidden;
+
+    .bg-blue-600 {
+      transition: width 0.5s ease-in-out;
+    }
+  }
+
+  // Volume discount cards
+  .border-green-200 {
+    transition: all 0.2s ease;
+
+    &:hover {
+      box-shadow: 0 4px 6px -1px rgb(34 197 94 / 0.1);
+    }
+  }
+
+  // Premium breakdown hover effects
+  .divide-y > div {
+    transition: background-color 0.2s ease;
+
+    &:hover:not(.bg-slate-50) {
+      background-color: #f8fafc;
+    }
+  }
+}

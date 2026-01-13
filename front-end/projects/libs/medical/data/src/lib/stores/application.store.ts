@@ -47,6 +47,8 @@ interface ApplicationState {
   stats: ApplicationStats | null;
   loading: boolean;
   saving: boolean;
+  planAddons: any[];
+  loadingPlanAddons: boolean;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -60,6 +62,8 @@ export class ApplicationStore {
     stats: null,
     loading: false,
     saving: false,
+    planAddons: [],
+    loadingPlanAddons: false,
   });
 
   // Selectors
@@ -72,6 +76,10 @@ export class ApplicationStore {
   // Members and addons from selected application
   readonly members = computed(() => this.state().selected?.members ?? []);
   readonly addons = computed(() => this.state().selected?.addons ?? []);
+
+  // Plan addons (configured for the plan)
+  readonly planAddons = computed(() => this.state().planAddons);
+  readonly isLoadingPlanAddons = computed(() => this.state().loadingPlanAddons);
 
   // Computed selectors
   readonly draftApplications = computed(() =>
@@ -420,6 +428,42 @@ export class ApplicationStore {
   // ADDON OPERATIONS
   // =========================================================================
 
+  /**
+   * Load available plan addons for a given plan.
+   * Updates state with configured addons (mandatory/optional/included).
+   */
+  loadPlanAddons(planId: string) {
+    this.state.update((s) => ({ ...s, loadingPlanAddons: true }));
+
+    this.http.get<ApiResponse<any[]>>(`/api/v1/medical/plans/${planId}/addons`).subscribe({
+      next: (res) => {
+        this.state.update((s) => ({
+          ...s,
+          planAddons: res.data || [],
+          loadingPlanAddons: false,
+        }));
+      },
+      error: () => {
+        this.state.update((s) => ({
+          ...s,
+          planAddons: [],
+          loadingPlanAddons: false,
+        }));
+      },
+    });
+  }
+
+  /**
+   * Clear plan addons from state
+   */
+  clearPlanAddons() {
+    this.state.update((s) => ({ ...s, planAddons: [], loadingPlanAddons: false }));
+  }
+
+  /**
+   * Add an addon to the application.
+   * Triggers premium recalculation on backend.
+   */
   addAddon(applicationId: string, addonId: string, addonRateId?: string) {
     this.state.update((s) => ({ ...s, saving: true }));
 
@@ -436,6 +480,10 @@ export class ApplicationStore {
       );
   }
 
+  /**
+   * Remove an addon from the application.
+   * Triggers premium recalculation on backend.
+   */
   removeAddon(applicationId: string, addonId: string) {
     return this.http
       .delete<ApiResponse<Application>>(`${this.apiUrl}/${applicationId}/addons/${addonId}`)
@@ -486,6 +534,98 @@ export class ApplicationStore {
 
   clearSelected() {
     this.state.update((s) => ({ ...s, selected: null }));
+  }
+
+  // =========================================================================
+  // CORPORATE CENSUS IMPORT
+  // =========================================================================
+
+  /**
+   * Import and validate census file (Step 1: Upload & Validate).
+   * Returns import_key for creating application.
+   */
+  importCensus(formData: FormData) {
+    this.state.update((s) => ({ ...s, saving: true }));
+
+    return this.http.post<ApiResponse<any>>(`${this.apiUrl}/import-census`, formData).pipe(
+      tap({
+        next: () => this.state.update((s) => ({ ...s, saving: false })),
+        error: () => this.state.update((s) => ({ ...s, saving: false })),
+      })
+    );
+  }
+
+  /**
+   * Create application from imported census (Step 2: Create Application).
+   * Uses import_key from importCensus.
+   */
+  createFromCensus(data: {
+    import_key: string;
+    scheme_id: string;
+    plan_id: string;
+    rate_card_id: string;
+    inception_date: string;
+    billing_frequency: string;
+  }) {
+    this.state.update((s) => ({ ...s, saving: true }));
+
+    return this.http.post<ApiResponse<Application>>(`${this.apiUrl}/create-from-census`, data).pipe(
+      tap({
+        next: (res) => {
+          this.state.update((s) => ({
+            ...s,
+            items: [res.data, ...s.items],
+            selected: res.data,
+            saving: false,
+          }));
+        },
+        error: () => this.state.update((s) => ({ ...s, saving: false })),
+      })
+    );
+  }
+
+  /**
+   * Create multiple applications from imported census (Multi-Plan Support).
+   * Uses import_key from importCensus and plan_mapping.
+   */
+  createMultiPlanFromCensus(data: {
+    import_key: string;
+    group_id: string;
+    scheme_id: string;
+    rate_card_id: string;
+    inception_date: string;
+    billing_frequency: string;
+    plan_mapping: Record<string, string>; // salary_band/department => plan_id
+    mapping_type: 'salary_band' | 'department' | 'job_title';
+  }) {
+    this.state.update((s) => ({ ...s, saving: true }));
+
+    return this.http
+      .post<
+        ApiResponse<{
+          applications: Array<{
+            application_id: string;
+            plan_id: string;
+            plan_name: string;
+            member_count: number;
+          }>;
+          total_members: number;
+          plans_used: number;
+        }>
+      >(`${this.apiUrl}/create-multi-plan-from-census`, data)
+      .pipe(
+        tap({
+          next: (res) => {
+            this.state.update((s) => ({
+              ...s,
+              saving: false,
+            }));
+            // Reload applications list to show new ones
+            this.loadAll({ group_id: data.group_id });
+          },
+          error: () => this.state.update((s) => ({ ...s, saving: false })),
+        })
+      );
   }
 
   private updateApplicationInState(id: string, data: Application) {

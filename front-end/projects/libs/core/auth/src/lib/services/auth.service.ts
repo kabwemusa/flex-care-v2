@@ -10,6 +10,8 @@ import {
   ModuleCode,
   RolesByGuard,
   PermissionsByGuard,
+  PasswordStatus,
+  ChangePasswordRequest,
 } from '../models/auth.models';
 
 @Injectable({
@@ -21,6 +23,7 @@ export class AuthService {
 
   // API Base URL - should come from environment
   private apiUrl = '/api/auth';
+  private passwordApiUrl = '/api/password';
 
   // Signals for reactive state management
   private userSignal = signal<User | null>(null);
@@ -28,6 +31,7 @@ export class AuthService {
   private modulesSignal = signal<ModuleCode[]>([]);
   private rolesSignal = signal<RolesByGuard>({});
   private permissionsSignal = signal<PermissionsByGuard>({});
+  private passwordStatusSignal = signal<PasswordStatus | null>(null);
   private loadingSignal = signal<boolean>(false);
   private errorSignal = signal<string | null>(null);
 
@@ -37,11 +41,13 @@ export class AuthService {
   modules = this.modulesSignal.asReadonly();
   roles = this.rolesSignal.asReadonly();
   permissions = this.permissionsSignal.asReadonly();
+  passwordStatus = this.passwordStatusSignal.asReadonly();
   loading = this.loadingSignal.asReadonly();
   error = this.errorSignal.asReadonly();
 
   isAuthenticated = computed(() => !!this.tokenSignal() && !!this.userSignal());
   isSystemAdmin = computed(() => this.userSignal()?.is_system_admin ?? false);
+  requiresPasswordChange = computed(() => this.passwordStatusSignal()?.force_change || this.passwordStatusSignal()?.expired || false);
 
   constructor() {
     // Load auth state from localStorage on init
@@ -57,7 +63,7 @@ export class AuthService {
 
     return this.http.post<LoginResponse>(`${this.apiUrl}/login`, credentials).pipe(
       tap((response) => {
-        const { user, token, modules, roles, permissions } = response.data;
+        const { user, token, modules, roles, permissions, password_status } = response.data;
 
         // Store token
         this.tokenSignal.set(token);
@@ -78,6 +84,10 @@ export class AuthService {
         // Store permissions (already grouped by guard from backend)
         this.permissionsSignal.set(permissions as PermissionsByGuard);
         localStorage.setItem('permissions', JSON.stringify(permissions));
+
+        // Store password status
+        this.passwordStatusSignal.set(password_status);
+        localStorage.setItem('password_status', JSON.stringify(password_status));
 
         this.loadingSignal.set(false);
       }),
@@ -154,8 +164,48 @@ export class AuthService {
    * Check if user has a specific permission
    */
   hasPermission(permission: string, guard: keyof PermissionsByGuard = 'web'): boolean {
+    if (this.isSystemAdmin()) return true;
     const perms = this.permissionsSignal()[guard] || [];
     return perms.includes(permission);
+  }
+
+  /**
+   * Universal permission checker
+   * Automatically detects guard from permission string format (e.g., "medical.schemes.view")
+   *
+   * @param permission - Permission string in format "{guard}.{resource}.{action}"
+   * @returns boolean indicating if user has the permission
+   */
+  isAllowed(permission: string): boolean {
+    if (this.isSystemAdmin()) return true;
+
+    // Extract guard from permission string (e.g., "medical.schemes.view" -> "medical")
+    const guardName = permission.split('.')[0] as keyof PermissionsByGuard;
+
+    // Check if guard is valid
+    if (!guardName || !['web', 'medical', 'life', 'motor', 'travel'].includes(guardName)) {
+      console.warn(`Invalid permission format: ${permission}. Expected format: {guard}.{resource}.{action}`);
+      return false;
+    }
+
+    const perms = this.permissionsSignal()[guardName] || [];
+    return perms.includes(permission);
+  }
+
+  /**
+   * Check if user is allowed to perform any of the given permissions
+   */
+  isAllowedAny(permissions: string[]): boolean {
+    if (this.isSystemAdmin()) return true;
+    return permissions.some(perm => this.isAllowed(perm));
+  }
+
+  /**
+   * Check if user is allowed to perform all of the given permissions
+   */
+  isAllowedAll(permissions: string[]): boolean {
+    if (this.isSystemAdmin()) return true;
+    return permissions.every(perm => this.isAllowed(perm));
   }
 
   /**
@@ -188,6 +238,24 @@ export class AuthService {
   }
 
   /**
+   * Change password
+   */
+  changePassword(request: ChangePasswordRequest): Observable<any> {
+    return this.http.post(`${this.passwordApiUrl}/change`, request).pipe(
+      tap((response: any) => {
+        // Update password status after successful password change
+        this.passwordStatusSignal.set({
+          expired: false,
+          expiring_soon: false,
+          days_until_expiration: null,
+          force_change: false,
+        });
+        localStorage.setItem('password_status', JSON.stringify(this.passwordStatusSignal()));
+      })
+    );
+  }
+
+  /**
    * Clear authentication state
    */
   private clearAuthState(): void {
@@ -196,6 +264,7 @@ export class AuthService {
     this.modulesSignal.set([]);
     this.rolesSignal.set({});
     this.permissionsSignal.set({});
+    this.passwordStatusSignal.set(null);
     this.errorSignal.set(null);
 
     localStorage.removeItem('auth_token');
@@ -203,6 +272,7 @@ export class AuthService {
     localStorage.removeItem('modules');
     localStorage.removeItem('roles');
     localStorage.removeItem('permissions');
+    localStorage.removeItem('password_status');
   }
 
   /**
@@ -214,6 +284,7 @@ export class AuthService {
     const modulesJson = localStorage.getItem('modules');
     const rolesJson = localStorage.getItem('roles');
     const permissionsJson = localStorage.getItem('permissions');
+    const passwordStatusJson = localStorage.getItem('password_status');
 
     if (token && userJson) {
       this.tokenSignal.set(token);
@@ -221,6 +292,7 @@ export class AuthService {
       this.modulesSignal.set(modulesJson ? JSON.parse(modulesJson) : []);
       this.rolesSignal.set(rolesJson ? JSON.parse(rolesJson) : {});
       this.permissionsSignal.set(permissionsJson ? JSON.parse(permissionsJson) : {});
+      this.passwordStatusSignal.set(passwordStatusJson ? JSON.parse(passwordStatusJson) : null);
     }
   }
 

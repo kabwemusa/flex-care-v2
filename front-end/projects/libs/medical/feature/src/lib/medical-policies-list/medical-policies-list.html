@@ -14,10 +14,10 @@
             <mat-icon fontSet="material-symbols-rounded">download</mat-icon>
             Export
           </button>
-          <button mat-flat-button color="primary" (click)="openDialog()">
+          <!-- <button mat-flat-button color="primary" (click)="openDialog()">
             <mat-icon fontSet="material-symbols-rounded">add_circle</mat-icon>
             New Policy
-          </button>
+          </button> -->
         </div>
       </lib-page-header>
 
@@ -86,7 +86,7 @@
           <mat-form-field
             appearance="outline"
             subscriptSizing="dynamic"
-            class="flex-1 min-w-[300px]"
+            class="flex-1 min-w-[300px] minimal-input"
           >
             <mat-icon fontSet="material-symbols-rounded" matPrefix class="!text-slate-400"
               >search</mat-icon
@@ -104,7 +104,7 @@
             }
           </mat-form-field>
 
-          <mat-form-field appearance="outline" subscriptSizing="dynamic" class="w-40">
+          <mat-form-field appearance="outline" subscriptSizing="dynamic" class="w-40 minimal-input">
             <mat-select [ngModel]="statusFilter()" (ngModelChange)="onStatusChange($event)">
               <mat-option value="">All Statuses</mat-option>
               @for (status of POLICY_STATUSES; track status.value) {
@@ -113,7 +113,7 @@
             </mat-select>
           </mat-form-field>
 
-          <mat-form-field appearance="outline" subscriptSizing="dynamic" class="w-40">
+          <mat-form-field appearance="outline" subscriptSizing="dynamic" class="w-40 minimal-input">
             <mat-select [ngModel]="typeFilter()" (ngModelChange)="onTypeChange($event)">
               <mat-option value="">All Types</mat-option>
               @for (type of POLICY_TYPES; track type.value) {
@@ -230,12 +230,12 @@
                   >
                   <span>View Details</span>
                 </button>
-                <button mat-menu-item (click)="openDialog(row)">
+                <!-- <button mat-menu-item (click)="openDialog(row)">
                   <mat-icon fontSet="material-symbols-rounded" class="!text-slate-500"
                     >edit</mat-icon
                   >
                   <span>Edit</span>
-                </button>
+                </button> -->
                 <mat-divider></mat-divider>
 
                 @if (row.status === 'active') {
@@ -297,9 +297,9 @@
                 <p class="text-sm text-slate-500 mb-4">
                   Try adjusting your filters or add a new policy.
                 </p>
-                <button mat-flat-button color="primary" (click)="openDialog()">
+                <!-- <button mat-flat-button color="primary" (click)="openDialog()">
                   Create Policy
-                </button>
+                </button> -->
               </div>
             </td>
           </tr>
@@ -461,10 +461,12 @@
           <mat-icon fontSet="material-symbols-rounded">open_in_new</mat-icon>
           Full Details
         </a>
-        <button mat-flat-button color="primary" (click)="openDialog(policy)">
-          <mat-icon fontSet="material-symbols-rounded">edit</mat-icon>
-          Edit
+        @if (policy.status === 'active') {
+        <button mat-flat-button color="primary" (click)="openAddMemberDialog(policy)">
+          <mat-icon fontSet="material-symbols-rounded">person_add</mat-icon>
+          Add Member
         </button>
+        }
       </div>
     </div>
     }

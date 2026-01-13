@@ -134,16 +134,15 @@ export const DISCOUNT_APPLICATION = [
 //   { value: 'reviewable', label: 'Subject to Review' },
 // ] as const;
 
+// libs/medical/data/src/lib/constants.ts
+
 export const CONDITION_CATEGORIES = [
-  { value: 'cardiovascular', label: 'Cardiovascular' },
-  { value: 'respiratory', label: 'Respiratory' },
-  { value: 'diabetes', label: 'Diabetes & Metabolic' },
-  { value: 'musculoskeletal', label: 'Musculoskeletal' },
-  { value: 'mental_health', label: 'Mental Health' },
-  { value: 'oncology', label: 'Oncology' },
-  { value: 'renal', label: 'Renal' },
-  { value: 'other', label: 'Other' },
+  { value: 'chronic', label: 'Chronic Condition' },
+  { value: 'pre_existing', label: 'Pre-existing Condition' },
+  { value: 'lifestyle', label: 'Lifestyle Related' },
 ] as const;
+
+export type ConditionCategory = (typeof CONDITION_CATEGORIES)[number]['value'];
 
 // export const EXCLUSION_TYPES = [
 //   { value: 'absolute', label: 'Absolute', description: 'Never covered' },
@@ -417,10 +416,26 @@ export const DURATION_TYPES = [
 ] as const;
 
 export const PLAN_EXCLUSION_TYPES = [
-  { value: 'absolute', label: 'Absolute (Never Covered)', description: 'Never covered under any circumstances' },
-  { value: 'conditional', label: 'Conditional', description: 'May be covered if conditions are met' },
-  { value: 'time_limited', label: 'Time Limited', description: 'Excluded for X days, then covered' },
-  { value: 'pre_existing', label: 'Pre-existing Related', description: 'Related to pre-existing conditions' },
+  {
+    value: 'absolute',
+    label: 'Absolute (Never Covered)',
+    description: 'Never covered under any circumstances',
+  },
+  {
+    value: 'conditional',
+    label: 'Conditional',
+    description: 'May be covered if conditions are met',
+  },
+  {
+    value: 'time_limited',
+    label: 'Time Limited',
+    description: 'Excluded for X days, then covered',
+  },
+  {
+    value: 'pre_existing',
+    label: 'Pre-existing Related',
+    description: 'Related to pre-existing conditions',
+  },
 ] as const;
 
 // Member exclusion types (for underwriting)

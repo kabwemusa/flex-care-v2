@@ -1,0 +1,478 @@
+<!-- libs/medical/feature/src/lib/medical-policy-detail/medical-policy-detail.html -->
+
+<div class="bg-white p-6 md:p-10 min-h-screen">
+  @if (isLoading()) {
+  <div class="flex items-center justify-center h-96">
+    <mat-spinner diameter="48"></mat-spinner>
+  </div>
+  } @else if (policy(); as policy) {
+  <!-- Header -->
+  <div class="mb-8">
+    <div class="flex items-center justify-between mb-4">
+      <button
+        mat-stroked-button
+        (click)="goBack()"
+        class="!border-slate-200 !text-slate-600 hover:!bg-slate-50"
+      >
+        <mat-icon fontSet="material-symbols-rounded">arrow_back</mat-icon>
+        Back to Policies
+      </button>
+
+      <div class="flex gap-2">
+        @if (policy.status === 'draft' || policy.status === 'suspended') {
+        <button
+          mat-stroked-button
+          color="primary"
+          (click)="activatePolicy()"
+          class="!border-primary-200"
+        >
+          <mat-icon fontSet="material-symbols-rounded">check_circle</mat-icon>
+          Activate
+        </button>
+        } @if (policy.status === 'active') {
+        <button
+          mat-flat-button
+          color="primary"
+          (click)="openAddMemberDialog()"
+          class="!bg-primary-600"
+        >
+          <mat-icon fontSet="material-symbols-rounded">person_add</mat-icon>
+          Add Member
+        </button>
+        }
+
+        <button mat-icon-button [matMenuTriggerFor]="menu">
+          <mat-icon fontSet="material-symbols-rounded">more_vert</mat-icon>
+        </button>
+        <mat-menu #menu="matMenu">
+          @if (policy.status === 'active') {
+          <button mat-menu-item (click)="suspendPolicy()">
+            <mat-icon fontSet="material-symbols-rounded">pause_circle</mat-icon>
+            <span>Suspend</span>
+          </button>
+          } @if (policy.status === 'suspended') {
+          <button mat-menu-item (click)="reinstatePolicy()">
+            <mat-icon fontSet="material-symbols-rounded">restart_alt</mat-icon>
+            <span>Reinstate</span>
+          </button>
+          } @if (policy.status !== 'cancelled') {
+          <mat-divider></mat-divider>
+          <button mat-menu-item (click)="cancelPolicy()" class="!text-red-600">
+            <mat-icon fontSet="material-symbols-rounded" class="!text-red-600">cancel</mat-icon>
+            <span>Cancel Policy</span>
+          </button>
+          }
+        </mat-menu>
+      </div>
+    </div>
+
+    <div class="flex items-start justify-between">
+      <div class="flex items-center gap-4">
+        <div class="flex h-16 w-16 items-center justify-center rounded-xl bg-blue-100">
+          <mat-icon fontSet="material-symbols-rounded" class="!text-4xl !text-blue-600"
+            >policy</mat-icon
+          >
+        </div>
+        <div>
+          <h1 class="text-3xl font-bold text-slate-900">{{ policy.policy_number }}</h1>
+          <p class="text-lg text-slate-600">{{ policy.holder_name }}</p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <span
+          class="inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium"
+          [class]="getStatusClasses(policy.status)"
+        >
+          <span class="h-2 w-2 rounded-full" [class]="getStatusDotColor(policy.status)"></span>
+          {{ getLabelByValue(POLICY_STATUSES, policy.status) }}
+        </span>
+        <span
+          class="inline-flex items-center gap-1.5 px-4 py-2 bg-slate-100 text-slate-700 rounded-full text-sm font-medium"
+        >
+          {{ policy.policy_type | titlecase }}
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tabs -->
+  <mat-tab-group
+    [selectedIndex]="activeTabIndex()"
+    (selectedIndexChange)="onTabChange($event)"
+    class="custom-tabs"
+  >
+    <!-- Overview Tab -->
+    <mat-tab>
+      <ng-template mat-tab-label>
+        <mat-icon fontSet="material-symbols-rounded" class="mr-2">{{ tabs[0].icon }}</mat-icon>
+        {{ tabs[0].label }}
+      </ng-template>
+
+      <div class="p-6 space-y-6">
+        <!-- Quick Stats -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-sm font-medium text-slate-500">Total Members</span>
+              <mat-icon fontSet="material-symbols-rounded" class="!text-slate-400">group</mat-icon>
+            </div>
+            <p class="text-3xl font-bold text-slate-900">{{ policy.member_count }}</p>
+          </div>
+
+          <div class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-sm font-medium text-slate-500">Base Premium</span>
+              <mat-icon fontSet="material-symbols-rounded" class="!text-slate-400"
+                >payments</mat-icon
+              >
+            </div>
+            <p class="text-3xl font-bold text-slate-900">
+              {{ formatCurrency(policy.base_premium) }}
+            </p>
+          </div>
+
+          <div class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-sm font-medium text-slate-500">Gross Premium</span>
+              <mat-icon fontSet="material-symbols-rounded" class="!text-slate-400"
+                >account_balance</mat-icon
+              >
+            </div>
+            <p class="text-3xl font-bold text-blue-600">
+              {{ formatCurrency(policy.gross_premium) }}
+            </p>
+          </div>
+
+          <div class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-sm font-medium text-slate-500">Active Add-ons</span>
+              <mat-icon fontSet="material-symbols-rounded" class="!text-slate-400"
+                >add_circle</mat-icon
+              >
+            </div>
+            <p class="text-3xl font-bold text-slate-900">
+              {{ policy.policy_addons?.length || 0 }}
+            </p>
+          </div>
+        </div>
+
+        <!-- Policy Details -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <!-- Coverage Information -->
+          <div class="rounded-xl border border-blue-200 bg-blue-50 p-6 space-y-4">
+            <h3 class="font-semibold text-blue-900 flex items-center gap-2 text-lg">
+              <mat-icon fontSet="material-symbols-rounded" class="!text-blue-600"
+                >verified_user</mat-icon
+              >
+              Coverage Information
+            </h3>
+            <mat-divider></mat-divider>
+            <div class="space-y-3">
+              <div class="flex justify-between">
+                <span class="text-blue-700 font-medium">Scheme</span>
+                <span class="text-blue-900">{{ policy.scheme?.name }}</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-blue-700 font-medium">Plan</span>
+                <span class="text-blue-900">{{ policy.plan?.name }}</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-blue-700 font-medium">Inception Date</span>
+                <span class="text-blue-900">{{ policy.inception_date | date : 'mediumDate' }}</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-blue-700 font-medium">Expiry Date</span>
+                <span class="text-blue-900">{{ policy.expiry_date | date : 'mediumDate' }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Financial Breakdown -->
+          <div class="rounded-xl border border-slate-200 bg-slate-50 p-6 space-y-4">
+            <h3 class="font-semibold text-slate-900 flex items-center gap-2 text-lg">
+              <mat-icon fontSet="material-symbols-rounded" class="!text-slate-600"
+                >payments</mat-icon
+              >
+              Financial Breakdown
+            </h3>
+            <mat-divider></mat-divider>
+            <div class="space-y-3">
+              <div class="flex justify-between">
+                <span class="text-slate-600 font-medium">Base Premium</span>
+                <span class="text-slate-900">{{ formatCurrency(policy.base_premium) }}</span>
+              </div>
+              @if (policy.addon_premium > 0) {
+              <div class="flex justify-between">
+                <span class="text-slate-600 font-medium">Add-ons</span>
+                <span class="text-green-600">+{{ formatCurrency(policy.addon_premium) }}</span>
+              </div>
+              } @if (policy.loading_amount > 0) {
+              <div class="flex justify-between">
+                <span class="text-slate-600 font-medium">Loadings</span>
+                <span class="text-red-600">+{{ formatCurrency(policy.loading_amount) }}</span>
+              </div>
+              } @if (policy.discount_amount > 0) {
+              <div class="flex justify-between">
+                <span class="text-slate-600 font-medium">Discounts</span>
+                <span class="text-green-600">-{{ formatCurrency(policy.discount_amount) }}</span>
+              </div>
+              }
+              <mat-divider></mat-divider>
+              <div class="flex justify-between items-center">
+                <span class="text-slate-900 font-semibold text-lg">Total Premium</span>
+                <span class="text-blue-600 font-bold text-xl">
+                  {{ formatCurrency(policy.gross_premium) }}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Corporate Group (if applicable) -->
+        @if (policy.group) {
+        <div class="rounded-xl border border-amber-200 bg-amber-50 p-6">
+          <h3 class="font-semibold text-amber-900 flex items-center gap-2 text-lg mb-4">
+            <mat-icon fontSet="material-symbols-rounded" class="!text-amber-600">business</mat-icon>
+            Corporate Group
+          </h3>
+          <mat-divider class="!mb-4"></mat-divider>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <span class="text-amber-700 font-medium block mb-1">Name</span>
+              <span class="text-amber-900">{{ policy.group.name }}</span>
+            </div>
+            <div>
+              <span class="text-amber-700 font-medium block mb-1">Code</span>
+              <span class="text-amber-900">{{ policy.group.code }}</span>
+            </div>
+          </div>
+        </div>
+        }
+      </div>
+    </mat-tab>
+
+    <!-- Members Tab -->
+    <mat-tab>
+      <ng-template mat-tab-label>
+        <mat-icon fontSet="material-symbols-rounded" class="mr-2">{{ tabs[1].icon }}</mat-icon>
+        {{ tabs[1].label }}
+      </ng-template>
+
+      <div class="p-6">
+        @if (policy.members && policy.members.length > 0) {
+        <div class="rounded-xl border border-slate-200 overflow-hidden">
+          <table mat-table [dataSource]="policy.members" class="w-full">
+            <!-- Name Column -->
+            <ng-container matColumnDef="name">
+              <th mat-header-cell *matHeaderCellDef class="!font-semibold !text-slate-700">Name</th>
+              <td mat-cell *matCellDef="let member">
+                <div>
+                  <div class="font-medium text-slate-900">
+                    {{ member.first_name }} {{ member.last_name }}
+                  </div>
+                  @if (member.email) {
+                  <div class="text-sm text-slate-500">{{ member.email }}</div>
+                  }
+                </div>
+              </td>
+            </ng-container>
+
+            <!-- Type Column -->
+            <ng-container matColumnDef="type">
+              <th mat-header-cell *matHeaderCellDef class="!font-semibold !text-slate-700">Type</th>
+              <td mat-cell *matCellDef="let member">
+                <span
+                  class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium"
+                  [class]="getMemberTypeBadgeClass(member.member_type)"
+                >
+                  {{ getLabelByValue(MEMBER_TYPES, member.member_type) }}
+                </span>
+              </td>
+            </ng-container>
+
+            <!-- DOB Column -->
+            <ng-container matColumnDef="dob">
+              <th mat-header-cell *matHeaderCellDef class="!font-semibold !text-slate-700">Age</th>
+              <td mat-cell *matCellDef="let member">
+                <div>
+                  <div class="text-slate-900">{{ calculateAge(member.date_of_birth) }} years</div>
+                  <div class="text-sm text-slate-500">
+                    {{ member.date_of_birth | date : 'shortDate' }}
+                  </div>
+                </div>
+              </td>
+            </ng-container>
+
+            <!-- Status Column -->
+            <ng-container matColumnDef="status">
+              <th mat-header-cell *matHeaderCellDef class="!font-semibold !text-slate-700">
+                Status
+              </th>
+              <td mat-cell *matCellDef="let member">
+                <span
+                  class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium"
+                  [class]="getStatusClasses(member.status)"
+                >
+                  <span
+                    class="h-1.5 w-1.5 rounded-full"
+                    [class]="getStatusDotColor(member.status)"
+                  ></span>
+                  {{ member.status | titlecase }}
+                </span>
+              </td>
+            </ng-container>
+
+            <!-- Premium Column -->
+            <ng-container matColumnDef="premium">
+              <th mat-header-cell *matHeaderCellDef class="!font-semibold !text-slate-700">
+                Premium
+              </th>
+              <td mat-cell *matCellDef="let member">
+                <div class="font-medium text-slate-900">
+                  {{ formatCurrency(member.base_premium || 0) }}
+                </div>
+              </td>
+            </ng-container>
+
+            <!-- Loadings Column -->
+            <ng-container matColumnDef="loadings">
+              <th mat-header-cell *matHeaderCellDef class="!font-semibold !text-slate-700">
+                Loadings
+              </th>
+              <td mat-cell *matCellDef="let member">
+                @if (member.loadings && member.loadings.length > 0) {
+                <span
+                  class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-red-100 text-red-700"
+                  [matTooltip]="member.loadings?.length ? (member.loadings | json) : ''"
+                >
+                  {{ member.loadings.length }}
+                </span>
+                } @else {
+                <span class="text-slate-400 text-sm">—</span>
+                }
+              </td>
+            </ng-container>
+
+            <!-- Exclusions Column -->
+            <ng-container matColumnDef="exclusions">
+              <th mat-header-cell *matHeaderCellDef class="!font-semibold !text-slate-700">
+                Exclusions
+              </th>
+              <td mat-cell *matCellDef="let member">
+                @if (member.exclusions && member.exclusions.length > 0) {
+                <span
+                  class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-700"
+                  [matTooltip]="member.exclusions?.length ? (member.exclusions | json) : ''"
+                >
+                  {{ member.exclusions.length }}
+                </span>
+                } @else {
+                <span class="text-slate-400 text-sm">—</span>
+                }
+              </td>
+            </ng-container>
+
+            <tr mat-header-row *matHeaderRowDef="memberColumns"></tr>
+            <tr mat-row *matRowDef="let row; columns: memberColumns" class="hover:bg-slate-50"></tr>
+          </table>
+        </div>
+        } @else {
+        <div
+          class="rounded-xl border-2 border-dashed border-slate-200 bg-slate-50 p-12 text-center"
+        >
+          <mat-icon fontSet="material-symbols-rounded" class="!text-6xl text-slate-300 mb-4"
+            >group_off</mat-icon
+          >
+          <p class="text-slate-500 text-lg mb-4">No members found</p>
+          @if (policy.status === 'active') {
+          <button mat-flat-button color="primary" (click)="openAddMemberDialog()">
+            <mat-icon fontSet="material-symbols-rounded">person_add</mat-icon>
+            Add First Member
+          </button>
+          }
+        </div>
+        }
+      </div>
+    </mat-tab>
+
+    <!-- Add-ons Tab -->
+    <mat-tab>
+      <ng-template mat-tab-label>
+        <mat-icon fontSet="material-symbols-rounded" class="mr-2">{{ tabs[2].icon }}</mat-icon>
+        {{ tabs[2].label }}
+      </ng-template>
+
+      <div class="p-6">
+        @if (policy.policy_addons && policy.policy_addons.length > 0) {
+        <div class="grid gap-4">
+          @for (policyAddon of policy.policy_addons; track policyAddon.id) {
+          <div class="rounded-xl border border-slate-200 bg-white p-6">
+            <div class="flex items-start justify-between">
+              <div class="flex items-start gap-4">
+                <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-purple-100">
+                  <mat-icon fontSet="material-symbols-rounded" class="!text-purple-600"
+                    >add_circle</mat-icon
+                  >
+                </div>
+                <div>
+                  <h4 class="font-semibold text-slate-900 text-lg">
+                    {{ policyAddon.addon?.name }}
+                  </h4>
+                  <p class="text-slate-600 mt-1">{{ policyAddon.addon?.description }}</p>
+                  <div class="flex items-center gap-4 mt-3">
+                    <span class="text-sm text-slate-500">
+                      Premium:
+                      <span class="font-medium text-slate-900">{{
+                        formatCurrency(policyAddon.premium)
+                      }}</span>
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          }
+        </div>
+        } @else {
+        <div
+          class="rounded-xl border-2 border-dashed border-slate-200 bg-slate-50 p-12 text-center"
+        >
+          <mat-icon fontSet="material-symbols-rounded" class="!text-6xl text-slate-300 mb-4"
+            >add_circle_outline</mat-icon
+          >
+          <p class="text-slate-500 text-lg">No add-ons configured</p>
+        </div>
+        }
+      </div>
+    </mat-tab>
+
+    <!-- Documents Tab -->
+    <mat-tab>
+      <ng-template mat-tab-label>
+        <mat-icon fontSet="material-symbols-rounded" class="mr-2">{{ tabs[3].icon }}</mat-icon>
+        {{ tabs[3].label }}
+      </ng-template>
+
+      <div class="p-6">
+        <div
+          class="rounded-xl border-2 border-dashed border-slate-200 bg-slate-50 p-12 text-center"
+        >
+          <mat-icon fontSet="material-symbols-rounded" class="!text-6xl text-slate-300 mb-4"
+            >description</mat-icon
+          >
+          <p class="text-slate-500 text-lg">Document management coming soon</p>
+        </div>
+      </div>
+    </mat-tab>
+  </mat-tab-group>
+  } @else {
+  <div class="flex flex-col items-center justify-center h-96">
+    <mat-icon fontSet="material-symbols-rounded" class="!text-8xl text-slate-300 mb-4"
+      >policy</mat-icon
+    >
+    <p class="text-slate-500 text-xl">Policy not found</p>
+    <button mat-stroked-button (click)="goBack()" class="mt-4">Go Back</button>
+  </div>
+  }
+</div>

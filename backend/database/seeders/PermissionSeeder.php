@@ -125,6 +125,9 @@ class PermissionSeeder extends Seeder
             'medical.groups.create',
             'medical.groups.update',
             'medical.groups.delete',
+            'medical.groups.import_census',
+            'medical.groups.bulk_approve',
+            'medical.groups.bulk_convert',
 
             // Claims (for future implementation)
             'medical.claims.view',

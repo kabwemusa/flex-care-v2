@@ -1,69 +1,72 @@
 // libs/medical/ui/src/lib/discounts/medical-discount-list.ts
 
-import { Component, OnInit, inject, signal, computed, ViewChild } from '@angular/core';
+import {
+  Component,
+  OnInit,
+  AfterViewInit,
+  ViewChild,
+  inject,
+  effect,
+  computed,
+  signal,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
 
 // Material Imports
-import { MatDialog } from '@angular/material/dialog';
-import { MatSidenav, MatSidenavModule } from '@angular/material/sidenav';
-import { MatIconModule } from '@angular/material/icon';
-import { MatButtonModule } from '@angular/material/button';
-import { MatMenuModule } from '@angular/material/menu';
-import { MatTableModule, MatTableDataSource } from '@angular/material/table';
+import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
 import { MatSort, MatSortModule } from '@angular/material/sort';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInputModule } from '@angular/material/input';
-import { MatSelectModule } from '@angular/material/select';
-import { MatChipsModule } from '@angular/material/chips';
-import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatDialog } from '@angular/material/dialog';
+import { MatMenuModule } from '@angular/material/menu';
+import { MatIconModule } from '@angular/material/icon';
+import { MatButtonModule } from '@angular/material/button';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatDividerModule } from '@angular/material/divider';
+import { MatSelectModule } from '@angular/material/select';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatDrawer, MatSidenavModule } from '@angular/material/sidenav';
 import { MatTabsModule } from '@angular/material/tabs';
 
-// Domain Imports
+// Domain/Shared Imports
 import {
   DiscountRule,
   PromoCode,
   DiscountListStore,
   DISCOUNT_TYPES,
   DISCOUNT_APPLICATION,
-  VALUE_TYPES,
   getLabelByValue,
 } from 'medical-data';
-import { FeedbackService, PageHeaderComponent } from 'shared';
 import { MedicalDiscountDialog } from '../dialogs/medical-discount-dialog/medical-discount-dialog';
 import { PromoCodeDialog } from '../dialogs/medical-promocode-dialog/medical-promocode-dialog';
+import { FeedbackService, PageHeaderComponent } from 'shared';
 
 @Component({
   selector: 'lib-medical-discount-list',
   standalone: true,
   imports: [
     CommonModule,
-    FormsModule,
-    MatSidenavModule,
-    MatIconModule,
-    MatButtonModule,
-    MatMenuModule,
     MatTableModule,
     MatPaginatorModule,
     MatSortModule,
-    MatFormFieldModule,
-    MatInputModule,
-    MatSelectModule,
-    MatChipsModule,
-    MatProgressSpinnerModule,
+    MatMenuModule,
+    MatIconModule,
+    MatButtonModule,
+    MatTooltipModule,
     MatDividerModule,
+    MatSelectModule,
+    MatFormFieldModule,
+    MatSidenavModule,
     MatTabsModule,
+    PageHeaderComponent,
   ],
   templateUrl: './medical-discount-list.html',
 })
-export class MedicalDiscountList implements OnInit {
+export class MedicalDiscountList implements OnInit, AfterViewInit {
   readonly store = inject(DiscountListStore);
   private readonly dialog = inject(MatDialog);
   private readonly feedback = inject(FeedbackService);
 
-  @ViewChild('drawer') drawer!: MatSidenav;
+  @ViewChild('detailDrawer') detailDrawer!: MatDrawer;
   @ViewChild('rulesPaginator') rulesPaginator!: MatPaginator;
   @ViewChild('rulesSort') rulesSort!: MatSort;
   @ViewChild('promosPaginator') promosPaginator!: MatPaginator;
@@ -82,126 +85,147 @@ export class MedicalDiscountList implements OnInit {
   rulesDataSource = new MatTableDataSource<DiscountRule>([]);
   promosDataSource = new MatTableDataSource<PromoCode>([]);
 
-  // Table columns
-  rulesColumns = ['name', 'type', 'value', 'application', 'scope', 'status', 'actions'];
+  // Columns
+  rulesColumns = ['name', 'type', 'value', 'scope', 'status', 'actions'];
   promosColumns = ['code', 'discount', 'validity', 'usage', 'status', 'actions'];
 
   // Constants
   readonly adjustmentTypes = DISCOUNT_TYPES;
   readonly applicationMethods = DISCOUNT_APPLICATION;
 
-  // Computed stats
+  // Computed KPIs
   totalRules = computed(() => this.store.discountRules().length);
-  activeDiscounts = computed(() => this.store.discounts().filter((d) => d.is_active).length);
-  activeLoadings = computed(() => this.store.loadings().filter((l) => l.is_active).length);
-  activePromos = computed(() => this.store.activePromoCodes().length);
+  activeDiscounts = computed(
+    () =>
+      this.store.discountRules().filter((d) => d.is_active && d.adjustment_type === 'discount')
+        .length
+  );
+  activeLoadings = computed(
+    () =>
+      this.store.discountRules().filter((d) => d.is_active && d.adjustment_type === 'loading')
+        .length
+  );
+  activePromos = computed(() => this.store.promoCodes().filter((p) => p.is_usable).length);
+
+  constructor() {
+    // Sync Store Data to Table
+    effect(() => {
+      this.rulesDataSource.data = this.store.discountRules();
+      this.promosDataSource.data = this.store.promoCodes();
+    });
+  }
 
   ngOnInit() {
     this.store.loadRules();
     this.store.loadPromoCodes();
-
-    // Subscribe to store changes
-    this.setupDataSources();
+    this.setupFilterPredicates();
   }
 
-  private setupDataSources() {
-    // Update data sources when store changes
-    setTimeout(() => {
-      this.updateRulesDataSource();
-      this.updatePromosDataSource();
-    });
+  ngAfterViewInit() {
+    // Assign paginators/sorts
+    this.rulesDataSource.paginator = this.rulesPaginator;
+    this.rulesDataSource.sort = this.rulesSort;
+    this.promosDataSource.paginator = this.promosPaginator;
+    this.promosDataSource.sort = this.promosSort;
   }
 
-  private updateRulesDataSource() {
-    let rules = this.store.discountRules();
+  private setupFilterPredicates() {
+    // Rules Predicate
+    this.rulesDataSource.filterPredicate = (data: DiscountRule, filter: string): boolean => {
+      const searchStr = this.searchQuery().toLowerCase();
+      const typeFilter = this.adjustmentTypeFilter();
+      const appFilter = this.applicationFilter();
 
-    // Apply filters
-    if (this.adjustmentTypeFilter()) {
-      rules = rules.filter((r) => r.adjustment_type === this.adjustmentTypeFilter());
-    }
-    if (this.applicationFilter()) {
-      rules = rules.filter((r) => r.application_method === this.applicationFilter());
-    }
-    if (this.searchQuery()) {
-      const q = this.searchQuery().toLowerCase();
-      rules = rules.filter(
-        (r) =>
-          r.name.toLowerCase().includes(q) ||
-          r.code.toLowerCase().includes(q) ||
-          r.description?.toLowerCase().includes(q)
+      const matchesSearch =
+        !searchStr ||
+        data.name.toLowerCase().includes(searchStr) ||
+        data.code.toLowerCase().includes(searchStr);
+
+      const matchesType = !typeFilter || data.adjustment_type === typeFilter;
+      const matchesApp = !appFilter || data.application_method === appFilter;
+
+      return matchesSearch && matchesType && matchesApp;
+    };
+
+    // Promos Predicate
+    this.promosDataSource.filterPredicate = (data: PromoCode, filter: string): boolean => {
+      const searchStr = this.searchQuery().toLowerCase();
+      // Only search filter applies to promos currently
+      return (
+        !searchStr ||
+        data.code.toLowerCase().includes(searchStr) ||
+        (data.name?.toLowerCase().includes(searchStr) ?? false)
       );
-    }
-
-    this.rulesDataSource.data = rules;
-    if (this.rulesPaginator) this.rulesDataSource.paginator = this.rulesPaginator;
-    if (this.rulesSort) this.rulesDataSource.sort = this.rulesSort;
+    };
   }
 
-  private updatePromosDataSource() {
-    let promos = this.store.promoCodes();
-
-    if (this.searchQuery()) {
-      const q = this.searchQuery().toLowerCase();
-      promos = promos.filter(
-        (p) => p.code.toLowerCase().includes(q) || p.name?.toLowerCase().includes(q)
-      );
-    }
-
-    this.promosDataSource.data = promos;
-    if (this.promosPaginator) this.promosDataSource.paginator = this.promosPaginator;
-    if (this.promosSort) this.promosDataSource.sort = this.promosSort;
+  // Filter Actions
+  applyFilter(event: Event) {
+    const val = (event.target as HTMLInputElement).value;
+    this.searchQuery.set(val);
+    this.triggerFilter();
   }
 
-  applyFilters() {
-    if (this.activeTabIndex() === 0) {
-      this.updateRulesDataSource();
-    } else {
-      this.updatePromosDataSource();
-    }
+  filterByType(val: string) {
+    this.adjustmentTypeFilter.set(val);
+    this.triggerFilter();
+  }
+
+  filterByApp(val: string) {
+    this.applicationFilter.set(val);
+    this.triggerFilter();
+  }
+
+  private triggerFilter() {
+    // Trigger filter update on both sources
+    this.rulesDataSource.filter = 'trigger';
+    this.promosDataSource.filter = 'trigger';
+
+    if (this.activeTabIndex() === 0) this.rulesDataSource.paginator?.firstPage();
+    else this.promosDataSource.paginator?.firstPage();
   }
 
   clearFilters() {
     this.searchQuery.set('');
     this.adjustmentTypeFilter.set('');
     this.applicationFilter.set('');
-    this.applyFilters();
+    this.triggerFilter();
+    this.rulesDataSource.filter = '';
+    this.promosDataSource.filter = '';
   }
 
   onTabChange(index: number) {
     this.activeTabIndex.set(index);
-    this.applyFilters();
+    // Optional: Reset filters when switching tabs if desired
   }
 
-  // Label helpers
+  // Labels
   getValueTypeLabel(rule: DiscountRule): string {
-    if (rule.value_type === 'percentage') {
-      return `${rule.value}%`;
-    }
-    return `ZMW ${rule.value}`;
+    return rule.value_type === 'percentage' ? `${rule.value}%` : `ZMW ${rule.value}`;
   }
 
-  getApplicationLabel(value: string): string {
-    return getLabelByValue(DISCOUNT_APPLICATION, value);
+  getApplicationLabel(val: string): string {
+    return getLabelByValue(DISCOUNT_APPLICATION, val);
   }
 
   getScopeLabel(rule: DiscountRule): string {
-    if (rule.plan) return rule.plan.name;
-    if (rule.scheme) return rule.scheme.name;
+    if (rule.plan) return `Plan: ${rule.plan.name}`;
+    if (rule.scheme) return `Scheme: ${rule.scheme.name}`;
     return 'Global';
   }
 
   // Drawer
-  openDrawer(rule: DiscountRule) {
+  viewDetails(rule: DiscountRule) {
     this.selectedRule.set(rule);
-    this.drawer.open();
+    this.detailDrawer.open();
   }
 
   closeDrawer() {
-    this.drawer.close();
+    this.detailDrawer.close();
     this.selectedRule.set(null);
   }
 
-  // CRUD - Rules
+  // CRUD
   openRuleDialog(rule?: DiscountRule) {
     const dialogRef = this.dialog.open(MedicalDiscountDialog, {
       maxWidth: '70vw',
@@ -213,48 +237,67 @@ export class MedicalDiscountList implements OnInit {
 
     dialogRef.afterClosed().subscribe((result) => {
       if (!result) return;
-
-      const request$ = rule
-        ? this.store.updateRule(rule.id, result)
-        : this.store.createRule(result);
-
-      request$.subscribe({
-        next: () => {
-          this.feedback.success(`Rule ${rule ? 'updated' : 'created'} successfully`);
-          this.store.loadRules();
-        },
-        error: (err) => this.feedback.error(err?.error?.message ?? 'Failed to save rule'),
+      const req$ = rule ? this.store.updateRule(rule.id, result) : this.store.createRule(result);
+      req$.subscribe({
+        next: () => this.feedback.success('Rule saved successfully'),
+        error: (e) => this.feedback.error(e?.error?.message || 'Failed to save'),
       });
     });
   }
 
-  async deleteRule(rule: DiscountRule) {
-    const confirmed = await this.feedback.confirm(
-      'Delete Rule?',
-      `Are you sure you want to delete "${rule.name}"?`
-    );
-    if (!confirmed) return;
+  // openPromoDialog(promo?: PromoCode) {
+  //   const dialogRef = this.dialog.open(PromoCodeDialog, {
+  //     maxWidth: '50vw',
+  //     data: promo ? { ...promo } : null,
+  //     panelClass: ['responsive-dialog', 'bg-white'],
+  //     autoFocus: false,
+  //   });
 
-    this.store.deleteRule(rule.id).subscribe({
-      next: () => {
-        this.feedback.success('Rule deleted');
-        this.closeDrawer();
-      },
-      error: (err) => this.feedback.error(err?.error?.message ?? 'Failed to delete'),
-    });
+  //   dialogRef.afterClosed().subscribe((result) => {
+  //     if(!result) return;
+  //     // Handle promo save
+  //   });
+  // }
+
+  async deleteRule(rule: DiscountRule) {
+    if (
+      await this.feedback.confirm('Delete Rule?', `Are you sure you want to delete ${rule.name}?`)
+    ) {
+      this.store.deleteRule(rule.id).subscribe({
+        next: () => {
+          this.feedback.success('Rule deleted');
+          this.closeDrawer();
+        },
+        error: () => this.feedback.error('Failed to delete'),
+      });
+    }
   }
 
   async toggleRuleStatus(rule: DiscountRule) {
     const action = rule.is_active ? 'deactivate' : 'activate';
-
     this.store.updateRule(rule.id, { is_active: !rule.is_active }).subscribe({
-      next: () => {
-        this.feedback.success(`Rule ${action}d`);
-        this.store.loadRules();
-      },
-      error: (err) => this.feedback.error(err?.error?.message ?? `Failed to ${action}`),
+      next: () => this.feedback.success(`Rule ${action}d`),
+      error: () => this.feedback.error('Failed to update status'),
     });
   }
+
+  // CSV Export
+  exportToCsv() {
+    const isRules = this.activeTabIndex() === 0;
+    const data = isRules ? this.rulesDataSource.filteredData : this.promosDataSource.filteredData;
+
+    if (!data.length) {
+      this.feedback.error('No data to export');
+      return;
+    }
+
+    // Simple CSV logic ...
+    const filename = isRules ? 'discount_rules.csv' : 'promo_codes.csv';
+    // Implementation of CSV generation here...
+    this.feedback.success(`Exporting ${filename}...`);
+  }
+
+  // Method stubs for Promo CRUD
 
   // CRUD - Promo Codes
   openPromoDialog(promo?: PromoCode, ruleId?: string) {

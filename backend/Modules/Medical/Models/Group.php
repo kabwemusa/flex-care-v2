@@ -72,7 +72,7 @@ class Group extends BaseModel
     public function primaryContact(): HasOne
     {
         return $this->hasOne(GroupContact::class, 'group_id')
-                    ->where('is_primary', true);
+                    ->where('is_primary', 1);
     }
 
     public function hrContacts(): HasMany
@@ -86,6 +86,10 @@ class Group extends BaseModel
         return $this->hasMany(Policy::class, 'group_id');
     }
 
+    public function applications(): HasMany
+    {
+        return $this->hasMany(Application::class, 'group_id');
+    }
     public function activePolicies(): HasMany
     {
         return $this->hasMany(Policy::class, 'group_id')

@@ -15,7 +15,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatFormFieldModule } from '@angular/material/form-field';
 
 // Core/Shared Imports
-import { UserManagementStore, UserListItem } from 'core-auth';
+import { UserManagementStore, UserListItem, AuthService } from 'core-auth';
 import { PageHeaderComponent, FeedbackService } from 'shared';
 
 // Dialog Imports
@@ -43,6 +43,7 @@ import { RoleAssignmentDialogComponent } from '../../dialogs/role-assignment-dia
 })
 export class UserManagementComponent implements OnInit, AfterViewInit {
   readonly store = inject(UserManagementStore);
+  private readonly authService = inject(AuthService);
   private readonly dialog = inject(MatDialog);
   private readonly feedback = inject(FeedbackService);
 
@@ -208,18 +209,69 @@ export class UserManagementComponent implements OnInit, AfterViewInit {
   }
 
   /**
+   * Reset user password (admin only)
+   */
+  async resetPassword(user: UserListItem) {
+    const confirmed = await this.feedback.confirm(
+      'Reset Password',
+      `Are you sure you want to reset the password for ${
+        user.username || user.email
+      }? A temporary password will be generated.`
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    this.store.resetPassword(user.id).subscribe({
+      next: async (response) => {
+        const tempPassword = response.data.temporary_password;
+        this.feedback.success('Password reset successfully!');
+
+        // Show temporary password with option to copy
+        const shouldCopy = await this.feedback.confirm(
+          'Temporary Password Generated',
+          `Temporary Password: ${tempPassword}\n\nIMPORTANT: Copy this password and share it securely with the user. The user will be required to change it on their next login.\n\nClick "Confirm" to copy to clipboard.`
+        );
+
+        if (shouldCopy && navigator.clipboard) {
+          try {
+            await navigator.clipboard.writeText(tempPassword);
+            this.feedback.success('Password copied to clipboard!');
+          } catch (err) {
+            this.feedback.error('Failed to copy to clipboard. Please copy manually.');
+          }
+        }
+
+        this.loadUsers();
+      },
+      error: (error) => {
+        this.feedback.error(error.error?.message || 'Failed to reset password');
+      },
+    });
+  }
+
+  /**
    * Delete user
    */
   async deleteUser(user: UserListItem) {
+    // Prevent deletion of active users
+    if (user.is_active) {
+      this.feedback.error('Cannot delete an active user. Please deactivate the user first.');
+      return;
+    }
+
     const confirmed = await this.feedback.confirm(
       'Delete User',
       `Are you sure you want to delete ${
         user.username || user.email
       }? This action cannot be undone.`
     );
+
     if (!confirmed) {
       return;
     }
+
     this.store.deleteUser(user.id).subscribe({
       next: () => {
         this.feedback.success('User deleted successfully');
@@ -229,6 +281,29 @@ export class UserManagementComponent implements OnInit, AfterViewInit {
         this.feedback.error(error.error?.message || 'Failed to delete user');
       },
     });
+  }
+
+  /**
+   * Check if user can perform action based on permissions
+   */
+  canPerformAction(action: string): boolean {
+    // System admins can do everything
+    if (this.authService.isSystemAdmin()) {
+      return true;
+    }
+
+    // Map actions to required permissions
+    const actionPermissions: Record<string, string[]> = {
+      create: ['users.create'],
+      edit: ['users.update'],
+      delete: ['users.delete'],
+      manage_roles: ['roles.assign'],
+      reset_password: ['users.update'], // Requires user update permission
+      toggle_status: ['users.update'],
+    };
+
+    const requiredPermissions = actionPermissions[action] || [];
+    return this.authService.hasAnyPermission(requiredPermissions);
   }
 
   /**

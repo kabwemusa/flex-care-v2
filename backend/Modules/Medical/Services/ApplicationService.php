@@ -147,6 +147,77 @@ class ApplicationService
         }
     }
 
+    /**
+     * Add a single member to an application
+     * Used for adding members one-by-one (e.g., from census import)
+     */
+    public function addMember(string $applicationId, array $memberData): ApplicationMember
+    {
+        $application = Application::with('rateCard')->findOrFail($applicationId);
+
+        $memberType = $memberData['member_type'] ?? MedicalConstants::MEMBER_TYPE_PRINCIPAL;
+
+        // Resolve Principal ID for dependents
+        $principalId = null;
+        if ($memberType !== MedicalConstants::MEMBER_TYPE_PRINCIPAL) {
+            // Link to principal if specified, or find first principal in application
+            if (!empty($memberData['principal_member_id'])) {
+                $principalId = $memberData['principal_member_id'];
+            } else {
+                $firstPrincipal = $application->activeMembers()
+                    ->where('member_type', MedicalConstants::MEMBER_TYPE_PRINCIPAL)
+                    ->first();
+                $principalId = $firstPrincipal?->id;
+            }
+        }
+
+        // Calculate Age
+        $dob = $memberData['date_of_birth'] ?? null;
+        $ageAtInception = null;
+        if ($dob) {
+            $inceptionDate = $application->proposed_start_date ?? now();
+            $ageAtInception = Carbon::parse($dob)->diffInYears($inceptionDate);
+        }
+
+        $member = ApplicationMember::create([
+            'application_id' => $application->id,
+            'member_type' => $memberType,
+            'relationship' => $memberData['relationship'] ?? null,
+            'principal_member_id' => $principalId,
+            'title' => $memberData['title'] ?? null,
+            'first_name' => $memberData['first_name'],
+            'middle_name' => $memberData['middle_name'] ?? null,
+            'last_name' => $memberData['last_name'],
+            'date_of_birth' => $dob,
+            'age_at_inception' => $ageAtInception,
+            'gender' => $memberData['gender'],
+            'national_id' => $memberData['national_id'] ?? null,
+            'email' => $memberData['email'] ?? null,
+            'phone' => $memberData['phone'] ?? null,
+            'address' => $memberData['address'] ?? null,
+            'city' => $memberData['city'] ?? null,
+            'state' => $memberData['state'] ?? null,
+            'country' => $memberData['country'] ?? 'Zambia',
+            'postal_code' => $memberData['postal_code'] ?? null,
+            'employee_number' => $memberData['employee_number'] ?? null,
+            'job_title' => $memberData['job_title'] ?? null,
+            'department' => $memberData['department'] ?? null,
+            'has_pre_existing_conditions' => $memberData['has_pre_existing_conditions'] ?? false,
+            'declared_conditions' => $memberData['declared_conditions'] ?? null,
+            'underwriting_status' => MedicalConstants::UW_STATUS_PENDING,
+        ]);
+
+        $applicationTogo = new Application();
+        $applicationTogo->activeMembers = $member;
+    
+        $this->premiumService->calculateApplicationPremium($applicationTogo);
+
+        // Calculate individual premium
+        // $this->premiumService->calculateApplicationMemberPremium($member, $application->rateCard);
+
+        return $member->fresh();
+    }
+
     // =========================================================================
     // WORKFLOW
     // =========================================================================

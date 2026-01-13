@@ -273,47 +273,18 @@ export interface Addon {
   description?: string;
   addon_type: string;
   addon_type_label?: string;
+  pricing_type: string;
+  pricing_type_label?: string;
+  currency?: string;
+  amount?: number;
+  percentage?: number;
+  percentage_basis?: string;
   effective_from?: string;
   effective_to?: string;
   is_active: boolean;
   is_effective?: boolean;
   sort_order: number;
-  addon_benefits_count?: number;
   plan_addons_count?: number;
-  addon_benefits?: AddonBenefit[];
-  rates?: AddonRate[];
-}
-
-export interface AddonBenefit {
-  id: string;
-  addon_id: string;
-  benefit_id: string;
-  limit_type?: string;
-  limit_frequency?: string;
-  limit_basis?: string;
-  limit_amount?: number;
-  limit_count?: number;
-  limit_days?: number;
-  waiting_period_days?: number;
-  display_value?: string;
-  benefit?: Benefit;
-}
-
-export interface AddonRate {
-  id: string;
-  addon_id: string;
-  plan_id?: string;
-  pricing_type: string;
-  pricing_type_label?: string;
-  amount?: number;
-  percentage?: number;
-  percentage_basis?: string;
-  effective_from: string;
-  effective_to?: string;
-  is_active: boolean;
-  is_effective?: boolean;
-  is_global?: boolean;
-  is_plan_specific?: boolean;
 }
 
 export interface PlanAddon {
@@ -1312,47 +1283,18 @@ export interface Addon {
   description?: string;
   addon_type: string;
   addon_type_label?: string;
+  pricing_type: string;
+  pricing_type_label?: string;
+  currency?: string;
+  amount?: number;
+  percentage?: number;
+  percentage_basis?: string;
   effective_from?: string;
   effective_to?: string;
   is_active: boolean;
   is_effective?: boolean;
   sort_order: number;
-  addon_benefits_count?: number;
   plan_addons_count?: number;
-  addon_benefits?: AddonBenefit[];
-  rates?: AddonRate[];
-}
-
-export interface AddonBenefit {
-  id: string;
-  addon_id: string;
-  benefit_id: string;
-  limit_type?: string;
-  limit_frequency?: string;
-  limit_basis?: string;
-  limit_amount?: number;
-  limit_count?: number;
-  limit_days?: number;
-  waiting_period_days?: number;
-  display_value?: string;
-  benefit?: Benefit;
-}
-
-export interface AddonRate {
-  id: string;
-  addon_id: string;
-  plan_id?: string;
-  pricing_type: string;
-  pricing_type_label?: string;
-  amount?: number;
-  percentage?: number;
-  percentage_basis?: string;
-  effective_from: string;
-  effective_to?: string;
-  is_active: boolean;
-  is_effective?: boolean;
-  is_global?: boolean;
-  is_plan_specific?: boolean;
 }
 
 export interface PlanAddon {
@@ -1918,16 +1860,43 @@ export interface Policy {
   is_suspended?: boolean;
   is_cancelled?: boolean;
   is_expired?: boolean;
+  is_expiring?: boolean;
   is_corporate?: boolean;
+  is_in_force?: boolean;
+  days_to_expiry?: number;
+
+  // Underwriting (from Application)
+  underwriting_notes?: string;
+  underwritten_by?: string;
+  underwritten_at?: string;
+
+  // Issuance (Application Conversion)
+  issued_at?: string;
+  issued_by?: string;
+
+  // Suspension
+  suspended_at?: string;
+  suspension_reason?: string;
+
+  // Cancellation
+  cancelled_at?: string;
+  cancelled_by?: string;
+  cancellation_reason?: string;
+  cancellation_notes?: string;
 
   // Renewal
   previous_policy_id?: string;
   renewed_to_policy_id?: string;
   renewal_count?: number;
+  can_be_renewed?: boolean;
+  is_auto_renew?: boolean;
 
-  // Timestamps
-  issued_at?: string;
-  issued_by?: string;
+  // Computed premiums
+  monthly_premium?: number;
+  annual_premium?: number;
+
+  // Computed display
+  policy_holder_name?: string;
 
   // Relations
   principal_member?: Member;
@@ -2111,6 +2080,85 @@ export interface QuoteAddonBreakdown {
   addon_id: string;
   addon_name: string;
   premium: number;
+}
+
+// ============================================================================
+// GROUP QUOTE
+// ============================================================================
+export interface GroupQuoteRequest {
+  group_id: string;
+  plan_id: string;
+  rate_card_id?: string;
+  billing_frequency?: string;
+  members: QuoteMember[];
+  addons?: { addon_id: string }[];
+  discount_codes?: string[];
+  show_tier_breakdown?: boolean;
+  show_volume_discounts?: boolean;
+  include_next_tier_info?: boolean;
+}
+
+export interface GroupQuoteResult {
+  group_id: string;
+  group_name: string;
+  plan_info: {
+    id: string;
+    name: string;
+    scheme_name: string;
+    rate_card_id: string;
+    rate_card_name: string;
+    premium_basis: string;
+  };
+  member_summary: {
+    total: number;
+    principals: number;
+    spouses: number;
+    children: number;
+    parents: number;
+    other: number;
+  };
+  tier_info?: {
+    current_tier: {
+      tier_number: number;
+      min_members: number;
+      max_members: number | null;
+      tier_premium: number;
+      extra_member_premium: number;
+    };
+    next_tier?: {
+      tier_number: number;
+      min_members: number;
+      max_members: number | null;
+      members_needed: number;
+      potential_savings: number;
+      tier_premium: number;
+    };
+  };
+  volume_discounts: {
+    id: string;
+    name: string;
+    description: string;
+    discount_type: string;
+    discount_value: number;
+    discount_amount: number;
+    triggered_by: string;
+    can_stack: boolean;
+  }[];
+  premium_breakdown: {
+    base_premium: number;
+    addon_premium: number;
+    subtotal: number;
+    tier_savings: number;
+    volume_discounts: number;
+    other_discounts: number;
+    total_discounts: number;
+    total_premium: number;
+    per_member_average: number;
+  };
+  billing_frequency: string;
+  currency: string;
+  generated_at: string;
+  valid_until: string;
 }
 
 // ============================================================================
