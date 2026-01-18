@@ -92,7 +92,7 @@ class PolicyController extends Controller
 
             $policies = $query->paginate(request('per_page', 20));
 
-            return $this->success(
+            return $this->paginated(
                 PolicyListResource::collection($policies),
                 'Policies retrieved'
             );

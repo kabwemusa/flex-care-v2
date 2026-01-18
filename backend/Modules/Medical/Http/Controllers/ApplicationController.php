@@ -45,90 +45,161 @@ class ApplicationController extends Controller
      * List applications with filtering.
      * GET /v1/medical/applications
      */
+    // public function index(): JsonResponse
+    // {
+    //     try {
+    //         $query = Application::query()
+    //             ->with(['scheme:id,code,name', 'plan:id,code,name', 'group:id,code,name'])
+    //             ->withCount('activeMembers');
+
+    //         // Search
+    //         if ($search = request('search')) {
+    //             $query->where(function ($q) use ($search) {
+    //                 $q->where('application_number', 'like', "%{$search}%")
+    //                   ->orWhere('contact_name', 'like', "%{$search}%")
+    //                   ->orWhere('contact_email', 'like', "%{$search}%");
+    //             });
+    //         }
+
+    //         // Filters
+    //         if ($status = request('status')) {
+    //             $query->where('status', $status);
+    //         }
+
+    //         if ($applicationType = request('application_type')) {
+    //             $query->where('application_type', $applicationType);
+    //         }
+
+    //         if ($policyType = request('policy_type')) {
+    //             $query->where('policy_type', $policyType);
+    //         }
+
+    //         if ($schemeId = request('scheme_id')) {
+    //             $query->where('scheme_id', $schemeId);
+    //         }
+
+    //         if ($planId = request('plan_id')) {
+    //             $query->where('plan_id', $planId);
+    //         }
+
+    //         if ($groupId = request('group_id')) {
+    //             $query->where('group_id', $groupId);
+    //         }
+
+    //         if (request('pending_underwriting')) {
+    //             $query->pendingUnderwriting();
+    //         }
+
+    //         if (request('pending_conversion')) {
+    //             $query->pendingConversion();
+    //         }
+
+    //         if (request('expired')) {
+    //             $query->expired();
+    //         }
+
+    //         if (request('corporate_only')) {
+    //             $query->corporate();
+    //         }
+
+    //         if (request('individual_only')) {
+    //             $query->individual();
+    //         }
+
+    //         // Date filters
+    //         if ($from = request('created_from')) {
+    //             $query->where('created_at', '>=', $from);
+    //         }
+    //         if ($to = request('created_to')) {
+    //             $query->where('created_at', '<=', $to);
+    //         }
+
+    //         // Sorting
+    //         $sortBy = request('sort_by', 'created_at');
+    //         $sortOrder = request('sort_order', 'desc');
+    //         $query->orderBy($sortBy, $sortOrder);
+
+    //         $applications = $query->paginate(request('per_page', 20));
+
+    //         return $this->paginated(
+    //             ApplicationListResource::collection($applications),
+    //             'Applications retrieved'
+    //         );
+    //     } catch (Throwable $e) {
+    //         return $this->error('Failed to retrieve applications: ' . $e->getMessage(), 500);
+    //     }
+    // }
+
     public function index(): JsonResponse
     {
         try {
             $query = Application::query()
-                ->with(['scheme:id,code,name', 'plan:id,code,name', 'group:id,code,name'])
+                ->with([
+                    'scheme:id,code,name',
+                    'plan:id,code,name',
+                    'group:id,code,name',
+                ])
                 ->withCount('activeMembers');
 
             // Search
-            if ($search = request('search')) {
-                $query->where(function ($q) use ($search) {
+            $query->when(request('search'), function ($q, $search) {
+                $q->where(function ($q) use ($search) {
                     $q->where('application_number', 'like', "%{$search}%")
-                      ->orWhere('contact_name', 'like', "%{$search}%")
-                      ->orWhere('contact_email', 'like', "%{$search}%");
+                    ->orWhere('contact_name', 'like', "%{$search}%")
+                    ->orWhere('contact_email', 'like', "%{$search}%");
                 });
-            }
+            });
 
             // Filters
-            if ($status = request('status')) {
-                $query->where('status', $status);
-            }
+            $query->when(request('status'), fn ($q, $v) => $q->where('status', $v))
+                ->when(request('application_type'), fn ($q, $v) => $q->where('application_type', $v))
+                ->when(request('policy_type'), fn ($q, $v) => $q->where('policy_type', $v))
+                ->when(request('scheme_id'), fn ($q, $v) => $q->where('scheme_id', $v))
+                ->when(request('plan_id'), fn ($q, $v) => $q->where('plan_id', $v))
+                ->when(request('group_id'), fn ($q, $v) => $q->where('group_id', $v));
 
-            if ($applicationType = request('application_type')) {
-                $query->where('application_type', $applicationType);
-            }
+            // Scopes
+            $query->when(request('pending_underwriting'), fn ($q) => $q->pendingUnderwriting())
+                ->when(request('pending_conversion'), fn ($q) => $q->pendingConversion())
+                ->when(request('expired'), fn ($q) => $q->expired())
+                ->when(request('corporate_only'), fn ($q) => $q->corporate())
+                ->when(request('individual_only'), fn ($q) => $q->individual());
 
-            if ($policyType = request('policy_type')) {
-                $query->where('policy_type', $policyType);
-            }
+            // Dates
+            $query->when(request('created_from'), fn ($q, $v) =>
+                $q->whereDate('created_at', '>=', $v)
+            );
+            $query->when(request('created_to'), fn ($q, $v) =>
+                $q->whereDate('created_at', '<=', $v)
+            );
 
-            if ($schemeId = request('scheme_id')) {
-                $query->where('scheme_id', $schemeId);
-            }
+            // Safe sorting
+            $allowedSorts = ['created_at', 'application_number', 'status'];
+            $sortBy = in_array(request('sort_by'), $allowedSorts)
+                ? request('sort_by')
+                : 'created_at';
 
-            if ($planId = request('plan_id')) {
-                $query->where('plan_id', $planId);
-            }
-
-            if ($groupId = request('group_id')) {
-                $query->where('group_id', $groupId);
-            }
-
-            if (request('pending_underwriting')) {
-                $query->pendingUnderwriting();
-            }
-
-            if (request('pending_conversion')) {
-                $query->pendingConversion();
-            }
-
-            if (request('expired')) {
-                $query->expired();
-            }
-
-            if (request('corporate_only')) {
-                $query->corporate();
-            }
-
-            if (request('individual_only')) {
-                $query->individual();
-            }
-
-            // Date filters
-            if ($from = request('created_from')) {
-                $query->where('created_at', '>=', $from);
-            }
-            if ($to = request('created_to')) {
-                $query->where('created_at', '<=', $to);
-            }
-
-            // Sorting
-            $sortBy = request('sort_by', 'created_at');
-            $sortOrder = request('sort_order', 'desc');
+            $sortOrder = request('sort_order') === 'asc' ? 'asc' : 'desc';
             $query->orderBy($sortBy, $sortOrder);
 
-            $applications = $query->paginate(request('per_page', 20));
+            $perPage = min((int) request('per_page', 20), 100);
 
-            return $this->success(
+            $applications = request()->has('cursor')
+                ? $query->orderBy('id')->cursorPaginate($perPage)
+                : $query->paginate($perPage);
+
+            return $this->paginated(
                 ApplicationListResource::collection($applications),
                 'Applications retrieved'
             );
+
         } catch (Throwable $e) {
-            return $this->error('Failed to retrieve applications: ' . $e->getMessage(), 500);
+            report($e);
+
+            return $this->error('Failed to retrieve applications'.$e->getMessage(), 500);
         }
     }
+
 
     /**
      * Create a new application.
@@ -165,8 +236,8 @@ class ApplicationController extends Controller
                 'group.primaryContact',
                 'renewalOfPolicy:id,policy_number',
                 'convertedPolicy:id,policy_number',
-                'activeMembers' => fn($q) => $q->orderBy('member_type')->orderBy('created_at'),
-                'activeMembers.principal:id,first_name,last_name',
+                // 'activeMembers' => fn($q) => $q->orderBy('member_type')->orderBy('created_at'),
+                // 'activeMembers.principal:id,first_name,last_name',
                 'activeAddons.addon',
                 'documents' => fn($q) => $q->active()->latest(),
             ])
@@ -641,16 +712,20 @@ class ApplicationController extends Controller
                 ->with(['principal:id,first_name,last_name'])
                 ->orderBy('member_type')
                 ->orderBy('created_at')
-                ->get();
+                ->paginate(request('per_page', 20));
 
-            return $this->success(
+            return $this->paginated(
                 ApplicationMemberResource::collection($members),
                 'Members retrieved'
             );
         } catch (Throwable $e) {
-            return $this->error('Failed to retrieve members: ' . $e->getMessage(), 500);
+            return $this->error(
+                'Failed to retrieve members: ' . $e->getMessage(),
+                500
+            );
         }
     }
+
 
     /**
      * Add member to application.

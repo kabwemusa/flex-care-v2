@@ -746,6 +746,397 @@ final class MedicalConstants
         self::SOURCE_RENEWAL => 'Renewal',
     ];
 
-    
-     
+    // =========================================================================
+    // ENDORSEMENT TYPES
+    // =========================================================================
+    public const ENDORSEMENT_TYPE_ADD_MEMBER = 'add_member';
+    public const ENDORSEMENT_TYPE_REMOVE_MEMBER = 'remove_member';
+    public const ENDORSEMENT_TYPE_UPGRADE_PLAN = 'upgrade_plan';
+    public const ENDORSEMENT_TYPE_DOWNGRADE_PLAN = 'downgrade_plan';
+    public const ENDORSEMENT_TYPE_ADD_ADDON = 'add_addon';
+    public const ENDORSEMENT_TYPE_REMOVE_ADDON = 'remove_addon';
+    public const ENDORSEMENT_TYPE_CHANGE_DETAILS = 'change_details';
+    public const ENDORSEMENT_TYPE_CORRECTION = 'correction';
+    public const ENDORSEMENT_TYPE_CANCELLATION = 'cancellation';
+    public const ENDORSEMENT_TYPE_REINSTATEMENT = 'reinstatement';
+
+    public const ENDORSEMENT_TYPES = [
+        self::ENDORSEMENT_TYPE_ADD_MEMBER => 'Add Member',
+        self::ENDORSEMENT_TYPE_REMOVE_MEMBER => 'Remove Member',
+        self::ENDORSEMENT_TYPE_UPGRADE_PLAN => 'Upgrade Plan',
+        self::ENDORSEMENT_TYPE_DOWNGRADE_PLAN => 'Downgrade Plan',
+        self::ENDORSEMENT_TYPE_ADD_ADDON => 'Add Add-on',
+        self::ENDORSEMENT_TYPE_REMOVE_ADDON => 'Remove Add-on',
+        self::ENDORSEMENT_TYPE_CHANGE_DETAILS => 'Change Details',
+        self::ENDORSEMENT_TYPE_CORRECTION => 'Correction',
+        self::ENDORSEMENT_TYPE_CANCELLATION => 'Cancellation',
+        self::ENDORSEMENT_TYPE_REINSTATEMENT => 'Reinstatement',
+    ];
+
+    // =========================================================================
+    // ENDORSEMENT STATUS
+    // =========================================================================
+    public const ENDORSEMENT_STATUS_PENDING = 'pending';
+    public const ENDORSEMENT_STATUS_APPROVED = 'approved';
+    public const ENDORSEMENT_STATUS_REJECTED = 'rejected';
+    public const ENDORSEMENT_STATUS_PROCESSED = 'processed';
+    public const ENDORSEMENT_STATUS_CANCELLED = 'cancelled';
+
+    public const ENDORSEMENT_STATUSES = [
+        self::ENDORSEMENT_STATUS_PENDING => 'Pending',
+        self::ENDORSEMENT_STATUS_APPROVED => 'Approved',
+        self::ENDORSEMENT_STATUS_REJECTED => 'Rejected',
+        self::ENDORSEMENT_STATUS_PROCESSED => 'Processed',
+        self::ENDORSEMENT_STATUS_CANCELLED => 'Cancelled',
+    ];
+
+    // =========================================================================
+    // ENDORSEMENT PREFIX
+    // =========================================================================
+    public const PREFIX_ENDORSEMENT = 'END';
+
+    // =========================================================================
+    // CLAIM TYPES
+    // =========================================================================
+    public const CLAIM_TYPE_IN_PATIENT = 'in_patient';
+    public const CLAIM_TYPE_OUT_PATIENT = 'out_patient';
+    public const CLAIM_TYPE_DENTAL = 'dental';
+    public const CLAIM_TYPE_OPTICAL = 'optical';
+    public const CLAIM_TYPE_MATERNITY = 'maternity';
+    public const CLAIM_TYPE_CHRONIC = 'chronic';
+    public const CLAIM_TYPE_WELLNESS = 'wellness';
+    public const CLAIM_TYPE_EMERGENCY = 'emergency';
+
+    public const CLAIM_TYPES = [
+        self::CLAIM_TYPE_IN_PATIENT => 'In-Patient',
+        self::CLAIM_TYPE_OUT_PATIENT => 'Out-Patient',
+        self::CLAIM_TYPE_DENTAL => 'Dental',
+        self::CLAIM_TYPE_OPTICAL => 'Optical',
+        self::CLAIM_TYPE_MATERNITY => 'Maternity',
+        self::CLAIM_TYPE_CHRONIC => 'Chronic',
+        self::CLAIM_TYPE_WELLNESS => 'Wellness',
+        self::CLAIM_TYPE_EMERGENCY => 'Emergency',
+    ];
+
+    // =========================================================================
+    // CLAIM STATUS
+    // =========================================================================
+    public const CLAIM_STATUS_SUBMITTED = 'submitted';
+    public const CLAIM_STATUS_PENDING_DOCUMENTS = 'pending_documents';
+    public const CLAIM_STATUS_IN_REVIEW = 'in_review';
+    public const CLAIM_STATUS_PENDING_APPROVAL = 'pending_approval';
+    public const CLAIM_STATUS_APPROVED = 'approved';
+    public const CLAIM_STATUS_PARTIALLY_APPROVED = 'partially_approved';
+    public const CLAIM_STATUS_REJECTED = 'rejected';
+    public const CLAIM_STATUS_PAID = 'paid';
+    public const CLAIM_STATUS_CLOSED = 'closed';
+
+    public const CLAIM_STATUSES = [
+        self::CLAIM_STATUS_SUBMITTED => 'Submitted',
+        self::CLAIM_STATUS_PENDING_DOCUMENTS => 'Pending Documents',
+        self::CLAIM_STATUS_IN_REVIEW => 'In Review',
+        self::CLAIM_STATUS_PENDING_APPROVAL => 'Pending Approval',
+        self::CLAIM_STATUS_APPROVED => 'Approved',
+        self::CLAIM_STATUS_PARTIALLY_APPROVED => 'Partially Approved',
+        self::CLAIM_STATUS_REJECTED => 'Rejected',
+        self::CLAIM_STATUS_PAID => 'Paid',
+        self::CLAIM_STATUS_CLOSED => 'Closed',
+    ];
+
+    // =========================================================================
+    // CLAIM SUBMISSION TYPES
+    // =========================================================================
+    public const SUBMISSION_TYPE_PROVIDER = 'provider';
+    public const SUBMISSION_TYPE_MEMBER = 'member';
+    public const SUBMISSION_TYPE_EMPLOYER = 'employer';
+
+    public const SUBMISSION_TYPES = [
+        self::SUBMISSION_TYPE_PROVIDER => 'Provider',
+        self::SUBMISSION_TYPE_MEMBER => 'Member',
+        self::SUBMISSION_TYPE_EMPLOYER => 'Employer',
+    ];
+
+    // =========================================================================
+    // CLAIM SUBMISSION CHANNELS
+    // =========================================================================
+    public const SUBMISSION_CHANNEL_PORTAL = 'portal';
+    public const SUBMISSION_CHANNEL_EMAIL = 'email';
+    public const SUBMISSION_CHANNEL_PAPER = 'paper';
+    public const SUBMISSION_CHANNEL_API = 'api';
+    public const SUBMISSION_CHANNEL_MOBILE = 'mobile';
+
+    public const SUBMISSION_CHANNELS = [
+        self::SUBMISSION_CHANNEL_PORTAL => 'Portal',
+        self::SUBMISSION_CHANNEL_EMAIL => 'Email',
+        self::SUBMISSION_CHANNEL_PAPER => 'Paper',
+        self::SUBMISSION_CHANNEL_API => 'API',
+        self::SUBMISSION_CHANNEL_MOBILE => 'Mobile App',
+    ];
+
+    // =========================================================================
+    // PROVIDER TYPES
+    // =========================================================================
+    public const PROVIDER_TYPE_HOSPITAL = 'hospital';
+    public const PROVIDER_TYPE_CLINIC = 'clinic';
+    public const PROVIDER_TYPE_PHARMACY = 'pharmacy';
+    public const PROVIDER_TYPE_LAB = 'lab';
+    public const PROVIDER_TYPE_OPTICAL = 'optical';
+    public const PROVIDER_TYPE_DENTAL = 'dental';
+    public const PROVIDER_TYPE_SPECIALIST = 'specialist';
+
+    public const PROVIDER_TYPES = [
+        self::PROVIDER_TYPE_HOSPITAL => 'Hospital',
+        self::PROVIDER_TYPE_CLINIC => 'Clinic',
+        self::PROVIDER_TYPE_PHARMACY => 'Pharmacy',
+        self::PROVIDER_TYPE_LAB => 'Laboratory',
+        self::PROVIDER_TYPE_OPTICAL => 'Optical Center',
+        self::PROVIDER_TYPE_DENTAL => 'Dental Clinic',
+        self::PROVIDER_TYPE_SPECIALIST => 'Specialist',
+    ];
+
+    // =========================================================================
+    // CLAIM LINE STATUS
+    // =========================================================================
+    public const CLAIM_LINE_STATUS_PENDING = 'pending';
+    public const CLAIM_LINE_STATUS_APPROVED = 'approved';
+    public const CLAIM_LINE_STATUS_PARTIALLY_APPROVED = 'partially_approved';
+    public const CLAIM_LINE_STATUS_REJECTED = 'rejected';
+
+    public const CLAIM_LINE_STATUSES = [
+        self::CLAIM_LINE_STATUS_PENDING => 'Pending',
+        self::CLAIM_LINE_STATUS_APPROVED => 'Approved',
+        self::CLAIM_LINE_STATUS_PARTIALLY_APPROVED => 'Partially Approved',
+        self::CLAIM_LINE_STATUS_REJECTED => 'Rejected',
+    ];
+
+    // =========================================================================
+    // CLAIM REJECTION REASONS
+    // =========================================================================
+    public const REJECTION_BENEFIT_EXHAUSTED = 'benefit_exhausted';
+    public const REJECTION_NOT_COVERED = 'not_covered';
+    public const REJECTION_WAITING_PERIOD = 'waiting_period';
+    public const REJECTION_PRE_EXISTING = 'pre_existing';
+    public const REJECTION_POLICY_INACTIVE = 'policy_inactive';
+    public const REJECTION_MEMBER_INACTIVE = 'member_inactive';
+    public const REJECTION_DUPLICATE = 'duplicate';
+    public const REJECTION_DOCUMENTATION = 'documentation';
+    public const REJECTION_FRAUD = 'fraud';
+    public const REJECTION_EXCLUSION = 'exclusion';
+    public const REJECTION_OTHER = 'other';
+
+    public const CLAIM_REJECTION_REASONS = [
+        self::REJECTION_BENEFIT_EXHAUSTED => 'Benefit Exhausted',
+        self::REJECTION_NOT_COVERED => 'Not Covered',
+        self::REJECTION_WAITING_PERIOD => 'Within Waiting Period',
+        self::REJECTION_PRE_EXISTING => 'Pre-existing Condition',
+        self::REJECTION_POLICY_INACTIVE => 'Policy Not Active',
+        self::REJECTION_MEMBER_INACTIVE => 'Member Not Active',
+        self::REJECTION_DUPLICATE => 'Duplicate Claim',
+        self::REJECTION_DOCUMENTATION => 'Missing Documentation',
+        self::REJECTION_FRAUD => 'Suspected Fraud',
+        self::REJECTION_EXCLUSION => 'Excluded Condition',
+        self::REJECTION_OTHER => 'Other',
+    ];
+
+    // =========================================================================
+    // CLAIM DOCUMENT TYPES
+    // =========================================================================
+    public const CLAIM_DOC_INVOICE = 'invoice';
+    public const CLAIM_DOC_RECEIPT = 'receipt';
+    public const CLAIM_DOC_PRESCRIPTION = 'prescription';
+    public const CLAIM_DOC_MEDICAL_REPORT = 'medical_report';
+    public const CLAIM_DOC_LAB_RESULT = 'lab_result';
+    public const CLAIM_DOC_REFERRAL = 'referral';
+    public const CLAIM_DOC_PREAUTH = 'preauth';
+    public const CLAIM_DOC_DISCHARGE = 'discharge_summary';
+    public const CLAIM_DOC_ID_COPY = 'id_copy';
+    public const CLAIM_DOC_OTHER = 'other';
+
+    public const CLAIM_DOCUMENT_TYPES = [
+        self::CLAIM_DOC_INVOICE => 'Invoice',
+        self::CLAIM_DOC_RECEIPT => 'Receipt',
+        self::CLAIM_DOC_PRESCRIPTION => 'Prescription',
+        self::CLAIM_DOC_MEDICAL_REPORT => 'Medical Report',
+        self::CLAIM_DOC_LAB_RESULT => 'Lab Result',
+        self::CLAIM_DOC_REFERRAL => 'Referral Letter',
+        self::CLAIM_DOC_PREAUTH => 'Pre-authorization',
+        self::CLAIM_DOC_DISCHARGE => 'Discharge Summary',
+        self::CLAIM_DOC_ID_COPY => 'ID Copy',
+        self::CLAIM_DOC_OTHER => 'Other',
+    ];
+
+    // =========================================================================
+    // CLAIM NOTE TYPES
+    // =========================================================================
+    public const CLAIM_NOTE_COMMENT = 'comment';
+    public const CLAIM_NOTE_STATUS_CHANGE = 'status_change';
+    public const CLAIM_NOTE_ASSIGNMENT = 'assignment';
+    public const CLAIM_NOTE_ESCALATION = 'escalation';
+    public const CLAIM_NOTE_QUERY = 'query';
+    public const CLAIM_NOTE_RESPONSE = 'response';
+    public const CLAIM_NOTE_SYSTEM = 'system';
+
+    public const CLAIM_NOTE_TYPES = [
+        self::CLAIM_NOTE_COMMENT => 'Comment',
+        self::CLAIM_NOTE_STATUS_CHANGE => 'Status Change',
+        self::CLAIM_NOTE_ASSIGNMENT => 'Assignment',
+        self::CLAIM_NOTE_ESCALATION => 'Escalation',
+        self::CLAIM_NOTE_QUERY => 'Query',
+        self::CLAIM_NOTE_RESPONSE => 'Response',
+        self::CLAIM_NOTE_SYSTEM => 'System',
+    ];
+
+    // =========================================================================
+    // PAYMENT METHODS
+    // =========================================================================
+    public const PAYMENT_METHOD_EFT = 'eft';
+    public const PAYMENT_METHOD_CHEQUE = 'cheque';
+    public const PAYMENT_METHOD_MOBILE_MONEY = 'mobile_money';
+    public const PAYMENT_METHOD_CASH = 'cash';
+
+    public const PAYMENT_METHODS = [
+        self::PAYMENT_METHOD_EFT => 'EFT',
+        self::PAYMENT_METHOD_CHEQUE => 'Cheque',
+        self::PAYMENT_METHOD_MOBILE_MONEY => 'Mobile Money',
+        self::PAYMENT_METHOD_CASH => 'Cash',
+    ];
+
+    // =========================================================================
+    // CLAIM PREFIX
+    // =========================================================================
+    public const PREFIX_CLAIM = 'CLM';
+
+    // =========================================================================
+    // BILLING - INVOICE TYPES
+    // =========================================================================
+    public const INVOICE_TYPE_PREMIUM = 'premium';
+    public const INVOICE_TYPE_ENDORSEMENT = 'endorsement';
+    public const INVOICE_TYPE_ADJUSTMENT = 'adjustment';
+    public const INVOICE_TYPE_CREDIT_NOTE = 'credit_note';
+
+    public const INVOICE_TYPES = [
+        self::INVOICE_TYPE_PREMIUM => 'Premium Invoice',
+        self::INVOICE_TYPE_ENDORSEMENT => 'Endorsement Invoice',
+        self::INVOICE_TYPE_ADJUSTMENT => 'Adjustment',
+        self::INVOICE_TYPE_CREDIT_NOTE => 'Credit Note',
+    ];
+
+    // =========================================================================
+    // BILLING - INVOICE STATUS
+    // =========================================================================
+    public const INVOICE_STATUS_DRAFT = 'draft';
+    public const INVOICE_STATUS_SENT = 'sent';
+    public const INVOICE_STATUS_PARTIALLY_PAID = 'partially_paid';
+    public const INVOICE_STATUS_PAID = 'paid';
+    public const INVOICE_STATUS_OVERDUE = 'overdue';
+    public const INVOICE_STATUS_CANCELLED = 'cancelled';
+    public const INVOICE_STATUS_WRITTEN_OFF = 'written_off';
+
+    public const INVOICE_STATUSES = [
+        self::INVOICE_STATUS_DRAFT => 'Draft',
+        self::INVOICE_STATUS_SENT => 'Sent',
+        self::INVOICE_STATUS_PARTIALLY_PAID => 'Partially Paid',
+        self::INVOICE_STATUS_PAID => 'Paid',
+        self::INVOICE_STATUS_OVERDUE => 'Overdue',
+        self::INVOICE_STATUS_CANCELLED => 'Cancelled',
+        self::INVOICE_STATUS_WRITTEN_OFF => 'Written Off',
+    ];
+
+    // =========================================================================
+    // BILLING - INVOICE ITEM TYPES
+    // =========================================================================
+    public const INVOICE_ITEM_BASE_PREMIUM = 'base_premium';
+    public const INVOICE_ITEM_MEMBER_PREMIUM = 'member_premium';
+    public const INVOICE_ITEM_ADDON_PREMIUM = 'addon_premium';
+    public const INVOICE_ITEM_LOADING = 'loading';
+    public const INVOICE_ITEM_DISCOUNT = 'discount';
+    public const INVOICE_ITEM_TAX = 'tax';
+    public const INVOICE_ITEM_ADJUSTMENT = 'adjustment';
+    public const INVOICE_ITEM_PRORATA = 'prorata';
+
+    public const INVOICE_ITEM_TYPES = [
+        self::INVOICE_ITEM_BASE_PREMIUM => 'Base Premium',
+        self::INVOICE_ITEM_MEMBER_PREMIUM => 'Member Premium',
+        self::INVOICE_ITEM_ADDON_PREMIUM => 'Addon Premium',
+        self::INVOICE_ITEM_LOADING => 'Loading',
+        self::INVOICE_ITEM_DISCOUNT => 'Discount',
+        self::INVOICE_ITEM_TAX => 'Tax',
+        self::INVOICE_ITEM_ADJUSTMENT => 'Adjustment',
+        self::INVOICE_ITEM_PRORATA => 'Pro-rata Adjustment',
+    ];
+
+    // =========================================================================
+    // BILLING - PAYMENT STATUS
+    // =========================================================================
+    public const PAYMENT_STATUS_PENDING = 'pending';
+    public const PAYMENT_STATUS_RECEIVED = 'received';
+    public const PAYMENT_STATUS_CONFIRMED = 'confirmed';
+    public const PAYMENT_STATUS_BOUNCED = 'bounced';
+    public const PAYMENT_STATUS_REVERSED = 'reversed';
+    public const PAYMENT_STATUS_REFUNDED = 'refunded';
+
+    public const PAYMENT_STATUSES = [
+        self::PAYMENT_STATUS_PENDING => 'Pending',
+        self::PAYMENT_STATUS_RECEIVED => 'Received',
+        self::PAYMENT_STATUS_CONFIRMED => 'Confirmed',
+        self::PAYMENT_STATUS_BOUNCED => 'Bounced',
+        self::PAYMENT_STATUS_REVERSED => 'Reversed',
+        self::PAYMENT_STATUS_REFUNDED => 'Refunded',
+    ];
+
+    // =========================================================================
+    // BILLING - PAYMENT METHODS (Extended)
+    // =========================================================================
+    public const PAYMENT_METHOD_BANK_TRANSFER = 'bank_transfer';
+    public const PAYMENT_METHOD_DIRECT_DEBIT = 'direct_debit';
+    public const PAYMENT_METHOD_CARD = 'card';
+
+    public const BILLING_PAYMENT_METHODS = [
+        self::PAYMENT_METHOD_BANK_TRANSFER => 'Bank Transfer',
+        self::PAYMENT_METHOD_EFT => 'EFT',
+        self::PAYMENT_METHOD_CHEQUE => 'Cheque',
+        self::PAYMENT_METHOD_MOBILE_MONEY => 'Mobile Money',
+        self::PAYMENT_METHOD_CASH => 'Cash',
+        self::PAYMENT_METHOD_DIRECT_DEBIT => 'Direct Debit',
+        self::PAYMENT_METHOD_CARD => 'Card Payment',
+    ];
+
+    // =========================================================================
+    // BILLING - SEND VIA
+    // =========================================================================
+    public const SEND_VIA_EMAIL = 'email';
+    public const SEND_VIA_POST = 'post';
+    public const SEND_VIA_PORTAL = 'portal';
+    public const SEND_VIA_SMS = 'sms';
+
+    public const SEND_VIA_OPTIONS = [
+        self::SEND_VIA_EMAIL => 'Email',
+        self::SEND_VIA_POST => 'Post',
+        self::SEND_VIA_PORTAL => 'Portal',
+        self::SEND_VIA_SMS => 'SMS',
+    ];
+
+    // =========================================================================
+    // BILLING - PREFIXES
+    // =========================================================================
+    public const PREFIX_INVOICE = 'INV';
+    public const PREFIX_PAYMENT = 'PAY';
+    public const PREFIX_CREDIT_NOTE = 'CN';
+
+    // =========================================================================
+    // BILLING - OVERDUE THRESHOLDS (Days)
+    // =========================================================================
+    public const OVERDUE_GRACE_PERIOD = 30;
+    public const OVERDUE_SUSPENSION_THRESHOLD = 60;
+    public const OVERDUE_LAPSE_THRESHOLD = 90;
+
+    // =========================================================================
+    // BILLING - PAYMENT TERMS TO DAYS MAPPING
+    // =========================================================================
+    public const PAYMENT_TERMS_DAYS = [
+        self::PAYMENT_TERMS_IMMEDIATE => 0,
+        self::PAYMENT_TERMS_15_DAYS => 15,
+        self::PAYMENT_TERMS_30_DAYS => 30,
+        self::PAYMENT_TERMS_60_DAYS => 60,
+    ];
 }

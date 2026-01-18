@@ -1,6 +1,6 @@
 // libs/medical/feature/src/lib/medical-group-detail/medical-group-detail.ts
 
-import { Component, OnInit, inject, signal, computed } from '@angular/core';
+import { Component, OnInit, inject, signal, computed, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -20,6 +20,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatDialog } from '@angular/material/dialog';
+import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 
 // Domain Imports
 import {
@@ -32,17 +33,16 @@ import {
   MEMBER_TYPES,
   GENDERS,
   APPLICATION_STATUSES,
+  MEMBER_TYPE_STYLES,
 } from 'medical-data';
 import { FeedbackService, PageHeaderComponent } from 'shared';
 import { MedicalCensusUploadDialog } from '../dialogs/medical-census-upload-dialog/medical-census-upload-dialog';
-import { MedicalGroupQuoteDialog } from '../dialogs/medical-group-quote-dialog/medical-group-quote-dialog';
 
 @Component({
   selector: 'lib-medical-group-detail',
   standalone: true,
   imports: [
     CommonModule,
-    RouterLink,
     FormsModule,
     MatTableModule,
     MatTabsModule,
@@ -57,7 +57,7 @@ import { MedicalGroupQuoteDialog } from '../dialogs/medical-group-quote-dialog/m
     MatProgressSpinnerModule,
     MatMenuModule,
     MatTooltipModule,
-    PageHeaderComponent,
+    MatPaginatorModule,
   ],
   templateUrl: './medical-group-detail.html',
   styleUrls: ['./medical-group-detail.scss'],
@@ -72,34 +72,27 @@ export class MedicalGroupDetail implements OnInit {
   // Data
   readonly group = this.store.selectedGroup;
   readonly loading = this.store.isLoading;
+  readonly members = this.store.members;
+  readonly membersPagination = this.store.membersPagination;
 
   // Filters for members table
   readonly memberSearchTerm = signal('');
   readonly memberTypeFilter = signal('');
   readonly applicationFilter = signal('');
-  readonly planFilter = signal('');
 
-  // Computed: All members from all applications
+  // Computed: Members from selected application (with display info)
   readonly allMembers = computed(() => {
     const grp = this.group();
-    if (!grp?.applications) return [];
+    const members = this.members();
+    const appMap = new Map((grp?.applications ?? []).map((app) => [app.id, app]));
 
-    const members: (ApplicationMember & { application_id: string; application_code?: string })[] =
-      [];
-
-    grp.applications.forEach((app: Application) => {
-      if (app.members) {
-        app.members.forEach((member: ApplicationMember) => {
-          members.push({
-            ...member,
-            application_id: app.id,
-            application_code: app?.application_number || app.id,
-          });
-        });
-      }
+    return members.map((member) => {
+      const app = appMap.get(member.application_id);
+      return {
+        ...member,
+        application_code: app?.application_number || app?.id,
+      };
     });
-
-    return members;
   });
 
   // Computed: Filtered members
@@ -124,23 +117,34 @@ export class MedicalGroupDetail implements OnInit {
       members = members.filter((m) => m.member_type === memberType);
     }
 
-    // Filter by application
-    const appId = this.applicationFilter();
-    if (appId) {
-      members = members.filter((m) => m.application_id === appId);
-    }
-
-    // Filter by plan
-    const planId = this.planFilter();
-    if (planId) {
-      const grp = this.group();
-      const appsWithPlan =
-        grp?.applications?.filter((app: Application) => app.plan_id === planId) || [];
-      const appIds = appsWithPlan.map((app: Application) => app.id);
-      members = members.filter((m) => appIds.includes(m.application_id));
-    }
-
     return members;
+  });
+
+  // Pagination
+  readonly memberPageSize = signal(10);
+  readonly memberPageSizeOptions = [10, 25, 50];
+
+  readonly loadMembersEffect = effect(() => {
+    const grp = this.group();
+    const selectedAppId = this.applicationFilter();
+    const perPage = this.memberPageSize();
+
+    if (!grp) return;
+
+    const defaultAppId = grp.applications?.[0]?.id;
+    const appId = selectedAppId || defaultAppId;
+
+    if (!appId) {
+      this.store.clearMembers();
+      return;
+    }
+
+    if (!selectedAppId && defaultAppId) {
+      this.applicationFilter.set(defaultAppId);
+      return;
+    }
+
+    this.store.loadMembers(appId, 1, perPage);
   });
 
   // Member summary stats
@@ -159,58 +163,14 @@ export class MedicalGroupDetail implements OnInit {
   // Applications list for dropdown
   readonly applications = computed(() => this.group()?.applications || []);
 
-  // Unique plans for filter dropdown
-  readonly uniquePlans = computed(() => {
-    const grp = this.group();
-    if (!grp?.applications) return [];
-
-    const planMap = new Map();
-    grp.applications.forEach((app: Application) => {
-      if (app.plan) {
-        planMap.set(app.plan.id, {
-          id: app.plan.id,
-          name: app.plan.name,
-          code: app.plan.code,
-        });
-      }
-    });
-
-    return Array.from(planMap.values());
-  });
-
-  // Policy count by plan for stats
-  readonly policyCountByPlan = computed(() => {
-    return this.group()?.stats?.policies_by_plan || [];
-  });
-
-  // Application count by plan for stats
-  readonly applicationCountByPlan = computed(() => {
-    return this.group()?.stats?.applications_by_plan || [];
-  });
-
-  // Helper to get count for a specific plan
-  getApplicationCountForPlan(planId: string): number {
-    const stats = this.applicationCountByPlan();
-    const planStats = stats.find((p: any) => p.plan_id === planId);
-    return planStats?.count || 0;
-  }
-
   // Constants
   readonly MEMBER_TYPES = MEMBER_TYPES;
   readonly GENDERS = GENDERS;
   readonly APPLICATION_STATUSES = APPLICATION_STATUSES;
+  readonly MEMBER_TYPE_STYLES = MEMBER_TYPE_STYLES;
 
   // Table columns
-  readonly memberColumns = [
-    'member_type',
-    'name',
-    'dob',
-    'gender',
-    'email',
-    'employee_number',
-    'application',
-    'status',
-  ];
+  readonly memberColumns = ['name', 'member_type', 'dob', 'gender', 'email', 'status'];
 
   ngOnInit() {
     const groupId = this.route.snapshot.paramMap.get('id');
@@ -220,6 +180,8 @@ export class MedicalGroupDetail implements OnInit {
   }
 
   loadGroup(id: string) {
+    this.store.clearMembers();
+    this.applicationFilter.set('');
     this.store.loadOne(id).subscribe({
       error: (err) => {
         this.feedback.error('Failed to load group details');
@@ -238,6 +200,15 @@ export class MedicalGroupDetail implements OnInit {
 
   getStatusConfig(status: string) {
     return getStatusConfig(APPLICATION_STATUSES as any, status);
+  }
+
+  getMemberTypeBadgeClass(type: string): string {
+    const style = MEMBER_TYPE_STYLES[type];
+    return style ? `${style.bg} ${style.text}` : 'bg-slate-100 text-slate-700';
+  }
+
+  getInitials(member: ApplicationMember): string {
+    return (member.first_name?.[0] || '') + (member.last_name?.[0] || '');
   }
 
   formatDate(date: string | Date | null): string {
@@ -282,49 +253,16 @@ export class MedicalGroupDetail implements OnInit {
     });
   }
 
-  openGroupQuoteDialog() {
-    const grp = this.group();
-    if (!grp) return;
-
-    // Get members from the selected application or all members
-    const appId = this.applicationFilter();
-    let members: any[] = [];
-
-    if (appId) {
-      const app = grp.applications?.find((a: Application) => a.id === appId);
-      members = app?.members || [];
-    } else {
-      members = this.allMembers();
-    }
-
-    if (members.length === 0) {
-      this.feedback.error('No members available. Please upload a census first.');
-      return;
-    }
-
-    const dialogRef = this.dialog.open(MedicalGroupQuoteDialog, {
-      maxWidth: '70vw',
-      data: {
-        group_id: grp.id,
-        group_name: grp.name,
-        members: members,
-      },
-      disableClose: true,
-    });
-
-    dialogRef.afterClosed().subscribe((result) => {
-      if (result?.accepted) {
-        this.feedback.success('Quote accepted! Ready for underwriting.');
-        // Navigate to application detail or refresh
-      }
-    });
-  }
-
   clearFilters() {
     this.memberSearchTerm.set('');
     this.memberTypeFilter.set('');
-    this.applicationFilter.set('');
-    this.planFilter.set('');
+  }
+
+  onMemberPage(event: PageEvent) {
+    const appId = this.applicationFilter();
+    if (!appId) return;
+    this.memberPageSize.set(event.pageSize);
+    this.store.loadMembers(appId, event.pageIndex + 1, event.pageSize);
   }
 
   exportMembers() {

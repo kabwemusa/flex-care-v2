@@ -85,6 +85,15 @@ export const MEDICAL_PERMISSIONS = {
   CLAIMS_APPROVE: 'medical.claims.approve',
   CLAIMS_REJECT: 'medical.claims.reject',
 
+  // Billing
+  BILLING_VIEW: 'medical.billing.view',
+  BILLING_INVOICES_CREATE: 'medical.billing.invoices.create',
+  BILLING_INVOICES_SEND: 'medical.billing.invoices.send',
+  BILLING_INVOICES_CANCEL: 'medical.billing.invoices.cancel',
+  BILLING_PAYMENTS_RECORD: 'medical.billing.payments.record',
+  BILLING_PAYMENTS_ALLOCATE: 'medical.billing.payments.allocate',
+  BILLING_PAYMENTS_REVERSE: 'medical.billing.payments.reverse',
+
   // Reports
   REPORTS_VIEW: 'medical.reports.view',
   REPORTS_EXPORT: 'medical.reports.export',

@@ -1,4 +1,4 @@
-<div class="flex flex-col max-h-[90vh]">
+<div class="flex flex-col max-h-[90vh] w-[70vw]">
   <!-- Header -->
   <div class="flex items-center justify-between px-6 py-4 border-b border-slate-200">
     <div class="flex items-center gap-3">
@@ -24,7 +24,7 @@
     <form [formGroup]="form" class="space-y-4">
       <!-- Member Type & Relationship -->
       <div class="grid grid-cols-2 gap-4">
-        <mat-form-field appearance="outline" class="w-full">
+        <mat-form-field appearance="fill" class="w-full minimal-input">
           <mat-select placeholder="Member Type" formControlName="member_type">
             @for (type of memberTypes; track type.value) {
             <mat-option [value]="type.value">{{ type.label }}</mat-option>
@@ -33,7 +33,7 @@
         </mat-form-field>
 
         @if (!isPrincipal()) {
-        <mat-form-field appearance="outline" class="w-full">
+        <mat-form-field appearance="fill" class="w-full minimal-input">
           <mat-select placeholder="Relationship" formControlName="relationship">
             @for (rel of relationships; track rel.value) { @if (rel.value !== 'self') {
             <mat-option [value]="rel.value">{{ rel.label }}</mat-option>
@@ -47,7 +47,7 @@
 
       <!-- Principal Selection for Dependents -->
       @if (!isPrincipal() && principals.length > 0) {
-      <mat-form-field appearance="outline" class="w-full">
+      <mat-form-field appearance="fill" class="w-full minimal-input">
         <mat-select placeholder="Select Principal Member" formControlName="principal_member_id">
           @for (principal of principals; track principal.id) {
           <mat-option [value]="principal.id">
@@ -60,7 +60,7 @@
 
       <!-- Personal Info -->
       <div class="grid grid-cols-4 gap-4">
-        <mat-form-field appearance="outline" class="w-full">
+        <mat-form-field appearance="fill" class="minimal-input">
           <mat-select placeholder="Title" formControlName="title">
             <mat-option value="Mr">Mr</mat-option>
             <mat-option value="Mrs">Mrs</mat-option>
@@ -69,21 +69,21 @@
           </mat-select>
         </mat-form-field>
 
-        <mat-form-field appearance="outline" class="w-full">
+        <mat-form-field appearance="fill" class="w-full minimal-input">
           <input matInput placeholder="First Name" formControlName="first_name" />
         </mat-form-field>
 
-        <mat-form-field appearance="outline" class="w-full">
+        <mat-form-field appearance="fill" class="w-full minimal-input">
           <input matInput placeholder="Middle Name" formControlName="middle_name" />
         </mat-form-field>
 
-        <mat-form-field appearance="outline" class="w-full">
+        <mat-form-field appearance="fill" class="w-full minimal-input">
           <input matInput placeholder="Last Name" formControlName="last_name" />
         </mat-form-field>
       </div>
 
       <div class="grid grid-cols-3 gap-4">
-        <mat-form-field appearance="outline" class="w-full">
+        <mat-form-field appearance="fill" class="w-full minimal-input">
           <input
             matInput
             [matDatepicker]="dobPicker"
@@ -94,7 +94,7 @@
           <mat-datepicker #dobPicker></mat-datepicker>
         </mat-form-field>
 
-        <mat-form-field appearance="outline" class="w-full">
+        <mat-form-field appearance="fill" class="w-full minimal-input">
           <mat-select placeholder="Gender" formControlName="gender">
             @for (g of genders; track g.value) {
             <mat-option [value]="g.value">{{ g.label }}</mat-option>
@@ -102,7 +102,7 @@
           </mat-select>
         </mat-form-field>
 
-        <mat-form-field appearance="outline" class="w-full">
+        <mat-form-field appearance="fill" class="w-full minimal-input">
           <mat-select placeholder="Marital Status" formControlName="marital_status">
             <mat-option value="single">Single</mat-option>
             <mat-option value="married">Married</mat-option>
@@ -114,22 +114,22 @@
 
       <!-- Identification -->
       <div class="grid grid-cols-2 gap-4">
-        <mat-form-field appearance="outline" class="w-full">
+        <mat-form-field appearance="fill" class="w-full minimal-input">
           <input matInput placeholder="National ID" formControlName="national_id" />
         </mat-form-field>
 
-        <mat-form-field appearance="outline" class="w-full">
+        <mat-form-field appearance="fill" class="w-full minimal-input">
           <input matInput placeholder="Passport Number" formControlName="passport_number" />
         </mat-form-field>
       </div>
 
       <!-- Contact Info -->
       <div class="grid grid-cols-2 gap-4">
-        <mat-form-field appearance="outline" class="w-full">
+        <mat-form-field appearance="fill" class="w-full minimal-input">
           <input matInput type="email" placeholder="Email" formControlName="email" />
         </mat-form-field>
 
-        <mat-form-field appearance="outline" class="w-full">
+        <mat-form-field appearance="fill" class="w-full minimal-input">
           <input matInput placeholder="Phone" formControlName="phone" />
         </mat-form-field>
       </div>
@@ -146,7 +146,7 @@
           </mat-checkbox>
 
           @if (form.get('has_pre_existing_conditions')?.value) {
-          <mat-form-field appearance="outline" class="w-full">
+          <mat-form-field appearance="fill" class="w-full minimal-input">
             <textarea
               matInput
               rows="3"

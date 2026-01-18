@@ -1,0 +1,527 @@
+<div class="flex h-[85vh] w-[70vw] flex-col bg-white">
+  <div class="flex flex-none items-center justify-between border-b border-slate-200 px-8 py-5">
+    <div>
+      <h2 class="text-xl font-bold tracking-tight text-slate-900">Submit New Claim</h2>
+      <p class="text-sm text-slate-500">Enter claim details for processing</p>
+    </div>
+    <button
+      mat-icon-button
+      (click)="cancel()"
+      class="!text-slate-400 hover:!bg-slate-50 hover:!text-slate-600"
+    >
+      <mat-icon fontSet="material-symbols-rounded">close</mat-icon>
+    </button>
+  </div>
+
+  <div class="flex-1 overflow-y-auto px-8 py-6">
+    <div class="mb-8 flex justify-center">
+      <div class="flex items-center">
+        @for (step of ['Policy & Member', 'Claim Details', 'Line Items']; track step; let i =
+        $index) {
+        <div class="flex items-center">
+          <div class="relative flex flex-col items-center">
+            <div
+              class="flex h-10 w-10 items-center justify-center rounded-full border-2 text-sm font-bold transition-all duration-300"
+              [class]="
+                currentStep() === i
+                  ? 'border-blue-600 bg-blue-600 text-white shadow-md shadow-blue-200'
+                  : currentStep() > i
+                  ? 'border-emerald-500 bg-emerald-500 text-white'
+                  : 'border-slate-200 bg-white text-slate-400'
+              "
+            >
+              @if (currentStep() > i) {
+              <mat-icon fontSet="material-symbols-rounded">check</mat-icon>
+              } @else {
+              {{ i + 1 }}
+              }
+            </div>
+            <span
+              class="absolute -bottom-6 w-32 text-center text-xs font-medium transition-colors duration-300"
+              [class]="
+                currentStep() === i
+                  ? 'text-blue-700'
+                  : currentStep() > i
+                  ? 'text-emerald-600'
+                  : 'text-slate-400'
+              "
+            >
+              {{ step }}
+            </span>
+          </div>
+          @if (i < 2) {
+          <div
+            class="mx-4 h-[2px] w-16 transition-colors duration-500"
+            [class]="currentStep() > i ? 'bg-emerald-500' : 'bg-slate-100'"
+          ></div>
+          }
+        </div>
+        }
+      </div>
+    </div>
+
+    <form [formGroup]="claimForm" class="mt-10">
+      @if (currentStep() === 0) {
+      <div class="mx-auto max-w-2xl space-y-6">
+        <div class="grid gap-6">
+          <mat-form-field appearance="fill" subscriptSizing="dynamic" class="w-full minimal-input">
+            <mat-label>Policy</mat-label>
+            <input
+              matInput
+              [formControl]="policyFilterControl"
+              [matAutocomplete]="policyAuto"
+              placeholder="Search by policy number or name"
+            />
+            <mat-icon matPrefix fontSet="material-symbols-rounded">search</mat-icon>
+            <mat-autocomplete
+              #policyAuto="matAutocomplete"
+              [displayWith]="displayPolicyFn"
+              (optionSelected)="onPolicySelected($event.option.value)"
+            >
+              @for (policy of filteredPolicies(); track policy.id) {
+              <mat-option [value]="policy.id">
+                <div class="flex flex-col py-1">
+                  <span class="font-medium text-slate-900">{{ policy.policy_number }}</span>
+                  <span class="text-xs text-slate-500"
+                    >{{ policy.policy_holder_name }} • {{ policy.plan?.name }}</span
+                  >
+                </div>
+              </mat-option>
+              }
+            </mat-autocomplete>
+            <mat-error>Policy is required</mat-error>
+          </mat-form-field>
+
+          <mat-form-field appearance="fill" subscriptSizing="dynamic" class="w-full minimal-input">
+            <mat-label>Member</mat-label>
+            <input
+              matInput
+              [formControl]="memberFilterControl"
+              [matAutocomplete]="memberAuto"
+              placeholder="Search member"
+            />
+            <mat-icon matPrefix fontSet="material-symbols-rounded">person_search</mat-icon>
+            <mat-autocomplete
+              #memberAuto="matAutocomplete"
+              [displayWith]="displayMemberFn"
+              (optionSelected)="onMemberSelected($event.option.value)"
+            >
+              @for (member of filteredMembers(); track member.id) {
+              <mat-option [value]="member.id">
+                <div class="flex items-center justify-between">
+                  <span class="text-slate-900">{{ member.full_name }}</span>
+                  <span class="rounded bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600">
+                    {{ member.member_number }}
+                  </span>
+                </div>
+              </mat-option>
+              }
+            </mat-autocomplete>
+            <mat-error>Member is required</mat-error>
+          </mat-form-field>
+        </div>
+      </div>
+      } @if (currentStep() === 1) {
+      <div class="space-y-6">
+        <div>
+          <label class="mb-3 block text-sm font-semibold text-slate-700">Claim Type</label>
+          <div class="grid grid-cols-4 gap-3">
+            @for (type of CLAIM_TYPES; track type.value) {
+            <button
+              type="button"
+              class="group relative flex flex-col items-center justify-center rounded-xl border p-4 transition-all duration-200 hover:shadow-md"
+              [class]="
+                claimForm.get('claim_type')?.value === type.value
+                  ? 'border-blue-600 bg-blue-50/50 ring-1 ring-blue-600'
+                  : 'border-slate-200 bg-white hover:border-blue-300'
+              "
+              (click)="claimForm.patchValue({ claim_type: type.value })"
+            >
+              <mat-icon
+                class="material-symbols-rounded !h-8 !w-8 !text-3xl transition-transform group-hover:scale-110"
+                [class]="
+                  claimForm.get('claim_type')?.value === type.value
+                    ? 'text-blue-600'
+                    : 'text-slate-400 group-hover:text-blue-500'
+                "
+              >
+                {{ type.icon }}
+              </mat-icon>
+              <span
+                class="mt-2 text-xs font-medium"
+                [class]="
+                  claimForm.get('claim_type')?.value === type.value
+                    ? 'text-blue-700'
+                    : 'text-slate-600'
+                "
+              >
+                {{ type.label }}
+              </span>
+            </button>
+            }
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-5">
+          <mat-form-field appearance="fill" subscriptSizing="dynamic">
+            <mat-label>Service Date</mat-label>
+            <input
+              matInput
+              [matDatepicker]="servicePicker"
+              formControlName="service_date"
+              [max]="maxDate"
+            />
+            <mat-datepicker-toggle matIconSuffix [for]="servicePicker"></mat-datepicker-toggle>
+            <mat-datepicker #servicePicker></mat-datepicker>
+          </mat-form-field>
+
+          @if (claimForm.get('claim_type')?.value === 'in_patient') {
+          <mat-form-field appearance="fill" subscriptSizing="dynamic">
+            <mat-label>Admission Date</mat-label>
+            <input
+              matInput
+              [matDatepicker]="admissionPicker"
+              formControlName="admission_date"
+              [max]="maxDate"
+            />
+            <mat-datepicker-toggle matIconSuffix [for]="admissionPicker"></mat-datepicker-toggle>
+            <mat-datepicker #admissionPicker></mat-datepicker>
+          </mat-form-field>
+
+          <mat-form-field appearance="fill" subscriptSizing="dynamic">
+            <mat-label>Discharge Date</mat-label>
+            <input
+              matInput
+              [matDatepicker]="dischargePicker"
+              formControlName="discharge_date"
+              [max]="maxDate"
+            />
+            <mat-datepicker-toggle matIconSuffix [for]="dischargePicker"></mat-datepicker-toggle>
+            <mat-datepicker #dischargePicker></mat-datepicker>
+          </mat-form-field>
+          }
+        </div>
+
+        <div class="h-px w-full bg-slate-100"></div>
+
+        <div class="grid grid-cols-2 gap-5">
+          <mat-form-field appearance="fill" subscriptSizing="dynamic" class="w-full minimal-input">
+            <mat-label>Provider Name</mat-label>
+            <input
+              matInput
+              formControlName="provider_name"
+              placeholder="e.g. City General Hospital"
+            />
+          </mat-form-field>
+
+          <mat-form-field appearance="fill" subscriptSizing="dynamic" class="w-full minimal-input">
+            <mat-label>Provider Type</mat-label>
+            <input
+              matInput
+              [formControl]="providerTypeFilterControl"
+              [matAutocomplete]="providerTypeAuto"
+              placeholder="Search type"
+            />
+            <mat-autocomplete
+              #providerTypeAuto="matAutocomplete"
+              [displayWith]="displayProviderTypeFn"
+              (optionSelected)="onProviderTypeSelected($event.option.value)"
+            >
+              @for (type of filteredProviderTypes(); track type.value) {
+              <mat-option [value]="type.value">{{ type.label }}</mat-option>
+              }
+            </mat-autocomplete>
+          </mat-form-field>
+
+          <mat-form-field
+            appearance="fill"
+            subscriptSizing="dynamic"
+            class="col-span-2 w-full minimal-input"
+          >
+            <mat-label>Invoice Number</mat-label>
+            <input matInput formControlName="provider_invoice_number" placeholder="Reference No." />
+          </mat-form-field>
+        </div>
+
+        <div class="h-px w-full bg-slate-100"></div>
+
+        <div class="grid grid-cols-2 gap-5">
+          <mat-form-field appearance="fill" subscriptSizing="dynamic" class="w-full minimal-input">
+            <mat-label>Primary Diagnosis</mat-label>
+            <input matInput formControlName="primary_diagnosis" />
+          </mat-form-field>
+
+          <mat-form-field appearance="fill" subscriptSizing="dynamic" class="w-full minimal-input">
+            <mat-label>ICD-10 Code</mat-label>
+            <input matInput formControlName="primary_icd_code" />
+          </mat-form-field>
+
+          <mat-form-field
+            appearance="fill"
+            class="w-full minimal-input"
+            subscriptSizing="dynamic"
+            class="col-span-2"
+          >
+            <mat-label>Notes</mat-label>
+            <textarea matInput formControlName="diagnosis_notes" rows="2"></textarea>
+          </mat-form-field>
+        </div>
+
+        <div
+          class="rounded-xl border border-slate-200 bg-slate-50/50 p-4 transition-colors hover:border-slate-300"
+        >
+          <div class="flex items-start gap-4">
+            <mat-checkbox
+              formControlName="requires_preauth"
+              color="primary"
+              class="mt-1"
+            ></mat-checkbox>
+            <div class="flex-1">
+              <p class="font-medium text-slate-900">Requires Pre-authorization?</p>
+              <p class="text-xs text-slate-500">
+                Check this if the service required prior approval
+              </p>
+
+              @if (claimForm.get('requires_preauth')?.value) {
+              <mat-form-field
+                appearance="fill"
+                subscriptSizing="dynamic"
+                class="mt-4 w-full minimal-input bg-white"
+              >
+                <mat-label>Pre-authorization Number</mat-label>
+                <input matInput formControlName="preauth_number" />
+              </mat-form-field>
+              }
+            </div>
+          </div>
+        </div>
+      </div>
+      } @if (currentStep() === 2) {
+      <div [formGroup]="linesForm" class="space-y-6">
+        <div class="flex items-center justify-between">
+          <h3 class="text-lg font-semibold text-slate-900">Claim Line Items</h3>
+          <button mat-stroked-button color="primary" type="button" (click)="addLine()">
+            <mat-icon fontSet="material-symbols-rounded">add</mat-icon>
+            Add Item
+          </button>
+        </div>
+
+        <div formArrayName="lines" class="space-y-6">
+          @for (line of lines.controls; track line; let i = $index) {
+          <div
+            [formGroupName]="i"
+            class="relative rounded-xl border bg-white p-5 shadow-sm transition-all"
+            [class]="
+              getLineEligibility(i)?.eligible === false
+                ? 'border-red-200 ring-1 ring-red-100'
+                : 'border-slate-200 hover:border-blue-300 hover:shadow-md'
+            "
+          >
+            <div class="mb-4 flex items-center justify-between">
+              <span
+                class="rounded-md bg-slate-100 px-2 py-1 text-xs font-bold uppercase tracking-wide text-slate-600"
+              >
+                Item {{ i + 1 }}
+              </span>
+              @if (lines.length > 1) {
+              <button
+                mat-icon-button
+                color="warn"
+                type="button"
+                (click)="removeLine(i)"
+                matTooltip="Remove item"
+              >
+                <mat-icon fontSet="material-symbols-rounded">delete</mat-icon>
+              </button>
+              }
+            </div>
+
+            <div class="space-y-4">
+              <div class="relative">
+                <mat-form-field appearance="fill" subscriptSizing="dynamic" class="w-full">
+                  <mat-label>Benefit Category</mat-label>
+                  <input
+                    matInput
+                    formControlName="_benefitSearch"
+                    [matAutocomplete]="benefitAuto"
+                    (focus)="onBenefitInputFocus(i)"
+                    placeholder="Search benefit"
+                  />
+                  <mat-autocomplete
+                    #benefitAuto="matAutocomplete"
+                    [displayWith]="displayBenefitFn"
+                    (optionSelected)="onBenefitSelected(i, $event.option.value)"
+                  >
+                    @for (benefit of filteredBenefits(i); track benefit.benefit_id) {
+                    <mat-option [value]="benefit.benefit_id">
+                      <div class="flex w-full items-center justify-between">
+                        <span class="text-slate-900">{{ benefit.benefit?.name }}</span>
+                        @if (benefit.display_value) {
+                        <span class="text-xs text-slate-500">{{ benefit.display_value }}</span>
+                        }
+                      </div>
+                    </mat-option>
+                    }
+                  </mat-autocomplete>
+                </mat-form-field>
+              </div>
+
+              @if (isCheckingEligibility(i)) {
+              <div
+                class="flex items-center gap-2 rounded-lg bg-blue-50 px-3 py-2 text-sm text-blue-700"
+              >
+                <mat-spinner diameter="16"></mat-spinner>
+                <span>Checking eligibility...</span>
+              </div>
+              } @else if (getLineEligibility(i); as eligibility) {
+              <div
+                class="flex items-start gap-3 rounded-lg border px-4 py-3"
+                [class]="
+                  eligibility.eligible
+                    ? 'border-emerald-200 bg-emerald-50/50 text-emerald-900'
+                    : 'border-red-200 bg-red-50/50 text-red-900'
+                "
+              >
+                <mat-icon
+                  fontSet="material-symbols-rounded"
+                  class="mt-0.5"
+                  [class]="eligibility.eligible ? 'text-emerald-600' : 'text-red-600'"
+                >
+                  {{ eligibility.eligible ? 'check_circle' : 'error' }}
+                </mat-icon>
+                <div class="flex-1">
+                  <p class="text-sm font-semibold">
+                    {{ eligibility.eligible ? 'Covered Benefit' : 'Benefit Limitation' }}
+                  </p>
+                  @if (eligibility.reason) {
+                  <p class="text-xs opacity-90">{{ eligibility.reason }}</p>
+                  } @if (eligibility.limit || eligibility.remaining) {
+                  <div class="mt-2 flex gap-4 text-xs font-medium opacity-80">
+                    @if (eligibility.limit) { <span>Limit: {{ eligibility.limit }}</span> } @if
+                    (eligibility.remaining) { <span>Remaining: {{ eligibility.remaining }}</span> }
+                  </div>
+                  }
+                </div>
+              </div>
+              }
+
+              <mat-form-field
+                appearance="fill"
+                subscriptSizing="dynamic"
+                class="w-full minimal-input"
+              >
+                <mat-label>Description</mat-label>
+                <input
+                  matInput
+                  formControlName="service_description"
+                  placeholder="Service details"
+                />
+              </mat-form-field>
+
+              <div class="grid grid-cols-4 gap-4">
+                <mat-form-field
+                  appearance="fill"
+                  subscriptSizing="dynamic"
+                  class="w-full minimal-input"
+                >
+                  <mat-label>Qty</mat-label>
+                  <input
+                    matInput
+                    type="number"
+                    formControlName="quantity"
+                    min="1"
+                    (input)="onLineAmountChange(i)"
+                  />
+                </mat-form-field>
+
+                <mat-form-field
+                  appearance="fill"
+                  subscriptSizing="dynamic"
+                  class="w-full minimal-input"
+                >
+                  <mat-label>Unit</mat-label>
+                  <input matInput formControlName="unit" placeholder="e.g. Days" />
+                </mat-form-field>
+
+                <mat-form-field
+                  appearance="fill"
+                  subscriptSizing="dynamic"
+                  class="w-full minimal-input"
+                >
+                  <mat-label>Unit Price</mat-label>
+                  <input
+                    matInput
+                    type="number"
+                    formControlName="unit_price"
+                    min="0"
+                    (input)="onLineAmountChange(i)"
+                  />
+                  <span matTextPrefix class="mr-1 text-slate-400">ZMW</span>
+                </mat-form-field>
+
+                <mat-form-field
+                  appearance="fill"
+                  subscriptSizing="dynamic"
+                  class="w-full minimal-input"
+                >
+                  <mat-label>Total</mat-label>
+                  <input matInput type="number" formControlName="claimed_amount" readonly />
+                  <span matTextPrefix class="mr-1 text-slate-400">ZMW</span>
+                </mat-form-field>
+              </div>
+            </div>
+          </div>
+          }
+        </div>
+
+        <div
+          class="flex items-center justify-end rounded-xl bg-slate-50 p-6 border border-slate-200"
+        >
+          <div class="text-right">
+            <p class="text-sm font-medium text-slate-500 uppercase tracking-wider">
+              Total Claim Value
+            </p>
+            <p class="text-3xl font-bold text-slate-900">
+              {{ formatCurrency(totalClaimedAmount) }}
+            </p>
+          </div>
+        </div>
+      </div>
+      }
+    </form>
+  </div>
+
+  <div
+    class="flex flex-none items-center justify-between border-t border-slate-200 bg-slate-50 px-8 py-4"
+  >
+    <button mat-button (click)="cancel()" class="text-slate-600">Cancel</button>
+
+    <div class="flex gap-3">
+      @if (currentStep() > 0) {
+      <button mat-stroked-button (click)="prevStep()" class="border-slate-300 text-slate-700">
+        <mat-icon fontSet="material-symbols-rounded">arrow_back</mat-icon>
+        Back
+      </button>
+      } @if (currentStep() < 2) {
+      <button mat-flat-button color="primary" (click)="nextStep()" class="px-6">
+        Next Step
+        <mat-icon fontSet="material-symbols-rounded" iconPositionEnd>arrow_forward</mat-icon>
+      </button>
+      } @else {
+      <button
+        mat-flat-button
+        color="primary"
+        (click)="submit()"
+        [disabled]="isSubmitting() || claimForm.invalid || linesForm.invalid"
+        class="px-6"
+      >
+        @if (isSubmitting()) {
+        <mat-spinner diameter="20" class="mr-2"></mat-spinner>
+        } @else {
+        <mat-icon fontSet="material-symbols-rounded">send</mat-icon>
+        } Submit Claim
+      </button>
+      }
+    </div>
+  </div>
+</div>

@@ -134,7 +134,7 @@ class ApplicationResource extends JsonResource
             'applied_discounts' => $this->applied_discounts,
             
             // Relations
-            'members' => ApplicationMemberResource::collection($this->whenLoaded('activeMembers')),
+            // 'members' => ApplicationMemberResource::collection($this->whenLoaded('activeMembers')),
             'addons' => $this->whenLoaded('activeAddons', fn() => $this->activeAddons->map(fn($a) => [
                 'id' => $a->id,
                 'addon_id' => $a->addon_id,

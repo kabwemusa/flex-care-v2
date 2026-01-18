@@ -25,9 +25,9 @@
         <div class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
           <div class="flex items-center justify-between">
             <div>
-              <p class="text-sm text-slate-500">Active Policies</p>
+              <p class="text-sm text-slate-500">Total Policies</p>
               <p class="text-2xl font-semibold text-slate-900">
-                {{ store.activePolicies().length }}
+                {{ store.totalItems() }}
               </p>
             </div>
             <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-100">
@@ -39,11 +39,11 @@
         <div class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
           <div class="flex items-center justify-between">
             <div>
-              <p class="text-sm text-slate-500">Renewals (30d)</p>
-              <p class="text-2xl font-semibold text-amber-600">{{ upcomingRenewals() }}</p>
+              <p class="text-sm text-slate-500">On This Page</p>
+              <p class="text-2xl font-semibold text-slate-600">{{ store.policies().length }}</p>
             </div>
-            <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-amber-100">
-              <mat-icon fontSet="material-symbols-rounded" class="!text-amber-600">update</mat-icon>
+            <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-slate-100">
+              <mat-icon fontSet="material-symbols-rounded" class="!text-slate-600">view_list</mat-icon>
             </div>
           </div>
         </div>
@@ -51,7 +51,7 @@
         <div class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
           <div class="flex items-center justify-between">
             <div>
-              <p class="text-sm text-slate-500">Total Premium</p>
+              <p class="text-sm text-slate-500">Page Premium</p>
               <p class="text-2xl font-semibold text-green-600">
                 {{ formatCurrency(totalPremiumVolume()) }}
               </p>
@@ -67,14 +67,14 @@
         <div class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
           <div class="flex items-center justify-between">
             <div>
-              <p class="text-sm text-slate-500">Suspended</p>
-              <p class="text-2xl font-semibold text-red-600">
-                {{ store.suspendedPolicies().length }}
+              <p class="text-sm text-slate-500">Current Page</p>
+              <p class="text-2xl font-semibold text-blue-600">
+                {{ store.currentPage() }} / {{ store.totalPages() }}
               </p>
             </div>
-            <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-red-100">
-              <mat-icon fontSet="material-symbols-rounded" class="!text-red-600"
-                >pause_circle</mat-icon
+            <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-100">
+              <mat-icon fontSet="material-symbols-rounded" class="!text-blue-600"
+                >auto_stories</mat-icon
               >
             </div>
           </div>
@@ -137,7 +137,7 @@
           <mat-spinner diameter="40"></mat-spinner>
         </div>
         } @else {
-        <table mat-table [dataSource]="dataSource" matSort class="w-full">
+        <table mat-table [dataSource]="store.policies()" matSort class="w-full">
           <ng-container matColumnDef="status">
             <th mat-header-cell *matHeaderCellDef mat-sort-header class="!pl-6 w-28">Status</th>
             <td mat-cell *matCellDef="let row" class="!pl-6">
@@ -188,6 +188,18 @@
             <td mat-cell *matCellDef="let row">
               <div class="text-sm text-slate-900">{{ row.scheme?.name || 'Unknown Scheme' }}</div>
               <div class="text-xs text-slate-500">{{ row.plan?.name || 'Unknown Plan' }}</div>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="members">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header class="!text-center">Members</th>
+            <td mat-cell *matCellDef="let row" class="!text-center">
+              <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-100">
+                <mat-icon fontSet="material-symbols-rounded" class="!text-[16px] !text-slate-500"
+                  >group</mat-icon
+                >
+                <span class="font-medium text-slate-700">{{ row.member_count || 0 }}</span>
+              </div>
             </td>
           </ng-container>
 
@@ -306,8 +318,11 @@
         </table>
 
         <mat-paginator
-          [pageSizeOptions]="[10, 25, 50, 100]"
-          [pageSize]="25"
+          [length]="store.totalItems()"
+          [pageIndex]="store.currentPage() - 1"
+          [pageSize]="store.pageSize()"
+          [pageSizeOptions]="pageSizeOptions"
+          (page)="onPageChange($event)"
           showFirstLastButtons
           class="!border-t !border-slate-100 !bg-white"
         ></mat-paginator>

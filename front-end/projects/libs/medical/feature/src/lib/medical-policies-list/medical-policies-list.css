@@ -8,3 +8,34 @@
 :host ::ng-deep .minimal-input .mat-mdc-text-field-wrapper {
   padding-bottom: 0;
 }
+
+:host {
+  ::ng-deep {
+    /* Remove default Material table box-shadow */
+    .mat-mdc-table {
+      background: transparent !important;
+    }
+
+    /* Make form fields cleaner/smaller */
+    .minimal-input {
+      .mat-mdc-text-field-wrapper {
+        background-color: white !important;
+        padding-top: 6px;
+        padding-bottom: 6px;
+      }
+      .mat-mdc-form-field-subscript-wrapper {
+        display: none; /* Hides the reserve space for errors if not needed immediately */
+      }
+      .mat-mdc-form-field-flex {
+        height: 40px; /* Modern compact height */
+        align-items: center;
+      }
+    }
+
+    /* Soften the drawer backdrop */
+    .mat-drawer-backdrop.mat-drawer-shown {
+      background-color: rgba(15, 23, 42, 0.4); /* Slate-900 with opacity */
+      backdrop-filter: blur(2px);
+    }
+  }
+}

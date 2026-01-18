@@ -127,6 +127,31 @@ export class MedicalMain {
           icon: 'group',
           requiredPermissions: [MEDICAL_PERMISSIONS.MEMBERS_VIEW],
         },
+        {
+          href: '/claims',
+          label: 'Claims',
+          icon: 'receipt_long',
+          requiredPermissions: [MEDICAL_PERMISSIONS.CLAIMS_VIEW],
+        },
+      ],
+    },
+    {
+      label: 'Billing',
+      icon: 'account_balance',
+      requiredModule: MODULES.MEDICAL,
+      children: [
+        {
+          href: '/billing/invoices',
+          label: 'Invoices',
+          icon: 'receipt',
+          requiredPermissions: [MEDICAL_PERMISSIONS.BILLING_VIEW],
+        },
+        {
+          href: '/billing/payments',
+          label: 'Payments',
+          icon: 'payments',
+          requiredPermissions: [MEDICAL_PERMISSIONS.BILLING_VIEW],
+        },
       ],
     },
   ]);

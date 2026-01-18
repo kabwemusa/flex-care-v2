@@ -4,7 +4,7 @@ import { HttpClient } from '@angular/common/http';
 import { computed, inject, Injectable, signal } from '@angular/core';
 import { tap } from 'rxjs';
 import { ApiResponse } from '../models/api-reponse';
-import { MedicalScheme, PaginatedResponse } from '../models/medical-interfaces';
+import { MedicalScheme } from '../models/medical-interfaces';
 
 interface SchemeState {
   items: MedicalScheme[];

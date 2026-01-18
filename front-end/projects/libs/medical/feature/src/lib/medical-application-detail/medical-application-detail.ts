@@ -1,6 +1,6 @@
 // libs/medical/ui/src/lib/applications/application-detail.component.ts
 
-import { Component, computed, inject, OnInit, signal } from '@angular/core';
+import { Component, computed, effect, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 
@@ -17,10 +17,11 @@ import { MatExpansionModule } from '@angular/material/expansion';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatPaginatorModule, MatPaginator, PageEvent } from '@angular/material/paginator';
 
 import {
   ApplicationStore,
-  Application,
+  PaginationMeta,
   ApplicationMember,
   ApplicationAddon,
   PlanAddon,
@@ -57,6 +58,7 @@ import { FeedbackService } from 'shared';
     MatDialogModule,
     MatSnackBarModule,
     MatExpansionModule,
+    MatPaginatorModule,
     MatDividerModule,
     MatCheckboxModule,
     MatProgressSpinnerModule,
@@ -87,7 +89,7 @@ export class MedicalApplicationDetail implements OnInit {
   // Selected addon IDs (for checkbox state)
   readonly selectedAddonIds = computed(() => {
     const addons = this.addons();
-    return new Set(addons.map(a => a.addon_id));
+    return new Set(addons.map((a) => a.addon_id));
   });
 
   // Computed for members table
@@ -98,6 +100,7 @@ export class MedicalApplicationDetail implements OnInit {
   );
 
   memberDataSource = new MatTableDataSource<ApplicationMember>([]);
+  // membersPagination = signal<PaginationMeta | null>(null);
   memberDisplayedColumns = [
     'member_type',
     'name',
@@ -111,6 +114,12 @@ export class MedicalApplicationDetail implements OnInit {
   addonDataSource = new MatTableDataSource<ApplicationAddon>([]);
   addonDisplayedColumns = ['addon', 'premium', 'actions'];
 
+  constructor() {
+    effect(() => {
+      this.memberDataSource.data = this.store.members();
+    });
+  }
+
   ngOnInit() {
     this.route.params.subscribe((params) => {
       this.applicationId.set(params['id']);
@@ -118,13 +127,24 @@ export class MedicalApplicationDetail implements OnInit {
     });
   }
 
+  // loadMembers(page = 1, perPage = 20) {
+  //   this.store.loadMembers(this.applicationId(), page, perPage).subscribe({
+  //     next: (res) => {
+  //       console.log(res.data);
+  //       this.memberDataSource.data = res.data;
+  //       this.membersPagination.set(res.meta);
+  //     },
+  //   });
+  // }
+
   private loadApplication() {
     this.store.loadOne(this.applicationId()).subscribe({
       next: () => {
-        this.memberDataSource.data = this.store.members();
+        this.store.loadMembers(this.applicationId(), 1);
+
+        // Addons still come from application
         this.addonDataSource.data = this.store.addons();
 
-        // Load plan addons after application is loaded
         const app = this.application();
         if (app?.plan_id) {
           this.store.loadPlanAddons(app.plan_id);
@@ -366,7 +386,7 @@ export class MedicalApplicationDetail implements OnInit {
     if (!app) return;
 
     const dialogRef = this.dialog.open(MedicalApplicationMemberDialog, {
-      width: '70vw',
+      maxWidth: '70vw',
       maxHeight: '90vh',
       disableClose: true,
       data: { applicationId: app.id, principals: this.principalMembers() },
@@ -385,7 +405,7 @@ export class MedicalApplicationDetail implements OnInit {
     if (!app) return;
 
     const dialogRef = this.dialog.open(MedicalApplicationMemberDialog, {
-      width: '70vw',
+      maxWidth: '70vw',
       maxHeight: '90vh',
       disableClose: true,
       data: { applicationId: app.id, member, principals: this.principalMembers() },
@@ -399,21 +419,26 @@ export class MedicalApplicationDetail implements OnInit {
     });
   }
 
-  removeMember(member: ApplicationMember) {
+  async removeMember(member: ApplicationMember) {
     const app = this.application();
     if (!app) return;
 
-    if (confirm(`Remove ${member.full_name || member.first_name} from this application?`)) {
-      this.store.removeMember(app.id, member.id).subscribe({
-        next: () => {
-          this.loadApplication();
-          this.feedback.success('Member removed');
-        },
-        error: (err) => {
-          this.feedback.error(err.error?.message || 'Failed to remove member');
-        },
-      });
-    }
+    const confirmed = await this.feedback.confirm(
+      'Approve Application?',
+      'This application will be approved and ready for customer acceptance.'
+    );
+
+    if (!confirmed) return;
+
+    this.store.removeMember(app.id, member.id).subscribe({
+      next: () => {
+        this.loadApplication();
+        this.feedback.success('Member removed');
+      },
+      error: (err) => {
+        this.feedback.error(err.error?.message || 'Failed to remove member');
+      },
+    });
   }
 
   underwriteMember(member: ApplicationMember) {
@@ -453,7 +478,9 @@ export class MedicalApplicationDetail implements OnInit {
     }
 
     if (!this.canEdit()) {
-      this.snackBar.open('Application cannot be edited in current status', 'Close', { duration: 3000 });
+      this.snackBar.open('Application cannot be edited in current status', 'Close', {
+        duration: 3000,
+      });
       return;
     }
 
@@ -470,7 +497,7 @@ export class MedicalApplicationDetail implements OnInit {
       });
     } else {
       // Find the ApplicationAddon record to remove
-      const appAddon = this.addons().find(a => a.addon_id === planAddon.addon_id);
+      const appAddon = this.addons().find((a) => a.addon_id === planAddon.addon_id);
       if (!appAddon) return;
 
       // Remove addon

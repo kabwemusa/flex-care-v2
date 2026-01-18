@@ -4,13 +4,13 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { computed, inject, Injectable, signal } from '@angular/core';
 import { tap } from 'rxjs';
 import {
-  ApiResponse,
   Application,
   ApplicationMember,
   ApplicationAddon,
   Policy,
   ApplicationStats,
 } from '../models/medical-interfaces';
+import { ApiResponse, PaginatedResponse, PaginationMeta } from '../models/api-reponse';
 
 export interface UnderwritingDecision {
   decision: 'approve' | 'decline' | 'terms';
@@ -42,13 +42,17 @@ export interface AppliedExclusionInput {
 }
 
 interface ApplicationState {
-  items: Application[];
+  items: Application[]; // server page
+  viewItems: Application[]; // filtered/sorted locally
   selected: Application | null;
   stats: ApplicationStats | null;
   loading: boolean;
   saving: boolean;
   planAddons: any[];
   loadingPlanAddons: boolean;
+  pagination: PaginationMeta | null;
+  members: ApplicationMember[];
+  membersPagination: PaginationMeta | null;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -58,12 +62,16 @@ export class ApplicationStore {
 
   private readonly state = signal<ApplicationState>({
     items: [],
+    viewItems: [],
     selected: null,
     stats: null,
     loading: false,
     saving: false,
     planAddons: [],
     loadingPlanAddons: false,
+    pagination: null,
+    members: [],
+    membersPagination: null,
   });
 
   // Selectors
@@ -72,9 +80,11 @@ export class ApplicationStore {
   readonly isLoading = computed(() => this.state().loading);
   readonly isSaving = computed(() => this.state().saving);
   readonly stats = computed(() => this.state().stats);
-
+  readonly viewItems = computed(() => this.state().viewItems);
   // Members and addons from selected application
-  readonly members = computed(() => this.state().selected?.members ?? []);
+  readonly members = computed(() => this.state().members);
+  readonly membersPagination = computed(() => this.state().membersPagination);
+
   readonly addons = computed(() => this.state().selected?.addons ?? []);
 
   // Plan addons (configured for the plan)
@@ -103,10 +113,52 @@ export class ApplicationStore {
   readonly pendingUwMembers = computed(() =>
     this.members().filter((m) => m.underwriting_status === 'pending')
   );
+  readonly pagination = computed(() => this.state().pagination);
+
+  readonly currentPage = computed(() => this.pagination()?.current_page ?? 1);
+  readonly totalPages = computed(() => this.pagination()?.last_page ?? 1);
+  readonly totalItems = computed(() => this.pagination()?.total ?? 0);
+  readonly pageSize = computed(() => this.pagination()?.per_page ?? 20);
+
+  readonly hasNextPage = computed(() => this.currentPage() < this.totalPages());
 
   // =========================================================================
   // LOAD OPERATIONS
   // =========================================================================
+
+  private syncViewItems(items: Application[]) {
+    this.state.update((s) => ({
+      ...s,
+      viewItems: items,
+    }));
+  }
+
+  loadNextPage() {
+    if (!this.hasNextPage() || this.isLoading()) return;
+
+    this.loadAll({
+      page: this.currentPage() + 1,
+      per_page: this.pageSize(),
+    });
+  }
+
+  // Load specific page
+  loadPage(page: number) {
+    if (page < 1 || page > this.totalPages() || this.isLoading()) return;
+
+    this.loadAll({
+      page,
+      per_page: this.pageSize(),
+    });
+  }
+
+  // Change page size
+  setPageSize(perPage: number) {
+    this.loadAll({
+      per_page: perPage,
+      page: 1,
+    });
+  }
 
   loadAll(filters?: {
     search?: string;
@@ -116,27 +168,37 @@ export class ApplicationStore {
     scheme_id?: string;
     plan_id?: string;
     group_id?: string;
+    page?: number;
+    per_page?: number;
   }) {
     this.state.update((s) => ({ ...s, loading: true }));
 
     let params = new HttpParams();
-    if (filters?.search) params = params.set('search', filters.search);
-    if (filters?.status) params = params.set('status', filters.status);
-    if (filters?.application_type)
-      params = params.set('application_type', filters.application_type);
-    if (filters?.policy_type) params = params.set('policy_type', filters.policy_type);
-    if (filters?.scheme_id) params = params.set('scheme_id', filters.scheme_id);
-    if (filters?.plan_id) params = params.set('plan_id', filters.plan_id);
-    if (filters?.group_id) params = params.set('group_id', filters.group_id);
 
-    this.http.get<ApiResponse<Application[]>>(this.apiUrl, { params }).subscribe({
+    Object.entries(filters ?? {}).forEach(([key, value]) => {
+      if (value !== undefined && value !== null) {
+        params = params.set(key, value);
+      }
+    });
+
+    this.http.get<PaginatedResponse<Application>>(this.apiUrl, { params }).subscribe({
       next: (res) =>
+        this.state.update((s) => {
+          const isFirstPage = !res.meta || res.meta.current_page === 1;
+
+          return {
+            ...s,
+            items: isFirstPage ? res.data : [...s.items, ...res.data],
+            viewItems: isFirstPage ? res.data : [...s.viewItems, ...res.data],
+            pagination: res.meta,
+            loading: false,
+          };
+        }),
+      error: () =>
         this.state.update((s) => ({
           ...s,
-          items: res.data,
           loading: false,
         })),
-      error: () => this.state.update((s) => ({ ...s, loading: false })),
     });
   }
 
@@ -154,6 +216,44 @@ export class ApplicationStore {
         error: () => this.state.update((s) => ({ ...s, loading: false })),
       })
     );
+  }
+
+  filterLocally(filters: {
+    search?: string;
+    status?: string;
+    application_type?: string;
+    policy_type?: string;
+  }) {
+    this.state.update((s) => {
+      let data = [...s.items];
+
+      if (filters.search) {
+        const q = filters.search.toLowerCase();
+        data = data.filter(
+          (a) =>
+            a.application_number.toLowerCase().includes(q) ||
+            a.contact_name?.toLowerCase().includes(q) ||
+            a.contact_email?.toLowerCase().includes(q)
+        );
+      }
+
+      if (filters.status) {
+        data = data.filter((a) => a.status === filters.status);
+      }
+
+      if (filters.application_type) {
+        data = data.filter((a) => a.application_type === filters.application_type);
+      }
+
+      if (filters.policy_type) {
+        data = data.filter((a) => a.policy_type === filters.policy_type);
+      }
+
+      return {
+        ...s,
+        viewItems: data,
+      };
+    });
   }
 
   // =========================================================================
@@ -368,6 +468,24 @@ export class ApplicationStore {
   // =========================================================================
   // MEMBER OPERATIONS
   // =========================================================================
+  loadMembers(applicationId: string, page = 1, perPage = 10) {
+    this.state.update((s) => ({ ...s, loading: true }));
+
+    this.http
+      .get<PaginatedResponse<ApplicationMember>>(`${this.apiUrl}/${applicationId}/members`, {
+        params: { page, per_page: perPage },
+      })
+      .subscribe({
+        next: (res) =>
+          this.state.update((s) => ({
+            ...s,
+            members: res.data,
+            membersPagination: res.meta,
+            loading: false,
+          })),
+        error: () => this.state.update((s) => ({ ...s, loading: false })),
+      });
+  }
 
   addMember(applicationId: string, member: Partial<ApplicationMember>) {
     this.state.update((s) => ({ ...s, saving: true }));

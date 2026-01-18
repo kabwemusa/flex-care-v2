@@ -27,5 +27,13 @@ export * from './lib/dialogs/medical-underwriting-dialog/medical-underwriting-di
 export * from './lib/dialogs/medical-quick-quote-dialog/medical-quick-quote-dialog';
 export * from './lib/dialogs/medical-census-upload-dialog/medical-census-upload-dialog';
 export * from './lib/dialogs/medical-group-quote-dialog/medical-group-quote-dialog';
+export * from './lib/dialogs/medical-endorsement-dialog/medical-endorsement-dialog';
+export * from './lib/dialogs/medical-claim-dialog/medical-claim-dialog';
+export * from './lib/dialogs/medical-member-benefits-dialog/medical-member-benefits-dialog';
 export * from './lib/components/application-documents/application-documents';
 export * from './lib/medical-group-detail/medical-group-detail';
+export * from './lib/medical-claims-list/medical-claims-list';
+export * from './lib/medical-claim-detail/medical-claim-detail';
+export * from './lib/medical-billing-invoices/medical-billing-invoices';
+export * from './lib/medical-billing-payments/medical-billing-payments';
+export * from './lib/dialogs/medical-record-payment-dialog/medical-record-payment-dialog';

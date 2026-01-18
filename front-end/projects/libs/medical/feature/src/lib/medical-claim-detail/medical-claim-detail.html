@@ -1,0 +1,482 @@
+@if (store.isLoading()) {
+<div class="flex h-96 items-center justify-center">
+  <mat-spinner diameter="48"></mat-spinner>
+</div>
+} @else if (claim(); as claim) {
+<lib-page-header
+  [title]="claim.claim_number"
+  [subtitle]="getClaimTypeConfig(claim.claim_type).label + ' Claim'"
+  [showBreadcrumb]="true"
+  [breadcrumbItems]="[
+    { label: 'Medical', link: '/medical' },
+    { label: 'Claims', link: '/claims' },
+    { label: claim.claim_number }
+  ]"
+>
+  <div actions class="flex items-center gap-3">
+    <!-- Status Badge -->
+    <span
+      class="rounded-full px-4 py-1.5 text-sm font-medium"
+      [class]="getStatusConfig(claim.status).bgColor + ' ' + getStatusConfig(claim.status).color"
+    >
+      {{ getStatusConfig(claim.status).label }}
+    </span>
+
+    <!-- Action Buttons -->
+    @if (claim.status === 'submitted') {
+    <button mat-flat-button color="primary" (click)="startReview()">
+      <mat-icon fontSet="material-symbols-rounded">rate_review</mat-icon>
+      Start Review
+    </button>
+    } @if (claim.can_be_approved) {
+    <button mat-flat-button color="primary" (click)="approveClaim()">
+      <mat-icon fontSet="material-symbols-rounded">check_circle</mat-icon>
+      Approve
+    </button>
+    <button mat-stroked-button color="warn" (click)="rejectClaim()">
+      <mat-icon fontSet="material-symbols-rounded">cancel</mat-icon>
+      Reject
+    </button>
+    } @if (claim.status === 'paid' || claim.status === 'rejected') {
+    <button mat-stroked-button (click)="closeClaim()">
+      <mat-icon fontSet="material-symbols-rounded">archive</mat-icon>
+      Close
+    </button>
+    }
+
+    <button mat-icon-button [matMenuTriggerFor]="moreMenu">
+      <mat-icon fontSet="material-symbols-rounded">more_vert</mat-icon>
+    </button>
+    <mat-menu #moreMenu="matMenu">
+      <button mat-menu-item>
+        <mat-icon fontSet="material-symbols-rounded">print</mat-icon>
+        <span>Print Claim</span>
+      </button>
+      <button mat-menu-item>
+        <mat-icon fontSet="material-symbols-rounded">download</mat-icon>
+        <span>Export PDF</span>
+      </button>
+    </mat-menu>
+  </div>
+</lib-page-header>
+
+<div class="p-6">
+  <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
+    <!-- Main Content -->
+    <div class="lg:col-span-2">
+      <!-- Summary Card -->
+      <div class="mb-6 rounded-lg border border-slate-200 bg-white p-6">
+        <div class="grid grid-cols-2 gap-6 md:grid-cols-4">
+          <div>
+            <p class="text-sm text-slate-500">Claimed Amount</p>
+            <p class="text-xl font-semibold text-slate-900">
+              {{ formatCurrency(claim.claimed_amount, claim.currency) }}
+            </p>
+          </div>
+          <div>
+            <p class="text-sm text-slate-500">Approved Amount</p>
+            <p class="text-xl font-semibold text-green-600">
+              {{ formatCurrency(claim.approved_amount, claim.currency) }}
+            </p>
+          </div>
+          <div>
+            <p class="text-sm text-slate-500">Payable Amount</p>
+            <p class="text-xl font-semibold text-blue-600">
+              {{ formatCurrency(claim.payable_amount, claim.currency) }}
+            </p>
+          </div>
+          <div>
+            <p class="text-sm text-slate-500">Paid Amount</p>
+            <p class="text-xl font-semibold text-emerald-600">
+              {{ formatCurrency(claim.paid_amount, claim.currency) }}
+            </p>
+          </div>
+        </div>
+
+        @if (claim.copay_amount > 0 || claim.deductible_amount > 0 || claim.excess_amount > 0) {
+        <mat-divider class="!my-4"></mat-divider>
+        <div class="grid grid-cols-3 gap-4">
+          @if (claim.copay_amount > 0) {
+          <div class="text-sm">
+            <span class="text-slate-500">Co-pay:</span>
+            <span class="ml-1 font-medium">{{
+              formatCurrency(claim.copay_amount, claim.currency)
+            }}</span>
+          </div>
+          } @if (claim.deductible_amount > 0) {
+          <div class="text-sm">
+            <span class="text-slate-500">Deductible:</span>
+            <span class="ml-1 font-medium">{{
+              formatCurrency(claim.deductible_amount, claim.currency)
+            }}</span>
+          </div>
+          } @if (claim.excess_amount > 0) {
+          <div class="text-sm">
+            <span class="text-slate-500">Excess:</span>
+            <span class="ml-1 font-medium">{{
+              formatCurrency(claim.excess_amount, claim.currency)
+            }}</span>
+          </div>
+          }
+        </div>
+        }
+      </div>
+
+      <!-- Tabs -->
+      <mat-tab-group [(selectedIndex)]="activeTabIndex" class="claim-tabs">
+        <!-- Claim Lines Tab -->
+        <mat-tab label="Claim Lines">
+          <div class="pt-4">
+            @if (claim.lines && claim.lines.length > 0) {
+            <table mat-table [dataSource]="claim.lines" class="w-full">
+              <!-- Line Number -->
+              <ng-container matColumnDef="line">
+                <th mat-header-cell *matHeaderCellDef class="!w-16 !font-semibold">#</th>
+                <td mat-cell *matCellDef="let line">{{ line.line_number }}</td>
+              </ng-container>
+
+              <!-- Description -->
+              <ng-container matColumnDef="description">
+                <th mat-header-cell *matHeaderCellDef class="!font-semibold">Service</th>
+                <td mat-cell *matCellDef="let line">
+                  <div>
+                    <p class="font-medium">{{ line.service_description }}</p>
+                    @if (line.service_code) {
+                    <p class="text-xs text-slate-500">Code: {{ line.service_code }}</p>
+                    } @if (line.benefit) {
+                    <div class="mt-1 inline-flex items-center gap-1.5 rounded bg-blue-50 px-2 py-0.5">
+                      <mat-icon fontSet="material-symbols-rounded" class="!text-xs !text-blue-600 !h-3 !w-3">account_balance_wallet</mat-icon>
+                      <span class="text-xs text-blue-700">{{ line.benefit.name }}</span>
+                      @if (line.benefit_limit) {
+                      <span class="text-[10px] text-blue-500">
+                        ({{ formatCurrency(line.benefit_used_before || 0) }} / {{ formatCurrency(line.benefit_limit) }})
+                      </span>
+                      }
+                    </div>
+                    }
+                  </div>
+                </td>
+              </ng-container>
+
+              <!-- Quantity -->
+              <ng-container matColumnDef="quantity">
+                <th mat-header-cell *matHeaderCellDef class="!w-24 !font-semibold">Qty</th>
+                <td mat-cell *matCellDef="let line">{{ line.quantity }} {{ line.unit || '' }}</td>
+              </ng-container>
+
+              <!-- Claimed -->
+              <ng-container matColumnDef="claimed">
+                <th mat-header-cell *matHeaderCellDef class="!w-32 !text-right !font-semibold">
+                  Claimed
+                </th>
+                <td mat-cell *matCellDef="let line" class="!text-right">
+                  {{ formatCurrency(line.claimed_amount, claim.currency) }}
+                </td>
+              </ng-container>
+
+              <!-- Approved -->
+              <ng-container matColumnDef="approved">
+                <th mat-header-cell *matHeaderCellDef class="!w-32 !text-right !font-semibold">
+                  Approved
+                </th>
+                <td mat-cell *matCellDef="let line" class="!text-right font-medium text-green-600">
+                  {{ formatCurrency(line.approved_amount, claim.currency) }}
+                </td>
+              </ng-container>
+
+              <!-- Status -->
+              <ng-container matColumnDef="status">
+                <th mat-header-cell *matHeaderCellDef class="!w-32 !font-semibold">Status</th>
+                <td mat-cell *matCellDef="let line">
+                  <span
+                    class="inline-flex rounded-full px-2 py-0.5 text-xs font-medium"
+                    [class]="getLineStatusClass(line.status)"
+                  >
+                    {{ line.status_label || line.status }}
+                  </span>
+                </td>
+              </ng-container>
+
+              <tr mat-header-row *matHeaderRowDef="linesColumns"></tr>
+              <tr mat-row *matRowDef="let row; columns: linesColumns"></tr>
+            </table>
+            } @else {
+            <div class="py-8 text-center text-slate-500">
+              <mat-icon fontSet="material-symbols-rounded" class="!text-4xl text-slate-300"
+                >list_alt</mat-icon
+              >
+              <p class="mt-2">No claim lines</p>
+            </div>
+            }
+          </div>
+        </mat-tab>
+
+        <!-- Documents Tab -->
+        <mat-tab label="Documents ({{ claim.documents?.length || 0 }})">
+          <div class="pt-4">
+            @if (claim.documents && claim.documents.length > 0) {
+            <div class="space-y-3">
+              @for (doc of claim.documents; track doc.id) {
+              <div class="flex items-center justify-between rounded-lg border border-slate-200 p-4">
+                <div class="flex items-center gap-3">
+                  <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-slate-100">
+                    <mat-icon fontSet="material-symbols-rounded" class="text-slate-500"
+                      >description</mat-icon
+                    >
+                  </div>
+                  <div>
+                    <p class="font-medium">{{ doc.title }}</p>
+                    <p class="text-sm text-slate-500">
+                      {{ doc.document_type_label }} • {{ doc.file_size_formatted }}
+                    </p>
+                  </div>
+                </div>
+                <div class="flex items-center gap-2">
+                  @if (doc.is_verified) {
+                  <span class="rounded-full bg-green-100 px-2 py-0.5 text-xs text-green-700"
+                    >Verified</span
+                  >
+                  }
+                  <button mat-icon-button>
+                    <mat-icon fontSet="material-symbols-rounded">download</mat-icon>
+                  </button>
+                </div>
+              </div>
+              }
+            </div>
+            } @else {
+            <div class="py-8 text-center text-slate-500">
+              <mat-icon fontSet="material-symbols-rounded" class="!text-4xl text-slate-300"
+                >folder_open</mat-icon
+              >
+              <p class="mt-2">No documents uploaded</p>
+            </div>
+            }
+          </div>
+        </mat-tab>
+
+        <!-- Notes Tab -->
+        <mat-tab label="Activity ({{ claim.notes?.length || 0 }})">
+          <div class="pt-4">
+            <!-- Add Note Button -->
+            <div class="mb-4">
+              <button mat-stroked-button (click)="toggleNoteForm()">
+                <mat-icon fontSet="material-symbols-rounded">{{
+                  showNoteForm() ? 'close' : 'add'
+                }}</mat-icon>
+                {{ showNoteForm() ? 'Cancel' : 'Add Note' }}
+              </button>
+            </div>
+
+            <!-- Note Form -->
+            @if (showNoteForm()) {
+            <form
+              [formGroup]="noteForm"
+              (ngSubmit)="submitNote()"
+              class="mb-6 rounded-lg border border-slate-200 p-4"
+            >
+              <mat-form-field appearance="fill" class="w-full">
+                <mat-label>Note</mat-label>
+                <textarea
+                  matInput
+                  formControlName="content"
+                  rows="3"
+                  placeholder="Enter your note..."
+                ></textarea>
+              </mat-form-field>
+              <div class="flex items-center justify-between">
+                <mat-checkbox formControlName="is_internal">Internal Note</mat-checkbox>
+                <button mat-flat-button color="primary" type="submit" [disabled]="noteForm.invalid">
+                  Add Note
+                </button>
+              </div>
+            </form>
+            }
+
+            <!-- Notes Timeline -->
+            @if (claim.notes && claim.notes.length > 0) {
+            <div class="space-y-4">
+              @for (note of claim.notes; track note.id) {
+              <div class="flex gap-3">
+                <div
+                  class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full"
+                  [class]="note.is_system ? 'bg-slate-100' : 'bg-blue-100'"
+                >
+                  <mat-icon
+                    fontSet="material-symbols-rounded"
+                    class="!text-base"
+                    [class]="note.is_system ? 'text-slate-500' : 'text-blue-600'"
+                  >
+                    {{ note.is_system ? 'smart_toy' : 'person' }}
+                  </mat-icon>
+                </div>
+                <div class="flex-1">
+                  <div class="flex items-center gap-2">
+                    <span class="font-medium">{{ note.note_type_label }}</span>
+                    @if (note.is_internal) {
+                    <span class="rounded bg-slate-100 px-1.5 py-0.5 text-xs text-slate-500"
+                      >Internal</span
+                    >
+                    }
+                    <span class="text-xs text-slate-400">{{
+                      note.created_at | date : 'medium'
+                    }}</span>
+                  </div>
+                  <p class="mt-1 text-sm text-slate-600">{{ note.content }}</p>
+                  @if (note.old_status && note.new_status) {
+                  <p class="mt-1 text-xs text-slate-400">
+                    Status: {{ note.old_status_label }} → {{ note.new_status_label }}
+                  </p>
+                  }
+                </div>
+              </div>
+              }
+            </div>
+            } @else {
+            <div class="py-8 text-center text-slate-500">
+              <mat-icon fontSet="material-symbols-rounded" class="!text-4xl text-slate-300"
+                >history</mat-icon
+              >
+              <p class="mt-2">No activity yet</p>
+            </div>
+            }
+          </div>
+        </mat-tab>
+      </mat-tab-group>
+    </div>
+
+    <!-- Sidebar -->
+    <div class="space-y-6">
+      <!-- Member Info -->
+      @if (claim.member) {
+      <div class="rounded-lg border border-slate-200 bg-white p-5">
+        <div class="mb-4 flex items-center justify-between">
+          <h3 class="text-sm font-semibold uppercase text-slate-500">Member</h3>
+          <button
+            mat-stroked-button
+            class="!h-8 !text-xs"
+            (click)="openMemberBenefits()"
+            matTooltip="View benefit utilization"
+          >
+            <mat-icon fontSet="material-symbols-rounded" class="!text-base">account_balance_wallet</mat-icon>
+            Benefits
+          </button>
+        </div>
+        <div class="flex items-center gap-3">
+          <div
+            class="flex h-12 w-12 items-center justify-center rounded-full bg-blue-100 text-lg font-semibold text-blue-600"
+          >
+            {{ claim.member.first_name?.charAt(0) }}{{ claim.member.last_name?.charAt(0) }}
+          </div>
+          <div>
+            <p class="font-semibold">{{ claim.member.first_name }} {{ claim.member.last_name }}</p>
+            <p class="text-sm text-slate-500">{{ claim.member.member_number }}</p>
+          </div>
+        </div>
+        <mat-divider class="!my-4"></mat-divider>
+        <dl class="space-y-2 text-sm">
+          @if (claim.member.relationship) {
+          <div class="flex justify-between">
+            <dt class="text-slate-500">Relationship</dt>
+            <dd class="font-medium capitalize">{{ claim.member.relationship }}</dd>
+          </div>
+          } @if (claim.member.date_of_birth) {
+          <div class="flex justify-between">
+            <dt class="text-slate-500">Date of Birth</dt>
+            <dd class="font-medium">{{ claim.member.date_of_birth | date : 'mediumDate' }}</dd>
+          </div>
+          }
+        </dl>
+      </div>
+      }
+
+      <!-- Policy Info -->
+      @if (claim.policy) {
+      <div class="rounded-lg border border-slate-200 bg-white p-5">
+        <h3 class="mb-4 text-sm font-semibold uppercase text-slate-500">Policy</h3>
+        <a
+          [routerLink]="['/medical/policies', claim.policy.id]"
+          class="text-blue-600 hover:underline"
+        >
+          {{ claim.policy.policy_number }}
+        </a>
+        <p class="mt-1 text-sm text-slate-600">{{ claim.policy.holder_name }}</p>
+        @if (claim.policy.plan) {
+        <p class="mt-2 text-xs text-slate-500">Plan: {{ claim.policy.plan.name }}</p>
+        } @if (claim.policy.scheme) {
+        <p class="text-xs text-slate-500">Scheme: {{ claim.policy.scheme.name }}</p>
+        }
+      </div>
+      }
+
+      <!-- Claim Info -->
+      <div class="rounded-lg border border-slate-200 bg-white p-5">
+        <h3 class="mb-4 text-sm font-semibold uppercase text-slate-500">Claim Details</h3>
+        <dl class="space-y-3 text-sm">
+          <div class="flex justify-between">
+            <dt class="text-slate-500">Type</dt>
+            <dd class="flex items-center gap-1 font-medium">
+              <mat-icon fontSet="material-symbols-rounded" class="!text-base text-slate-400">
+                {{ getClaimTypeConfig(claim.claim_type).icon }}
+              </mat-icon>
+              {{ getClaimTypeConfig(claim.claim_type).label }}
+            </dd>
+          </div>
+          <div class="flex justify-between">
+            <dt class="text-slate-500">Service Date</dt>
+            <dd class="font-medium">{{ claim.service_date | date : 'mediumDate' }}</dd>
+          </div>
+          @if (claim.provider_name) {
+          <div class="flex justify-between">
+            <dt class="text-slate-500">Provider</dt>
+            <dd class="font-medium">{{ claim.provider_name }}</dd>
+          </div>
+          } @if (claim.primary_diagnosis) {
+          <div class="flex justify-between">
+            <dt class="text-slate-500">Diagnosis</dt>
+            <dd class="font-medium">{{ claim.primary_diagnosis }}</dd>
+          </div>
+          } @if (claim.primary_icd_code) {
+          <div class="flex justify-between">
+            <dt class="text-slate-500">ICD Code</dt>
+            <dd class="font-mono text-xs">{{ claim.primary_icd_code }}</dd>
+          </div>
+          }
+        </dl>
+      </div>
+
+      <!-- Timestamps -->
+      <div class="rounded-lg border border-slate-200 bg-white p-5">
+        <h3 class="mb-4 text-sm font-semibold uppercase text-slate-500">Timeline</h3>
+        <dl class="space-y-3 text-sm">
+          <div class="flex justify-between">
+            <dt class="text-slate-500">Received</dt>
+            <dd class="font-medium">{{ claim.received_at | date : 'medium' }}</dd>
+          </div>
+          @if (claim.first_response_at) {
+          <div class="flex justify-between">
+            <dt class="text-slate-500">First Response</dt>
+            <dd class="font-medium">{{ claim.first_response_at | date : 'medium' }}</dd>
+          </div>
+          } @if (claim.approved_at) {
+          <div class="flex justify-between">
+            <dt class="text-slate-500">Approved</dt>
+            <dd class="font-medium">{{ claim.approved_at | date : 'medium' }}</dd>
+          </div>
+          } @if (claim.completed_at) {
+          <div class="flex justify-between">
+            <dt class="text-slate-500">Completed</dt>
+            <dd class="font-medium">{{ claim.completed_at | date : 'medium' }}</dd>
+          </div>
+          } @if (claim.tat_days !== null && claim.tat_days !== undefined) {
+          <div class="flex justify-between">
+            <dt class="text-slate-500">TAT</dt>
+            <dd class="font-medium">{{ claim.tat_days }} days</dd>
+          </div>
+          }
+        </dl>
+      </div>
+    </div>
+  </div>
+</div>
+}

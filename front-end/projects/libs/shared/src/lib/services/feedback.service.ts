@@ -28,6 +28,15 @@ export class FeedbackService {
     });
   }
 
+  info(message: string) {
+    this.snackbar.open(message, 'Close', {
+      duration: 4000,
+      panelClass: ['info-snackbar'],
+      horizontalPosition: 'right',
+      verticalPosition: 'top',
+    });
+  }
+
   async confirm(title: string, message: string): Promise<boolean> {
     const dialogRef = this.dialog.open(ConfirmationDialog, {
       width: '400px',

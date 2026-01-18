@@ -176,15 +176,17 @@ export class BenefitStore {
   loadPlanBenefits(planId: string) {
     this.state.update((s) => ({ ...s, loading: true }));
 
-    this.http.get<ApiResponse<PlanBenefit[]>>(`${this.apiUrl}/plans/${planId}/benefits`).subscribe({
-      next: (res) =>
-        this.state.update((s) => ({
-          ...s,
-          planBenefits: res.data,
-          loading: false,
-        })),
-      error: () => this.state.update((s) => ({ ...s, loading: false })),
-    });
+    return this.http
+      .get<ApiResponse<PlanBenefit[]>>(`${this.apiUrl}/plans/${planId}/benefits`)
+      .subscribe({
+        next: (res) =>
+          this.state.update((s) => ({
+            ...s,
+            planBenefits: res.data,
+            loading: false,
+          })),
+        error: () => this.state.update((s) => ({ ...s, loading: false })),
+      });
   }
 
   addBenefitToPlan(planId: string, data: Partial<PlanBenefit>) {

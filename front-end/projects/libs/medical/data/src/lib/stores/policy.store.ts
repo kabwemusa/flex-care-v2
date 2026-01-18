@@ -3,13 +3,36 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { computed, inject, Injectable, signal } from '@angular/core';
 import { tap } from 'rxjs';
-import { ApiResponse, Policy, Member, PolicyAddon } from '../models/medical-interfaces';
+import { Policy, Member, PolicyAddon } from '../models/medical-interfaces';
+import { ApiResponse, PaginatedResponse, PaginationMeta } from '../models/api-reponse';
+
+// export interface PaginationMeta {
+//   current_page: number;
+//   last_page: number;
+//   per_page: number;
+//   total: number;
+//   from?: number | null;
+//   to?: number | null;
+// }
+
+export interface PolicyFilters {
+  search?: string;
+  status?: string;
+  policy_type?: string;
+  scheme_id?: string;
+  plan_id?: string;
+  group_id?: string;
+  page?: number;
+  per_page?: number;
+}
 
 interface PolicyState {
   items: Policy[];
   selected: Policy | null;
   loading: boolean;
   saving: boolean;
+  pagination: PaginationMeta | null;
+  filters: PolicyFilters;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -22,6 +45,8 @@ export class PolicyStore {
     selected: null,
     loading: false,
     saving: false,
+    pagination: null,
+    filters: {},
   });
 
   // Selectors
@@ -29,6 +54,16 @@ export class PolicyStore {
   readonly selectedPolicy = computed(() => this.state().selected);
   readonly isLoading = computed(() => this.state().loading);
   readonly isSaving = computed(() => this.state().saving);
+  readonly pagination = computed(() => this.state().pagination);
+  readonly filters = computed(() => this.state().filters);
+
+  // Pagination computed selectors
+  readonly currentPage = computed(() => this.pagination()?.current_page ?? 1);
+  readonly totalPages = computed(() => this.pagination()?.last_page ?? 1);
+  readonly totalItems = computed(() => this.pagination()?.total ?? 0);
+  readonly pageSize = computed(() => this.pagination()?.per_page ?? 20);
+  readonly hasNextPage = computed(() => this.currentPage() < this.totalPages());
+  readonly hasPrevPage = computed(() => this.currentPage() > 1);
 
   // Computed selectors
   readonly activePolicies = computed(() => this.policies().filter((p) => p.status === 'active'));
@@ -49,15 +84,8 @@ export class PolicyStore {
   // LOAD OPERATIONS
   // =========================================================================
 
-  loadAll(filters?: {
-    search?: string;
-    status?: string;
-    policy_type?: string;
-    scheme_id?: string;
-    plan_id?: string;
-    group_id?: string;
-  }) {
-    this.state.update((s) => ({ ...s, loading: true }));
+  loadAll(filters?: PolicyFilters) {
+    this.state.update((s) => ({ ...s, loading: true, filters: filters ?? {} }));
 
     let params = new HttpParams();
     if (filters?.search) params = params.set('search', filters.search);
@@ -66,15 +94,50 @@ export class PolicyStore {
     if (filters?.scheme_id) params = params.set('scheme_id', filters.scheme_id);
     if (filters?.plan_id) params = params.set('plan_id', filters.plan_id);
     if (filters?.group_id) params = params.set('group_id', filters.group_id);
+    if (filters?.page) params = params.set('page', filters.page.toString());
+    if (filters?.per_page) params = params.set('per_page', filters.per_page.toString());
 
-    this.http.get<ApiResponse<Policy[]>>(this.apiUrl, { params }).subscribe({
+    this.http.get<PaginatedResponse<Policy>>(this.apiUrl, { params }).subscribe({
       next: (res) =>
         this.state.update((s) => ({
           ...s,
           items: res.data,
+          pagination: res.meta ?? null,
           loading: false,
         })),
       error: () => this.state.update((s) => ({ ...s, loading: false })),
+    });
+  }
+
+  // Load next page (for lazy loading / infinite scroll)
+  loadNextPage() {
+    if (!this.hasNextPage() || this.isLoading()) return;
+
+    const currentFilters = this.filters();
+    this.loadAll({
+      ...currentFilters,
+      page: this.currentPage() + 1,
+    });
+  }
+
+  // Load specific page
+  loadPage(page: number) {
+    if (page < 1 || page > this.totalPages() || this.isLoading()) return;
+
+    const currentFilters = this.filters();
+    this.loadAll({
+      ...currentFilters,
+      page,
+    });
+  }
+
+  // Change page size
+  setPageSize(perPage: number) {
+    const currentFilters = this.filters();
+    this.loadAll({
+      ...currentFilters,
+      per_page: perPage,
+      page: 1, // Reset to first page when changing page size
     });
   }
 
@@ -211,6 +274,23 @@ export class PolicyStore {
 
     return this.http
       .post<ApiResponse<Member>>(`${this.apiUrl}/${policyId}/members`, memberData)
+      .pipe(
+        tap({
+          next: () => {
+            // Reload policy to get updated member list and counts
+            this.loadOne(policyId).subscribe();
+            this.state.update((s) => ({ ...s, saving: false }));
+          },
+          error: () => this.state.update((s) => ({ ...s, saving: false })),
+        })
+      );
+  }
+
+  removeMember(policyId: string, memberId: string) {
+    this.state.update((s) => ({ ...s, saving: true }));
+
+    return this.http
+      .delete<ApiResponse<void>>(`${this.apiUrl}/${policyId}/members/${memberId}`)
       .pipe(
         tap({
           next: () => {

@@ -12,7 +12,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatInputModule } from '@angular/material/input';
 import { MatTableModule, MatTableDataSource } from '@angular/material/table';
 import { MatSortModule, MatSort } from '@angular/material/sort';
-import { MatPaginatorModule, MatPaginator } from '@angular/material/paginator';
+import { MatPaginatorModule, MatPaginator, PageEvent } from '@angular/material/paginator';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatChipsModule } from '@angular/material/chips';
@@ -100,14 +100,18 @@ export class MedicalApplicationList implements OnInit {
   readonly approvedCount = computed(() => this.store.stats()?.approved ?? 0);
   readonly acceptedCount = computed(() => this.store.stats()?.accepted ?? 0);
 
+  readonly pageIndex = computed(() => this.store.currentPage() - 1);
+  readonly pageSize = computed(() => this.store.pageSize());
+  readonly totalItems = computed(() => this.store.totalItems());
+
   // Selected for drawer
   selectedApplication = signal<Application | null>(null);
 
   constructor() {
     // Watch for changes in the store and update the table
     effect(() => {
-      const applications = this.store.applications();
-      this.dataSource.data = applications;
+      // const applications = this.store.applications();
+      this.dataSource.data = this.store.viewItems();
     });
   }
 
@@ -123,20 +127,20 @@ export class MedicalApplicationList implements OnInit {
     if (this.sort) {
       this.dataSource.sort = this.sort;
     }
-    if (this.paginator) {
-      this.dataSource.paginator = this.paginator;
-    }
+    // if (this.paginator) {
+    //   this.dataSource.paginator = this.paginator;
+    // }
   }
 
   ngAfterViewInit() {
     this.dataSource.sort = this.sort;
-    this.dataSource.paginator = this.paginator;
+    // this.dataSource.paginator = this.paginator;
   }
 
   applyFilter(event: Event) {
     const value = (event.target as HTMLInputElement).value.trim().toLowerCase();
     this.searchQuery.set(value);
-    this.loadWithFilters();
+    this.store.filterLocally({ search: value });
   }
 
   filterByStatus(status: string) {
@@ -200,6 +204,25 @@ export class MedicalApplicationList implements OnInit {
   closeDrawer() {
     this.detailDrawer?.close();
     this.selectedApplication.set(null);
+  }
+
+  onPageChange(event: PageEvent) {
+    // Only react if something actually changed
+    if (
+      event.pageIndex + 1 === this.store.currentPage() &&
+      event.pageSize === this.store.pageSize()
+    ) {
+      return;
+    }
+
+    this.store.loadAll({
+      page: event.pageIndex + 1,
+      per_page: event.pageSize,
+      search: this.searchQuery() || undefined,
+      status: this.selectedStatus() || undefined,
+      application_type: this.selectedType() || undefined,
+      policy_type: this.selectedPolicyType() || undefined,
+    });
   }
 
   editApplication(application: Application) {

@@ -16,7 +16,8 @@ use Exception;
 class MemberService
 {
     public function __construct(
-        protected PremiumService $premiumService
+        protected PremiumService $premiumService,
+        protected BenefitUtilizationService $benefitUtilizationService
     ) {}
 
     // =========================================================================
@@ -58,6 +59,9 @@ class MemberService
 
             // 3. Update Policy Totals
             $this->premiumService->calculatePolicyPremium($policy);
+
+            // 4. Initialize Benefit Utilization tracking
+            $this->benefitUtilizationService->initializeMemberBenefits($member);
 
             return $member;
         });

@@ -1,0 +1,620 @@
+<!-- libs/medical/feature/src/lib/dialogs/medical-endorsement-dialog/medical-endorsement-dialog.html -->
+
+<div class="flex max-h-[90vh] w-[60vw] min-w-[600px] flex-col overflow-hidden bg-white">
+  <!-- Header -->
+  <div class="flex items-center justify-between border-b border-slate-100 px-6 py-4">
+    <div class="flex items-center gap-3">
+      <div class="flex h-10 w-10 items-center justify-center rounded-full" [class]="config().color">
+        <mat-icon fontSet="material-symbols-rounded">{{ config().icon }}</mat-icon>
+      </div>
+      <div>
+        <h2 class="text-lg font-semibold tracking-tight text-slate-900">{{ config().title }}</h2>
+        <p class="text-xs text-slate-500">{{ config().subtitle }}</p>
+      </div>
+    </div>
+    <button mat-icon-button (click)="cancel()" class="!text-slate-400 hover:!text-slate-700">
+      <mat-icon fontSet="material-symbols-rounded">close</mat-icon>
+    </button>
+  </div>
+
+  <!-- Policy Info Banner -->
+  <div class="border-b border-slate-100 bg-slate-50 px-6 py-3">
+    <div class="flex items-center justify-between text-sm">
+      <div class="flex items-center gap-4">
+        <span class="text-slate-600">Policy:</span>
+        <span class="font-mono font-medium text-slate-900">{{ data.policy.policy_number }}</span>
+      </div>
+      <div class="flex items-center gap-4">
+        <span class="text-slate-600">Start:</span>
+        <span class="font-medium text-slate-900">
+          {{ data.policy.inception_date | date : 'mediumDate' }}
+        </span>
+      </div>
+      <div class="flex items-center gap-4">
+        <span class="text-slate-600">Expiry:</span>
+        <span class="font-medium text-slate-900">
+          {{ data.policy.expiry_date | date : 'mediumDate' }}
+        </span>
+      </div>
+      <div class="flex items-center gap-4">
+        <span class="text-slate-600">Days Remaining:</span>
+        <span
+          class="font-medium"
+          [class]="daysRemaining() > 30 ? 'text-green-600' : 'text-orange-600'"
+        >
+          {{ daysRemaining() }} days
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Form Content -->
+  <div class="flex-1 overflow-y-auto p-6">
+    <form [formGroup]="endorsementForm" class="space-y-6">
+      <!-- Common: Effective Date -->
+      <div class="space-y-4">
+        <h3 class="text-sm font-semibold text-slate-700 flex items-center gap-2">
+          <mat-icon fontSet="material-symbols-rounded" class="!text-base">event</mat-icon>
+          Endorsement Details
+        </h3>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div class="flex flex-col gap-1.5">
+            <label class="text-sm font-medium text-slate-700">
+              Effective Date <span class="text-red-500">*</span>
+            </label>
+            <mat-form-field
+              appearance="fill"
+              class="w-full minimal-input"
+              subscriptSizing="dynamic"
+            >
+              <input
+                matInput
+                [matDatepicker]="effectivePicker"
+                formControlName="effective_date"
+                [min]="minEffectiveDate()"
+                [max]="maxEffectiveDate()"
+              />
+              <mat-datepicker-toggle matIconSuffix [for]="effectivePicker"></mat-datepicker-toggle>
+              <mat-datepicker #effectivePicker></mat-datepicker>
+              @if (endorsementForm.get('effective_date')?.hasError('required')) {
+              <mat-error>Effective date is required</mat-error>
+              } @if (endorsementForm.get('effective_date')?.hasError('matDatepickerMin')) {
+              <mat-error
+                >Date must be on or after {{ formatDateDisplay(minEffectiveDate()) }}</mat-error
+              >
+              } @if (endorsementForm.get('effective_date')?.hasError('matDatepickerMax')) {
+              <mat-error
+                >Date must be on or before {{ formatDateDisplay(maxEffectiveDate()) }}</mat-error
+              >
+              }
+            </mat-form-field>
+            <p class="text-xs text-slate-500">
+              Valid range: <strong>{{ formatDateDisplay(minEffectiveDate()) }}</strong> to
+              <strong>{{ formatDateDisplay(maxEffectiveDate()) }}</strong>
+              (within policy period)
+            </p>
+          </div>
+
+          <div class="flex flex-col gap-1.5">
+            <label class="text-sm font-medium text-slate-700">Notes</label>
+            <mat-form-field
+              appearance="fill"
+              class="w-full minimal-input"
+              subscriptSizing="dynamic"
+            >
+              <input matInput formControlName="notes" placeholder="Optional notes" />
+            </mat-form-field>
+          </div>
+        </div>
+      </div>
+
+      <!-- ADD MEMBER FORM -->
+      @if (data.mode === 'add_member') {
+      <div [formGroup]="memberForm" class="space-y-6">
+        <!-- Member Type -->
+        <div class="space-y-4">
+          <h3 class="text-sm font-semibold text-slate-700 flex items-center gap-2">
+            <mat-icon fontSet="material-symbols-rounded" class="!text-base">badge</mat-icon>
+            Member Type
+          </h3>
+
+          <div class="grid grid-cols-2 gap-4">
+            <mat-form-field appearance="fill" class="minimal-input" subscriptSizing="dynamic">
+              <mat-label>Member Type *</mat-label>
+              <mat-select formControlName="member_type">
+                @for (type of memberTypes; track type.value) {
+                <mat-option [value]="type.value">{{ type.label }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+
+            @if (showPrincipalSelection()) {
+            <mat-form-field appearance="fill" class="minimal-input" subscriptSizing="dynamic">
+              <mat-label>Principal Member *</mat-label>
+              <mat-select formControlName="principal_id">
+                @for (principal of principalMembers(); track principal.id) {
+                <mat-option [value]="principal.id">
+                  {{ principal.first_name }} {{ principal.last_name }}
+                  <span class="text-slate-400 text-xs ml-1">({{ principal.member_number }})</span>
+                </mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+            }
+          </div>
+
+          @if (showPrincipalSelection()) {
+          <mat-form-field appearance="fill" class="w-1/2 minimal-input" subscriptSizing="dynamic">
+            <mat-label>Relationship *</mat-label>
+            <mat-select formControlName="relationship">
+              @for (rel of relationshipOptions; track rel.value) {
+              <mat-option [value]="rel.value">{{ rel.label }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+          }
+        </div>
+
+        <!-- Personal Information -->
+        <div class="space-y-4">
+          <h3 class="text-sm font-semibold text-slate-700 flex items-center gap-2">
+            <mat-icon fontSet="material-symbols-rounded" class="!text-base">person</mat-icon>
+            Personal Information
+          </h3>
+
+          <div class="grid grid-cols-4 gap-4">
+            <mat-form-field appearance="fill" class="minimal-input" subscriptSizing="dynamic">
+              <mat-label>Title</mat-label>
+              <mat-select formControlName="title">
+                @for (title of titleOptions; track title) {
+                <mat-option [value]="title">{{ title }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+
+            <mat-form-field
+              appearance="fill"
+              class="col-span-3 minimal-input"
+              subscriptSizing="dynamic"
+            >
+              <mat-label>First Name *</mat-label>
+              <input matInput formControlName="first_name" />
+              @if (memberForm.get('first_name')?.hasError('required')) {
+              <mat-error>Required</mat-error>
+              }
+            </mat-form-field>
+          </div>
+
+          <div class="grid grid-cols-2 gap-4">
+            <mat-form-field appearance="fill" class="minimal-input" subscriptSizing="dynamic">
+              <mat-label>Middle Name</mat-label>
+              <input matInput formControlName="middle_name" />
+            </mat-form-field>
+
+            <mat-form-field appearance="fill" class="minimal-input" subscriptSizing="dynamic">
+              <mat-label>Last Name *</mat-label>
+              <input matInput formControlName="last_name" />
+              @if (memberForm.get('last_name')?.hasError('required')) {
+              <mat-error>Required</mat-error>
+              }
+            </mat-form-field>
+          </div>
+
+          <div class="grid grid-cols-2 gap-4">
+            <mat-form-field appearance="fill" class="minimal-input" subscriptSizing="dynamic">
+              <mat-label>Date of Birth *</mat-label>
+              <input matInput [matDatepicker]="dobPicker" formControlName="date_of_birth" />
+              <mat-datepicker-toggle matIconSuffix [for]="dobPicker"></mat-datepicker-toggle>
+              <mat-datepicker #dobPicker></mat-datepicker>
+              @if (memberForm.get('date_of_birth')?.hasError('required')) {
+              <mat-error>Required</mat-error>
+              }
+            </mat-form-field>
+
+            <mat-form-field appearance="fill" class="minimal-input" subscriptSizing="dynamic">
+              <mat-label>Gender *</mat-label>
+              <mat-select formControlName="gender">
+                <mat-option value="M">Male</mat-option>
+                <mat-option value="F">Female</mat-option>
+              </mat-select>
+              @if (memberForm.get('gender')?.hasError('required')) {
+              <mat-error>Required</mat-error>
+              }
+            </mat-form-field>
+          </div>
+        </div>
+
+        <!-- Identification -->
+        <div class="space-y-4">
+          <h3 class="text-sm font-semibold text-slate-700 flex items-center gap-2">
+            <mat-icon fontSet="material-symbols-rounded" class="!text-base">id_card</mat-icon>
+            Identification
+          </h3>
+
+          <div class="grid grid-cols-2 gap-4">
+            <mat-form-field appearance="fill" class="minimal-input" subscriptSizing="dynamic">
+              <mat-label>National ID</mat-label>
+              <input matInput formControlName="national_id" />
+            </mat-form-field>
+
+            <mat-form-field appearance="fill" class="minimal-input" subscriptSizing="dynamic">
+              <mat-label>Passport Number</mat-label>
+              <input matInput formControlName="passport_number" />
+            </mat-form-field>
+          </div>
+        </div>
+
+        <!-- Contact Information -->
+        <div class="space-y-4">
+          <h3 class="text-sm font-semibold text-slate-700 flex items-center gap-2">
+            <mat-icon fontSet="material-symbols-rounded" class="!text-base">contact_mail</mat-icon>
+            Contact Information
+          </h3>
+
+          <div class="grid grid-cols-2 gap-4">
+            <mat-form-field appearance="fill" class="minimal-input" subscriptSizing="dynamic">
+              <mat-label>Email</mat-label>
+              <input matInput type="email" formControlName="email" />
+              @if (memberForm.get('email')?.hasError('email')) {
+              <mat-error>Invalid email</mat-error>
+              }
+            </mat-form-field>
+
+            <mat-form-field appearance="fill" class="minimal-input" subscriptSizing="dynamic">
+              <mat-label>Phone</mat-label>
+              <input matInput formControlName="phone" />
+            </mat-form-field>
+          </div>
+
+          <mat-form-field appearance="fill" class="w-1/2 minimal-input" subscriptSizing="dynamic">
+            <mat-label>Mobile</mat-label>
+            <input matInput formControlName="mobile" />
+          </mat-form-field>
+        </div>
+
+        <!-- Employment (Corporate) -->
+        @if (isCorporatePolicy) {
+        <div class="space-y-4">
+          <h3 class="text-sm font-semibold text-slate-700 flex items-center gap-2">
+            <mat-icon fontSet="material-symbols-rounded" class="!text-base">work</mat-icon>
+            Employment Details
+          </h3>
+
+          <div class="grid grid-cols-2 gap-4">
+            <mat-form-field appearance="fill" class="minimal-input" subscriptSizing="dynamic">
+              <mat-label>Employee Number</mat-label>
+              <input matInput formControlName="employee_number" />
+            </mat-form-field>
+
+            <mat-form-field appearance="fill" class="minimal-input" subscriptSizing="dynamic">
+              <mat-label>Job Title</mat-label>
+              <input matInput formControlName="job_title" />
+            </mat-form-field>
+          </div>
+
+          <mat-form-field appearance="fill" class="w-1/2 minimal-input" subscriptSizing="dynamic">
+            <mat-label>Department</mat-label>
+            <input matInput formControlName="department" />
+          </mat-form-field>
+        </div>
+        }
+
+        <!-- Medical Declaration -->
+        <div class="space-y-4">
+          <h3 class="text-sm font-semibold text-slate-700 flex items-center gap-2">
+            <mat-icon fontSet="material-symbols-rounded" class="!text-base"
+              >medical_information</mat-icon
+            >
+            Medical Declaration
+          </h3>
+
+          <mat-checkbox formControlName="has_pre_existing_conditions" color="primary">
+            Has pre-existing medical conditions
+          </mat-checkbox>
+
+          @if (memberForm.get('has_pre_existing_conditions')?.value) {
+          <mat-form-field appearance="fill" class="w-full minimal-input" subscriptSizing="dynamic">
+            <mat-label>Medical History Notes</mat-label>
+            <textarea matInput formControlName="medical_history_notes" rows="3"></textarea>
+          </mat-form-field>
+          }
+        </div>
+      </div>
+      }
+
+      <!-- REMOVE MEMBER FORM -->
+      @if (data.mode === 'remove_member' && data.member) {
+      <div class="space-y-4">
+        <!-- Simple Member Info -->
+        <div class="flex items-center gap-3 p-3 bg-slate-50 rounded-lg border border-slate-200">
+          <mat-icon fontSet="material-symbols-rounded" class="text-slate-400">person</mat-icon>
+          <div class="flex-1">
+            <span class="font-medium text-slate-900">
+              {{ data.member.first_name }} {{ data.member.last_name }}
+            </span>
+            <span class="text-slate-400 mx-2">&bull;</span>
+            <span class="text-slate-600 text-sm">{{ data.member.member_number }}</span>
+            <span class="text-slate-400 mx-2">&bull;</span>
+            <span class="text-sm px-2 py-0.5 rounded bg-slate-200 text-slate-700">
+              {{ data.member.member_type | titlecase }}
+            </span>
+          </div>
+        </div>
+
+        <mat-form-field appearance="fill" class="w-full minimal-input" subscriptSizing="dynamic">
+          <mat-label>Reason *</mat-label>
+          <mat-select formControlName="reason">
+            <mat-option value="Resigned from company">Resigned from company</mat-option>
+            <mat-option value="Contract ended">Contract ended</mat-option>
+            <mat-option value="Divorce">Divorce</mat-option>
+            <mat-option value="Death">Death</mat-option>
+            <mat-option value="Age limit exceeded">Age limit exceeded</mat-option>
+            <mat-option value="Member request">Member request</mat-option>
+            <mat-option value="Other">Other</mat-option>
+          </mat-select>
+          @if (endorsementForm.get('reason')?.hasError('required')) {
+          <mat-error>Reason is required</mat-error>
+          }
+        </mat-form-field>
+
+        <p class="text-xs text-slate-500">
+          <mat-icon fontSet="material-symbols-rounded" class="!text-sm align-middle mr-1"
+            >info</mat-icon
+          >
+          A pro-rated refund will be calculated based on the termination date.
+        </p>
+      </div>
+      }
+
+      <!-- UPGRADE PLAN FORM -->
+      @if (data.mode === 'upgrade_plan') {
+      <div class="space-y-4">
+        <!-- Current Plan Info -->
+        <div class="flex items-center gap-3 p-3 bg-slate-50 rounded-lg border border-slate-200">
+          <mat-icon fontSet="material-symbols-rounded" class="text-slate-400">assignment</mat-icon>
+          <div class="flex-1">
+            <span class="text-sm text-slate-500">Current Plan:</span>
+            <span class="font-medium text-slate-900 ml-2">{{ data.policy.plan?.name }}</span>
+          </div>
+        </div>
+
+        <mat-form-field appearance="fill" class="w-full minimal-input" subscriptSizing="dynamic">
+          <mat-label>Select New Plan *</mat-label>
+          <mat-select formControlName="new_plan_id">
+            @for (plan of upgradePlans(); track plan.id) {
+            <mat-option [value]="plan.id">
+              <div class="flex items-center justify-between w-full">
+                <span>{{ plan.name }}</span>
+                @if (plan.tier_level) {
+                <span class="text-xs px-2 py-0.5 rounded bg-blue-100 text-blue-700">
+                  Tier {{ plan.tier_level }}
+                </span>
+                }
+              </div>
+            </mat-option>
+            }
+          </mat-select>
+          @if (endorsementForm.get('new_plan_id')?.hasError('required')) {
+          <mat-error>Please select a plan</mat-error>
+          }
+        </mat-form-field>
+
+        @if (upgradePlans().length === 0) {
+        <div class="text-center py-4 text-slate-500">
+          <mat-icon fontSet="material-symbols-rounded" class="!text-3xl text-slate-300"
+            >info</mat-icon
+          >
+          <p class="mt-2">No other plans available in this scheme.</p>
+        </div>
+        }
+
+        <p class="text-xs text-slate-500">
+          <mat-icon fontSet="material-symbols-rounded" class="!text-sm align-middle mr-1"
+            >info</mat-icon
+          >
+          Pro-rated premium difference will be calculated from the effective date.
+        </p>
+      </div>
+      }
+
+      <!-- DOWNGRADE PLAN FORM -->
+      @if (data.mode === 'downgrade_plan') {
+      <div class="space-y-4">
+        <!-- Current Plan Info -->
+        <div class="flex items-center gap-3 p-3 bg-slate-50 rounded-lg border border-slate-200">
+          <mat-icon fontSet="material-symbols-rounded" class="text-slate-400">assignment</mat-icon>
+          <div class="flex-1">
+            <span class="text-sm text-slate-500">Current Plan:</span>
+            <span class="font-medium text-slate-900 ml-2">{{ data.policy.plan?.name }}</span>
+          </div>
+        </div>
+
+        <mat-form-field appearance="fill" class="w-full minimal-input" subscriptSizing="dynamic">
+          <mat-label>Select New Plan *</mat-label>
+          <mat-select formControlName="new_plan_id">
+            @for (plan of downgradePlans(); track plan.id) {
+            <mat-option [value]="plan.id">
+              <div class="flex items-center justify-between w-full">
+                <span>{{ plan.name }}</span>
+                @if (plan.tier_level) {
+                <span class="text-xs px-2 py-0.5 rounded bg-orange-100 text-orange-700">
+                  Tier {{ plan.tier_level }}
+                </span>
+                }
+              </div>
+            </mat-option>
+            }
+          </mat-select>
+          @if (endorsementForm.get('new_plan_id')?.hasError('required')) {
+          <mat-error>Please select a plan</mat-error>
+          }
+        </mat-form-field>
+
+        @if (downgradePlans().length === 0) {
+        <div class="text-center py-4 text-slate-500">
+          <mat-icon fontSet="material-symbols-rounded" class="!text-3xl text-slate-300"
+            >info</mat-icon
+          >
+          <p class="mt-2">No other plans available in this scheme.</p>
+        </div>
+        }
+
+        <p class="text-xs text-slate-500">
+          <mat-icon fontSet="material-symbols-rounded" class="!text-sm align-middle mr-1"
+            >info</mat-icon
+          >
+          A pro-rated refund will be calculated from the effective date.
+        </p>
+      </div>
+      }
+
+      <!-- ADD ADDON FORM -->
+      @if (data.mode === 'add_addon') {
+      <div class="space-y-4">
+        <mat-form-field appearance="fill" class="w-full minimal-input" subscriptSizing="dynamic">
+          <mat-label>Select Add-on *</mat-label>
+          <mat-select formControlName="addon_id">
+            @for (planAddon of availableAddonsForPolicy(); track planAddon.addon_id) {
+            <mat-option [value]="planAddon.addon_id">
+              <div class="flex items-center justify-between w-full">
+                <span>{{ planAddon.addon?.name }}</span>
+                @if (planAddon.addon?.amount) {
+                <span class="text-green-600 text-sm"
+                  >+{{ planAddon?.addon?.amount | number : '1.2-2' }}
+                  {{ data.policy.currency }}/year</span
+                >
+                }
+              </div>
+            </mat-option>
+            }
+          </mat-select>
+          @if (endorsementForm.get('addon_id')?.hasError('required')) {
+          <mat-error>Please select an add-on</mat-error>
+          }
+        </mat-form-field>
+
+        @if (availableAddonsForPolicy().length === 0) {
+        <div class="text-center py-4 text-slate-500">
+          <mat-icon fontSet="material-symbols-rounded" class="!text-3xl text-slate-300"
+            >info</mat-icon
+          >
+          <p class="mt-2">No additional add-ons available for this plan.</p>
+        </div>
+        }
+
+        <p class="text-xs text-slate-500">
+          <mat-icon fontSet="material-symbols-rounded" class="!text-sm align-middle mr-1"
+            >info</mat-icon
+          >
+          Pro-rated premium will be calculated from the effective date to policy expiry.
+        </p>
+      </div>
+      }
+
+      <!-- REMOVE ADDON FORM -->
+      @if (data.mode === 'remove_addon') {
+      <div class="space-y-4">
+        <mat-form-field appearance="fill" class="w-full minimal-input" subscriptSizing="dynamic">
+          <mat-label>Select Add-on to Remove *</mat-label>
+          <mat-select formControlName="addon_id">
+            @for (policyAddon of currentPolicyAddons(); track policyAddon.addon_id) {
+            <mat-option [value]="policyAddon.addon_id">
+              <div class="flex items-center justify-between w-full">
+                <span>{{ policyAddon.addon_name || policyAddon.addon?.name }}</span>
+                @if (policyAddon.premium) {
+                <span class="text-slate-500 text-sm"
+                  >{{ policyAddon.premium | number : '1.2-2' }}
+                  {{ data.policy.currency }}/year</span
+                >
+                }
+              </div>
+            </mat-option>
+            }
+          </mat-select>
+          @if (endorsementForm.get('addon_id')?.hasError('required')) {
+          <mat-error>Please select an add-on</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="fill" class="w-full minimal-input" subscriptSizing="dynamic">
+          <mat-label>Reason *</mat-label>
+          <mat-select formControlName="reason">
+            <mat-option value="No longer needed">No longer needed</mat-option>
+            <mat-option value="Cost reduction">Cost reduction</mat-option>
+            <mat-option value="Coverage overlap">Coverage overlap with another policy</mat-option>
+            <mat-option value="Member request">Member request</mat-option>
+            <mat-option value="Other">Other</mat-option>
+          </mat-select>
+          @if (endorsementForm.get('reason')?.hasError('required')) {
+          <mat-error>Reason is required</mat-error>
+          }
+        </mat-form-field>
+
+        @if (currentPolicyAddons().length === 0) {
+        <div class="text-center py-4 text-slate-500">
+          <mat-icon fontSet="material-symbols-rounded" class="!text-3xl text-slate-300"
+            >info</mat-icon
+          >
+          <p class="mt-2">This policy has no active add-ons to remove.</p>
+        </div>
+        }
+
+        <p class="text-xs text-slate-500">
+          <mat-icon fontSet="material-symbols-rounded" class="!text-sm align-middle mr-1"
+            >info</mat-icon
+          >
+          A pro-rated refund will be calculated from the effective date.
+        </p>
+      </div>
+      }
+
+      <!-- Info Banner - only for add_member -->
+      @if (data.mode === 'add_member') {
+      <div class="rounded-lg border border-blue-200 bg-blue-50 p-4">
+        <div class="flex items-start gap-2 text-sm text-blue-800">
+          <mat-icon fontSet="material-symbols-rounded" class="!text-base mt-0.5">info</mat-icon>
+          <div>
+            <p class="font-medium">Approval Required</p>
+            <p class="text-blue-700 mt-1">
+              This request will need approval before the member is added to the policy.
+            </p>
+          </div>
+        </div>
+      </div>
+      }
+    </form>
+  </div>
+
+  <!-- Footer Actions -->
+  <div class="flex items-center justify-between border-t border-slate-100 bg-slate-50/50 px-6 py-4">
+    <div class="text-xs text-slate-500">
+      @switch (data.mode) { @case ('add_member') { Pro-rated premium will be calculated based on
+      rate card. } @case ('upgrade_plan') { Additional premium will be calculated and invoiced. }
+      @case ('downgrade_plan') { Refund will be calculated based on rate difference. } @case
+      ('add_addon') { Additional premium will be invoiced for the add-on. } @default { Requires
+      approval before taking effect. } }
+    </div>
+    <div class="flex items-center gap-3">
+      <button mat-button (click)="cancel()" class="!text-slate-600" [disabled]="saving()">
+        Cancel
+      </button>
+      <button
+        mat-raised-button
+        color="primary"
+        (click)="submit()"
+        [disabled]="!isFormValid || saving()"
+        class="!px-6"
+      >
+        @if (saving()) {
+        <mat-spinner diameter="18" class="mr-2"></mat-spinner>
+        Processing... } @else {
+        <mat-icon fontSet="material-symbols-rounded" class="!text-base mr-1">{{
+          config().buttonIcon
+        }}</mat-icon>
+        {{ config().buttonText }}
+        }
+      </button>
+    </div>
+  </div>
+</div>

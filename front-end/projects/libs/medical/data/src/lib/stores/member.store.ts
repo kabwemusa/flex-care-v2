@@ -4,18 +4,42 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { computed, inject, Injectable, signal } from '@angular/core';
 import { tap } from 'rxjs';
 import {
-  ApiResponse,
   Member,
   MemberLoading,
   MemberExclusion,
   CreateMemberPayload,
+  MemberBenefitSummary,
+  BenefitHistoryResponse,
 } from '../models/medical-interfaces';
+import { ApiResponse, PaginatedResponse } from 'medical-data';
+
+export interface MemberPaginationMeta {
+  current_page: number;
+  last_page: number;
+  per_page: number;
+  total: number;
+  from?: number | null;
+  to?: number | null;
+}
+
+export interface MemberFilters {
+  search?: string;
+  status?: string;
+  policy_id?: string;
+  member_type?: string;
+  principals_only?: boolean;
+  dependents_only?: boolean;
+  page?: number;
+  per_page?: number;
+}
 
 interface MemberState {
   items: Member[];
   selected: Member | null;
   loading: boolean;
   saving: boolean;
+  pagination: MemberPaginationMeta | null;
+  filters: MemberFilters;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -28,6 +52,8 @@ export class MemberStore {
     selected: null,
     loading: false,
     saving: false,
+    pagination: null,
+    filters: {},
   });
 
   // Selectors
@@ -35,6 +61,16 @@ export class MemberStore {
   readonly selectedMember = computed(() => this.state().selected);
   readonly isLoading = computed(() => this.state().loading);
   readonly isSaving = computed(() => this.state().saving);
+  readonly pagination = computed(() => this.state().pagination);
+  readonly filters = computed(() => this.state().filters);
+
+  // Pagination computed selectors
+  readonly currentPage = computed(() => this.pagination()?.current_page ?? 1);
+  readonly totalPages = computed(() => this.pagination()?.last_page ?? 1);
+  readonly totalItems = computed(() => this.pagination()?.total ?? 0);
+  readonly pageSize = computed(() => this.pagination()?.per_page ?? 10);
+  readonly hasNextPage = computed(() => this.currentPage() < this.totalPages());
+  readonly hasPrevPage = computed(() => this.currentPage() > 1);
 
   // Computed selectors
   readonly activeMembers = computed(() => this.members().filter((m) => m.status === 'active'));
@@ -45,28 +81,49 @@ export class MemberStore {
   // LOAD OPERATIONS
   // =========================================================================
 
-  loadAll(filters?: {
-    search?: string;
-    status?: string;
-    policy_id?: string;
-    member_type?: string;
-  }) {
-    this.state.update((s) => ({ ...s, loading: true }));
+  loadAll(filters?: MemberFilters) {
+    this.state.update((s) => ({ ...s, loading: true, filters: filters ?? {} }));
 
     let params = new HttpParams();
     if (filters?.search) params = params.set('search', filters.search);
     if (filters?.status) params = params.set('status', filters.status);
     if (filters?.policy_id) params = params.set('policy_id', filters.policy_id);
     if (filters?.member_type) params = params.set('member_type', filters.member_type);
+    if (filters?.principals_only) params = params.set('principals_only', 'true');
+    if (filters?.dependents_only) params = params.set('dependents_only', 'true');
+    if (filters?.page) params = params.set('page', filters.page.toString());
+    if (filters?.per_page) params = params.set('per_page', filters.per_page.toString());
 
-    this.http.get<ApiResponse<Member[]>>(this.apiUrl, { params }).subscribe({
+    this.http.get<PaginatedResponse<Member>>(this.apiUrl, { params }).subscribe({
       next: (res) =>
         this.state.update((s) => ({
           ...s,
           items: res.data,
+          pagination: res.meta ?? null,
           loading: false,
         })),
       error: () => this.state.update((s) => ({ ...s, loading: false })),
+    });
+  }
+
+  // Load specific page
+  loadPage(page: number) {
+    if (page < 1 || page > this.totalPages() || this.isLoading()) return;
+
+    const currentFilters = this.filters();
+    this.loadAll({
+      ...currentFilters,
+      page,
+    });
+  }
+
+  // Change page size
+  setPageSize(perPage: number) {
+    const currentFilters = this.filters();
+    this.loadAll({
+      ...currentFilters,
+      per_page: perPage,
+      page: 1,
     });
   }
 
@@ -278,6 +335,88 @@ export class MemberStore {
           next: (res) => this.updateMemberInState(memberId, res.data),
         })
       );
+  }
+
+  // =========================================================================
+  // BENEFIT UTILIZATION
+  // =========================================================================
+
+  private readonly benefitsState = signal<{
+    loading: boolean;
+    summary: MemberBenefitSummary | null;
+    history: BenefitHistoryResponse | null;
+    historyLoading: boolean;
+  }>({
+    loading: false,
+    summary: null,
+    history: null,
+    historyLoading: false,
+  });
+
+  // Benefit selectors
+  readonly benefitSummary = computed(() => this.benefitsState().summary);
+  readonly benefitsLoading = computed(() => this.benefitsState().loading);
+  readonly benefitHistory = computed(() => this.benefitsState().history);
+  readonly benefitHistoryLoading = computed(() => this.benefitsState().historyLoading);
+
+  /**
+   * Load benefit balances for a member
+   */
+  loadBenefitBalances(memberId: string) {
+    this.benefitsState.update((s) => ({ ...s, loading: true, summary: null }));
+
+    return this.http
+      .get<ApiResponse<MemberBenefitSummary>>(`${this.apiUrl}/${memberId}/benefits`)
+      .pipe(
+        tap({
+          next: (res) => {
+            this.benefitsState.update((s) => ({
+              ...s,
+              loading: false,
+              summary: res.data,
+            }));
+          },
+          error: () => {
+            this.benefitsState.update((s) => ({ ...s, loading: false }));
+          },
+        })
+      );
+  }
+
+  /**
+   * Load benefit utilization history for a specific benefit
+   */
+  loadBenefitHistory(memberId: string, benefitId: string) {
+    this.benefitsState.update((s) => ({ ...s, historyLoading: true, history: null }));
+
+    return this.http
+      .get<ApiResponse<BenefitHistoryResponse>>(`${this.apiUrl}/${memberId}/benefits/${benefitId}/history`)
+      .pipe(
+        tap({
+          next: (res) => {
+            this.benefitsState.update((s) => ({
+              ...s,
+              historyLoading: false,
+              history: res.data,
+            }));
+          },
+          error: () => {
+            this.benefitsState.update((s) => ({ ...s, historyLoading: false }));
+          },
+        })
+      );
+  }
+
+  /**
+   * Clear benefit state
+   */
+  clearBenefits() {
+    this.benefitsState.set({
+      loading: false,
+      summary: null,
+      history: null,
+      historyLoading: false,
+    });
   }
 
   // =========================================================================

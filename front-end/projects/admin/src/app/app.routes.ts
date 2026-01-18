@@ -154,6 +154,30 @@ export const routes: Routes = [
         canActivate: [moduleGuard, anyPermissionGuard],
         data: { module: MODULES.MEDICAL, permissions: [MEDICAL_PERMISSIONS.MEMBERS_VIEW] },
       },
+      {
+        path: 'claims',
+        loadComponent: () => import('medical-feature').then((m) => m.MedicalClaimsList),
+        canActivate: [moduleGuard, anyPermissionGuard],
+        data: { module: MODULES.MEDICAL, permissions: [MEDICAL_PERMISSIONS.CLAIMS_VIEW] },
+      },
+      {
+        path: 'claims/:id',
+        loadComponent: () => import('medical-feature').then((m) => m.MedicalClaimDetail),
+        canActivate: [moduleGuard, anyPermissionGuard],
+        data: { module: MODULES.MEDICAL, permissions: [MEDICAL_PERMISSIONS.CLAIMS_VIEW] },
+      },
+      {
+        path: 'billing/invoices',
+        loadComponent: () => import('medical-feature').then((m) => m.MedicalBillingInvoices),
+        canActivate: [moduleGuard, anyPermissionGuard],
+        data: { module: MODULES.MEDICAL, permissions: [MEDICAL_PERMISSIONS.BILLING_VIEW] },
+      },
+      {
+        path: 'billing/payments',
+        loadComponent: () => import('medical-feature').then((m) => m.MedicalBillingPayments),
+        canActivate: [moduleGuard, anyPermissionGuard],
+        data: { module: MODULES.MEDICAL, permissions: [MEDICAL_PERMISSIONS.BILLING_VIEW] },
+      },
     ],
   },
 ];

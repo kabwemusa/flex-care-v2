@@ -14,6 +14,9 @@ use Modules\Medical\Http\Controllers\MemberController;
 use Modules\Medical\Http\Controllers\PolicyController;
 use Modules\Medical\Http\Controllers\ApplicationController;
 use Modules\Medical\Http\Controllers\PlanExclusionController;
+use Modules\Medical\Http\Controllers\EndorsementController;
+use Modules\Medical\Http\Controllers\ClaimController;
+use Modules\Medical\Http\Controllers\BillingController;
 use Modules\Medical\Constants\MedicalConstants;
 
 /*
@@ -28,7 +31,7 @@ use Modules\Medical\Constants\MedicalConstants;
 */
 
 Route::prefix('v1/medical')
-    ->middleware(['auth:sanctum', 'module:medical'])
+    ->middleware(['auth:sanctum', 'session.check', 'module:medical'])
     ->group(function () {
 
     // =========================================================================
@@ -293,7 +296,119 @@ Route::prefix('v1/medical')
         
         // Issue cards for all members
         Route::post('/{policyId}/issue-cards', [MemberController::class, 'issueCardsForPolicy']);
+
+        // Endorsements for a specific policy
+        Route::get('/{policyId}/endorsements', [EndorsementController::class, 'forPolicy']);
     });
+
+    // =========================================================================
+    // ENDORSEMENTS
+    // =========================================================================
+    Route::prefix('endorsements')->group(function () {
+        Route::get('/', [EndorsementController::class, 'index']);
+        Route::get('/stats', [EndorsementController::class, 'stats']);
+        Route::get('/types', [EndorsementController::class, 'types']);
+        Route::get('/statuses', [EndorsementController::class, 'statuses']);
+        Route::post('/', [EndorsementController::class, 'store']);
+        Route::get('/{id}', [EndorsementController::class, 'show']);
+
+        // Workflow actions
+        Route::post('/{id}/approve', [EndorsementController::class, 'approve']);
+        Route::post('/{id}/reject', [EndorsementController::class, 'reject']);
+        Route::post('/{id}/process', [EndorsementController::class, 'process']);
+        Route::post('/{id}/cancel', [EndorsementController::class, 'cancel']);
+    });
+
+    // =========================================================================
+    // CLAIMS
+    // =========================================================================
+    Route::prefix('claims')->group(function () {
+        Route::get('/', [ClaimController::class, 'index']);
+        Route::get('/stats', [ClaimController::class, 'stats']);
+        Route::get('/types', [ClaimController::class, 'types']);
+        Route::get('/statuses', [ClaimController::class, 'statuses']);
+        Route::get('/rejection-reasons', [ClaimController::class, 'rejectionReasons']);
+        Route::post('/check-benefit-eligibility', [ClaimController::class, 'checkBenefitEligibility']);
+        Route::post('/', [ClaimController::class, 'store']);
+        Route::get('/{id}', [ClaimController::class, 'show']);
+        Route::put('/{id}', [ClaimController::class, 'update']);
+
+        // Workflow actions
+        Route::post('/{id}/start-review', [ClaimController::class, 'startReview']);
+        Route::post('/{id}/request-documents', [ClaimController::class, 'requestDocuments']);
+        Route::post('/{id}/adjudicate', [ClaimController::class, 'adjudicate']);
+        Route::post('/{id}/approve', [ClaimController::class, 'approve']);
+        Route::post('/{id}/reject', [ClaimController::class, 'reject']);
+        Route::post('/{id}/pay', [ClaimController::class, 'pay']);
+        Route::post('/{id}/close', [ClaimController::class, 'close']);
+        Route::post('/{id}/assign', [ClaimController::class, 'assign']);
+
+        // Claim lines
+        Route::post('/{id}/lines', [ClaimController::class, 'addLine']);
+
+        // Documents
+        Route::post('/{id}/documents', [ClaimController::class, 'uploadDocument']);
+
+        // Notes
+        Route::post('/{id}/notes', [ClaimController::class, 'addNote']);
+    });
+
+    // Claims for a specific policy
+    Route::get('policies/{policyId}/claims', [ClaimController::class, 'forPolicy']);
+
+    // Claims for a specific member
+    Route::get('members/{memberId}/claims', [ClaimController::class, 'forMember']);
+
+    // =========================================================================
+    // BILLING (Invoices & Payments)
+    // =========================================================================
+    Route::prefix('billing')->group(function () {
+        // Statistics & Dashboard
+        Route::get('/stats', [BillingController::class, 'stats']);
+        Route::get('/action-required', [BillingController::class, 'actionRequired']);
+        Route::get('/unallocated-payments', [BillingController::class, 'unallocatedPayments']);
+
+        // Reference Data
+        Route::get('/invoice-types', [BillingController::class, 'invoiceTypes']);
+        Route::get('/invoice-statuses', [BillingController::class, 'invoiceStatuses']);
+        Route::get('/payment-methods', [BillingController::class, 'paymentMethods']);
+        Route::get('/payment-statuses', [BillingController::class, 'paymentStatuses']);
+
+        // Invoices
+        Route::get('/invoices', [BillingController::class, 'invoices']);
+        Route::get('/invoices/{id}', [BillingController::class, 'showInvoice']);
+        Route::post('/invoices/{id}/send', [BillingController::class, 'sendInvoice']);
+        Route::post('/invoices/{id}/cancel', [BillingController::class, 'cancelInvoice']);
+        Route::post('/invoices/{id}/write-off', [BillingController::class, 'writeOffInvoice']);
+        Route::post('/invoices/{invoiceId}/payments', [BillingController::class, 'recordPaymentForInvoice']);
+
+        // Payments
+        Route::get('/payments', [BillingController::class, 'payments']);
+        Route::get('/payments/{id}', [BillingController::class, 'showPayment']);
+        Route::post('/payments', [BillingController::class, 'recordPayment']);
+        Route::post('/payments/{paymentId}/allocate', [BillingController::class, 'allocatePayment']);
+        Route::post('/payments/{paymentId}/auto-allocate', [BillingController::class, 'autoAllocatePayment']);
+        Route::post('/payments/{id}/confirm', [BillingController::class, 'confirmPayment']);
+        Route::post('/payments/{id}/bounce', [BillingController::class, 'bouncePayment']);
+        Route::post('/payments/{id}/reverse', [BillingController::class, 'reversePayment']);
+        Route::post('/payments/{id}/reconcile', [BillingController::class, 'reconcilePayment']);
+
+        // Allocations
+        Route::delete('/allocations/{allocationId}', [BillingController::class, 'reverseAllocation']);
+    });
+
+    // Policy Billing
+    Route::get('policies/{policyId}/invoices', [BillingController::class, 'invoicesForPolicy']);
+    Route::get('policies/{policyId}/payments', [BillingController::class, 'paymentsForPolicy']);
+    Route::get('policies/{policyId}/billing-summary', [BillingController::class, 'policyBillingSummary']);
+    Route::post('policies/{policyId}/generate-invoice', [BillingController::class, 'generateInvoice']);
+    Route::post('policies/{policyId}/generate-recurring-invoice', [BillingController::class, 'generateRecurringInvoice']);
+
+    // Group Billing
+    Route::get('groups/{groupId}/invoices', [BillingController::class, 'invoicesForGroup']);
+
+    // Endorsement Invoice Generation
+    Route::post('endorsements/{endorsementId}/generate-invoice', [BillingController::class, 'generateEndorsementInvoice']);
 
     // =========================================================================
     // MEMBERS
@@ -324,6 +439,10 @@ Route::prefix('v1/medical')
         
         // Eligibility
         Route::get('/{id}/eligibility', [MemberController::class, 'checkEligibility']);
+        
+        // Benefit Balances
+        Route::get('/{id}/benefits', [MemberController::class, 'benefitBalances']);
+        Route::get('/{id}/benefits/{benefitId}/history', [MemberController::class, 'benefitHistory']);
         
         // Dependents
         Route::get('/{id}/dependents', [MemberController::class, 'dependents']);
@@ -409,6 +528,39 @@ Route::prefix('v1/medical')
         Route::get('/exclusion-types', fn() => response()->json([
             'data' => MedicalConstants::EXCLUSION_TYPES
         ]));
+        Route::get('/endorsement-types', fn() => response()->json([
+            'data' => MedicalConstants::ENDORSEMENT_TYPES
+        ]));
+        Route::get('/endorsement-statuses', fn() => response()->json([
+            'data' => MedicalConstants::ENDORSEMENT_STATUSES
+        ]));
+        Route::get('/claim-types', fn() => response()->json([
+            'data' => MedicalConstants::CLAIM_TYPES
+        ]));
+        Route::get('/claim-statuses', fn() => response()->json([
+            'data' => MedicalConstants::CLAIM_STATUSES
+        ]));
+        Route::get('/claim-rejection-reasons', fn() => response()->json([
+            'data' => MedicalConstants::CLAIM_REJECTION_REASONS
+        ]));
+        Route::get('/submission-types', fn() => response()->json([
+            'data' => MedicalConstants::SUBMISSION_TYPES
+        ]));
+        Route::get('/provider-types', fn() => response()->json([
+            'data' => MedicalConstants::PROVIDER_TYPES
+        ]));
+        Route::get('/invoice-types', fn() => response()->json([
+            'data' => MedicalConstants::INVOICE_TYPES
+        ]));
+        Route::get('/invoice-statuses', fn() => response()->json([
+            'data' => MedicalConstants::INVOICE_STATUSES
+        ]));
+        Route::get('/payment-statuses', fn() => response()->json([
+            'data' => MedicalConstants::PAYMENT_STATUSES
+        ]));
+        Route::get('/billing-payment-methods', fn() => response()->json([
+            'data' => MedicalConstants::BILLING_PAYMENT_METHODS
+        ]));
 
         // Get all lookups in one call
         Route::get('/all', fn() => response()->json([
@@ -433,6 +585,17 @@ Route::prefix('v1/medical')
                 'limit_types' => MedicalConstants::LIMIT_TYPES,
                 'copay_types' => MedicalConstants::COPAY_TYPES,
                 'exclusion_types' => MedicalConstants::EXCLUSION_TYPES,
+                'endorsement_types' => MedicalConstants::ENDORSEMENT_TYPES,
+                'endorsement_statuses' => MedicalConstants::ENDORSEMENT_STATUSES,
+                'claim_types' => MedicalConstants::CLAIM_TYPES,
+                'claim_statuses' => MedicalConstants::CLAIM_STATUSES,
+                'claim_rejection_reasons' => MedicalConstants::CLAIM_REJECTION_REASONS,
+                'submission_types' => MedicalConstants::SUBMISSION_TYPES,
+                'provider_types' => MedicalConstants::PROVIDER_TYPES,
+                'invoice_types' => MedicalConstants::INVOICE_TYPES,
+                'invoice_statuses' => MedicalConstants::INVOICE_STATUSES,
+                'payment_statuses' => MedicalConstants::PAYMENT_STATUSES,
+                'billing_payment_methods' => MedicalConstants::BILLING_PAYMENT_METHODS,
             ]
         ]));
     });

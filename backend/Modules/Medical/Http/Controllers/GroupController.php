@@ -55,7 +55,7 @@ class GroupController extends Controller
 
             $groups = $query->paginate(request('per_page', 20));
 
-            return $this->success(
+            return $this->paginated(
                 GroupResource::collection($groups),
                 'Corporate groups retrieved'
             );
@@ -112,7 +112,7 @@ class GroupController extends Controller
                     'scheme:id,name,code',
                     'plan:id,name,code',
                     'rateCard:id,name,code',
-                    'activeMembers' => fn($m) => $m->orderBy('member_type')
+                    // 'activeMembers' => fn($m) => $m->orderBy('member_type')
                 ]),
             ])
             ->withCount(['policies', 'contacts', 'applications'])

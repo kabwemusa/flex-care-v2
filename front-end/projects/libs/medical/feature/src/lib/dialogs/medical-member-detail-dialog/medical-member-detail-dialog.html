@@ -1,0 +1,334 @@
+<!-- libs/medical/feature/src/lib/dialogs/medical-member-detail-dialog/medical-member-detail-dialog.html -->
+
+<div class="w-[70vw] max-h-[85vh] flex flex-col">
+  <!-- Header -->
+  <div class="flex items-center justify-between px-6 py-4 border-b border-slate-200 bg-slate-50">
+    <div class="flex items-center gap-4">
+      <div
+        class="flex h-14 w-14 items-center justify-center rounded-full text-lg font-semibold"
+        [class]="getMemberTypeStyle().bg + ' ' + getMemberTypeStyle().text"
+      >
+        {{ initials }}
+      </div>
+      <div>
+        <h2 class="text-lg font-semibold text-slate-900">{{ fullName }}</h2>
+        <div class="flex items-center gap-2 mt-1">
+          <span
+            class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
+            [class]="getMemberTypeStyle().bg + ' ' + getMemberTypeStyle().text"
+          >
+            {{ memberTypeLabel }}
+          </span>
+          <span
+            class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium"
+            [class]="getMemberStatusStyle().bg + ' ' + getMemberStatusStyle().text"
+          >
+            <span class="h-1.5 w-1.5 rounded-full" [class]="getMemberStatusStyle().dot"></span>
+            {{ member.status | titlecase }}
+          </span>
+        </div>
+      </div>
+    </div>
+    <button mat-icon-button (click)="close()" class="!text-slate-400 hover:!text-slate-600">
+      <mat-icon fontSet="material-symbols-rounded">close</mat-icon>
+    </button>
+  </div>
+
+  <!-- Content -->
+  <div class="flex-1 overflow-y-auto p-6 space-y-6">
+    <!-- Personal Information -->
+    <div class="rounded-xl border border-slate-200 bg-white p-5">
+      <h3 class="font-semibold text-slate-900 flex items-center gap-2 mb-4">
+        <mat-icon fontSet="material-symbols-rounded" class="!text-slate-500">person</mat-icon>
+        Personal Information
+      </h3>
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <p class="text-sm text-slate-500">Member Number</p>
+          <p class="font-medium text-slate-900 font-mono">{{ member.member_number }}</p>
+        </div>
+        <div>
+          <p class="text-sm text-slate-500">Date of Birth</p>
+          <p class="font-medium text-slate-900">
+            {{ member.date_of_birth | date : 'mediumDate' }}
+            <span class="text-slate-500 text-sm">({{ age }} years)</span>
+          </p>
+        </div>
+        <div>
+          <p class="text-sm text-slate-500">Gender</p>
+          <p class="font-medium text-slate-900">
+            {{ member.gender === 'M' ? 'Male' : member.gender === 'F' ? 'Female' : '-' }}
+          </p>
+        </div>
+        <div>
+          <p class="text-sm text-slate-500">National ID</p>
+          <p class="font-medium text-slate-900">{{ member.national_id || '-' }}</p>
+        </div>
+        @if (member.email) {
+        <div>
+          <p class="text-sm text-slate-500">Email</p>
+          <p class="font-medium text-slate-900">{{ member.email }}</p>
+        </div>
+        } @if (member.phone || member.mobile) {
+        <div>
+          <p class="text-sm text-slate-500">Phone</p>
+          <p class="font-medium text-slate-900">{{ member.phone || member.mobile }}</p>
+        </div>
+        }
+      </div>
+    </div>
+
+    <!-- Coverage Details -->
+    <div class="rounded-xl border border-blue-200 bg-blue-50 p-5">
+      <h3 class="font-semibold text-blue-900 flex items-center gap-2 mb-4">
+        <mat-icon fontSet="material-symbols-rounded" class="!text-blue-600">verified_user</mat-icon>
+        Coverage Details
+      </h3>
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <p class="text-sm text-blue-700">Cover Start Date</p>
+          <p class="font-medium text-blue-900">
+            {{ member.cover_start_date | date : 'mediumDate' }}
+          </p>
+        </div>
+        <div>
+          <p class="text-sm text-blue-700">Cover End Date</p>
+          <p class="font-medium text-blue-900">{{ member.cover_end_date | date : 'mediumDate' }}</p>
+        </div>
+        @if (member.waiting_period_end_date) {
+        <div>
+          <p class="text-sm text-blue-700">Waiting Period Ends</p>
+          <p class="font-medium text-blue-900">
+            {{ member.waiting_period_end_date | date : 'mediumDate' }}
+          </p>
+        </div>
+        } @if (member.card_number) {
+        <div>
+          <p class="text-sm text-blue-700">Card Number</p>
+          <p class="font-medium text-blue-900 font-mono">{{ member.card_number }}</p>
+        </div>
+        }
+      </div>
+    </div>
+
+    <!-- Premium Information -->
+    <div class="rounded-xl border border-slate-200 bg-slate-50 p-5">
+      <h3 class="font-semibold text-slate-900 flex items-center gap-2 mb-4">
+        <mat-icon fontSet="material-symbols-rounded" class="!text-slate-500">payments</mat-icon>
+        Premium Information @if (isProratedPremium) {
+        <mat-icon
+          fontSet="material-symbols-rounded"
+          [matTooltip]="PREMIUM_INDICATORS.prorated.tooltip"
+          [class]="PREMIUM_INDICATORS.prorated.color"
+          class="!text-[18px]"
+        >
+          {{ PREMIUM_INDICATORS.prorated.icon }}
+        </mat-icon>
+        }
+      </h3>
+      <div class="space-y-3">
+        <div class="flex justify-between items-center">
+          <span class="text-slate-600">Base Premium</span>
+          <span class="font-medium text-slate-900">{{ formatCurrency(member.premium || 0) }}</span>
+        </div>
+        @if (member.loading_amount > 0) {
+        <div class="flex justify-between items-center">
+          <span class="text-slate-600">Loading Amount</span>
+          <span class="font-medium text-amber-600"
+            >+{{ formatCurrency(member.loading_amount) }}</span
+          >
+        </div>
+        }
+        <mat-divider></mat-divider>
+        <div class="flex justify-between items-center">
+          <span class="font-semibold text-slate-900">Total Premium</span>
+          <span class="font-bold text-lg text-slate-900">{{ formatCurrency(totalPremium) }}</span>
+        </div>
+        @if (isProratedPremium && proratedMetadata) {
+        <div class="mt-3 p-3 rounded-lg bg-blue-100 border border-blue-200">
+          <p class="text-sm text-blue-700 font-medium mb-2">Pro-rated Premium Details</p>
+          <div class="grid grid-cols-2 gap-2 text-sm">
+            <div>
+              <span class="text-blue-600">Annual Premium:</span>
+              <span class="text-blue-900 ml-1">{{
+                formatCurrency(proratedMetadata.annual_premium || 0)
+              }}</span>
+            </div>
+            <div>
+              <span class="text-blue-600">Days Remaining:</span>
+              <span class="text-blue-900 ml-1">{{ proratedMetadata.days_remaining }}</span>
+            </div>
+            @if (proratedMetadata.effective_date) {
+            <div class="col-span-2">
+              <span class="text-blue-600">Effective Date:</span>
+              <span class="text-blue-900 ml-1">{{
+                proratedMetadata.effective_date | date : 'mediumDate'
+              }}</span>
+            </div>
+            }
+          </div>
+        </div>
+        }
+      </div>
+    </div>
+
+    <!-- Medical Loadings -->
+    <div class="rounded-xl border border-amber-200 bg-amber-50 p-5">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="font-semibold text-amber-900 flex items-center gap-2">
+          <mat-icon fontSet="material-symbols-rounded" class="!text-amber-600"
+            >trending_up</mat-icon
+          >
+          Medical Loadings
+        </h3>
+        @if (loadingsCount > 0) {
+        <span class="px-2 py-0.5 rounded-full text-xs font-medium bg-amber-200 text-amber-800">
+          {{ loadingsCount }} active
+        </span>
+        }
+      </div>
+
+      @if (member.loadings && member.loadings.length > 0) {
+      <div class="space-y-3">
+        @for (loading of member.loadings; track loading.id) {
+        <div class="bg-white rounded-lg border border-amber-200 p-4">
+          <div class="flex items-start justify-between mb-2">
+            <div>
+              <p class="font-medium text-slate-900">{{ loading.condition_name }}</p>
+              @if (loading.icd10_code) {
+              <p class="text-sm text-slate-500">ICD-10: {{ loading.icd10_code }}</p>
+              }
+            </div>
+            <div class="flex gap-2">
+              <span
+                class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"
+                [class]="
+                  getLoadingTypeStyle(loading.loading_type).bg +
+                  ' ' +
+                  getLoadingTypeStyle(loading.loading_type).text
+                "
+              >
+                {{ getLoadingTypeStyle(loading.loading_type).label }}
+              </span>
+              <span
+                class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"
+                [class]="
+                  getDurationTypeStyle(loading.duration_type).bg +
+                  ' ' +
+                  getDurationTypeStyle(loading.duration_type).text
+                "
+              >
+                {{ getDurationTypeStyle(loading.duration_type).label }}
+              </span>
+            </div>
+          </div>
+          <div class="flex items-center justify-between text-sm">
+            <span class="text-slate-600">
+              @if (loading.loading_type === 'percentage') {
+              {{ loading.loading_value }}% loading } @else {
+              {{ formatCurrency(loading.loading_amount) }} loading }
+            </span>
+            <span class="text-slate-500">
+              {{ loading.start_date | date : 'shortDate' }}
+              @if (loading.end_date) { - {{ loading.end_date | date : 'shortDate' }}
+              }
+            </span>
+          </div>
+          @if (loading.notes) {
+          <p class="mt-2 text-sm text-slate-600 italic">{{ loading.notes }}</p>
+          }
+        </div>
+        }
+      </div>
+      } @else {
+      <div class="text-center py-6">
+        <mat-icon fontSet="material-symbols-rounded" class="!text-[36px] text-amber-300 mb-2">
+          check_circle
+        </mat-icon>
+        <p class="text-amber-700">No medical loadings applied</p>
+      </div>
+      }
+    </div>
+
+    <!-- Exclusions -->
+    <div class="rounded-xl border border-red-200 bg-red-50 p-5">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="font-semibold text-red-900 flex items-center gap-2">
+          <mat-icon fontSet="material-symbols-rounded" class="!text-red-600">block</mat-icon>
+          Exclusions
+        </h3>
+        @if (exclusionsCount > 0) {
+        <span class="px-2 py-0.5 rounded-full text-xs font-medium bg-red-200 text-red-800">
+          {{ exclusionsCount }} active
+        </span>
+        }
+      </div>
+
+      @if (member.exclusions && member.exclusions.length > 0) {
+      <div class="space-y-3">
+        @for (exclusion of member.exclusions; track exclusion.id) {
+        <div class="bg-white rounded-lg border border-red-200 p-4">
+          <div class="flex items-start justify-between mb-2">
+            <div>
+              <p class="font-medium text-slate-900">{{ exclusion.exclusion_name }}</p>
+              @if (exclusion.benefit?.name) {
+              <p class="text-sm text-slate-500">Benefit: {{ exclusion.benefit?.name }}</p>
+              }
+            </div>
+            <div class="flex gap-2">
+              <span
+                class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"
+                [class]="
+                  getExclusionTypeStyle(exclusion.exclusion_type).bg +
+                  ' ' +
+                  getExclusionTypeStyle(exclusion.exclusion_type).text
+                "
+              >
+                {{ getExclusionTypeStyle(exclusion.exclusion_type).label }}
+              </span>
+              @if (exclusion.is_permanent) {
+              <span
+                class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-200 text-red-800"
+              >
+                Permanent
+              </span>
+              }
+            </div>
+          </div>
+          @if (exclusion.description) {
+          <p class="text-sm text-slate-600 mb-2">{{ exclusion.description }}</p>
+          }
+          <div class="flex items-center justify-between text-sm">
+            <span class="text-slate-500">
+              Start: {{ exclusion.start_date | date : 'shortDate' }} @if (exclusion.end_date) { -
+              End: {{ exclusion.end_date | date : 'shortDate' }}
+              }
+            </span>
+            @if (exclusion.review_date) {
+            <span class="text-slate-500"
+              >Review: {{ exclusion.review_date | date : 'shortDate' }}</span
+            >
+            }
+          </div>
+          @if (exclusion.notes) {
+          <p class="mt-2 text-sm text-slate-600 italic">{{ exclusion.notes }}</p>
+          }
+        </div>
+        }
+      </div>
+      } @else {
+      <div class="text-center py-6">
+        <mat-icon fontSet="material-symbols-rounded" class="!text-[36px] text-red-300 mb-2">
+          check_circle
+        </mat-icon>
+        <p class="text-red-700">No exclusions applied</p>
+      </div>
+      }
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div class="flex items-center justify-end gap-3 px-6 py-4 border-t border-slate-200 bg-slate-50">
+    <button mat-stroked-button (click)="close()">Close</button>
+  </div>
+</div>

@@ -343,6 +343,13 @@
                 class="hover:bg-slate-50"
               ></tr>
             </table>
+            <mat-paginator
+              [length]="store.membersPagination()?.total ?? 0"
+              [pageIndex]="(store.membersPagination()?.current_page ?? 1) - 1"
+              [pageSize]="store.membersPagination()?.per_page ?? 10"
+              (page)="store.loadMembers(applicationId(), $event.pageIndex + 1, $event.pageSize)"
+            >
+            </mat-paginator>
           </div>
           }
         </div>

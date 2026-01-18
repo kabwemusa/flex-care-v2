@@ -415,10 +415,13 @@
 
         <!-- Paginator -->
         <mat-paginator
+          [length]="totalItems()"
+          [pageIndex]="pageIndex()"
+          [pageSize]="pageSize()"
           [pageSizeOptions]="[10, 20, 50]"
-          [pageSize]="20"
           showFirstLastButtons
           class="border-t border-slate-100"
+          (page)="onPageChange($event)"
         ></mat-paginator>
         }
       </div>

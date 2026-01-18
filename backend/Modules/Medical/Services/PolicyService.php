@@ -226,14 +226,9 @@ public function addMemberToPolicy(Policy $policy, array $memberData, Carbon|stri
         // Create Member
         $member = new Member($memberData);
         $member->policy_id = $policy->id;
-        $member->scheme_id = $policy->scheme_id;
-        $member->plan_id = $policy->plan_id;
         $member->status = MedicalConstants::MEMBER_STATUS_ACTIVE;
         $member->cover_start_date = $effectiveDate;
         $member->cover_end_date = $policy->expiry_date;
-
-        // Calculate age at effective date for accurate pricing
-        $member->age_at_inception = $member->date_of_birth->diffInYears($effectiveDate);
 
         $member->save();
 
@@ -252,18 +247,17 @@ public function addMemberToPolicy(Policy $policy, array $memberData, Carbon|stri
         $daysRemaining = $this->proRatingService->calculateDaysRemaining($effectiveDate, $policy->expiry_date);
 
         // Update member with prorated premium
-        $member->base_premium = $proratedPremium;
-        $member->total_premium = $proratedPremium; // + loadings if any
+        $member->premium = $proratedPremium;
 
         // Store pro-rating metadata for audit trail
-        $member->premium_notes = json_encode([
+        $member->metadata = [
             'annual_premium' => $annualPremium,
             'prorated_premium' => $proratedPremium,
             'effective_date' => $effectiveDate->toDateString(),
             'days_remaining' => $daysRemaining,
             'pro_rata_method' => 'daily',
             'calculated_at' => now()->toISOString()
-        ]);
+        ];
 
         $member->save();
 
@@ -392,10 +386,7 @@ protected function copyMemberForRenewal(Policy $newPolicy, Member $oldMember, ?s
     $newMember->status = MedicalConstants::MEMBER_STATUS_PENDING;
     $newMember->cover_start_date = $newPolicy->inception_date;
     $newMember->cover_end_date = $newPolicy->expiry_date;
-    
-    // Recalculate Age
-    $newMember->age_at_inception = $newMember->date_of_birth->diffInYears($newPolicy->inception_date);
-    
+
     $newMember->save();
 
     // Copy Risk Data (Loadings/Exclusions)

@@ -1,0 +1,15 @@
+:host {
+  display: block;
+}
+
+.minimal-input {
+  --mdc-filled-text-field-container-color: white;
+  --mdc-filled-text-field-active-indicator-height: 0;
+  --mdc-filled-text-field-focus-active-indicator-height: 1px;
+}
+
+::ng-deep .mat-mdc-table {
+  .mat-mdc-row:hover {
+    background-color: #f8fafc;
+  }
+}

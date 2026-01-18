@@ -3,20 +3,18 @@
 import {
   Component,
   OnInit,
-  AfterViewInit,
   ViewChild,
   inject,
   signal,
   computed,
-  effect,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 
 // Material Imports
-import { MatTableDataSource, MatTableModule } from '@angular/material/table';
-import { MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
+import { MatTableModule } from '@angular/material/table';
+import { MatPaginatorModule } from '@angular/material/paginator';
 import { MatSort, MatSortModule } from '@angular/material/sort';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatIconModule } from '@angular/material/icon';
@@ -34,12 +32,15 @@ import { MatDialog } from '@angular/material/dialog';
 // Domain Imports
 import {
   PolicyStore,
+  PolicyFilters,
   Policy,
   POLICY_STATUSES,
   POLICY_TYPES,
   getLabelByValue,
   getStatusConfig,
   formatCurrency,
+  POLICY_UI_CONFIG,
+  POLICY_STATUS_STYLES,
 } from 'medical-data';
 import { FeedbackService, PageHeaderComponent } from 'shared';
 import { MedicalAddMemberToPolicyDialog } from '../dialogs/medical-add-member-to-policy-dialog/medical-add-member-to-policy-dialog';
@@ -69,23 +70,24 @@ import { MedicalAddMemberToPolicyDialog } from '../dialogs/medical-add-member-to
   ],
   templateUrl: './medical-policies-list.html',
 })
-export class MedicalPoliciesList implements OnInit, AfterViewInit {
+export class MedicalPoliciesList implements OnInit {
   readonly store = inject(PolicyStore);
   private readonly feedback = inject(FeedbackService);
   private readonly dialog = inject(MatDialog);
 
   // Table
-  displayedColumns = ['status', 'policy_number', 'holder', 'plan', 'dates', 'premium', 'actions'];
-  dataSource = new MatTableDataSource<Policy>([]);
+  displayedColumns = ['status', 'policy_number', 'holder', 'plan', 'members', 'dates', 'premium', 'actions'];
 
-  @ViewChild(MatPaginator) paginator!: MatPaginator;
   @ViewChild(MatSort) sort!: MatSort;
   @ViewChild('detailDrawer') detailDrawer!: MatDrawer;
 
-  // Filters
+  // Filters (local UI state)
   searchTerm = signal('');
   statusFilter = signal('');
   typeFilter = signal('');
+
+  // Debounce timer for search
+  private searchDebounceTimer: ReturnType<typeof setTimeout> | null = null;
 
   // Selected item for drawer
   selectedPolicy = signal<Policy | null>(null);
@@ -93,15 +95,20 @@ export class MedicalPoliciesList implements OnInit, AfterViewInit {
   // Constants
   readonly POLICY_STATUSES = POLICY_STATUSES;
   readonly POLICY_TYPES = POLICY_TYPES;
+  readonly POLICY_UI_CONFIG = POLICY_UI_CONFIG;
+  readonly POLICY_STATUS_STYLES = POLICY_STATUS_STYLES;
   readonly getLabelByValue = getLabelByValue;
   readonly formatCurrency = formatCurrency;
+
+  // Page size options for paginator
+  readonly pageSizeOptions = [10, 25, 50, 100];
 
   // Computed Logic
   readonly hasActiveFilters = computed(
     () => this.searchTerm() !== '' || this.statusFilter() !== '' || this.typeFilter() !== ''
   );
 
-  // Local KPIs
+  // Local KPIs (based on current page data)
   readonly totalPremiumVolume = computed(() =>
     this.store.activePolicies().reduce((sum, p) => sum + (p.gross_premium || 0), 0)
   );
@@ -117,86 +124,72 @@ export class MedicalPoliciesList implements OnInit, AfterViewInit {
       }).length
   );
 
-  constructor() {
-    effect(() => {
-      const policies = this.store.policies();
-      this.dataSource.data = policies;
-    });
-  }
-
   ngOnInit(): void {
-    this.store.loadAll();
-    // this.store.loadStats();
-    this.setupFilter();
+    this.loadPolicies();
   }
 
-  ngAfterViewInit(): void {
-    this.dataSource.paginator = this.paginator;
-    this.dataSource.sort = this.sort;
-  }
-
-  private setupFilter(): void {
-    this.dataSource.filterPredicate = (data: Policy, filter: string) => {
-      const searchData = JSON.parse(filter);
-
-      // Text search
-      const textMatch =
-        !searchData.search ||
-        data.policy_number.toLowerCase().includes(searchData.search) ||
-        data.holder_name?.toLowerCase().includes(searchData.search) ||
-        data.holder_email?.toLowerCase().includes(searchData.search) ||
-        data.scheme?.name?.toLowerCase().includes(searchData.search) ||
-        (data.group?.name?.toLowerCase().includes(searchData.search) ?? false);
-
-      // Status filter
-      const statusMatch = !searchData.status || data.status === searchData.status;
-
-      // Type filter
-      const typeMatch = !searchData.type || data.policy_type === searchData.type;
-
-      return textMatch && statusMatch && typeMatch;
+  // Build filters object from current UI state
+  private buildFilters(): PolicyFilters {
+    const filters: PolicyFilters = {
+      per_page: this.store.pageSize(),
+      page: this.store.currentPage(),
     };
+
+    if (this.searchTerm()) filters.search = this.searchTerm();
+    if (this.statusFilter()) filters.status = this.statusFilter();
+    if (this.typeFilter()) filters.policy_type = this.typeFilter();
+
+    return filters;
   }
 
-  private applyFilter(): void {
-    const filterValue = JSON.stringify({
-      search: this.searchTerm().toLowerCase(),
-      status: this.statusFilter(),
-      type: this.typeFilter(),
-    });
-    this.dataSource.filter = filterValue;
-
-    if (this.dataSource.paginator) {
-      this.dataSource.paginator.firstPage();
-    }
+  // Load policies with current filters
+  private loadPolicies(): void {
+    this.store.loadAll(this.buildFilters());
   }
 
-  // Filter Handlers
+  // Filter Handlers with server-side filtering
   onSearchChange(value: string): void {
     this.searchTerm.set(value);
-    this.applyFilter();
+
+    // Debounce search to avoid too many API calls
+    if (this.searchDebounceTimer) {
+      clearTimeout(this.searchDebounceTimer);
+    }
+
+    this.searchDebounceTimer = setTimeout(() => {
+      this.store.loadAll({ ...this.buildFilters(), page: 1 }); // Reset to page 1 on search
+    }, 300);
   }
 
   onStatusChange(value: string): void {
     this.statusFilter.set(value);
-    this.applyFilter();
+    this.store.loadAll({ ...this.buildFilters(), page: 1 }); // Reset to page 1 on filter change
   }
 
   onTypeChange(value: string): void {
     this.typeFilter.set(value);
-    this.applyFilter();
+    this.store.loadAll({ ...this.buildFilters(), page: 1 }); // Reset to page 1 on filter change
   }
 
   clearSearch(): void {
     this.searchTerm.set('');
-    this.applyFilter();
+    this.store.loadAll({ ...this.buildFilters(), search: undefined, page: 1 });
   }
 
   clearFilters(): void {
     this.searchTerm.set('');
     this.statusFilter.set('');
     this.typeFilter.set('');
-    this.applyFilter();
+    this.store.loadAll({ per_page: this.store.pageSize(), page: 1 });
+  }
+
+  // Pagination handlers
+  onPageChange(event: { pageIndex: number; pageSize: number }): void {
+    const newPage = event.pageIndex + 1; // MatPaginator is 0-indexed, API is 1-indexed
+    const filters = this.buildFilters();
+    filters.page = newPage;
+    filters.per_page = event.pageSize;
+    this.store.loadAll(filters);
   }
 
   // =========================================================================
@@ -363,7 +356,7 @@ export class MedicalPoliciesList implements OnInit, AfterViewInit {
   }
 
   exportToCsv(): void {
-    const data = this.dataSource.filteredData;
+    const data = this.store.policies();
     if (data.length === 0) {
       this.feedback.error('No data to export');
       return;
@@ -379,7 +372,7 @@ export class MedicalPoliciesList implements OnInit, AfterViewInit {
       'Premium',
       'Type',
     ];
-    const rows = data.map((p) => [
+    const rows = data.map((p: Policy) => [
       p.policy_number,
       `"${p.holder_name}"`,
       `"${p.scheme?.name || ''}"`,
@@ -390,7 +383,7 @@ export class MedicalPoliciesList implements OnInit, AfterViewInit {
       p.policy_type,
     ]);
 
-    const csvContent = [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
+    const csvContent = [headers.join(','), ...rows.map((r: (string | number | undefined)[]) => r.join(','))].join('\n');
     const blob = new Blob([csvContent], { type: 'text/csv' });
     const url = window.URL.createObjectURL(blob);
     const link = document.createElement('a');

@@ -68,6 +68,7 @@ export class MedicalApplicationMemberDialog implements OnInit {
   form!: FormGroup;
 
   ngOnInit() {
+    console.log(this.data);
     this.isEditMode.set(!!this.data.member);
     this.buildForm();
 

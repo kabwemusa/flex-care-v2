@@ -3,7 +3,8 @@
 import { HttpClient } from '@angular/common/http';
 import { computed, inject, Injectable, signal } from '@angular/core';
 import { tap } from 'rxjs';
-import { ApiResponse, PaginatedResponse, PlanExclusion } from '../models/medical-interfaces';
+import { PlanExclusion } from '../models/medical-interfaces';
+import { ApiResponse, PaginatedResponse } from 'medical-data';
 
 interface PlanExclusionState {
   items: PlanExclusion[];
@@ -113,17 +114,19 @@ export class PlanExclusionStore {
   create(planId: string, data: Partial<PlanExclusion>) {
     this.state.update((s) => ({ ...s, saving: true }));
 
-    return this.http.post<ApiResponse<PlanExclusion>>(`${this.baseUrl}/plans/${planId}/exclusions`, data).pipe(
-      tap({
-        next: (res) =>
-          this.state.update((s) => ({
-            ...s,
-            items: [res.data, ...s.items],
-            saving: false,
-          })),
-        error: () => this.state.update((s) => ({ ...s, saving: false })),
-      })
-    );
+    return this.http
+      .post<ApiResponse<PlanExclusion>>(`${this.baseUrl}/plans/${planId}/exclusions`, data)
+      .pipe(
+        tap({
+          next: (res) =>
+            this.state.update((s) => ({
+              ...s,
+              items: [res.data, ...s.items],
+              saving: false,
+            })),
+          error: () => this.state.update((s) => ({ ...s, saving: false })),
+        })
+      );
   }
 
   /**
@@ -132,18 +135,20 @@ export class PlanExclusionStore {
   update(id: string, data: Partial<PlanExclusion>) {
     this.state.update((s) => ({ ...s, saving: true }));
 
-    return this.http.put<ApiResponse<PlanExclusion>>(`${this.baseUrl}/plan-exclusions/${id}`, data).pipe(
-      tap({
-        next: (res) =>
-          this.state.update((s) => ({
-            ...s,
-            items: s.items.map((item) => (item.id === id ? res.data : item)),
-            selected: s.selected?.id === id ? res.data : s.selected,
-            saving: false,
-          })),
-        error: () => this.state.update((s) => ({ ...s, saving: false })),
-      })
-    );
+    return this.http
+      .put<ApiResponse<PlanExclusion>>(`${this.baseUrl}/plan-exclusions/${id}`, data)
+      .pipe(
+        tap({
+          next: (res) =>
+            this.state.update((s) => ({
+              ...s,
+              items: s.items.map((item) => (item.id === id ? res.data : item)),
+              selected: s.selected?.id === id ? res.data : s.selected,
+              saving: false,
+            })),
+          error: () => this.state.update((s) => ({ ...s, saving: false })),
+        })
+      );
   }
 
   /**
@@ -172,18 +177,20 @@ export class PlanExclusionStore {
   activate(id: string) {
     this.state.update((s) => ({ ...s, saving: true }));
 
-    return this.http.post<ApiResponse<PlanExclusion>>(`${this.baseUrl}/plan-exclusions/${id}/activate`, {}).pipe(
-      tap({
-        next: (res) =>
-          this.state.update((s) => ({
-            ...s,
-            items: s.items.map((item) => (item.id === id ? res.data : item)),
-            selected: s.selected?.id === id ? res.data : s.selected,
-            saving: false,
-          })),
-        error: () => this.state.update((s) => ({ ...s, saving: false })),
-      })
-    );
+    return this.http
+      .post<ApiResponse<PlanExclusion>>(`${this.baseUrl}/plan-exclusions/${id}/activate`, {})
+      .pipe(
+        tap({
+          next: (res) =>
+            this.state.update((s) => ({
+              ...s,
+              items: s.items.map((item) => (item.id === id ? res.data : item)),
+              selected: s.selected?.id === id ? res.data : s.selected,
+              saving: false,
+            })),
+          error: () => this.state.update((s) => ({ ...s, saving: false })),
+        })
+      );
   }
 
   /**

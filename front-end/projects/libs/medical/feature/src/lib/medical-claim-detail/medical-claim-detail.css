@@ -1,0 +1,11 @@
+:host {
+  display: block;
+}
+
+.claim-tabs ::ng-deep .mat-mdc-tab-body-wrapper {
+  min-height: 400px;
+}
+
+::ng-deep .mat-mdc-checkbox label {
+  font-size: 0.875rem;
+}

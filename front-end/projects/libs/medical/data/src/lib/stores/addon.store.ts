@@ -162,6 +162,23 @@ export class AddonCatalogStore {
     });
   }
 
+  // Returns observable for loading plan addons
+  loadPlanAddonsObs(planId: string) {
+    this.state.update((s) => ({ ...s, loading: true }));
+
+    return this.http.get<ApiResponse<PlanAddon[]>>(`/api/v1/medical/plans/${planId}/addons`).pipe(
+      tap({
+        next: (res) =>
+          this.state.update((s) => ({
+            ...s,
+            planAddons: res.data,
+            loading: false,
+          })),
+        error: () => this.state.update((s) => ({ ...s, loading: false })),
+      })
+    );
+  }
+
   loadAvailableAddons(planId: string) {
     return this.http.get<ApiResponse<Addon[]>>(`/api/v1/medical/plans/${planId}/available-addons`);
   }

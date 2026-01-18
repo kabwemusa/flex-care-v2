@@ -43,8 +43,8 @@ return [
 
     // Session management
     'session' => [
-        'lifetime' => env('SESSION_LIFETIME', 120), // 2 hours in minutes
-        'inactivity_timeout' => env('SESSION_INACTIVITY_TIMEOUT', 1), // 30 minutes of inactivity
+        'lifetime' => env('SESSION_LIFETIME', 120), // 2 hours in minutes (absolute token lifetime)
+        'inactivity_timeout' => env('SESSION_INACTIVITY_TIMEOUT', 15), // 15 minutes of inactivity
         'refresh_token_lifetime' => env('REFRESH_TOKEN_LIFETIME', 10080), // 7 days in minutes
     ],
 

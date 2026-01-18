@@ -1,7 +1,7 @@
-import { Injectable, signal, computed, inject } from '@angular/core';
+import { Injectable, signal, computed, inject, OnDestroy } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
-import { Observable, tap, catchError, throwError } from 'rxjs';
+import { Observable, tap, catchError, throwError, interval, Subscription } from 'rxjs';
 import {
   User,
   UserContext,
@@ -17,7 +17,7 @@ import {
 @Injectable({
   providedIn: 'root',
 })
-export class AuthService {
+export class AuthService implements OnDestroy {
   private http = inject(HttpClient);
   private router = inject(Router);
 
@@ -35,6 +35,15 @@ export class AuthService {
   private loadingSignal = signal<boolean>(false);
   private errorSignal = signal<string | null>(null);
 
+  // Inactivity tracking
+  private inactivityTimer: any = null;
+  private sessionCheckInterval: Subscription | null = null;
+  // Inactivity timeout: 14 minutes (slightly less than backend's 15 min to give buffer)
+  private readonly INACTIVITY_TIMEOUT = 14 * 60 * 1000; // 14 minutes in milliseconds
+  // Session validation: Check every 5 minutes (reduced from 30s to save resources)
+  private readonly SESSION_CHECK_INTERVAL = 5 * 60 * 1000; // 5 minutes in milliseconds
+  private activityListener: (() => void) | null = null;
+
   // Computed signals
   user = this.userSignal.asReadonly();
   token = this.tokenSignal.asReadonly();
@@ -47,11 +56,24 @@ export class AuthService {
 
   isAuthenticated = computed(() => !!this.tokenSignal() && !!this.userSignal());
   isSystemAdmin = computed(() => this.userSignal()?.is_system_admin ?? false);
-  requiresPasswordChange = computed(() => this.passwordStatusSignal()?.force_change || this.passwordStatusSignal()?.expired || false);
+  requiresPasswordChange = computed(
+    () => this.passwordStatusSignal()?.force_change || this.passwordStatusSignal()?.expired || false
+  );
 
   constructor() {
     // Load auth state from localStorage on init
     this.loadAuthState();
+
+    // Start inactivity tracking and session validation if authenticated
+    if (this.isAuthenticated()) {
+      this.startInactivityTracking();
+      this.startSessionValidation();
+    }
+  }
+
+  ngOnDestroy(): void {
+    this.stopInactivityTracking();
+    this.stopSessionValidation();
   }
 
   /**
@@ -89,6 +111,10 @@ export class AuthService {
         this.passwordStatusSignal.set(password_status);
         localStorage.setItem('password_status', JSON.stringify(password_status));
 
+        // Start inactivity tracking and session validation after successful login
+        this.startInactivityTracking();
+        this.startSessionValidation();
+
         this.loadingSignal.set(false);
       }),
       catchError((error) => {
@@ -106,11 +132,15 @@ export class AuthService {
     return this.http.post(`${this.apiUrl}/logout`, {}).pipe(
       tap(() => {
         this.clearAuthState();
+        this.stopInactivityTracking();
+        this.stopSessionValidation();
         this.router.navigate(['/login']);
       }),
       catchError((error) => {
         // Clear state even if API call fails
         this.clearAuthState();
+        this.stopInactivityTracking();
+        this.stopSessionValidation();
         this.router.navigate(['/login']);
         return throwError(() => error);
       })
@@ -184,7 +214,9 @@ export class AuthService {
 
     // Check if guard is valid
     if (!guardName || !['web', 'medical', 'life', 'motor', 'travel'].includes(guardName)) {
-      console.warn(`Invalid permission format: ${permission}. Expected format: {guard}.{resource}.{action}`);
+      console.warn(
+        `Invalid permission format: ${permission}. Expected format: {guard}.{resource}.{action}`
+      );
       return false;
     }
 
@@ -197,7 +229,7 @@ export class AuthService {
    */
   isAllowedAny(permissions: string[]): boolean {
     if (this.isSystemAdmin()) return true;
-    return permissions.some(perm => this.isAllowed(perm));
+    return permissions.some((perm) => this.isAllowed(perm));
   }
 
   /**
@@ -205,7 +237,7 @@ export class AuthService {
    */
   isAllowedAll(permissions: string[]): boolean {
     if (this.isSystemAdmin()) return true;
-    return permissions.every(perm => this.isAllowed(perm));
+    return permissions.every((perm) => this.isAllowed(perm));
   }
 
   /**
@@ -296,4 +328,99 @@ export class AuthService {
     }
   }
 
+  /**
+   * Start tracking user inactivity
+   */
+  private startInactivityTracking(): void {
+    // Clear any existing timer
+    this.stopInactivityTracking();
+
+    // Reset timer on user activity
+    this.activityListener = () => {
+      if (this.inactivityTimer) {
+        clearTimeout(this.inactivityTimer);
+      }
+
+      this.inactivityTimer = setTimeout(() => {
+        // User has been inactive - log them out
+        console.warn('Session expired due to inactivity');
+        this.handleSessionExpired('inactivity');
+      }, this.INACTIVITY_TIMEOUT);
+    };
+
+    // Listen for user activity events
+    const events = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click'];
+    events.forEach((event) => {
+      document.addEventListener(event, this.activityListener!, true);
+    });
+
+    // Start the initial timer
+    this.activityListener();
+  }
+
+  /**
+   * Stop tracking user inactivity
+   */
+  private stopInactivityTracking(): void {
+    if (this.inactivityTimer) {
+      clearTimeout(this.inactivityTimer);
+      this.inactivityTimer = null;
+    }
+
+    // Remove event listeners
+    if (this.activityListener) {
+      const events = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click'];
+      events.forEach((event) => {
+        document.removeEventListener(event, this.activityListener!, true);
+      });
+      this.activityListener = null;
+    }
+  }
+
+  /**
+   * Start periodic session validation with backend
+   */
+  private startSessionValidation(): void {
+    // Stop any existing validation
+    this.stopSessionValidation();
+
+    // Check session validity periodically
+    this.sessionCheckInterval = interval(this.SESSION_CHECK_INTERVAL).subscribe(() => {
+      if (this.isAuthenticated()) {
+        this.getMe().subscribe({
+          error: (error) => {
+            // If we get a 401, session has expired on backend
+            if (error.status === 401) {
+              const errorCode = error.error?.error_code;
+              const reason = errorCode === 'SESSION_INACTIVE' ? 'inactivity' : 'timeout';
+              this.handleSessionExpired(reason);
+            }
+          },
+        });
+      }
+    });
+  }
+
+  /**
+   * Stop periodic session validation
+   */
+  private stopSessionValidation(): void {
+    if (this.sessionCheckInterval) {
+      this.sessionCheckInterval.unsubscribe();
+      this.sessionCheckInterval = null;
+    }
+  }
+
+  /**
+   * Handle session expiration
+   */
+  private handleSessionExpired(reason: 'timeout' | 'inactivity'): void {
+    this.clearAuthState();
+    this.stopInactivityTracking();
+    this.stopSessionValidation();
+
+    this.router.navigate(['/login'], {
+      queryParams: { expired: true, reason },
+    });
+  }
 }

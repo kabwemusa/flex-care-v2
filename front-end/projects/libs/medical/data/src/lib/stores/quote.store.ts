@@ -3,7 +3,8 @@
 import { HttpClient } from '@angular/common/http';
 import { computed, inject, Injectable, signal } from '@angular/core';
 import { tap } from 'rxjs';
-import { ApiResponse, GroupQuoteRequest, GroupQuoteResult } from '../models/medical-interfaces';
+import { GroupQuoteRequest, GroupQuoteResult } from '../models/medical-interfaces';
+import { ApiResponse } from 'medical-data';
 
 interface QuoteState {
   groupQuote: GroupQuoteResult | null;

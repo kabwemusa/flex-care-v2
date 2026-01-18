@@ -39,15 +39,28 @@ class MemberController extends Controller
         $query = Member::query()
             ->with(['policy:id,policy_number,status', 'principal:id,first_name,last_name']);
 
-        if ($search = request('search')) $query->search($search);
-        if ($status = request('status')) $query->where('status', $status);
-        if ($policyId = request('policy_id')) $query->where('policy_id', $policyId);
+        // Search
+        $query->when(request('search'), function ($q, $search) {
+            $q->where(function ($q) use ($search) {
+                $q->where('member_number', 'like', "%{$search}%")
+                  ->orWhere('first_name', 'like', "%{$search}%")
+                  ->orWhere('last_name', 'like', "%{$search}%")
+                  ->orWhere('email', 'like', "%{$search}%")
+                  ->orWhere('national_id', 'like', "%{$search}%")
+                  ->orWhere('employee_number', 'like', "%{$search}%");
+            });
+        });
+
+        // Filters
+        $query->when(request('status'), fn ($q, $v) => $q->where('status', $v))
+              ->when(request('policy_id'), fn ($q, $v) => $q->where('policy_id', $v))
+              ->when(request('member_type'), fn ($q, $v) => $q->where('member_type', $v));
         
         // Scopes
         if (request('principals_only')) $query->principals();
         if (request('dependents_only')) $query->dependents();
 
-        return $this->success(
+        return $this->paginated(
             MemberListResource::collection($query->paginate(request('per_page', 20))),
             'Members retrieved'
         );
@@ -711,6 +724,80 @@ class MemberController extends Controller
             return $this->error('Member not found', 404);
         } catch (Throwable $e) {
             return $this->error('Failed to check eligibility', 500);
+        }
+    }
+
+    /**
+     * Get member benefit balances.
+     * GET /v1/medical/members/{id}/benefits
+     */
+    public function benefitBalances(string $id): JsonResponse
+    {
+        try {
+            $member = Member::with(['policy.plan'])->findOrFail($id);
+            
+            $benefitService = app(\Modules\Medical\Services\BenefitUtilizationService::class);
+            $summary = $benefitService->getMemberBenefitSummary($member);
+
+            return $this->success($summary, 'Benefit balances retrieved');
+        } catch (ModelNotFoundException $e) {
+            return $this->error('Member not found', 404);
+        } catch (Throwable $e) {
+            return $this->error('Failed to retrieve benefit balances: ' . $e->getMessage(), 500);
+        }
+    }
+
+    /**
+     * Get benefit utilization history for a member.
+     * GET /v1/medical/members/{id}/benefits/{benefitId}/history
+     */
+    public function benefitHistory(string $id, string $benefitId): JsonResponse
+    {
+        try {
+            $member = Member::findOrFail($id);
+            
+            $utilization = \Modules\Medical\Models\MemberBenefitUtilization::where('member_id', $member->id)
+                ->where('benefit_id', $benefitId)
+                ->currentPeriod()
+                ->with(['benefit', 'history.claim:id,claim_number,service_date'])
+                ->first();
+
+            if (!$utilization) {
+                return $this->error('Benefit utilization not found', 404);
+            }
+
+            $data = [
+                'utilization' => [
+                    'id' => $utilization->id,
+                    'benefit_name' => $utilization->benefit?->name,
+                    'limit_type' => $utilization->limit_type,
+                    'limit' => $utilization->formatted_limit,
+                    'used' => $utilization->formatted_used,
+                    'remaining' => $utilization->formatted_remaining,
+                    'utilization_percentage' => $utilization->utilization_percentage,
+                    'is_exhausted' => $utilization->is_exhausted,
+                    'period_start' => $utilization->period_start->format('Y-m-d'),
+                    'period_end' => $utilization->period_end->format('Y-m-d'),
+                ],
+                'history' => $utilization->history->map(fn($h) => [
+                    'id' => $h->id,
+                    'transaction_type' => $h->transaction_type,
+                    'transaction_type_label' => $h->transaction_type_label,
+                    'amount_change' => $h->amount_change,
+                    'count_change' => $h->count_change,
+                    'days_change' => $h->days_change,
+                    'balance_amount' => $h->balance_amount,
+                    'claim_number' => $h->claim?->claim_number,
+                    'notes' => $h->notes,
+                    'created_at' => $h->created_at->format('Y-m-d H:i:s'),
+                ]),
+            ];
+
+            return $this->success($data, 'Benefit history retrieved');
+        } catch (ModelNotFoundException $e) {
+            return $this->error('Member not found', 404);
+        } catch (Throwable $e) {
+            return $this->error('Failed to retrieve benefit history: ' . $e->getMessage(), 500);
         }
     }
 

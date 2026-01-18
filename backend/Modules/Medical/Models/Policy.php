@@ -224,6 +224,37 @@ class Policy extends BaseModel
         return $this->hasMany(PolicyDocument::class, 'policy_id');
     }
 
+    public function invoices(): HasMany
+    {
+        return $this->hasMany(Invoice::class, 'policy_id');
+    }
+
+    public function payments(): HasMany
+    {
+        return $this->hasMany(Payment::class, 'policy_id');
+    }
+
+    public function endorsements(): HasMany
+    {
+        return $this->hasMany(Endorsement::class, 'policy_id');
+    }
+
+    public function outstandingInvoices(): HasMany
+    {
+        return $this->invoices()
+            ->where('balance', '>', 0)
+            ->whereNotIn('status', [
+                MedicalConstants::INVOICE_STATUS_CANCELLED,
+                MedicalConstants::INVOICE_STATUS_WRITTEN_OFF,
+            ]);
+    }
+
+    public function overdueInvoices(): HasMany
+    {
+        return $this->invoices()
+            ->where('status', MedicalConstants::INVOICE_STATUS_OVERDUE);
+    }
+
     // =========================================================================
     // SCOPES
     // =========================================================================
@@ -617,5 +648,91 @@ class Policy extends BaseModel
         $policy->save();
 
         return $policy;
+    }
+
+    // =========================================================================
+    // BILLING ACCESSORS
+    // =========================================================================
+
+    /**
+     * Get total outstanding balance.
+     */
+    public function getOutstandingBalanceAttribute(): float
+    {
+        return $this->outstandingInvoices()->sum('balance');
+    }
+
+    /**
+     * Get total overdue amount.
+     */
+    public function getOverdueAmountAttribute(): float
+    {
+        return $this->overdueInvoices()->sum('balance');
+    }
+
+    /**
+     * Get maximum overdue days.
+     */
+    public function getMaxOverdueDaysAttribute(): int
+    {
+        return $this->overdueInvoices()->max('days_overdue') ?? 0;
+    }
+
+    /**
+     * Check if policy has overdue payments.
+     */
+    public function getHasOverduePaymentsAttribute(): bool
+    {
+        return $this->overdueInvoices()->exists();
+    }
+
+    /**
+     * Check if policy is in good billing standing.
+     */
+    public function getIsInGoodStandingAttribute(): bool
+    {
+        return $this->max_overdue_days < MedicalConstants::OVERDUE_GRACE_PERIOD;
+    }
+
+    /**
+     * Check if policy should be suspended due to non-payment.
+     */
+    public function getShouldSuspendForNonPaymentAttribute(): bool
+    {
+        return $this->max_overdue_days >= MedicalConstants::OVERDUE_SUSPENSION_THRESHOLD;
+    }
+
+    /**
+     * Check if policy should lapse due to non-payment.
+     */
+    public function getShouldLapseForNonPaymentAttribute(): bool
+    {
+        return $this->max_overdue_days >= MedicalConstants::OVERDUE_LAPSE_THRESHOLD;
+    }
+
+    /**
+     * Get total invoiced amount.
+     */
+    public function getTotalInvoicedAttribute(): float
+    {
+        return $this->invoices()
+            ->whereNotIn('status', [
+                MedicalConstants::INVOICE_STATUS_CANCELLED,
+                MedicalConstants::INVOICE_STATUS_WRITTEN_OFF,
+            ])
+            ->sum('total_amount');
+    }
+
+    /**
+     * Get total paid amount.
+     */
+    public function getTotalPaidAttribute(): float
+    {
+        return $this->invoices()
+            ->whereNotIn('status', [
+                MedicalConstants::INVOICE_STATUS_CANCELLED,
+                MedicalConstants::INVOICE_STATUS_WRITTEN_OFF,
+            ])
+            ->sum('paid_amount');
     }
 }
