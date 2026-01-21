@@ -220,6 +220,7 @@ Route::prefix('v1/medical')
         Route::post('/{id}/quote/email', [ApplicationController::class, 'emailQuote']);
         Route::post('/{id}/submit', [ApplicationController::class, 'submit']);
         Route::post('/{id}/start-underwriting', [ApplicationController::class, 'startUnderwriting']);
+        Route::post('/{id}/regenerate-quote', [ApplicationController::class, 'regenerateQuote']);
         Route::post('/{id}/approve', [ApplicationController::class, 'approve']);
         Route::post('/{id}/decline', [ApplicationController::class, 'decline']);
         Route::post('/{id}/refer', [ApplicationController::class, 'refer']);
@@ -248,6 +249,7 @@ Route::prefix('v1/medical')
         // Documents
         Route::get('/{id}/documents', [ApplicationController::class, 'documents']);
         Route::post('/{id}/documents', [ApplicationController::class, 'uploadDocument']);
+        Route::get('/{id}/documents/{documentId}/download', [ApplicationController::class, 'downloadDocument']);
     });
 
     // =========================================================================

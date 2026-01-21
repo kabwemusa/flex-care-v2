@@ -46,31 +46,51 @@
         </div>
 
         <!-- Action Buttons -->
-        <div class="flex items-center gap-2 flex-wrap">
+        <div class="flex items-center gap-1 flex-wrap">
           @if (canEdit()) {
-          <button mat-stroked-button (click)="editApplication()">
+          <button
+            mat-icon-button
+            (click)="editApplication()"
+            matTooltip="Edit Application"
+            class="!text-slate-600 hover:!bg-slate-100"
+          >
             <mat-icon fontSet="material-symbols-rounded">edit</mat-icon>
-            Edit
           </button>
           } @switch (app.status) { @case ('draft') {
-          <button mat-stroked-button (click)="calculatePremium()" [disabled]="isSaving()">
+          <button
+            mat-icon-button
+            (click)="calculatePremium()"
+            [disabled]="isSaving()"
+            matTooltip="Calculate Premium"
+            class="!text-slate-600 hover:!bg-slate-100"
+          >
             <mat-icon fontSet="material-symbols-rounded">calculate</mat-icon>
-            Calculate
           </button>
-          <button mat-flat-button color="primary" (click)="generateQuote()" [disabled]="isSaving()">
+          <button
+            mat-flat-button
+            color="primary"
+            (click)="generateQuote()"
+            [disabled]="isSaving()"
+            matTooltip="Generate Quote"
+          >
             <mat-icon fontSet="material-symbols-rounded">request_quote</mat-icon>
             Generate Quote
           </button>
           } @case ('quoted') {
-          <button mat-stroked-button (click)="openQuoteActions()">
+          <button
+            mat-stroked-button
+            (click)="openQuoteActions()"
+            matTooltip="Download or Email Quote"
+          >
             <mat-icon fontSet="material-symbols-rounded">description</mat-icon>
-            Quote Actions
+            Quote
           </button>
           <button
             mat-flat-button
             color="primary"
             (click)="submitForUnderwriting()"
             [disabled]="isSaving()"
+            matTooltip="Submit for Underwriting"
           >
             <mat-icon fontSet="material-symbols-rounded">send</mat-icon>
             Submit for UW
@@ -81,39 +101,73 @@
             color="accent"
             (click)="startUnderwriting()"
             [disabled]="isSaving()"
+            matTooltip="Start Underwriting Process"
           >
             <mat-icon fontSet="material-symbols-rounded">policy</mat-icon>
             Start Underwriting
           </button>
           } @case ('underwriting') {
-          <button mat-stroked-button (click)="referApplication()" [disabled]="isSaving()">
-            <mat-icon fontSet="material-symbols-rounded">forward</mat-icon>
-            Refer
+          <button
+            mat-icon-button
+            (click)="regenerateQuote()"
+            [disabled]="isSaving()"
+            matTooltip="Recalculate & Regenerate Quote"
+            class="!text-indigo-600 hover:!bg-indigo-50"
+          >
+            <mat-icon fontSet="material-symbols-rounded">refresh</mat-icon>
           </button>
           <button
-            mat-stroked-button
-            color="warn"
+            mat-icon-button
+            (click)="openQuoteActions()"
+            matTooltip="Download or Email Quote"
+            class="!text-slate-600 hover:!bg-slate-100"
+          >
+            <mat-icon fontSet="material-symbols-rounded">description</mat-icon>
+          </button>
+          <div class="w-px h-6 bg-slate-200 mx-1"></div>
+          <button
+            mat-icon-button
+            (click)="referApplication()"
+            [disabled]="isSaving()"
+            matTooltip="Refer for Review"
+            class="!text-orange-600 hover:!bg-orange-50"
+          >
+            <mat-icon fontSet="material-symbols-rounded">forward</mat-icon>
+          </button>
+          <button
+            mat-icon-button
             (click)="declineApplication()"
             [disabled]="isSaving()"
+            matTooltip="Decline Application"
+            class="!text-red-600 hover:!bg-red-50"
           >
             <mat-icon fontSet="material-symbols-rounded">cancel</mat-icon>
-            Decline
           </button>
           <button
             mat-flat-button
             color="primary"
             (click)="approveApplication()"
             [disabled]="isSaving()"
+            matTooltip="Approve Application"
           >
             <mat-icon fontSet="material-symbols-rounded">check_circle</mat-icon>
             Approve
           </button>
           } @case ('approved') {
           <button
+            mat-icon-button
+            (click)="openQuoteActions()"
+            matTooltip="Download or Email Quote"
+            class="!text-slate-600 hover:!bg-slate-100"
+          >
+            <mat-icon fontSet="material-symbols-rounded">description</mat-icon>
+          </button>
+          <button
             mat-flat-button
             color="primary"
             (click)="acceptApplication()"
             [disabled]="isSaving()"
+            matTooltip="Record Customer Acceptance"
           >
             <mat-icon fontSet="material-symbols-rounded">thumb_up</mat-icon>
             Record Acceptance
@@ -124,6 +178,7 @@
             color="primary"
             (click)="convertToPolicy()"
             [disabled]="isSaving()"
+            matTooltip="Convert to Active Policy"
           >
             <mat-icon fontSet="material-symbols-rounded">task_alt</mat-icon>
             Convert to Policy

@@ -1,11 +1,11 @@
 <!-- libs/medical/feature/src/lib/dialogs/medical-record-payment-dialog/medical-record-payment-dialog.html -->
 
-<div class="flex flex-col h-full max-h-[85vh]">
+<div class="flex flex-col h-full max-h-[85vh] w-[70vw]">
   <!-- Header -->
   <div class="flex items-center justify-between p-4 border-b bg-slate-50">
     <div class="flex items-center gap-3">
       <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
-        <mat-icon class="text-green-600">payments</mat-icon>
+        <mat-icon fontSet="material-symbols-rounded" class="text-green-600">payments</mat-icon>
       </div>
       <div>
         <h2 class="text-lg font-semibold text-slate-800">Record Payment</h2>
@@ -13,7 +13,7 @@
       </div>
     </div>
     <button mat-icon-button (click)="cancel()">
-      <mat-icon>close</mat-icon>
+      <mat-icon fontSet="material-symbols-rounded">close</mat-icon>
     </button>
   </div>
 
@@ -24,53 +24,57 @@
       <div class="space-y-2">
         <label class="text-sm font-medium text-slate-700">Policy *</label>
         @if (selectedPolicy()) {
-          <div class="flex items-center justify-between p-3 bg-blue-50 rounded-lg border border-blue-200">
-            <div>
-              <p class="font-medium text-blue-800">{{ selectedPolicy()!.policy_number }}</p>
-              <p class="text-sm text-blue-600">{{ selectedPolicy()!.holder_name }}</p>
-            </div>
-            <button mat-icon-button (click)="clearPolicy()" type="button">
-              <mat-icon class="text-blue-600">close</mat-icon>
-            </button>
+        <div
+          class="flex items-center justify-between p-3 bg-blue-50 rounded-lg border border-blue-200"
+        >
+          <div>
+            <p class="font-medium text-blue-800">{{ selectedPolicy()!.policy_number }}</p>
+            <p class="text-sm text-blue-600">{{ selectedPolicy()!.holder_name }}</p>
           </div>
+          <button mat-icon-button (click)="clearPolicy()" type="button">
+            <mat-icon fontSet="material-symbols-rounded" class="text-blue-600">close</mat-icon>
+          </button>
+        </div>
         } @else {
-          <mat-form-field appearance="outline" class="w-full">
-            <mat-label>Search policy</mat-label>
-            <input
-              matInput
-              formControlName="policy_search"
-              placeholder="Enter policy number or holder name..."
-              [matAutocomplete]="policyAuto"
-            />
-            <mat-icon matPrefix class="text-slate-400">search</mat-icon>
-            @if (searchingPolicies()) {
-              <mat-spinner matSuffix diameter="20"></mat-spinner>
+        <mat-form-field appearance="fill" class="w-full minimal-input">
+          <mat-label>Search policy</mat-label>
+          <input
+            matInput
+            formControlName="policy_search"
+            placeholder="Enter policy number or holder name..."
+            [matAutocomplete]="policyAuto"
+          />
+          <mat-icon fontSet="material-symbols-rounded" matPrefix class="text-slate-400"
+            >search</mat-icon
+          >
+          @if (searchingPolicies()) {
+          <mat-spinner matSuffix diameter="20"></mat-spinner>
+          }
+          <mat-autocomplete #policyAuto="matAutocomplete">
+            @for (policy of policySearchResults(); track policy.id) {
+            <mat-option (click)="selectPolicy(policy)">
+              <div class="flex flex-col">
+                <span class="font-medium">{{ policy.policy_number }}</span>
+                <span class="text-sm text-slate-500">{{ policy.holder_name }}</span>
+              </div>
+            </mat-option>
+            } @if (policySearchResults().length === 0 && form.get('policy_search')?.value?.length >=
+            2 && !searchingPolicies()) {
+            <mat-option disabled>
+              <span class="text-slate-500">No policies found</span>
+            </mat-option>
             }
-            <mat-autocomplete #policyAuto="matAutocomplete">
-              @for (policy of policySearchResults(); track policy.id) {
-                <mat-option (click)="selectPolicy(policy)">
-                  <div class="flex flex-col">
-                    <span class="font-medium">{{ policy.policy_number }}</span>
-                    <span class="text-sm text-slate-500">{{ policy.holder_name }}</span>
-                  </div>
-                </mat-option>
-              }
-              @if (policySearchResults().length === 0 && form.get('policy_search')?.value?.length >= 2 && !searchingPolicies()) {
-                <mat-option disabled>
-                  <span class="text-slate-500">No policies found</span>
-                </mat-option>
-              }
-            </mat-autocomplete>
-            @if (form.get('policy_id')?.touched && form.get('policy_id')?.invalid) {
-              <mat-error>Policy is required</mat-error>
-            }
-          </mat-form-field>
+          </mat-autocomplete>
+          @if (form.get('policy_id')?.touched && form.get('policy_id')?.invalid) {
+          <mat-error>Policy is required</mat-error>
+          }
+        </mat-form-field>
         }
       </div>
 
       <!-- Amount and Date Row -->
       <div class="grid grid-cols-2 gap-4">
-        <mat-form-field appearance="outline">
+        <mat-form-field appearance="fill" class="minimal-input">
           <mat-label>Amount</mat-label>
           <input
             matInput
@@ -82,43 +86,42 @@
           />
           <span matTextPrefix>ZMW&nbsp;</span>
           @if (form.get('amount')?.touched && form.get('amount')?.hasError('required')) {
-            <mat-error>Amount is required</mat-error>
-          }
-          @if (form.get('amount')?.touched && form.get('amount')?.hasError('min')) {
-            <mat-error>Amount must be greater than 0</mat-error>
+          <mat-error>Amount is required</mat-error>
+          } @if (form.get('amount')?.touched && form.get('amount')?.hasError('min')) {
+          <mat-error>Amount must be greater than 0</mat-error>
           }
         </mat-form-field>
 
-        <mat-form-field appearance="outline">
+        <mat-form-field appearance="fill" class="minimal-input">
           <mat-label>Payment Date</mat-label>
           <input matInput [matDatepicker]="picker" formControlName="payment_date" />
           <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
           <mat-datepicker #picker></mat-datepicker>
           @if (form.get('payment_date')?.touched && form.get('payment_date')?.invalid) {
-            <mat-error>Date is required</mat-error>
+          <mat-error>Date is required</mat-error>
           }
         </mat-form-field>
       </div>
 
       <!-- Payment Method -->
-      <mat-form-field appearance="outline" class="w-full">
+      <mat-form-field appearance="fill" class="w-full minimal-input">
         <mat-label>Payment Method</mat-label>
         <mat-select formControlName="payment_method">
           @for (method of PAYMENT_METHODS; track method.value) {
-            <mat-option [value]="method.value">{{ method.label }}</mat-option>
+          <mat-option [value]="method.value">{{ method.label }}</mat-option>
           }
         </mat-select>
       </mat-form-field>
 
       <!-- Reference -->
-      <mat-form-field appearance="outline" class="w-full">
+      <mat-form-field appearance="fill" class="w-full minimal-input">
         <mat-label>Reference / Transaction ID</mat-label>
         <input matInput formControlName="reference" placeholder="Bank reference, cheque #, etc." />
         <mat-hint>Optional - helps track the payment source</mat-hint>
       </mat-form-field>
 
       <!-- Notes -->
-      <mat-form-field appearance="outline" class="w-full">
+      <mat-form-field appearance="fill" class="w-full minimal-input">
         <mat-label>Notes</mat-label>
         <textarea
           matInput
@@ -140,9 +143,9 @@
       [disabled]="form.invalid || isSubmitting()"
     >
       @if (isSubmitting()) {
-        <mat-spinner diameter="20" class="mr-2"></mat-spinner>
+      <mat-spinner diameter="20" class="mr-2"></mat-spinner>
       }
-      <mat-icon>save</mat-icon>
+      <mat-icon fontSet="material-symbols-rounded">save</mat-icon>
       Record Payment
     </button>
   </div>

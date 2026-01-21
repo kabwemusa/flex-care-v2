@@ -2,9 +2,12 @@
 
 namespace Modules\Medical\Http\Controllers;
 
+use App\Mail\QuoteEmail;
 use Illuminate\Routing\Controller;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Str;
 use Modules\Medical\Models\Application;
@@ -25,6 +28,7 @@ use App\Traits\ApiResponse;
 use Throwable;
 use Exception;
 use Illuminate\Http\Request as HttpRequest;
+use Illuminate\Support\Facades\Mail;
 use Modules\Medical\Models\RateCard;
 use Symfony\Component\HttpFoundation\Request;
 
@@ -385,8 +389,16 @@ class ApplicationController extends Controller
                 'addons.addon'
             ])->findOrFail($id);
 
-            if ($application->status !== MedicalConstants::APPLICATION_STATUS_QUOTED) {
-                return $this->error('Application must be in quoted status to download quote', 422);
+            // Allow download for quoted, underwriting, and approved statuses
+            $allowedStatuses = [
+                MedicalConstants::APPLICATION_STATUS_QUOTED,
+                MedicalConstants::APPLICATION_STATUS_SUBMITTED,
+                MedicalConstants::APPLICATION_STATUS_UNDERWRITING,
+                MedicalConstants::APPLICATION_STATUS_APPROVED,
+            ];
+
+            if (!in_array($application->status, $allowedStatuses)) {
+                return $this->error('Quote can only be downloaded after it has been generated', 422);
             }
 
             // In a production environment, you would use a PDF generation library like dompdf or snappy
@@ -451,8 +463,16 @@ class ApplicationController extends Controller
         try {
             $application = Application::with(['scheme', 'plan', 'members', 'addons'])->findOrFail($id);
 
-            if ($application->status !== MedicalConstants::APPLICATION_STATUS_QUOTED) {
-                return $this->error('Application must be in quoted status to email quote', 422);
+            // Allow email for quoted, underwriting, and approved statuses
+            $allowedStatuses = [
+                MedicalConstants::APPLICATION_STATUS_QUOTED,
+                MedicalConstants::APPLICATION_STATUS_SUBMITTED,
+                MedicalConstants::APPLICATION_STATUS_UNDERWRITING,
+                MedicalConstants::APPLICATION_STATUS_APPROVED,
+            ];
+
+            if (!in_array($application->status, $allowedStatuses)) {
+                return $this->error('Quote can only be emailed after it has been generated', 422);
             }
 
             $validated = request()->validate([
@@ -460,11 +480,9 @@ class ApplicationController extends Controller
                 'message' => 'nullable|string|max:1000',
             ]);
 
-            // In production, you would queue an email job here
-            // Mail::to($validated['email'])->queue(new QuoteEmail($application, $validated['message']));
-
-            // For now, we'll just return success
-            // You can implement actual email sending using Laravel's Mail facade and queues
+            // Send email with PDF attachment
+            $customMessage = $validated['message'] ?? null;
+            Mail::to($validated['email'])->send(new QuoteEmail($application, $customMessage));
 
             return $this->success([
                 'email' => $validated['email'],
@@ -523,6 +541,51 @@ class ApplicationController extends Controller
             return $this->error('Application not found', 404);
         } catch (Throwable $e) {
             return $this->error($e->getMessage(), 500);
+        }
+    }
+
+    /**
+     * Regenerate quote after underwriting changes.
+     * Recalculates premium with all loadings, discounts, and exclusions applied.
+     * POST /v1/medical/applications/{id}/regenerate-quote
+     */
+    public function regenerateQuote(string $id): JsonResponse
+    {
+        try {
+            $application = DB::transaction(function () use ($id) {
+                $application = Application::findOrFail($id);
+
+                // Must be in underwriting status
+                if (!in_array($application->status, [
+                    MedicalConstants::APPLICATION_STATUS_UNDERWRITING,
+                    MedicalConstants::APPLICATION_STATUS_SUBMITTED,
+                ])) {
+                    throw new Exception('Can only regenerate quote during underwriting', 422);
+                }
+
+                // Recalculate premium with all applied loadings and discounts
+                $this->premiumService->calculateApplicationPremium($application);
+
+                // Update quote validity
+                $application->update([
+                    'quoted_at' => now(),
+                    'quote_valid_until' => now()->addDays(config('medical.quote.validity_days', 14)),
+                ]);
+
+                return $application->fresh([
+                    'scheme', 'plan', 'rateCard', 'activeMembers', 'activeAddons'
+                ]);
+            });
+
+            return $this->success(
+                new ApplicationResource($application),
+                'Quote regenerated with updated terms'
+            );
+        } catch (ModelNotFoundException $e) {
+            return $this->error('Application not found', 404);
+        } catch (Throwable $e) {
+            $code = $e->getCode() === 422 ? 422 : 500;
+            return $this->error($e->getMessage(), $code);
         }
     }
 
@@ -882,6 +945,7 @@ class ApplicationController extends Controller
                 $underwriterId = request('underwriter_id') ?? auth()->id();
                 $loadings = request('loadings', []);
                 $exclusions = request('exclusions', []);
+                $discounts = request('discounts', []);
                 $notes = request('notes');
 
                 return $this->applicationService->applyMemberUnderwritingDecision(
@@ -890,6 +954,7 @@ class ApplicationController extends Controller
                     $underwriterId,
                     $loadings,
                     $exclusions,
+                    $discounts,
                     $notes
                 );
             });
@@ -1172,6 +1237,39 @@ class ApplicationController extends Controller
             });
         } catch (Throwable $e) {
             return $this->error('Upload failed: ' . $e->getMessage(), 500);
+        }
+    }
+
+    /**
+     * Download/view application document.
+     * GET /v1/medical/applications/{id}/documents/{documentId}/download
+     */
+    public function downloadDocument(string $id, string $documentId): StreamedResponse|JsonResponse
+    {
+        try {
+            $document = ApplicationDocument::where('application_id', $id)
+                ->where('id', $documentId)
+                ->active()
+                ->firstOrFail();
+
+            if (!Storage::disk('local')->exists($document->file_path)) {
+                return $this->error('File not found', 404);
+            }
+
+            $disposition = request()->query('inline') === 'true' ? 'inline' : 'attachment';
+
+            return Storage::disk('local')->download(
+                $document->file_path,
+                $document->file_name,
+                [
+                    'Content-Type' => $document->mime_type,
+                    'Content-Disposition' => "{$disposition}; filename=\"{$document->file_name}\"",
+                ]
+            );
+        } catch (ModelNotFoundException $e) {
+            return $this->error('Document not found', 404);
+        } catch (Throwable $e) {
+            return $this->error('Failed to download document: ' . $e->getMessage(), 500);
         }
     }
 

@@ -162,7 +162,7 @@ export class MedicalApplicationDetail implements OnInit {
     if (!app) return;
 
     const dialogRef = this.dialog.open(MedicalApplicationDialog, {
-      width: '70vw',
+      maxWidth: '70vw',
       maxHeight: '90vh',
       disableClose: true,
       data: { application: app },
@@ -251,6 +251,21 @@ export class MedicalApplicationDetail implements OnInit {
       },
       error: (err) => {
         this.feedback.error(err?.error?.message || 'Failed to start underwriting');
+      },
+    });
+  }
+
+  regenerateQuote() {
+    const app = this.application();
+    if (!app) return;
+
+    this.store.regenerateQuote(app.id).subscribe({
+      next: () => {
+        this.feedback.success('Quote regenerated with updated terms');
+        this.loadApplication();
+      },
+      error: (err) => {
+        this.feedback.error(err?.error?.message || 'Failed to regenerate quote');
       },
     });
   }

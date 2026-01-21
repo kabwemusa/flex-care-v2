@@ -164,13 +164,14 @@ class BillingService
             ]);
 
             // Apply tax if configured
-            $taxRate = config('medical.tax_rate', 0);
+            $taxRate = config('medical.tax_rate', 0.05);
+            $taxName = config('medical.tax_name', 'VAT');
             if ($taxRate > 0) {
                 $taxAmount = round($endorsement->premium_adjustment * $taxRate, 2);
                 $invoice->items()->create([
                     'line_number' => 2,
                     'item_type' => MedicalConstants::INVOICE_ITEM_TAX,
-                    'description' => 'Tax (' . ($taxRate * 100) . '%)',
+                    'description' => "{$taxName} (" . ($taxRate * 100) . '%)',
                     'quantity' => 1,
                     'unit_price' => $taxAmount,
                     'amount' => $taxAmount,
@@ -256,7 +257,7 @@ class BillingService
         }
 
         // Option 2: Detailed billing (member-level breakdown)
-        $activeMembers = $policy->activeMembers()->with('memberLoadings')->get();
+        $activeMembers = $policy->activeMembers()->with('loadings')->get();
 
         foreach ($activeMembers as $member) {
             $lineNumber++;
@@ -325,15 +326,16 @@ class BillingService
             ]);
         }
 
-        // Apply tax
+        // Apply tax from config
         $tax = round($policy->tax_amount * $billingMultiplier, 2);
         if ($tax > 0) {
             $lineNumber++;
-            $taxRate = config('medical.tax_rate', 0) * 100;
+            $taxRate = config('medical.tax_rate', 0.05) * 100;
+            $taxName = config('medical.tax_name', 'VAT');
             $invoice->items()->create([
                 'line_number' => $lineNumber,
                 'item_type' => MedicalConstants::INVOICE_ITEM_TAX,
-                'description' => "Tax ({$taxRate}%)",
+                'description' => "{$taxName} ({$taxRate}%)",
                 'quantity' => 1,
                 'unit_price' => $tax,
                 'amount' => $tax,

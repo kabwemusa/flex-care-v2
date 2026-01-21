@@ -1,0 +1,14 @@
+/* Make the background transparent/white for done & edit steps so the colored icon shows */
+::ng-deep .mat-step-header .mat-step-icon-state-edit,
+::ng-deep .mat-step-header .mat-step-icon-state-done {
+  background-color: transparent !important; /* Removes the blue bubble */
+  border: 2px solid #cbd5e1; /* Optional: Adds a subtle grey ring like the inactive steps */
+  color: inherit; /* Allows your !text-primary class to work */
+}
+
+/* Optional: Remove the border if you want a pure floating checkmark */
+::ng-deep .mat-step-header .mat-step-icon-state-edit.mat-step-icon-selected,
+::ng-deep .mat-step-header .mat-step-icon-state-done.mat-step-icon-selected {
+  background-color: transparent !important;
+  border-color: var(--primary); /* Highlight the ring if it's the active step */
+}

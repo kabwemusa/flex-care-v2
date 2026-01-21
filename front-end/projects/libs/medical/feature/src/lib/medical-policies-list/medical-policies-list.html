@@ -1,49 +1,40 @@
 <mat-drawer-container class="h-full">
   <mat-drawer-content>
     <div class="bg-white p-6 md:p-10 min-h-[80vh] shadow-sm">
-      <lib-page-header
-        title="Policy Management"
-        subtitle="Manage insurance policies, coverage terms and renewals"
-      >
-        <div actions class="flex gap-2">
+      <!-- Header -->
+      <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-6">
+        <div>
+          <h1 class="text-2xl font-bold tracking-tight text-slate-900">Policies</h1>
+          <p class="mt-1 text-sm text-slate-500">
+            Manage insurance policies, coverage terms and renewals
+          </p>
+        </div>
+        <div class="flex gap-2">
           <button
             mat-stroked-button
             (click)="exportToCsv()"
-            class="!border-slate-200 hidden sm:flex"
+            class="!border-slate-200 !rounded-lg hidden sm:flex"
           >
             <mat-icon fontSet="material-symbols-rounded">download</mat-icon>
             Export
           </button>
-          <!-- <button mat-flat-button color="primary" (click)="openDialog()">
-            <mat-icon fontSet="material-symbols-rounded">add_circle</mat-icon>
-            New Policy
-          </button> -->
         </div>
-      </lib-page-header>
+      </div>
 
-      <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+      <!-- KPI Cards -->
+      <div class="grid grid-cols-2 gap-4 sm:grid-cols-4 mb-6">
         <div class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
           <div class="flex items-center justify-between">
             <div>
-              <p class="text-sm text-slate-500">Total Policies</p>
-              <p class="text-2xl font-semibold text-slate-900">
+              <div class="text-xs font-medium text-slate-500">Total Policies</div>
+              <div class="mt-1 text-xl font-bold tracking-tight text-slate-900">
                 {{ store.totalItems() }}
-              </p>
+              </div>
             </div>
-            <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-100">
-              <mat-icon fontSet="material-symbols-rounded" class="!text-blue-600">policy</mat-icon>
-            </div>
-          </div>
-        </div>
-
-        <div class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-          <div class="flex items-center justify-between">
-            <div>
-              <p class="text-sm text-slate-500">On This Page</p>
-              <p class="text-2xl font-semibold text-slate-600">{{ store.policies().length }}</p>
-            </div>
-            <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-slate-100">
-              <mat-icon fontSet="material-symbols-rounded" class="!text-slate-600">view_list</mat-icon>
+            <div class="flex h-9 w-9 items-center justify-center rounded-full bg-blue-100">
+              <mat-icon fontSet="material-symbols-rounded" class="!text-[18px] text-blue-600"
+                >policy</mat-icon
+              >
             </div>
           </div>
         </div>
@@ -51,13 +42,29 @@
         <div class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
           <div class="flex items-center justify-between">
             <div>
-              <p class="text-sm text-slate-500">Page Premium</p>
-              <p class="text-2xl font-semibold text-green-600">
+              <div class="text-xs font-medium text-slate-500">On This Page</div>
+              <div class="mt-1 text-xl font-bold tracking-tight text-slate-600">
+                {{ store.policies().length }}
+              </div>
+            </div>
+            <div class="flex h-9 w-9 items-center justify-center rounded-full bg-slate-100">
+              <mat-icon fontSet="material-symbols-rounded" class="!text-[18px] text-slate-500"
+                >view_list</mat-icon
+              >
+            </div>
+          </div>
+        </div>
+
+        <div class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+          <div class="flex items-center justify-between">
+            <div>
+              <div class="text-xs font-medium text-slate-500">Page Premium</div>
+              <div class="mt-1 text-xl font-bold tracking-tight text-green-600">
                 {{ formatCurrency(totalPremiumVolume()) }}
-              </p>
+              </div>
             </div>
-            <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-green-100">
-              <mat-icon fontSet="material-symbols-rounded" class="!text-green-600"
+            <div class="flex h-9 w-9 items-center justify-center rounded-full bg-green-100">
+              <mat-icon fontSet="material-symbols-rounded" class="!text-[18px] text-green-600"
                 >payments</mat-icon
               >
             </div>
@@ -67,13 +74,13 @@
         <div class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
           <div class="flex items-center justify-between">
             <div>
-              <p class="text-sm text-slate-500">Current Page</p>
-              <p class="text-2xl font-semibold text-blue-600">
+              <div class="text-xs font-medium text-slate-500">Current Page</div>
+              <div class="mt-1 text-xl font-bold tracking-tight text-blue-600">
                 {{ store.currentPage() }} / {{ store.totalPages() }}
-              </p>
+              </div>
             </div>
-            <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-100">
-              <mat-icon fontSet="material-symbols-rounded" class="!text-blue-600"
+            <div class="flex h-9 w-9 items-center justify-center rounded-full bg-blue-100">
+              <mat-icon fontSet="material-symbols-rounded" class="!text-[18px] text-blue-600"
                 >auto_stories</mat-icon
               >
             </div>
@@ -84,7 +91,7 @@
       <div class="rounded-xl border border-slate-200 bg-white p-4 mb-6 shadow-sm">
         <div class="flex flex-wrap gap-4 items-end">
           <mat-form-field
-            appearance="outline"
+            appearance="fill"
             subscriptSizing="dynamic"
             class="flex-1 min-w-[300px] minimal-input"
           >
@@ -104,7 +111,7 @@
             }
           </mat-form-field>
 
-          <mat-form-field appearance="outline" subscriptSizing="dynamic" class="w-40 minimal-input">
+          <mat-form-field appearance="fill" subscriptSizing="dynamic" class="w-40 minimal-input">
             <mat-select [ngModel]="statusFilter()" (ngModelChange)="onStatusChange($event)">
               <mat-option value="">All Statuses</mat-option>
               @for (status of POLICY_STATUSES; track status.value) {
@@ -113,7 +120,7 @@
             </mat-select>
           </mat-form-field>
 
-          <mat-form-field appearance="outline" subscriptSizing="dynamic" class="w-40 minimal-input">
+          <mat-form-field appearance="fill" subscriptSizing="dynamic" class="w-40 minimal-input">
             <mat-select [ngModel]="typeFilter()" (ngModelChange)="onTypeChange($event)">
               <mat-option value="">All Types</mat-option>
               @for (type of POLICY_TYPES; track type.value) {
@@ -131,191 +138,230 @@
         </div>
       </div>
 
-      <div class="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+      <div
+        class="flex flex-col rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden"
+      >
         @if (store.isLoading()) {
-        <div class="flex items-center justify-center h-64">
-          <mat-spinner diameter="40"></mat-spinner>
+        <div class="divide-y divide-slate-100">
+          @for (i of [1,2,3,4,5]; track i) {
+          <div class="flex items-center gap-4 p-4 animate-pulse">
+            <div class="h-6 w-20 rounded-full bg-slate-100"></div>
+            <div class="flex-1 space-y-2">
+              <div class="h-4 w-1/3 rounded bg-slate-100"></div>
+              <div class="h-3 w-1/4 rounded bg-slate-50"></div>
+            </div>
+            <div class="h-4 w-16 rounded bg-slate-100"></div>
+            <div class="h-4 w-20 rounded bg-slate-100"></div>
+          </div>
+          }
         </div>
         } @else {
-        <table mat-table [dataSource]="store.policies()" matSort class="w-full">
-          <ng-container matColumnDef="status">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header class="!pl-6 w-28">Status</th>
-            <td mat-cell *matCellDef="let row" class="!pl-6">
-              <span
-                class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium"
-                [class]="getStatusClasses(row.status)"
+        <div class="overflow-x-auto">
+          <table mat-table [dataSource]="store.policies()" matSort class="w-full">
+            <ng-container matColumnDef="status">
+              <th
+                mat-header-cell
+                *matHeaderCellDef
+                mat-sort-header
+                class="!bg-slate-50 !px-4 !py-3 text-xs font-semibold uppercase tracking-wider text-slate-500 !w-28"
               >
+                Status
+              </th>
+              <td mat-cell *matCellDef="let row" class="!px-4 !py-3">
                 <span
-                  class="h-1.5 w-1.5 rounded-full"
-                  [class]="getStatusDotColor(row.status)"
-                ></span>
-                {{ getLabelByValue(POLICY_STATUSES, row.status) }}
-              </span>
-            </td>
-          </ng-container>
-
-          <ng-container matColumnDef="policy_number">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header>Policy #</th>
-            <td mat-cell *matCellDef="let row">
-              <button
-                class="text-left font-mono text-sm text-slate-700 hover:text-blue-600 transition-colors"
-                (click)="viewDetails(row); $event.stopPropagation()"
-              >
-                {{ row.policy_number }}
-              </button>
-            </td>
-          </ng-container>
-
-          <ng-container matColumnDef="holder">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header>Policy Holder</th>
-            <td mat-cell *matCellDef="let row">
-              <div class="font-medium text-slate-900">{{ row.holder_name }}</div>
-              <div class="text-xs text-slate-500 flex items-center gap-1">
-                @if(row.policy_type === 'corporate') {
-                <mat-icon fontSet="material-symbols-rounded" class="!text-[14px]"
-                  >business</mat-icon
+                  class="inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium"
+                  [class]="getStatusClasses(row.status)"
                 >
-                {{ row.group?.name || 'Corporate' }}
-                } @else {
-                <mat-icon fontSet="material-symbols-rounded" class="!text-[14px]">person</mat-icon>
-                Individual }
-              </div>
-            </td>
-          </ng-container>
+                  {{ getLabelByValue(POLICY_STATUSES, row.status) }}
+                </span>
+              </td>
+            </ng-container>
 
-          <ng-container matColumnDef="plan">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header>Scheme & Plan</th>
-            <td mat-cell *matCellDef="let row">
-              <div class="text-sm text-slate-900">{{ row.scheme?.name || 'Unknown Scheme' }}</div>
-              <div class="text-xs text-slate-500">{{ row.plan?.name || 'Unknown Plan' }}</div>
-            </td>
-          </ng-container>
-
-          <ng-container matColumnDef="members">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header class="!text-center">Members</th>
-            <td mat-cell *matCellDef="let row" class="!text-center">
-              <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-100">
-                <mat-icon fontSet="material-symbols-rounded" class="!text-[16px] !text-slate-500"
-                  >group</mat-icon
-                >
-                <span class="font-medium text-slate-700">{{ row.member_count || 0 }}</span>
-              </div>
-            </td>
-          </ng-container>
-
-          <ng-container matColumnDef="dates">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header>Dates</th>
-            <td mat-cell *matCellDef="let row">
-              <div class="text-xs text-slate-700">
-                Start: {{ row.inception_date | date : 'mediumDate' }}
-              </div>
-              <div class="text-xs text-slate-500">
-                End: {{ row.expiry_date | date : 'mediumDate' }}
-              </div>
-            </td>
-          </ng-container>
-
-          <ng-container matColumnDef="premium">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header>Premium</th>
-            <td mat-cell *matCellDef="let row">
-              <div class="font-medium text-slate-900">
-                {{ formatCurrency(row.gross_premium) }}
-              </div>
-              <div class="text-xs text-slate-500 capitalize">{{ row.billing_frequency }}</div>
-            </td>
-          </ng-container>
-
-          <ng-container matColumnDef="actions">
-            <th mat-header-cell *matHeaderCellDef class="w-16 !pr-4"></th>
-            <td mat-cell *matCellDef="let row" class="!pr-4">
-              <button
-                mat-icon-button
-                [matMenuTriggerFor]="rowMenu"
-                (click)="$event.stopPropagation()"
+            <ng-container matColumnDef="policy_number">
+              <th
+                mat-header-cell
+                *matHeaderCellDef
+                mat-sort-header
+                class="!bg-slate-50 !px-4 !py-3 text-xs font-semibold uppercase tracking-wider text-slate-500"
               >
-                <mat-icon fontSet="material-symbols-rounded">more_vert</mat-icon>
-              </button>
-              <mat-menu #rowMenu="matMenu">
-                <button mat-menu-item (click)="viewDetails(row)">
-                  <mat-icon fontSet="material-symbols-rounded" class="!text-slate-500"
-                    >visibility</mat-icon
-                  >
-                  <span>View Details</span>
-                </button>
-                <!-- <button mat-menu-item (click)="openDialog(row)">
-                  <mat-icon fontSet="material-symbols-rounded" class="!text-slate-500"
-                    >edit</mat-icon
-                  >
-                  <span>Edit</span>
-                </button> -->
-                <mat-divider></mat-divider>
-
-                @if (row.status === 'active') {
-                <button mat-menu-item (click)="suspendPolicy(row, $event)">
-                  <mat-icon fontSet="material-symbols-rounded" class="!text-amber-500"
-                    >pause</mat-icon
-                  >
-                  <span>Suspend</span>
-                </button>
-                } @if (row.status === 'suspended') {
-                <button mat-menu-item (click)="reinstatePolicy(row, $event)">
-                  <mat-icon fontSet="material-symbols-rounded" class="!text-green-500"
-                    >play_arrow</mat-icon
-                  >
-                  <span>Reinstate</span>
-                </button>
-                } @if (row.status === 'pending') {
-                <button mat-menu-item (click)="activatePolicy(row, $event)">
-                  <mat-icon fontSet="material-symbols-rounded" class="!text-green-500"
-                    >check_circle</mat-icon
-                  >
-                  <span>Activate</span>
-                </button>
-                }
-
+                Policy #
+              </th>
+              <td mat-cell *matCellDef="let row" class="!px-4 !py-3">
                 <button
-                  mat-menu-item
-                  class="!text-red-600 hover:!bg-red-50"
-                  (click)="cancelPolicy(row, $event)"
+                  class="text-left font-medium text-slate-900 hover:text-primary transition-colors"
+                  (click)="viewDetails(row); $event.stopPropagation()"
                 >
-                  <mat-icon fontSet="material-symbols-rounded" class="!text-red-600"
-                    >cancel</mat-icon
-                  >
-                  <span>Cancel Policy</span>
+                  {{ row.policy_number }}
                 </button>
-              </mat-menu>
-            </td>
-          </ng-container>
-
-          <tr mat-header-row *matHeaderRowDef="displayedColumns" class="!bg-slate-50"></tr>
-          <tr
-            mat-row
-            *matRowDef="let row; columns: displayedColumns"
-            class="group border-b border-slate-100 last:border-0 hover:bg-slate-50 transition-colors cursor-pointer"
-            (click)="viewDetails(row)"
-          ></tr>
-
-          <tr class="mat-row" *matNoDataRow>
-            <td class="mat-cell text-center py-16" [attr.colspan]="displayedColumns.length">
-              <div class="flex flex-col items-center">
-                <div
-                  class="flex h-16 w-16 items-center justify-center rounded-full bg-slate-100 mb-4"
-                >
-                  <mat-icon fontSet="material-symbols-rounded" class="!text-[32px] !text-slate-400"
-                    >policy</mat-icon
-                  >
+                <div class="text-xs text-slate-500">
+                  {{ row.policy_type | titlecase }}
                 </div>
-                <p class="text-slate-600 font-medium mb-1">No policies found</p>
-                <p class="text-sm text-slate-500 mb-4">
-                  Try adjusting your filters or add a new policy.
-                </p>
-                <!-- <button mat-flat-button color="primary" (click)="openDialog()">
-                  Create Policy
-                </button> -->
-              </div>
-            </td>
-          </tr>
-        </table>
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="holder">
+              <th
+                mat-header-cell
+                *matHeaderCellDef
+                mat-sort-header
+                class="!bg-slate-50 !px-4 !py-3 text-xs font-semibold uppercase tracking-wider text-slate-500"
+              >
+                Policy Holder
+              </th>
+              <td mat-cell *matCellDef="let row" class="!px-4 !py-3">
+                <div class="font-medium text-slate-900">{{ row.holder_name }}</div>
+                <div class="text-xs text-slate-500">
+                  @if(row.policy_type === 'corporate') {
+                  {{ row.group?.name || 'Corporate' }}
+                  } @else { Individual }
+                </div>
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="plan">
+              <th
+                mat-header-cell
+                *matHeaderCellDef
+                mat-sort-header
+                class="!bg-slate-50 !px-4 !py-3 text-xs font-semibold uppercase tracking-wider text-slate-500"
+              >
+                Plan
+              </th>
+              <td mat-cell *matCellDef="let row" class="!px-4 !py-3">
+                <div class="font-medium text-slate-900">{{ row.plan?.name || '-' }}</div>
+                <div class="text-xs text-slate-500">{{ row.scheme?.name || '-' }}</div>
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="members">
+              <th
+                mat-header-cell
+                *matHeaderCellDef
+                mat-sort-header
+                class="!bg-slate-50 !px-4 !py-3 text-xs font-semibold uppercase tracking-wider text-slate-500 !text-center !w-24"
+              >
+                Members
+              </th>
+              <td mat-cell *matCellDef="let row" class="!px-4 !py-3 !text-center">
+                <span class="inline-flex items-center gap-1 text-sm text-slate-700">
+                  <mat-icon fontSet="material-symbols-rounded" class="!text-[16px] text-slate-400"
+                    >group</mat-icon
+                  >
+                  {{ row.member_count || 0 }}
+                </span>
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="dates">
+              <th
+                mat-header-cell
+                *matHeaderCellDef
+                mat-sort-header
+                class="!bg-slate-50 !px-4 !py-3 text-xs font-semibold uppercase tracking-wider text-slate-500"
+              >
+                Dates
+              </th>
+              <td mat-cell *matCellDef="let row" class="!px-4 !py-3">
+                <div class="text-sm text-slate-700">
+                  {{ row.inception_date | date : 'mediumDate' }}
+                </div>
+                <div class="text-xs text-slate-500">
+                  to {{ row.expiry_date | date : 'mediumDate' }}
+                </div>
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="premium">
+              <th
+                mat-header-cell
+                *matHeaderCellDef
+                mat-sort-header
+                class="!bg-slate-50 !px-4 !py-3 text-xs font-semibold uppercase tracking-wider text-slate-500 !text-right"
+              >
+                Premium
+              </th>
+              <td mat-cell *matCellDef="let row" class="!px-4 !py-3 !text-right">
+                <div class="font-semibold text-slate-900">
+                  {{ formatCurrency(row.gross_premium) }}
+                </div>
+                <div class="text-xs text-slate-500 capitalize">{{ row.billing_frequency }}</div>
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="actions">
+              <th
+                mat-header-cell
+                *matHeaderCellDef
+                class="!bg-slate-50 !px-4 !py-3 text-xs font-semibold uppercase tracking-wider text-slate-500 !w-16"
+              ></th>
+              <td mat-cell *matCellDef="let row" class="!px-4 !py-3">
+                <button
+                  mat-icon-button
+                  [matMenuTriggerFor]="rowMenu"
+                  (click)="$event.stopPropagation()"
+                  class="!text-slate-400 hover:!text-slate-600"
+                >
+                  <mat-icon fontSet="material-symbols-rounded">more_vert</mat-icon>
+                </button>
+                <mat-menu #rowMenu="matMenu">
+                  <button mat-menu-item (click)="viewDetails(row)">
+                    <mat-icon fontSet="material-symbols-rounded">visibility</mat-icon>
+                    <span>View Details</span>
+                  </button>
+                  <button mat-menu-item [routerLink]="['/policies', row.id]">
+                    <mat-icon fontSet="material-symbols-rounded">open_in_new</mat-icon>
+                    <span>Open Full Page</span>
+                  </button>
+                  <mat-divider></mat-divider>
+
+                  @if (row.status === 'active') {
+                  <button mat-menu-item (click)="suspendPolicy(row, $event)">
+                    <mat-icon fontSet="material-symbols-rounded">pause</mat-icon>
+                    <span>Suspend</span>
+                  </button>
+                  } @if (row.status === 'suspended') {
+                  <button mat-menu-item (click)="reinstatePolicy(row, $event)">
+                    <mat-icon fontSet="material-symbols-rounded">play_arrow</mat-icon>
+                    <span>Reinstate</span>
+                  </button>
+                  } @if (row.status === 'pending') {
+                  <button mat-menu-item (click)="activatePolicy(row, $event)">
+                    <mat-icon fontSet="material-symbols-rounded">check_circle</mat-icon>
+                    <span>Activate</span>
+                  </button>
+                  }
+                  <mat-divider></mat-divider>
+                  <button mat-menu-item class="!text-red-600" (click)="cancelPolicy(row, $event)">
+                    <mat-icon fontSet="material-symbols-rounded" class="!text-red-600"
+                      >cancel</mat-icon
+                    >
+                    <span>Cancel Policy</span>
+                  </button>
+                </mat-menu>
+              </td>
+            </ng-container>
+
+            <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+            <tr
+              mat-row
+              *matRowDef="let row; columns: displayedColumns"
+              class="hover:bg-slate-50 cursor-pointer transition-colors"
+              (click)="viewDetails(row)"
+            ></tr>
+
+            <tr class="mat-row" *matNoDataRow>
+              <td class="mat-cell text-center py-12" [attr.colspan]="displayedColumns.length">
+                <div class="flex flex-col items-center gap-2">
+                  <mat-icon fontSet="material-symbols-rounded" class="!text-[48px] text-slate-300">
+                    policy
+                  </mat-icon>
+                  <p class="text-slate-500">No policies found</p>
+                  <p class="text-sm text-slate-400">Try adjusting your filters</p>
+                </div>
+              </td>
+            </tr>
+          </table>
+        </div>
 
         <mat-paginator
           [length]="store.totalItems()"
@@ -361,10 +407,7 @@
             class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium"
             [class]="getStatusClasses(policy.status)"
           >
-            <span
-              class="h-1.5 w-1.5 rounded-full"
-              [class]="getStatusDotColor(policy.status)"
-            ></span>
+            <span class="h-1.5 w-1.5 rounded-full" [class]="getStatusClasses(policy.status)"></span>
             {{ getLabelByValue(POLICY_STATUSES, policy.status) }}
           </span>
           <span

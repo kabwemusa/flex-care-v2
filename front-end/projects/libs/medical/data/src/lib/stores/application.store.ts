@@ -445,6 +445,23 @@ export class ApplicationStore {
   // QUOTE OPERATIONS
   // =========================================================================
 
+  /**
+   * Regenerate quote after underwriting changes (loadings, discounts, exclusions).
+   * Recalculates premium and updates the quote with new terms.
+   */
+  regenerateQuote(id: string) {
+    this.state.update((s) => ({ ...s, saving: true }));
+
+    return this.http
+      .post<ApiResponse<Application>>(`${this.apiUrl}/${id}/regenerate-quote`, {})
+      .pipe(
+        tap({
+          next: (res) => this.updateApplicationInState(id, res.data),
+          error: () => this.state.update((s) => ({ ...s, saving: false })),
+        })
+      );
+  }
+
   downloadQuote(id: string) {
     return this.http.get<any>(`${this.apiUrl}/${id}/quote/download`);
   }
@@ -644,6 +661,15 @@ export class ApplicationStore {
           },
         })
       );
+  }
+
+  downloadDocument(applicationId: string, documentId: string, inline = false) {
+    const url = `${this.apiUrl}/${applicationId}/documents/${documentId}/download${inline ? '?inline=true' : ''}`;
+    return this.http.get(url, { responseType: 'blob', observe: 'response' });
+  }
+
+  getDocumentDownloadUrl(applicationId: string, documentId: string, inline = false) {
+    return `${this.apiUrl}/${applicationId}/documents/${documentId}/download${inline ? '?inline=true' : ''}`;
   }
 
   // =========================================================================

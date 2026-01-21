@@ -344,15 +344,15 @@ export class MedicalPoliciesList implements OnInit {
   // =========================================================================
 
   getStatusClasses(status: string): string {
-    const config = getStatusConfig(POLICY_STATUSES, status);
-    return config ? `${config.bgColor} ${config.color}` : 'bg-slate-100 text-slate-600';
-  }
-
-  getStatusDotColor(status: string): string {
-    const config = getStatusConfig(POLICY_STATUSES, status);
-    if (!config) return 'bg-slate-400';
-    const match = config.bgColor.match(/bg-(\w+)-\d+/);
-    return match ? `bg-${match[1]}-500` : 'bg-slate-400';
+    const colorMap: Record<string, string> = {
+      pending: 'bg-amber-50 text-amber-700 border-amber-200',
+      active: 'bg-green-50 text-green-700 border-green-200',
+      suspended: 'bg-orange-50 text-orange-700 border-orange-200',
+      cancelled: 'bg-red-50 text-red-700 border-red-200',
+      expired: 'bg-slate-100 text-slate-700 border-slate-200',
+      lapsed: 'bg-rose-50 text-rose-700 border-rose-200',
+    };
+    return colorMap[status] || 'bg-slate-100 text-slate-700 border-slate-200';
   }
 
   exportToCsv(): void {

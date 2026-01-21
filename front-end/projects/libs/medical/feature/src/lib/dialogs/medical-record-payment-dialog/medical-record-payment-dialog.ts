@@ -2,12 +2,7 @@
 
 import { Component, inject, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import {
-  FormBuilder,
-  FormGroup,
-  ReactiveFormsModule,
-  Validators,
-} from '@angular/forms';
+import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatDialogRef, MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -21,6 +16,7 @@ import { debounceTime, distinctUntilChanged, switchMap, of } from 'rxjs';
 
 import { PolicyStore, formatCurrency, RecordPaymentPayload } from 'medical-data';
 import { BILLING_PAYMENT_METHODS } from 'medical-data';
+import { provideNativeDateAdapter } from '@angular/material/core';
 
 interface DialogData {
   policyId?: string;
@@ -44,6 +40,7 @@ interface DialogData {
     MatAutocompleteModule,
     MatProgressSpinnerModule,
   ],
+  providers: [provideNativeDateAdapter()],
   templateUrl: './medical-record-payment-dialog.html',
 })
 export class MedicalRecordPaymentDialog implements OnInit {
@@ -58,7 +55,9 @@ export class MedicalRecordPaymentDialog implements OnInit {
   form!: FormGroup;
   isSubmitting = signal(false);
   searchingPolicies = signal(false);
-  policySearchResults = signal<Array<{ id: string; policy_number: string; holder_name: string }>>([]);
+  policySearchResults = signal<Array<{ id: string; policy_number: string; holder_name: string }>>(
+    []
+  );
   selectedPolicy = signal<{ id: string; policy_number: string; holder_name: string } | null>(null);
 
   readonly today = new Date();
@@ -87,31 +86,34 @@ export class MedicalRecordPaymentDialog implements OnInit {
     });
 
     // Setup policy search
-    this.form.get('policy_search')?.valueChanges.pipe(
-      debounceTime(300),
-      distinctUntilChanged(),
-      switchMap((term: string) => {
-        if (!term || term.length < 2) {
-          this.policySearchResults.set([]);
-          return of([]);
+    this.form
+      .get('policy_search')
+      ?.valueChanges.pipe(
+        debounceTime(300),
+        distinctUntilChanged(),
+        switchMap((term: string) => {
+          if (!term || term.length < 2) {
+            this.policySearchResults.set([]);
+            return of([]);
+          }
+          this.searchingPolicies.set(true);
+          // Search policies
+          this.policyStore.loadAll({ search: term, per_page: 10, page: 1 });
+          return of(this.policyStore.policies());
+        })
+      )
+      .subscribe((results) => {
+        this.searchingPolicies.set(false);
+        if (Array.isArray(results)) {
+          this.policySearchResults.set(
+            results.map((p) => ({
+              id: p.id,
+              policy_number: p.policy_number,
+              holder_name: p.holder_name ?? '',
+            }))
+          );
         }
-        this.searchingPolicies.set(true);
-        // Search policies
-        this.policyStore.loadAll({ search: term, per_page: 10, page: 1 });
-        return of(this.policyStore.policies());
-      })
-    ).subscribe((results) => {
-      this.searchingPolicies.set(false);
-      if (Array.isArray(results)) {
-        this.policySearchResults.set(
-          results.map((p) => ({
-            id: p.id,
-            policy_number: p.policy_number,
-            holder_name: p.holder_name ?? '',
-          }))
-        );
-      }
-    });
+      });
   }
 
   selectPolicy(policy: { id: string; policy_number: string; holder_name: string }): void {

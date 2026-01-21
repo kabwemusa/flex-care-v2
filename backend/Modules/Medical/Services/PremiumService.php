@@ -98,9 +98,9 @@ class PremiumService
         // 3. Final Totals
         $discountAmount = (float) $application->discount_amount; // Calculated by DiscountService previously
         $totalPremium = $basePremium + $addonPremium + $loadingAmount - $discountAmount;
-        
-        // Tax
-        $taxRate = config('medical.tax_rate', 0.05); // e.g., 0.16 for VAT
+
+        // Tax - configured in config/medical.php
+        $taxRate = config('medical.tax_rate', 0.05);
         $taxAmount = round($totalPremium * $taxRate, 2);
         $grossPremium = $totalPremium + $taxAmount;
 
@@ -193,8 +193,9 @@ class PremiumService
         // 3. Totals
         $discountAmount = (float) $policy->discount_amount;
         $totalPremium = $basePremium + $addonPremium + $loadingAmount - $discountAmount;
-        
-        $taxRate = config('medical.tax_rate', 0.0);
+
+        // Tax - configured in config/medical.php
+        $taxRate = config('medical.tax_rate', 0.05);
         $taxAmount = round($totalPremium * $taxRate, 2);
         $grossPremium = $totalPremium + $taxAmount;
 

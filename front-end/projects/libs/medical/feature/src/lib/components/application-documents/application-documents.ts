@@ -12,6 +12,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatDialogModule, MatDialog } from '@angular/material/dialog';
 
 import { ApplicationStore, DOCUMENT_TYPES } from 'medical-data';
 import { FeedbackService } from 'shared';
@@ -30,6 +31,7 @@ import { FeedbackService } from 'shared';
     MatProgressSpinnerModule,
     MatTableModule,
     MatTooltipModule,
+    MatDialogModule,
   ],
   templateUrl: './application-documents.html',
 })
@@ -37,6 +39,7 @@ export class ApplicationDocumentsComponent {
   private readonly fb = inject(FormBuilder);
   private readonly store = inject(ApplicationStore);
   private readonly feedback = inject(FeedbackService);
+  private readonly dialog = inject(MatDialog);
 
   // Inputs
   readonly applicationId = input.required<string>();
@@ -172,5 +175,53 @@ export class ApplicationDocumentsComponent {
 
   getMemberName(doc: any): string {
     return doc.member ? `${doc.member.first_name} ${doc.member.last_name}` : 'Application';
+  }
+
+  downloadDocument(doc: any) {
+    this.store.downloadDocument(this.applicationId(), doc.id).subscribe({
+      next: (response) => {
+        const blob = response.body;
+        if (blob) {
+          const url = window.URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = doc.file_name;
+          link.click();
+          window.URL.revokeObjectURL(url);
+        }
+      },
+      error: () => {
+        this.feedback.error('Failed to download document');
+      },
+    });
+  }
+
+  previewDocument(doc: any) {
+    const previewableTypes = ['application/pdf', 'image/jpeg', 'image/png', 'image/jpg'];
+
+    if (!previewableTypes.includes(doc.mime_type)) {
+      this.downloadDocument(doc);
+      return;
+    }
+
+    this.store.downloadDocument(this.applicationId(), doc.id, true).subscribe({
+      next: (response) => {
+        const blob = response.body;
+        if (blob) {
+          const url = window.URL.createObjectURL(blob);
+          window.open(url, '_blank');
+          // Delay revoking to allow time for the new window to load
+          setTimeout(() => window.URL.revokeObjectURL(url), 1000);
+        }
+      },
+      error: () => {
+        this.feedback.error('Failed to preview document');
+      },
+    });
+  }
+
+  isPreviewable(doc: any): boolean {
+    const previewableTypes = ['application/pdf', 'image/jpeg', 'image/png', 'image/jpg'];
+    return previewableTypes.includes(doc.mime_type);
   }
 }

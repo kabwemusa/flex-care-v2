@@ -26,14 +26,20 @@ class ModuleServiceProvider extends ServiceProvider
                 continue;
             }
 
-            // 3. Load Routes
+            // 3. Load Config
+            $configPath = "$module/Config/" . strtolower($moduleName) . ".php";
+            if (File::exists($configPath)) {
+                $this->mergeConfigFrom($configPath, strtolower($moduleName));
+            }
+
+            // 4. Load Routes
             if (File::exists("$module/Routes/api.php")) {
                 Route::prefix('api')
                     ->middleware('api')
                     ->group("$module/Routes/api.php");
             }
 
-            // 4. Load Migrations
+            // 5. Load Migrations
             if (File::exists("$module/Migrations")) {
                 $this->loadMigrationsFrom("$module/Migrations");
             }

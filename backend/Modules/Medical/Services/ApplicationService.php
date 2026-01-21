@@ -19,7 +19,8 @@ use Exception;
 class ApplicationService
 {
     public function __construct(
-        protected PremiumService $premiumService
+        protected PremiumService $premiumService,
+        protected BillingService $billingService
     ) {}
 
     // =========================================================================
@@ -278,9 +279,10 @@ class ApplicationService
         string $underwriterId,
         array $loadings = [],
         array $exclusions = [],
+        array $discounts = [],
         ?string $notes = null
     ): ApplicationMember {
-        
+
         $updateData = [
             'underwritten_by' => $underwriterId,
             'underwritten_at' => now(),
@@ -290,8 +292,9 @@ class ApplicationService
         switch ($decision) {
             case 'approve':
                 $updateData['underwriting_status'] = MedicalConstants::UW_STATUS_APPROVED;
-                $updateData['applied_loadings'] = []; 
-                $updateData['applied_exclusions'] = []; 
+                $updateData['applied_loadings'] = [];
+                $updateData['applied_exclusions'] = [];
+                $updateData['applied_discounts'] = [];
                 break;
 
             case 'decline':
@@ -303,6 +306,7 @@ class ApplicationService
                 $updateData['underwriting_status'] = MedicalConstants::UW_STATUS_TERMS;
                 $updateData['applied_loadings'] = $loadings;
                 $updateData['applied_exclusions'] = $exclusions;
+                $updateData['applied_discounts'] = $discounts;
                 break;
 
             default:
@@ -319,13 +323,49 @@ class ApplicationService
             throw new Exception("Cannot recalculate premium: Application has no active Rate Card.");
         }
 
+        // Calculate and update discount amount on the application
+        $this->updateApplicationDiscountAmount($application);
+
         // FIX: Pass the RateCard as the second argument
         $this->premiumService->calculateApplicationMemberPremium($member, $application->rateCard);
-        
+
         // Recalculate application (totals)
         $this->premiumService->calculateApplicationPremium($application);
 
         return $member->fresh();
+    }
+
+    /**
+     * Calculate the total discount amount from all member-applied discounts
+     * and update the application's discount_amount field.
+     */
+    protected function updateApplicationDiscountAmount(Application $application): void
+    {
+        $application->load('activeMembers');
+
+        $totalDiscountAmount = 0;
+        $basePremium = (float) $application->base_premium;
+
+        foreach ($application->activeMembers as $member) {
+            $appliedDiscounts = $member->applied_discounts ?? [];
+
+            foreach ($appliedDiscounts as $discount) {
+                $type = $discount['type'] ?? 'percentage';
+                $value = (float) ($discount['value'] ?? 0);
+
+                if ($type === 'percentage') {
+                    // Calculate percentage of base premium for this member
+                    $memberBasePremium = (float) ($member->base_premium ?? 0);
+                    $totalDiscountAmount += round($memberBasePremium * ($value / 100), 2);
+                } elseif ($type === 'fixed') {
+                    $totalDiscountAmount += $value;
+                }
+            }
+        }
+
+        $application->update([
+            'discount_amount' => round($totalDiscountAmount, 2),
+        ]);
     }
 
     public function approveApplication(Application $application, string $underwriterId, ?string $notes = null): Application
@@ -445,7 +485,7 @@ class ApplicationService
             }
 
             $policy->updateMemberCounts();
-            
+
             // 4. Update Application Status
             $application->markAsConverted($policy->id, $issuedBy);
 
@@ -454,7 +494,12 @@ class ApplicationService
                 $policy->group->update(['status' => MedicalConstants::GROUP_STATUS_ACTIVE]);
             }
 
-            return $policy->fresh(['scheme', 'plan', 'members']);
+            // 6. Auto-generate first invoice if configured
+            if (config('medical.invoice.auto_generate_on_policy_creation', true)) {
+                $this->billingService->generateFirstInvoice($policy, $issuedBy);
+            }
+
+            return $policy->fresh(['scheme', 'plan', 'members', 'invoices']);
         });
     }
 

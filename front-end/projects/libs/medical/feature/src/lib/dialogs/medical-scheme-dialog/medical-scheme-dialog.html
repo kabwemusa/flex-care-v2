@@ -43,6 +43,13 @@
       (selectionChange)="onStepChange($event.selectedIndex)"
       class="!bg-transparent"
     >
+      <ng-template matStepperIcon="edit">
+        <mat-icon fontSet="material-symbols-rounded" class="!text-green-600">check</mat-icon>
+      </ng-template>
+
+      <ng-template matStepperIcon="done">
+        <mat-icon fontSet="material-symbols-rounded" class="!text-green-600">check</mat-icon>
+      </ng-template>
       <!-- Step 1: Basic Information -->
       <mat-step [stepControl]="basicInfoForm" label="Basic Info">
         <form [formGroup]="basicInfoForm" class="p-6 space-y-5">
@@ -56,7 +63,11 @@
             <label class="text-sm font-medium text-slate-700">
               Scheme Name <span class="text-red-500">*</span>
             </label>
-            <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+            <mat-form-field
+              appearance="fill"
+              class="w-full minimal-input"
+              subscriptSizing="dynamic"
+            >
               <input matInput formControlName="name" placeholder="e.g. Corporate Gold Plus" />
               <mat-icon matSuffix fontSet="material-symbols-rounded" class="!text-slate-400"
                 >badge</mat-icon
@@ -74,7 +85,11 @@
             <label class="text-sm font-medium text-slate-700">
               Market Segment <span class="text-red-500">*</span>
             </label>
-            <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+            <mat-form-field
+              appearance="fill"
+              class="w-full minimal-input"
+              subscriptSizing="dynamic"
+            >
               <mat-select
                 formControlName="market_segments"
                 placeholder="Select target markets"
@@ -120,7 +135,11 @@
           <!-- Description -->
           <div class="flex flex-col gap-1.5">
             <label class="text-sm font-medium text-slate-700">Description</label>
-            <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+            <mat-form-field
+              appearance="fill"
+              class="w-full minimal-input"
+              subscriptSizing="dynamic"
+            >
               <textarea
                 matInput
                 formControlName="description"
@@ -138,7 +157,11 @@
               <label class="text-sm font-medium text-slate-700">
                 Effective From <span class="text-red-500">*</span>
               </label>
-              <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+              <mat-form-field
+                appearance="fill"
+                class="w-full minimal-input"
+                subscriptSizing="dynamic"
+              >
                 <input
                   matInput
                   [matDatepicker]="fromPicker"
@@ -152,7 +175,11 @@
 
             <div class="flex flex-col gap-1.5">
               <label class="text-sm font-medium text-slate-700">Effective To</label>
-              <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+              <mat-form-field
+                appearance="fill"
+                class="w-full minimal-input"
+                subscriptSizing="dynamic"
+              >
                 <input
                   matInput
                   [matDatepicker]="toPicker"
@@ -207,7 +234,11 @@
             <div class="grid grid-cols-2 gap-4">
               <div class="flex flex-col gap-1.5">
                 <label class="text-xs text-slate-500">Minimum Age</label>
-                <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+                <mat-form-field
+                  appearance="fill"
+                  class="w-full minimal-input"
+                  subscriptSizing="dynamic"
+                >
                   <input matInput type="number" formControlName="min_age" min="0" max="100" />
                   <span matTextSuffix class="text-slate-400 text-sm">years</span>
                 </mat-form-field>
@@ -215,7 +246,11 @@
 
               <div class="flex flex-col gap-1.5">
                 <label class="text-xs text-slate-500">Maximum Age</label>
-                <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+                <mat-form-field
+                  appearance="fill"
+                  class="w-full minimal-input"
+                  subscriptSizing="dynamic"
+                >
                   <input matInput type="number" formControlName="max_age" min="0" max="120" />
                   <span matTextSuffix class="text-slate-400 text-sm">years</span>
                 </mat-form-field>
@@ -230,7 +265,11 @@
             <div class="grid grid-cols-2 gap-4">
               <div class="flex flex-col gap-1.5">
                 <label class="text-xs text-slate-500">Minimum Members</label>
-                <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+                <mat-form-field
+                  appearance="fill"
+                  class="w-full minimal-input"
+                  subscriptSizing="dynamic"
+                >
                   <input
                     matInput
                     type="number"
@@ -243,7 +282,11 @@
 
               <div class="flex flex-col gap-1.5">
                 <label class="text-xs text-slate-500">Maximum Members</label>
-                <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+                <mat-form-field
+                  appearance="fill"
+                  class="w-full minimal-input"
+                  subscriptSizing="dynamic"
+                >
                   <input
                     matInput
                     type="number"
@@ -261,7 +304,11 @@
           <!-- Required Documents -->
           <div class="flex flex-col gap-1.5">
             <label class="text-sm font-medium text-slate-700">Required Documents</label>
-            <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+            <mat-form-field
+              appearance="fill"
+              class="w-full minimal-input"
+              subscriptSizing="dynamic"
+            >
               <mat-select
                 formControlName="required_documents"
                 multiple
@@ -320,7 +367,11 @@
             @if (underwritingForm.get('require_medical_exam')?.value) {
             <div class="flex flex-col gap-1.5 pt-2 border-t border-slate-100">
               <label class="text-xs text-slate-500">Age Threshold for Medical Exam</label>
-              <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+              <mat-form-field
+                appearance="fill"
+                class="w-full minimal-input"
+                subscriptSizing="dynamic"
+              >
                 <input
                   matInput
                   type="number"
@@ -337,7 +388,11 @@
           <!-- Auto Accept -->
           <div class="flex flex-col gap-1.5">
             <label class="text-sm font-medium text-slate-700">Auto-Accept Age Limit</label>
-            <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+            <mat-form-field
+              appearance="fill"
+              class="w-full minimal-input"
+              subscriptSizing="dynamic"
+            >
               <input matInput type="number" formControlName="auto_accept_age_limit" min="0" />
               <span matTextSuffix class="text-slate-400 text-sm">years</span>
             </mat-form-field>

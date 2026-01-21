@@ -9,7 +9,7 @@ html {
   @include mat.theme(
     (
       color: (
-        primary: mat.$azure-palette,
+        primary: mat.$cyan-palette,
         tertiary: mat.$violet-palette,
       ),
       // 2. CHANGE THIS: Replaces Roboto with Inter globally for Material components

@@ -259,6 +259,21 @@ class Policy extends BaseModel
     // SCOPES
     // =========================================================================
 
+    public function scopeSearch($query, string $term)
+    {
+        return $query->where(function ($q) use ($term) {
+            $q->where('policy_number', 'like', "%{$term}%")
+              ->orWhere('holder_name', 'like', "%{$term}%")
+              ->orWhere('holder_email', 'like', "%{$term}%")
+              ->orWhere('holder_phone', 'like', "%{$term}%");
+        });
+    }
+
+    public function scopeDraft($query)
+    {
+        return $query->where('status', MedicalConstants::POLICY_STATUS_DRAFT);
+    }
+
     public function scopeActive($query)
     {
         return $query->where('status', MedicalConstants::POLICY_STATUS_ACTIVE);
@@ -280,6 +295,12 @@ class Policy extends BaseModel
     }
 
     public function scopeExpiringSoon($query, int $days = 30)
+    {
+        return $query->where('status', MedicalConstants::POLICY_STATUS_ACTIVE)
+            ->whereBetween('expiry_date', [now(), now()->addDays($days)]);
+    }
+
+    public function scopeExpiringWithin($query, int $days = 30)
     {
         return $query->where('status', MedicalConstants::POLICY_STATUS_ACTIVE)
             ->whereBetween('expiry_date', [now(), now()->addDays($days)]);
@@ -501,8 +522,9 @@ class Policy extends BaseModel
         $this->addon_premium = $this->activeAddons()->sum('premium');
         
         $this->total_premium = $this->base_premium + $this->addon_premium + $this->loading_amount - $this->discount_amount;
-        
-        $taxRate = config('medical.tax_rate', 0);
+
+        // Tax - configured in config/medical.php
+        $taxRate = config('medical.tax_rate', 0.05);
         $this->tax_amount = round($this->total_premium * $taxRate, 2);
         
         $this->gross_premium = $this->total_premium + $this->tax_amount;

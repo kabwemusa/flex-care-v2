@@ -98,6 +98,11 @@ export class MedicalUnderwritingDialog implements OnInit {
   readonly promoCodeControl = new FormControl('');
   readonly isValidatingPromo = signal(false);
 
+  // Expansion panel states
+  readonly loadingsExpanded = signal(true);
+  readonly discountsExpanded = signal(false);
+  readonly exclusionsExpanded = signal(false);
+
   // --- Rules & Computed Logic ---
 
   // Get active rules from store
@@ -210,6 +215,17 @@ export class MedicalUnderwritingDialog implements OnInit {
 
   // Get available plan exclusions
   readonly availablePlanExclusions = computed(() => this.planExclusionStore.activeExclusions());
+
+  // Get applied promo codes with their index for removal
+  readonly appliedPromoCodes = computed(() => {
+    const promos: { code: string; index: number }[] = [];
+    this.discountsArray.controls.forEach((ctrl, idx) => {
+      if (ctrl.get('is_promo')?.value && ctrl.get('promo_code')?.value) {
+        promos.push({ code: ctrl.get('promo_code')?.value, index: idx });
+      }
+    });
+    return promos;
+  });
 
   private buildForm() {
     this.form = this.fb.group({
@@ -466,6 +482,29 @@ export class MedicalUnderwritingDialog implements OnInit {
     });
     this.discountsArray.push(group);
   }
+
+  removeDiscountByRuleId(ruleId: string) {
+    const index = this.discountsArray.controls.findIndex(
+      (ctrl) => ctrl.get('discount_rule_id')?.value === ruleId
+    );
+    if (index !== -1) {
+      this.discountsArray.removeAt(index);
+    }
+  }
+
+  removePromoDiscount(index: number) {
+    this.discountsArray.removeAt(index);
+  }
+
+  removeExclusionByPlanId(planExclusionId: string) {
+    const index = this.exclusionsArray.controls.findIndex(
+      (ctrl) => ctrl.get('plan_exclusion_id')?.value === planExclusionId
+    );
+    if (index !== -1) {
+      this.exclusionsArray.removeAt(index);
+    }
+  }
+
   // --- Actions ---
 
   cancel() {

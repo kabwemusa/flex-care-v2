@@ -1,7 +1,8 @@
 {
   "permissions": {
     "allow": [
-      "Bash(cat:*)"
+      "Bash(cat:*)",
+      "Bash(\"C:\\\\Users\\\\CICT-SD\\\\.config\\\\herd\\\\bin\\\\php.bat\" artisan tinker --execute=\"echo ''PHP syntax OK'';\")"
     ]
   }
 }

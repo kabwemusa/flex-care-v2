@@ -102,11 +102,7 @@
 
           <!-- Filter Dropdowns -->
           <div class="flex items-start gap-2 flex-wrap">
-            <mat-form-field
-              appearance="outline"
-              subscriptSizing="dynamic"
-              class="modern-filter-select w-56"
-            >
+            <mat-form-field appearance="fill" subscriptSizing="dynamic" class="minimal-input w-56">
               <mat-select
                 [value]="selectedSegment()"
                 (selectionChange)="filterBySegment($event.value)"

@@ -23,12 +23,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatDialog } from '@angular/material/dialog';
 
 // Domain Imports
-import {
-  BillingStore,
-  Payment,
-  PaymentFilters,
-  formatCurrency,
-} from 'medical-data';
+import { BillingStore, Payment, PaymentFilters, formatCurrency } from 'medical-data';
 import { FeedbackService, PageHeaderComponent } from 'shared';
 import {
   PAYMENT_STATUS_STYLES,
@@ -117,9 +112,15 @@ export class MedicalBillingPayments implements OnInit {
   );
 
   // KPIs from store stats
-  readonly totalReceived = computed(() => this.store.stats()?.payments?.summary?.total_received ?? 0);
-  readonly unallocatedAmount = computed(() => this.store.stats()?.payments?.summary?.total_unallocated ?? 0);
-  readonly paymentsThisMonth = computed(() => this.store.stats()?.payments?.summary?.total_payments ?? 0);
+  readonly totalReceived = computed(
+    () => this.store.stats()?.payments?.summary?.total_received ?? 0
+  );
+  readonly unallocatedAmount = computed(
+    () => this.store.stats()?.payments?.summary?.total_unallocated ?? 0
+  );
+  readonly paymentsThisMonth = computed(
+    () => this.store.stats()?.payments?.summary?.total_payments ?? 0
+  );
 
   ngOnInit(): void {
     this.loadPayments();
@@ -221,7 +222,7 @@ export class MedicalBillingPayments implements OnInit {
 
   openRecordPaymentDialog(): void {
     const dialogRef = this.dialog.open(MedicalRecordPaymentDialog, {
-      width: '600px',
+      maxWidth: '70vw',
       maxHeight: '90vh',
       disableClose: true,
       panelClass: ['responsive-dialog', 'bg-white'],
@@ -252,7 +253,9 @@ export class MedicalBillingPayments implements OnInit {
     if (
       await this.feedback.confirm(
         'Auto-Allocate Payment',
-        `Automatically allocate ${formatCurrency(payment.unallocated_amount)} to outstanding invoices?`
+        `Automatically allocate ${formatCurrency(
+          payment.unallocated_amount
+        )} to outstanding invoices?`
       )
     ) {
       this.store.autoAllocatePayment(payment.id).subscribe({

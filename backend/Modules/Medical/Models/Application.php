@@ -535,8 +535,8 @@ class Application extends BaseModel
         // Calculate totals
         $this->total_premium = $this->base_premium + $this->addon_premium + $this->loading_amount - $this->discount_amount;
         
-        // Tax (configurable)
-        $taxRate = config('medical.tax_rate', 0);
+        // Tax - configured in config/medical.php
+        $taxRate = config('medical.tax_rate', 0.05);
         $this->tax_amount = round($this->total_premium * $taxRate, 2);
         
         $this->gross_premium = $this->total_premium + $this->tax_amount;

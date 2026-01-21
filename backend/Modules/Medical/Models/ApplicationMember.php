@@ -47,6 +47,7 @@ class ApplicationMember extends BaseModel
         'underwriting_status',
         'applied_loadings',
         'applied_exclusions',
+        'applied_discounts',
         'underwriting_notes',
         'underwritten_by',
         'underwritten_at',
@@ -66,6 +67,7 @@ class ApplicationMember extends BaseModel
         'declared_conditions' => 'array',
         'applied_loadings' => 'array',
         'applied_exclusions' => 'array',
+        'applied_discounts' => 'array',
         'underwritten_at' => 'datetime',
         'is_active' => 'boolean',
     ];
