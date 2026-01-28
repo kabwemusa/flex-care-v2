@@ -5,7 +5,7 @@ import { catchError, throwError } from 'rxjs';
 
 // @medical/data/interceptors/api.interceptor.ts
 export const apiInterceptor: HttpInterceptorFn = (req, next) => {
-  const snackbar = inject(MatSnackBar);
+  // const snackbar = inject(MatSnackBar);
 
   return next(req).pipe(
     catchError((err: HttpErrorResponse) => {
@@ -13,7 +13,7 @@ export const apiInterceptor: HttpInterceptorFn = (req, next) => {
       const errorMessage = err.error?.message || 'A system error occurred';
       const validationErrors = err.error?.errors;
 
-      snackbar.open(errorMessage, 'Close', { panelClass: 'error-snackbar' });
+      // snackbar.open(errorMessage, 'Close', { panelClass: 'error-snackbar' });
 
       return throwError(() => err.error);
     })
