@@ -227,8 +227,7 @@ return new class extends Migration
             $table->uuid('id')->primary();
             $table->foreignUuid('application_id')->constrained('med_applications')->cascadeOnDelete();
             $table->foreignUuid('addon_id')->constrained('med_addons')->restrictOnDelete();
-            $table->foreignUuid('addon_rate_id')->nullable()->constrained('med_addon_rates')->nullOnDelete();
-            
+           
             $table->decimal('premium', 15, 2)->default(0);
             $table->boolean('is_active')->default(true);
             
