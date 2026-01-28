@@ -40,8 +40,8 @@ class ModuleServiceProvider extends ServiceProvider
             }
 
             // 5. Load Migrations
-            if (File::exists("$module/Migrations")) {
-                $this->loadMigrationsFrom("$module/Migrations");
+            if (File::exists("$module/Database/Migrations")) {
+                $this->loadMigrationsFrom("$module/Database/Migrations");
             }
         }
     }
