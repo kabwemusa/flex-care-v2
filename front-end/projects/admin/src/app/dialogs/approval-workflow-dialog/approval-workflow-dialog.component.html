@@ -1,0 +1,206 @@
+<div class="flex flex-col max-h-[85vh]">
+  <!-- Header -->
+  <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+    <div>
+      <h2 class="text-lg font-semibold text-slate-900">
+        {{ isEdit ? 'Edit Workflow' : 'Create Workflow' }}
+      </h2>
+      <p class="text-sm text-slate-500">Configure a multi-step approval process</p>
+    </div>
+    <button mat-icon-button (click)="dialogRef.close()" class="!-mr-2">
+      <mat-icon fontSet="material-symbols-rounded">close</mat-icon>
+    </button>
+  </div>
+
+  <!-- Content -->
+  <div class="flex-1 overflow-y-auto px-6 py-5">
+    <form [formGroup]="form" class="space-y-5">
+      <!-- Basic Info -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <mat-form-field appearance="fill" class="w-full">
+          <mat-label>Workflow Name</mat-label>
+          <input matInput formControlName="name" placeholder="e.g., Application Approval" />
+          @if (form.get('name')?.hasError('required')) {
+          <mat-error>Name is required</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="fill" class="w-full">
+          <mat-label>Code</mat-label>
+          <input
+            matInput
+            formControlName="code"
+            placeholder="e.g., application_approval"
+            [readonly]="isEdit"
+          />
+          @if (form.get('code')?.hasError('required')) {
+          <mat-error>Code is required</mat-error>
+          } @if (form.get('code')?.hasError('pattern')) {
+          <mat-error>Only lowercase letters, numbers, underscores and hyphens</mat-error>
+          } @if (!isEdit) {
+          <button
+            matSuffix
+            mat-icon-button
+            type="button"
+            (click)="generateCode()"
+            matTooltip="Generate from name"
+          >
+            <mat-icon fontSet="material-symbols-rounded">auto_fix_high</mat-icon>
+          </button>
+          }
+        </mat-form-field>
+      </div>
+
+      <mat-form-field appearance="fill" class="w-full minimal-input">
+        <mat-label>Entity Type</mat-label>
+        <mat-select formControlName="entity_type">
+          @for (type of entityTypes; track type.code) {
+          <mat-option [value]="type.code">{{ type.label }}</mat-option>
+          }
+        </mat-select>
+        <mat-hint>The type of entity this workflow applies to</mat-hint>
+        @if (form.get('entity_type')?.hasError('required')) {
+        <mat-error>Entity type is required</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="fill" class="w-full minimal-input">
+        <mat-label>Description</mat-label>
+        <textarea
+          matInput
+          formControlName="description"
+          rows="2"
+          placeholder="Describe when this workflow is used..."
+        ></textarea>
+      </mat-form-field>
+
+      <div class="flex items-center justify-between p-4 bg-slate-50 rounded-lg">
+        <div>
+          <p class="font-medium text-slate-900">Active Status</p>
+          <p class="text-sm text-slate-500">Inactive workflows cannot be used</p>
+        </div>
+        <mat-slide-toggle formControlName="is_active" color="primary"></mat-slide-toggle>
+      </div>
+
+      <!-- Steps -->
+      <div class="border-t border-slate-200 pt-5">
+        <div class="flex items-center justify-between mb-4">
+          <div>
+            <h3 class="font-semibold text-slate-900">Approval Steps</h3>
+            <p class="text-sm text-slate-500">Define the sequence of approval steps</p>
+          </div>
+          <button
+            mat-stroked-button
+            type="button"
+            (click)="addStep()"
+            class="!border-blue-200 !text-blue-600"
+          >
+            <mat-icon fontSet="material-symbols-rounded" class="mr-1">add</mat-icon>
+            Add Step
+          </button>
+        </div>
+
+        @if (stepsArray.length === 0) {
+        <div
+          class="text-center py-8 bg-slate-50 rounded-lg border-2 border-dashed border-slate-200"
+        >
+          <mat-icon fontSet="material-symbols-rounded" class="!text-4xl !text-slate-300">
+            account_tree
+          </mat-icon>
+          <p class="text-sm text-slate-500 mt-2">No steps configured</p>
+          <button mat-button color="primary" type="button" (click)="addStep()" class="!mt-2">
+            Add First Step
+          </button>
+        </div>
+        } @else {
+        <div
+          cdkDropList
+          (cdkDropListDropped)="onStepDrop($event)"
+          class="space-y-3"
+          formArrayName="steps"
+        >
+          @for (step of stepsArray.controls; track $index; let i = $index) {
+          <div
+            cdkDrag
+            class="border border-slate-200 rounded-lg p-4 bg-white hover:border-slate-300 transition-colors"
+            [formGroupName]="i"
+          >
+            <div class="flex items-start gap-4">
+              <!-- Drag Handle -->
+              <div
+                cdkDragHandle
+                class="flex flex-col items-center gap-1 pt-2 cursor-move text-slate-400 hover:text-slate-600"
+              >
+                <mat-icon fontSet="material-symbols-rounded" class="!text-lg"
+                  >drag_indicator</mat-icon
+                >
+                <span class="text-xs font-semibold">{{ i + 1 }}</span>
+              </div>
+
+              <!-- Step Fields -->
+              <div class="flex-1 grid grid-cols-1 md:grid-cols-2 gap-3">
+                <mat-form-field appearance="fill" class="w-full minimal-input">
+                  <mat-label>Step Name</mat-label>
+                  <input matInput formControlName="name" placeholder="e.g., Initial Review" />
+                </mat-form-field>
+
+                <mat-form-field appearance="fill" class="w-full">
+                  <mat-label>Approval Group</mat-label>
+                  <mat-select formControlName="group_id">
+                    @for (group of groupStore.activeGroups(); track group.id) {
+                    <mat-option [value]="group.id">{{ group.name }}</mat-option>
+                    }
+                  </mat-select>
+                </mat-form-field>
+
+                <mat-form-field appearance="fill" class="w-full minimal-input md:col-span-2">
+                  <mat-label>Description (optional)</mat-label>
+                  <input
+                    matInput
+                    formControlName="description"
+                    placeholder="What happens in this step?"
+                  />
+                </mat-form-field>
+              </div>
+
+              <!-- Remove Button -->
+              <button
+                mat-icon-button
+                type="button"
+                (click)="removeStep(i)"
+                class="!text-slate-400 hover:!text-red-500 !-mt-1"
+                matTooltip="Remove step"
+              >
+                <mat-icon fontSet="material-symbols-rounded">delete</mat-icon>
+              </button>
+            </div>
+          </div>
+          }
+        </div>
+
+        @if (stepsArray.length > 1) {
+        <p class="text-xs text-slate-500 mt-3 flex items-center gap-1">
+          <mat-icon fontSet="material-symbols-rounded" class="!text-sm">info</mat-icon>
+          Drag steps to reorder them
+        </p>
+        } }
+      </div>
+    </form>
+  </div>
+
+  <!-- Footer -->
+  <div class="flex items-center justify-end gap-3 px-6 py-4 border-t border-slate-100 bg-slate-50">
+    <button mat-button (click)="dialogRef.close()">Cancel</button>
+    <button
+      mat-flat-button
+      color="primary"
+      (click)="onSubmit()"
+      [disabled]="saving || form.invalid"
+    >
+      @if (saving) {
+      <mat-spinner diameter="18" class="mr-2"></mat-spinner>
+      }
+      {{ isEdit ? 'Update' : 'Create' }}
+    </button>
+  </div>
+</div>

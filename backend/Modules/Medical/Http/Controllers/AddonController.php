@@ -180,13 +180,13 @@ class AddonController extends Controller
     /**
      * Get addons dropdown.
      * GET /v1/medical/addons/dropdown
+     * GET /v1/medical/lookups/addons
      */
     public function dropdown(): JsonResponse
     {
         try {
-            $addons = Addon::active()
-                ->effective()
-                ->ordered()
+            // For lookups, return all addons (no filtering)
+            $addons = Addon::orderBy('name')
                 ->get(['id', 'code', 'name', 'addon_type']);
 
             return $this->success($addons, 'Addons retrieved');

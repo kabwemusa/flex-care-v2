@@ -42,10 +42,14 @@
     </div> -->
 
     <div class="flex items-center gap-1 sm:gap-2">
+      <!-- Notification Bell -->
       <button
         mat-icon-button
+        [matMenuTriggerFor]="notificationMenu"
+        (menuOpened)="onNotificationMenuOpened()"
         class="group !text-foreground-500 hover:!bg-primary/10 hover:!text-primary transition-colors"
-        [matBadge]="3"
+        [matBadge]="unreadCount() > 0 ? (unreadCount() > 99 ? '99+' : unreadCount()) : null"
+        [matBadgeHidden]="!hasUnread()"
         matBadgeColor="warn"
         matBadgeSize="small"
       >
@@ -56,6 +60,99 @@
           notifications
         </mat-icon>
       </button>
+
+      <!-- Notification Menu -->
+      <mat-menu
+        #notificationMenu="matMenu"
+        xPosition="before"
+        class="!min-w-[360px] !max-w-[400px] !rounded-xl !border !border-divider/50 !bg-background/95 !backdrop-blur-md"
+      >
+        <!-- Header -->
+        <div class="flex items-center justify-between px-4 py-3 border-b border-divider/50">
+          <h3 class="text-sm font-semibold text-foreground">Notifications</h3>
+          @if (hasUnread()) {
+            <button
+              mat-button
+              (click)="markAllAsRead(); $event.stopPropagation()"
+              class="!text-xs !text-primary !min-w-0 !px-2 !h-7"
+            >
+              Mark all read
+            </button>
+          }
+        </div>
+
+        <!-- Notification List -->
+        <div class="max-h-[400px] overflow-y-auto">
+          @if (isLoadingNotifications()) {
+            <div class="flex items-center justify-center py-8">
+              <mat-spinner diameter="24"></mat-spinner>
+            </div>
+          } @else if (notifications().length === 0) {
+            <div class="flex flex-col items-center justify-center py-8 px-4 text-center">
+              <mat-icon
+                fontSet="material-symbols-rounded"
+                
+              >
+                notifications_none
+              </mat-icon>
+              <p class="text-sm text-muted-foreground">No notifications yet</p>
+            </div>
+          } @else {
+            @for (notification of notifications().slice(0, 10); track notification.id) {
+              <button
+                mat-menu-item
+                (click)="onNotificationClick(notification)"
+                class="!h-auto !py-3 !px-4 !whitespace-normal hover:!bg-content2"
+                [class.!bg-primary/5]="!notification.read_at"
+              >
+                <div class="flex items-start gap-3 w-full">
+                  <div
+                    class="flex-shrink-0 w-9 h-9 rounded-full flex items-center justify-center"
+                    [ngClass]="notification.read_at ? 'bg-gray-100' : 'bg-primary/10'"
+                  >
+                    <mat-icon
+                      fontSet="material-symbols-rounded"
+                     
+                      [ngClass]="getNotificationIconColor(notification.data['type'])"
+                    >
+                      {{ getNotificationIcon(notification.data['type']) }}
+                    </mat-icon>
+                  </div>
+                  <div class="flex-1 min-w-0">
+                    <p class="text-sm font-medium text-foreground line-clamp-1">
+                      {{ notification.data['title'] }}
+                    </p>
+                    <p class="text-xs text-muted-foreground mt-0.5 line-clamp-2">
+                      {{ notification.data['message'] }}
+                    </p>
+                    <p class="text-[10px] text-muted-foreground/70 mt-1">
+                      {{ getTimeAgo(notification.created_at) }}
+                    </p>
+                  </div>
+                  @if (!notification.read_at) {
+                    <div class="flex-shrink-0">
+                      <span class="w-2 h-2 rounded-full bg-primary block"></span>
+                    </div>
+                  }
+                </div>
+              </button>
+            }
+          }
+        </div>
+
+        <!-- Footer -->
+        @if (notifications().length > 0) {
+          <div class="border-t border-divider/50">
+            <button
+              mat-menu-item
+              (click)="viewAllApprovals()"
+              class="!h-10 !justify-center !text-primary hover:!bg-primary/5"
+            >
+              <span class="text-sm font-medium">View all approvals</span>
+            </button>
+          </div>
+        }
+      </mat-menu>
 
       <button
         mat-button

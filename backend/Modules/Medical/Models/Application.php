@@ -7,9 +7,13 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Modules\Medical\Constants\MedicalConstants;
 use Carbon\Carbon;
+use App\Traits\HasApprovalWorkflow;
+use App\Models\ApprovalWorkflow;
+use App\Models\ApprovalRequest;
 
 class Application extends BaseModel
 {
+    use HasApprovalWorkflow;
     protected $table = 'med_applications';
 
     protected $fillable = [
@@ -693,5 +697,55 @@ class Application extends BaseModel
     public function getPrincipalMember(): ?ApplicationMember
     {
         return $this->principals()->first();
+    }
+
+    // =========================================================================
+    // APPROVAL WORKFLOW IMPLEMENTATION
+    // =========================================================================
+
+    /**
+     * Get the entity type for approval workflow
+     */
+    public function getApprovalEntityType(): string
+    {
+        return ApprovalWorkflow::ENTITY_APPLICATION;
+    }
+
+    /**
+     * Callback when approval is completed (all steps approved)
+     */
+    public function onApprovalCompleted(ApprovalRequest $request): void
+    {
+        // Mark application as approved after all approval steps pass
+        $this->status = MedicalConstants::APPLICATION_STATUS_APPROVED;
+        $this->underwriting_status = MedicalConstants::UW_STATUS_APPROVED;
+        $this->underwriting_completed_at = now();
+        $this->quote_valid_until = now()->addDays(14);
+        $this->save();
+    }
+
+    /**
+     * Callback when approval is rejected
+     */
+    public function onApprovalRejected(ApprovalRequest $request, string $reason): void
+    {
+        // Mark application as declined when approval is rejected
+        $this->status = MedicalConstants::APPLICATION_STATUS_DECLINED;
+        $this->underwriting_status = MedicalConstants::UW_STATUS_DECLINED;
+        $this->underwriting_completed_at = now();
+        $this->underwriting_notes = $reason;
+        $this->save();
+    }
+
+    /**
+     * Callback when approval is returned for amendment
+     */
+    public function onApprovalReturned(ApprovalRequest $request, string $reason): void
+    {
+        // Reset application to draft status for amendment
+        $this->status = MedicalConstants::APPLICATION_STATUS_DRAFT;
+        $this->underwriting_status = null;
+        $this->underwriting_notes = "Returned for amendment: {$reason}";
+        $this->save();
     }
 }

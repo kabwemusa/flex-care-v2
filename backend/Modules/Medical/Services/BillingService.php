@@ -5,6 +5,7 @@ namespace Modules\Medical\Services;
 use Exception;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Database\Eloquent\Builder;
 use Modules\Medical\Models\Invoice;
 use Modules\Medical\Models\InvoiceItem;
@@ -13,6 +14,7 @@ use Modules\Medical\Models\Member;
 use Modules\Medical\Models\Endorsement;
 use Modules\Medical\Models\Group;
 use Modules\Medical\Constants\MedicalConstants;
+use App\Mail\InvoiceEmail;
 
 class BillingService
 {
@@ -349,17 +351,38 @@ class BillingService
     // =========================================================================
 
     /**
-     * Send an invoice.
+     * Send an invoice via email.
      */
-    public function sendInvoice(Invoice $invoice, string $via, ?string $sentBy = null): bool
+    public function sendInvoice(Invoice $invoice, string $via = 'email', ?string $sentBy = null): bool
     {
         if (!$invoice->can_be_sent) {
             throw new Exception('Invoice cannot be sent in current state');
         }
 
-        // Here you would integrate with email/notification service
-        // For now, we just update the status
+        // Load relationships for email
+        $invoice->load(['policy.plan', 'items', 'group']);
 
+        // Get recipient email
+        $recipientEmail = $invoice->bill_to_email;
+
+        if (!$recipientEmail && $invoice->policy) {
+            $recipientEmail = $invoice->policy->holder_email;
+        }
+
+        if (!$recipientEmail && $invoice->group) {
+            $recipientEmail = $invoice->group->billing_email ?? $invoice->group->contact_email;
+        }
+
+        if (!$recipientEmail) {
+            throw new Exception('No recipient email address found for this invoice');
+        }
+
+        // Send email with PDF attachment
+        if ($via === 'email') {
+            Mail::to($recipientEmail)->send(new InvoiceEmail($invoice));
+        }
+
+        // Update invoice status
         return $invoice->send($via, $sentBy);
     }
 

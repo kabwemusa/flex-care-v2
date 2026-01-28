@@ -3,16 +3,23 @@
 namespace Modules\Medical\Services;
 
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Modules\Medical\Models\Application;
 use Modules\Medical\Models\ApplicationMember;
 use Modules\Medical\Models\ApplicationAddon;
+use Modules\Medical\Models\ApplicationDocument;
 use Modules\Medical\Models\Policy;
 use Modules\Medical\Models\PolicyAddon;
+use Modules\Medical\Models\PolicyDocument;
 use Modules\Medical\Models\Member;
 use Modules\Medical\Models\MemberLoading;
 use Modules\Medical\Models\MemberExclusion;
+use Modules\Medical\Models\MemberDocument;
 use Modules\Medical\Models\PromoCode;
 use Modules\Medical\Constants\MedicalConstants;
+use App\Services\ApprovalService;
+use App\Models\ApprovalRequest;
+use App\Models\User;
 use Carbon\Carbon;
 use Exception;
 
@@ -240,7 +247,7 @@ class ApplicationService
         return $application->fresh();
     }
 
-    public function submitForUnderwriting(Application $application): Application
+    public function submitForUnderwriting(Application $application, User $submittedBy): Application
     {
         if (!$application->can_be_submitted) {
             throw new Exception('Application cannot be submitted. Check status.');
@@ -250,6 +257,25 @@ class ApplicationService
             'status' => MedicalConstants::APPLICATION_STATUS_SUBMITTED,
             'submitted_at' => now()
         ]);
+
+        // Check if there's an approval workflow for applications
+        if ($application->hasApprovalWorkflow()) {
+            try {
+                // Initiate the approval workflow
+                $application->submitForApproval($submittedBy);
+                \Log::info('Approval workflow initiated for application: ' . $application->id);
+            } catch (\Exception $e) {
+                \Log::error('Failed to initiate approval workflow: ' . $e->getMessage(), [
+                    'application_id' => $application->id,
+                    'entity_type' => $application->getApprovalEntityType(),
+                    'error' => $e->getMessage()
+                ]);
+                // Re-throw to notify user of the issue
+                throw new Exception('Failed to initiate approval workflow: ' . $e->getMessage());
+            }
+        } else {
+            \Log::info('No approval workflow found for application entity type: ' . $application->getApprovalEntityType());
+        }
 
         return $application->fresh();
     }
@@ -430,6 +456,100 @@ class ApplicationService
     }
 
     // =========================================================================
+    // APPROVAL WORKFLOW ACTIONS
+    // =========================================================================
+
+    /**
+     * Approve an application at the current approval step
+     */
+    public function approveApplicationStep(Application $application, User $approver, ?string $comments = null): array
+    {
+        $approvalService = app(ApprovalService::class);
+        $request = $application->getActiveApprovalRequest();
+
+        if (!$request) {
+            throw new Exception('No active approval request found for this application');
+        }
+
+        if (!$request->userCanApprove($approver)) {
+            throw new Exception('You are not authorized to approve at this step');
+        }
+
+        $updatedRequest = $approvalService->approve($request, $approver, $comments);
+
+        return [
+            'request' => $updatedRequest,
+            'application' => $application->fresh(),
+            'is_final' => $updatedRequest->status === ApprovalRequest::STATUS_APPROVED,
+        ];
+    }
+
+    /**
+     * Reject an application at the current approval step
+     */
+    public function rejectApplicationStep(Application $application, User $rejector, string $reason): array
+    {
+        $approvalService = app(ApprovalService::class);
+        $request = $application->getActiveApprovalRequest();
+
+        if (!$request) {
+            throw new Exception('No active approval request found for this application');
+        }
+
+        if (!$request->userCanApprove($rejector)) {
+            throw new Exception('You are not authorized to reject at this step');
+        }
+
+        $updatedRequest = $approvalService->reject($request, $rejector, $reason);
+
+        return [
+            'request' => $updatedRequest,
+            'application' => $application->fresh(),
+        ];
+    }
+
+    /**
+     * Return an application for amendment at the current approval step
+     */
+    public function returnApplicationStep(Application $application, User $returner, string $reason): array
+    {
+        $approvalService = app(ApprovalService::class);
+        $request = $application->getActiveApprovalRequest();
+
+        if (!$request) {
+            throw new Exception('No active approval request found for this application');
+        }
+
+        if (!$request->userCanApprove($returner)) {
+            throw new Exception('You are not authorized to return at this step');
+        }
+
+        $updatedRequest = $approvalService->returnForAmendment($request, $returner, $reason);
+
+        return [
+            'request' => $updatedRequest,
+            'application' => $application->fresh(),
+        ];
+    }
+
+    /**
+     * Get the approval status for an application
+     */
+    public function getApprovalStatus(Application $application): array
+    {
+        return $application->getApprovalProgress();
+    }
+
+    /**
+     * Check if user can approve the current step
+     */
+    public function canUserApprove(Application $application, User $user): bool
+    {
+        $request = $application->getActiveApprovalRequest();
+        return $request && $request->userCanApprove($user);
+    }
+
+    // =========================================================================
     // CONVERSION
     // =========================================================================
 
@@ -486,15 +606,18 @@ class ApplicationService
 
             $policy->updateMemberCounts();
 
-            // 4. Update Application Status
+            // 4. Copy Application Documents to Policy/Members
+            $this->copyApplicationDocuments($application, $policy, $memberMap);
+
+            // 5. Update Application Status
             $application->markAsConverted($policy->id, $issuedBy);
 
-            // 5. Activate Group if Prospect
+            // 6. Activate Group if Prospect
             if ($policy->group_id && $policy->group && $policy->group->status === MedicalConstants::GROUP_STATUS_PROSPECT) {
                 $policy->group->update(['status' => MedicalConstants::GROUP_STATUS_ACTIVE]);
             }
 
-            // 6. Auto-generate first invoice if configured
+            // 7. Auto-generate first invoice if configured
             if (config('medical.invoice.auto_generate_on_policy_creation', true)) {
                 $this->billingService->generateFirstInvoice($policy, $issuedBy);
             }
@@ -550,6 +673,107 @@ class ApplicationService
         }
 
         return $member;
+    }
+
+    /**
+     * Copy application documents to policy and member documents.
+     *
+     * - Documents with application_member_id → MemberDocument (linked to converted member)
+     * - Documents without application_member_id → PolicyDocument (general policy docs)
+     */
+    protected function copyApplicationDocuments(Application $application, Policy $policy, array $memberMap): void
+    {
+        $applicationDocuments = ApplicationDocument::where('application_id', $application->id)
+            ->active()
+            ->get();
+
+        foreach ($applicationDocuments as $appDoc) {
+            // Skip if file doesn't exist
+            if (!Storage::disk('private')->exists($appDoc->file_path)) {
+                continue;
+            }
+
+            if ($appDoc->application_member_id) {
+                // Member-specific document → copy to MemberDocument
+                $member = $memberMap[$appDoc->application_member_id] ?? null;
+                if ($member) {
+                    $this->copyDocumentToMember($appDoc, $member);
+                }
+            } else {
+                // General application document → copy to PolicyDocument
+                $this->copyDocumentToPolicy($appDoc, $policy);
+            }
+        }
+    }
+
+    /**
+     * Copy an application document to a policy document.
+     */
+    protected function copyDocumentToPolicy(ApplicationDocument $appDoc, Policy $policy): PolicyDocument
+    {
+        // Copy file to new location
+        $newPath = "policies/{$policy->id}/documents/{$appDoc->file_name}";
+        Storage::disk('private')->copy($appDoc->file_path, $newPath);
+
+        // Create policy document record
+        return PolicyDocument::create([
+            'policy_id' => $policy->id,
+            'document_type' => $this->mapApplicationDocTypeToPolicyDocType($appDoc->document_type),
+            'title' => $appDoc->title,
+            'file_path' => $newPath,
+            'file_name' => $appDoc->file_name,
+            'mime_type' => $appDoc->mime_type,
+            'file_size' => $appDoc->file_size,
+            'issue_date' => now(),
+            'uploaded_by' => $appDoc->uploaded_by,
+            'is_system_generated' => false,
+            'is_active' => true,
+        ]);
+    }
+
+    /**
+     * Copy an application document to a member document.
+     */
+    protected function copyDocumentToMember(ApplicationDocument $appDoc, Member $member): MemberDocument
+    {
+        // Copy file to new location
+        $newPath = "members/{$member->id}/documents/{$appDoc->file_name}";
+        Storage::disk('private')->copy($appDoc->file_path, $newPath);
+
+        // Create member document record
+        return MemberDocument::create([
+            'member_id' => $member->id,
+            'document_type' => $appDoc->document_type,
+            'title' => $appDoc->title,
+            'file_path' => $newPath,
+            'file_name' => $appDoc->file_name,
+            'mime_type' => $appDoc->mime_type,
+            'file_size' => $appDoc->file_size,
+            'issue_date' => now(),
+            'is_verified' => $appDoc->is_verified,
+            'verified_by' => $appDoc->verified_by,
+            'verified_at' => $appDoc->verified_at,
+            'uploaded_by' => $appDoc->uploaded_by,
+            'is_active' => true,
+        ]);
+    }
+
+    /**
+     * Map application document types to policy document types.
+     * Some types are shared, others need mapping.
+     */
+    protected function mapApplicationDocTypeToPolicyDocType(string $appDocType): string
+    {
+        // Application doc types: id_copy, medical_report, census_file, declaration, passport, birth_certificate
+        // Policy doc types: certificate, schedule, endorsement, terms, supporting_document, census_file, declaration_form
+
+        $mapping = [
+            'declaration' => MedicalConstants::DOC_TYPE_DECLARATION,
+            'declaration_form' => MedicalConstants::DOC_TYPE_DECLARATION,
+            'census_file' => MedicalConstants::DOC_TYPE_CENSUS,
+        ];
+
+        return $mapping[$appDocType] ?? MedicalConstants::DOC_TYPE_SUPPORTING;
     }
 
     // =========================================================================

@@ -70,6 +70,16 @@ export class RateCardListStore {
       );
   }
 
+  /**
+   * Load rate cards for dropdown selection (uses permission-free lookup endpoint)
+   */
+  loadDropdown(planId?: string) {
+    const url = planId
+      ? `/api/v1/medical/lookups/rate-cards?plan_id=${planId}`
+      : '/api/v1/medical/lookups/rate-cards';
+    return this.http.get<ApiResponse<{ id: string; code: string; name: string; plan_id: string }[]>>(url);
+  }
+
   loadOne(id: string) {
     this.state.update((s) => ({ ...s, loading: true }));
 

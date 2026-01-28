@@ -68,10 +68,30 @@ export class MedicalRecordPaymentDialog implements OnInit {
     // Pre-fill if data provided
     if (this.data?.policyId) {
       this.form.patchValue({ policy_id: this.data.policyId });
+      // Load the policy details to display
+      this.loadPolicyDetails(this.data.policyId);
     }
     if (this.data?.suggestedAmount) {
       this.form.patchValue({ amount: this.data.suggestedAmount });
     }
+  }
+
+  private loadPolicyDetails(policyId: string): void {
+    this.policyStore.loadOne(policyId).subscribe({
+      next: (res) => {
+        const policy = res.data;
+        if (policy) {
+          this.selectedPolicy.set({
+            id: policy.id,
+            policy_number: policy.policy_number,
+            holder_name: policy.holder_name ?? '',
+          });
+          this.form.patchValue({
+            policy_search: `${policy.policy_number} - ${policy.holder_name ?? ''}`,
+          });
+        }
+      },
+    });
   }
 
   private initForm(): void {

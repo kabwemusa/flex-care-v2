@@ -377,12 +377,16 @@ class BenefitUtilizationService
 
     /**
      * Get benefit balances for a member.
+     * Ensures all plan benefits are initialized before returning.
      */
     public function getMemberBenefitBalances(
         Member $member,
         ?Carbon $asOfDate = null
     ): Collection {
         $asOfDate = $asOfDate ?? now();
+
+        // First, ensure all plan benefits are initialized for this member
+        $this->initializeMemberBenefits($member);
 
         return MemberBenefitUtilization::where('member_id', $member->id)
             ->where('period_start', '<=', $asOfDate)

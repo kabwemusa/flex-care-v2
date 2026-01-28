@@ -19,17 +19,75 @@ export class MedicalMain {
       label: 'Dashboard',
       icon: 'dashboard',
     },
+    // {
+    //   href: '/admin/users',
+    //   label: 'User Management',
+    //   icon: 'group',
+    //   requireSystemAdmin: true,
+    // },
+    // {
+    //   href: '/admin/roles',
+    //   label: 'Roles & Permissions',
+    //   icon: 'badge',
+    //   requireSystemAdmin: true,
+    // },
     {
-      href: '/admin/users',
-      label: 'User Management',
-      icon: 'group',
-      requireSystemAdmin: true,
+      label: 'User Administration',
+      icon: 'admin_panel_settings',
+      children: [
+        {
+          href: '/admin/users',
+          label: 'User Management',
+          icon: 'group',
+          requireSystemAdmin: true,
+        },
+        {
+          href: '/admin/roles',
+          label: 'Roles & Permissions',
+          icon: 'badge',
+          requireSystemAdmin: true,
+        },
+      ],
     },
+    // {
+    //   href: '/admin/approval-groups',
+    //   label: 'Approval Groups',
+    //   icon: 'approval',
+    //   requireSystemAdmin: true,
+    // },
+    // {
+    //   href: '/admin/approval-workflows',
+    //   label: 'Approval Workflows',
+    //   icon: 'automation',
+    //   requireSystemAdmin: true,
+    // },
+    // {
+    //   href: '/approvals',
+    //   label: 'My Approvals',
+    //   icon: 'pending_actions',
+    // },
     {
-      href: '/admin/roles',
-      label: 'Roles & Permissions',
-      icon: 'badge',
-      requireSystemAdmin: true,
+      label: 'Approval Management',
+      icon: 'how_to_reg',
+      children: [
+        {
+          href: '/approvals',
+          label: 'Pending Approvals',
+          icon: 'pending_actions',
+        },
+        {
+          href: '/admin/approval-workflows',
+          label: 'Workflows',
+          icon: 'automation',
+          requireSystemAdmin: true,
+        },
+        {
+          href: '/admin/approval-groups',
+          label: 'Groups',
+          icon: 'approval',
+          requireSystemAdmin: true,
+        },
+      ],
     },
     {
       label: 'Product Setup',
@@ -153,6 +211,11 @@ export class MedicalMain {
           requiredPermissions: [MEDICAL_PERMISSIONS.BILLING_VIEW],
         },
       ],
+    },
+    {
+      href: '/reports',
+      label: 'Reports',
+      icon: 'analytics',
     },
   ]);
 

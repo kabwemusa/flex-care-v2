@@ -79,8 +79,8 @@ export class MedicalCensusUploadDialog {
   importResult = signal<CensusImportResult | null>(null);
   isDragOver = signal(false);
 
-  // Data
-  readonly schemes = this.schemeStore.schemes;
+  // Data (loaded from permission-free lookup endpoints)
+  readonly schemes = signal<{ id: string; name: string; code: string }[]>([]);
   readonly plans = signal<{ id: string; name: string; code: string }[]>([]);
   readonly rateCards = signal<{ id: string; name: string; code: string }[]>([]);
 
@@ -107,8 +107,10 @@ export class MedicalCensusUploadDialog {
       billing_frequency: ['monthly', Validators.required],
     });
 
-    // Load schemes
-    this.schemeStore.loadAll();
+    // Load schemes using permission-free lookup endpoint
+    this.schemeStore.loadDropdown().subscribe({
+      next: (res) => this.schemes.set(res.data.map((s: any) => ({ id: s.id, name: s.name, code: s.code }))),
+    });
 
     // Watch scheme changes to load plans
     this.applicationForm.get('scheme_id')?.valueChanges.subscribe((schemeId) => {
@@ -141,25 +143,26 @@ export class MedicalCensusUploadDialog {
   }
 
   private loadPlansForScheme(schemeId: string) {
-    this.planStore.loadByScheme(schemeId).subscribe({
+    // Use permission-free lookup endpoint
+    this.planStore.loadDropdown(schemeId).subscribe({
       next: (res) => {
         if (res.data) {
-          this.plans.set(res.data.map((p) => ({ id: p.id, name: p.name, code: p.code })));
+          this.plans.set(res.data.map((p: any) => ({ id: p.id, name: p.name, code: p.code })));
         }
       },
     });
   }
 
   private loadRateCardsForPlan(planId: string) {
-    this.rateCardStore.loadByPlan(planId).subscribe({
+    // Use permission-free lookup endpoint
+    this.rateCardStore.loadDropdown(planId).subscribe({
       next: (res) => {
         if (res.data) {
-          this.rateCards.set(res.data.map((r) => ({ id: r.id, name: r.name, code: r.code })));
+          this.rateCards.set(res.data.map((r: any) => ({ id: r.id, name: r.name, code: r.code })));
 
-          // Auto-select if only one active rate card
-          const activeCards = res.data.filter((r) => r.is_active);
-          if (activeCards.length === 1 && !this.applicationForm.get('rate_card_id')?.value) {
-            this.applicationForm.patchValue({ rate_card_id: activeCards[0].id });
+          // Auto-select if only one rate card
+          if (res.data.length === 1 && !this.applicationForm.get('rate_card_id')?.value) {
+            this.applicationForm.patchValue({ rate_card_id: res.data[0].id });
           }
         }
       },

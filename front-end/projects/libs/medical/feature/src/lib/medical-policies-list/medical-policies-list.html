@@ -315,23 +315,23 @@
                   <mat-divider></mat-divider>
 
                   @if (row.status === 'active') {
-                  <button mat-menu-item (click)="suspendPolicy(row, $event)">
+                  <button *libPermission="permissions.POLICIES_SUSPEND" mat-menu-item (click)="suspendPolicy(row, $event)">
                     <mat-icon fontSet="material-symbols-rounded">pause</mat-icon>
                     <span>Suspend</span>
                   </button>
                   } @if (row.status === 'suspended') {
-                  <button mat-menu-item (click)="reinstatePolicy(row, $event)">
+                  <button *libPermission="permissions.POLICIES_REINSTATE" mat-menu-item (click)="reinstatePolicy(row, $event)">
                     <mat-icon fontSet="material-symbols-rounded">play_arrow</mat-icon>
                     <span>Reinstate</span>
                   </button>
                   } @if (row.status === 'pending') {
-                  <button mat-menu-item (click)="activatePolicy(row, $event)">
+                  <button *libPermission="permissions.POLICIES_UPDATE" mat-menu-item (click)="activatePolicy(row, $event)">
                     <mat-icon fontSet="material-symbols-rounded">check_circle</mat-icon>
                     <span>Activate</span>
                   </button>
                   }
-                  <mat-divider></mat-divider>
-                  <button mat-menu-item class="!text-red-600" (click)="cancelPolicy(row, $event)">
+                  <mat-divider *libPermission="permissions.POLICIES_CANCEL"></mat-divider>
+                  <button *libPermission="permissions.POLICIES_CANCEL" mat-menu-item class="!text-red-600" (click)="cancelPolicy(row, $event)">
                     <mat-icon fontSet="material-symbols-rounded" class="!text-red-600"
                       >cancel</mat-icon
                     >
@@ -520,7 +520,7 @@
           Full Details
         </a>
         @if (policy.status === 'active') {
-        <button mat-flat-button color="primary" (click)="openAddMemberDialog(policy)">
+        <button *libPermission="permissions.MEMBERS_ADD" mat-flat-button color="primary" (click)="openAddMemberDialog(policy)">
           <mat-icon fontSet="material-symbols-rounded">person_add</mat-icon>
           Add Member
         </button>

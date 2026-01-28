@@ -261,11 +261,13 @@ class PlanController extends Controller
     /**
      * Get plans for dropdown.
      * GET /v1/medical/plans/dropdown
+     * GET /v1/medical/lookups/plans
      */
     public function dropdown(): JsonResponse
     {
         try {
-            $query = Plan::active()->effective()->ordered();
+            // For lookups, return all plans (no filtering)
+            $query = Plan::orderBy('name');
 
             if ($schemeId = request('scheme_id')) {
                 $query->where('scheme_id', $schemeId);

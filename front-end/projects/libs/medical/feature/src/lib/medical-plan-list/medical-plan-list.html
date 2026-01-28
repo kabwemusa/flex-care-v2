@@ -18,7 +18,13 @@
             Export
           </button>
 
-          <button mat-flat-button color="primary" class="!rounded-lg" (click)="openCreateDialog()">
+          <button
+            *libPermission="permissions.PLANS_CREATE"
+            mat-flat-button
+            color="primary"
+            class="!rounded-lg"
+            (click)="openCreateDialog()"
+          >
             <mat-icon fontSet="material-symbols-rounded">add</mat-icon>
             New Plan
           </button>
@@ -304,33 +310,34 @@
                     >
                     <span>View Details</span>
                   </button>
-                  <button mat-menu-item (click)="openCreateDialog(plan)">
+                  <button *libPermission="permissions.PLANS_UPDATE" mat-menu-item (click)="openCreateDialog(plan)">
                     <mat-icon fontSet="material-symbols-rounded" class="!text-slate-500"
                       >edit</mat-icon
                     >
                     <span>Edit Plan</span>
                   </button>
-                  <button mat-menu-item (click)="openQuickQuote(plan)">
+                  <button *libPermission="permissions.APPLICATIONS_QUOTE" mat-menu-item (click)="openQuickQuote(plan)">
                     <mat-icon fontSet="material-symbols-rounded" class="!text-slate-500"
                       >calculate</mat-icon
                     >
                     <span>Quick Quote</span>
                   </button>
                   <mat-divider></mat-divider>
-                  <button mat-menu-item (click)="clonePlan(plan)">
+                  <button *libPermission="permissions.PLANS_CREATE" mat-menu-item (click)="clonePlan(plan)">
                     <mat-icon fontSet="material-symbols-rounded" class="!text-slate-500"
                       >content_copy</mat-icon
                     >
                     <span>Clone Plan</span>
                   </button>
-                  <button mat-menu-item (click)="toggleStatus(plan)">
+                  <button *libPermission="permissions.PLANS_CONFIGURE" mat-menu-item (click)="toggleStatus(plan)">
                     <mat-icon fontSet="material-symbols-rounded" class="!text-slate-500">
                       {{ plan.is_active ? 'block' : 'check_circle' }}
                     </mat-icon>
                     <span>{{ plan.is_active ? 'Deactivate' : 'Activate' }}</span>
                   </button>
-                  <mat-divider class="!my-1 opacity-50"></mat-divider>
+                  <mat-divider *libPermission="permissions.PLANS_DELETE" class="!my-1 opacity-50"></mat-divider>
                   <button
+                    *libPermission="permissions.PLANS_DELETE"
                     mat-menu-item
                     class="!text-red-600 hover:!bg-red-50"
                     (click)="deletePlan(plan)"
@@ -365,7 +372,7 @@
             <p class="mt-1 text-sm text-slate-500 max-w-xs">
               Get started by creating a new medical plan with benefits and pricing.
             </p>
-            <button mat-stroked-button color="primary" class="mt-4" (click)="openCreateDialog()">
+            <button *libPermission="permissions.PLANS_CREATE" mat-stroked-button color="primary" class="mt-4" (click)="openCreateDialog()">
               Create First Plan
             </button>
           </div>
@@ -679,13 +686,13 @@
           Full Details
         </a>
         <div class="flex items-center gap-2">
-          <button mat-stroked-button (click)="toggleStatus(plan)" class="!border-slate-200">
+          <button *libPermission="permissions.PLANS_CONFIGURE" mat-stroked-button (click)="toggleStatus(plan)" class="!border-slate-200">
             <mat-icon fontSet="material-symbols-rounded">
               {{ plan.is_active ? 'block' : 'check_circle' }}
             </mat-icon>
             {{ plan.is_active ? 'Deactivate' : 'Activate' }}
           </button>
-          <button mat-flat-button color="primary" (click)="openCreateDialog(plan)">
+          <button *libPermission="permissions.PLANS_UPDATE" mat-flat-button color="primary" (click)="openCreateDialog(plan)">
             <mat-icon fontSet="material-symbols-rounded">edit</mat-icon>
             Edit Plan
           </button>

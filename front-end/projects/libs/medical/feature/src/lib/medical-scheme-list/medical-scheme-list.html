@@ -18,7 +18,13 @@
             Export
           </button>
 
-          <button mat-flat-button color="primary" class="!rounded-lg" (click)="openCreateDialog()">
+          <button
+            *libPermission="permissions.SCHEMES_CREATE"
+            mat-flat-button
+            color="primary"
+            class="!rounded-lg"
+            (click)="openCreateDialog()"
+          >
             <mat-icon fontSet="material-symbols-rounded">add</mat-icon>
             New Scheme
           </button>
@@ -177,7 +183,13 @@
         } @else {
         <!-- Table -->
         <div class="overflow-x-auto">
-          <table mat-table [dataSource]="dataSource" matSort class="w-full">
+          <table
+            *libPermission="permissions.SCHEMES_VIEW"
+            mat-table
+            [dataSource]="dataSource"
+            matSort
+            class="w-full"
+          >
             <!-- Status Column -->
             <ng-container matColumnDef="status">
               <th
@@ -315,20 +327,32 @@
                     >
                     <span>View Details</span>
                   </button>
-                  <button mat-menu-item (click)="openCreateDialog(scheme)">
+                  <button
+                    *libPermission="permissions.SCHEMES_UPDATE"
+                    mat-menu-item
+                    (click)="openCreateDialog(scheme)"
+                  >
                     <mat-icon fontSet="material-symbols-rounded" class="!text-slate-500"
                       >edit</mat-icon
                     >
                     <span>Edit Scheme</span>
                   </button>
-                  <button mat-menu-item (click)="toggleStatus(scheme)">
+                  <button
+                    *libPermission="permissions.SCHEMES_ACTIVATE"
+                    mat-menu-item
+                    (click)="toggleStatus(scheme)"
+                  >
                     <mat-icon fontSet="material-symbols-rounded" class="!text-slate-500">
                       {{ scheme.is_active ? 'block' : 'check_circle' }}
                     </mat-icon>
                     <span>{{ scheme.is_active ? 'Deactivate' : 'Activate' }}</span>
                   </button>
-                  <mat-divider class="!my-1 opacity-50"></mat-divider>
+                  <mat-divider
+                    *libPermission="permissions.SCHEMES_DELETE"
+                    class="!my-1 opacity-50"
+                  ></mat-divider>
                   <button
+                    *libPermission="permissions.SCHEMES_DELETE"
                     mat-menu-item
                     class="!text-red-600 hover:!bg-red-50"
                     (click)="deleteScheme(scheme)"
@@ -363,7 +387,13 @@
             <p class="mt-1 text-sm text-slate-500 max-w-xs">
               Get started by creating a new medical scheme for your organization.
             </p>
-            <button mat-stroked-button color="primary" class="mt-4" (click)="openCreateDialog()">
+            <button
+              *libPermission="permissions.SCHEMES_CREATE"
+              mat-stroked-button
+              color="primary"
+              class="mt-4"
+              (click)="openCreateDialog()"
+            >
               Create First Scheme
             </button>
           </div>
@@ -573,13 +603,23 @@
       <div
         class="flex items-center justify-end gap-3 border-t border-slate-100 px-6 py-4 bg-slate-50"
       >
-        <button mat-stroked-button (click)="toggleStatus(scheme)" class="!border-slate-200">
+        <button
+          *libPermission="permissions.SCHEMES_ACTIVATE"
+          mat-stroked-button
+          (click)="toggleStatus(scheme)"
+          class="!border-slate-200"
+        >
           <mat-icon fontSet="material-symbols-rounded">
             {{ scheme.is_active ? 'block' : 'check_circle' }}
           </mat-icon>
           {{ scheme.is_active ? 'Deactivate' : 'Activate' }}
         </button>
-        <button mat-flat-button color="primary" (click)="openCreateDialog(scheme)">
+        <button
+          *libPermission="permissions.SCHEMES_UPDATE"
+          mat-flat-button
+          color="primary"
+          (click)="openCreateDialog(scheme)"
+        >
           <mat-icon fontSet="material-symbols-rounded">edit</mat-icon>
           Edit Scheme
         </button>

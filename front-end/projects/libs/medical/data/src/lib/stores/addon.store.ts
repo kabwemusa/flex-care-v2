@@ -76,8 +76,11 @@ export class AddonCatalogStore {
     );
   }
 
+  /**
+   * Load addons for dropdown selection (uses permission-free lookup endpoint)
+   */
   loadDropdown() {
-    return this.http.get<ApiResponse<DropdownOption[]>>(`${this.apiUrl}/dropdown`);
+    return this.http.get<ApiResponse<DropdownOption[]>>('/api/v1/medical/lookups/addons');
   }
 
   create(addon: Partial<Addon>) {

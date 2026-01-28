@@ -152,7 +152,7 @@ class RoleSeeder extends Seeder
         $adminUser = User::create([
             'email' => 'admin@flexcare.zm',
             'username' => 'admin',
-            'password' => bcrypt('password'), // Change in production!
+            'password' => bcrypt('Testing01!'), // Change in production!
             'is_active' => true,
             'is_system_admin' => true,
         ]);

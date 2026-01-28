@@ -33,12 +33,15 @@ import {
   BILLING_FREQUENCIES,
   getLabelByValue,
 } from 'medical-data';
+import { MEDICAL_PERMISSIONS } from 'core-auth';
+import { PermissionDirective } from 'shared';
 
 import { MedicalApplicationDialog } from '../dialogs/medical-application-dialog/medical-application-dialog';
 import { MedicalApplicationMemberDialog } from '../dialogs/medical-application-member-dialog/medical-application-member-dialog';
 import { MedicalUnderwritingDialog } from '../dialogs/medical-underwriting-dialog/medical-underwriting-dialog';
 import { MedicalApplicationReferralDialog } from '../dialogs/medical-application-referral-dialog/medical-application-referral-dialog';
 import { MedicalQuoteActionsDialog } from '../dialogs/medical-quote-actions-dialog/medical-quote-actions-dialog';
+import { MedicalApprovalActionDialog, ApprovalAction } from '../dialogs/medical-approval-action-dialog/medical-approval-action-dialog';
 import { ApplicationDocumentsComponent } from '../components/application-documents/application-documents';
 import { FeedbackService } from 'shared';
 
@@ -63,6 +66,7 @@ import { FeedbackService } from 'shared';
     MatCheckboxModule,
     MatProgressSpinnerModule,
     ApplicationDocumentsComponent,
+    PermissionDirective,
   ],
   templateUrl: './medical-application-detail.html',
 })
@@ -74,6 +78,7 @@ export class MedicalApplicationDetail implements OnInit {
   private readonly snackBar = inject(MatSnackBar);
   private readonly feedback = inject(FeedbackService);
 
+  readonly permissions = MEDICAL_PERMISSIONS;
   readonly applicationId = signal<string>('');
 
   readonly application = computed(() => this.store.selectedApplication());
@@ -85,6 +90,17 @@ export class MedicalApplicationDetail implements OnInit {
   // Plan addons (from store)
   readonly planAddons = computed(() => this.store.planAddons());
   readonly isLoadingPlanAddons = computed(() => this.store.isLoadingPlanAddons());
+
+  // Approval workflow state
+  readonly approvalStatus = signal<any>(null);
+  readonly canApproveApplication = signal(false);
+  readonly isLoadingApprovalStatus = signal(false);
+
+  // Check if there's an active pending approval workflow
+  readonly hasPendingApproval = computed(() => {
+    const status = this.approvalStatus();
+    return status?.has_request && status?.status === 'pending';
+  });
 
   // Selected addon IDs (for checkbox state)
   readonly selectedAddonIds = computed(() => {
@@ -149,6 +165,45 @@ export class MedicalApplicationDetail implements OnInit {
         if (app?.plan_id) {
           this.store.loadPlanAddons(app.plan_id);
         }
+
+        // Load approval status if application is in a workflow stage
+        this.loadApprovalStatus();
+      },
+    });
+  }
+
+  private loadApprovalStatus() {
+    const app = this.application();
+    if (!app) return;
+
+    // Only load if application is in relevant status
+    const approvalStatuses = ['submitted', 'underwriting', 'referred'];
+    if (!approvalStatuses.includes(app.status)) {
+      this.approvalStatus.set(null);
+      this.canApproveApplication.set(false);
+      return;
+    }
+
+    this.isLoadingApprovalStatus.set(true);
+
+    // Load both approval status and can-approve in parallel
+    this.store.getApprovalStatus(app.id).subscribe({
+      next: (res) => {
+        this.approvalStatus.set(res.data);
+        this.isLoadingApprovalStatus.set(false);
+      },
+      error: () => {
+        this.approvalStatus.set(null);
+        this.isLoadingApprovalStatus.set(false);
+      },
+    });
+
+    this.store.canApprove(app.id).subscribe({
+      next: (res) => {
+        this.canApproveApplication.set(res.data?.can_approve ?? false);
+      },
+      error: () => {
+        this.canApproveApplication.set(false);
       },
     });
   }
@@ -390,6 +445,45 @@ export class MedicalApplicationDetail implements OnInit {
         this.feedback.error(err?.error?.message || 'Failed to convert to policy');
       },
     });
+  }
+
+  // =========================================================================
+  // APPROVAL WORKFLOW ACTIONS
+  // =========================================================================
+
+  openApprovalAction(action: ApprovalAction) {
+    const app = this.application();
+    if (!app) return;
+
+    const dialogRef = this.dialog.open(MedicalApprovalActionDialog, {
+      width: '600px',
+      maxHeight: '90vh',
+      disableClose: true,
+      data: {
+        applicationId: app.id,
+        applicationNumber: app.application_number,
+        action,
+        approvalStatus: this.approvalStatus(),
+      },
+    });
+
+    dialogRef.afterClosed().subscribe((result) => {
+      if (result) {
+        this.loadApplication();
+      }
+    });
+  }
+
+  approvalApprove() {
+    this.openApprovalAction('approve');
+  }
+
+  approvalReject() {
+    this.openApprovalAction('reject');
+  }
+
+  approvalReturn() {
+    this.openApprovalAction('return');
   }
 
   // =========================================================================

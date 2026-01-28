@@ -48,6 +48,30 @@ export const routes: Routes = [
           ),
         canActivate: [systemAdminGuard],
       },
+      {
+        path: 'admin/approval-groups',
+        loadComponent: () =>
+          import('./pages/settings/approval-groups/approval-groups.component').then(
+            (m) => m.ApprovalGroupsComponent
+          ),
+        canActivate: [systemAdminGuard],
+      },
+      {
+        path: 'admin/approval-workflows',
+        loadComponent: () =>
+          import('./pages/settings/approval-workflows/approval-workflows.component').then(
+            (m) => m.ApprovalWorkflowsComponent
+          ),
+        canActivate: [systemAdminGuard],
+      },
+      // Approvals (available to all authenticated users)
+      {
+        path: 'approvals',
+        loadComponent: () =>
+          import('./pages/approvals/pending-approvals/pending-approvals.component').then(
+            (m) => m.PendingApprovalsComponent
+          ),
+      },
       // Medical Module Routes
       {
         path: 'schemes',
@@ -177,6 +201,11 @@ export const routes: Routes = [
         loadComponent: () => import('medical-feature').then((m) => m.MedicalBillingPayments),
         canActivate: [moduleGuard, anyPermissionGuard],
         data: { module: MODULES.MEDICAL, permissions: [MEDICAL_PERMISSIONS.BILLING_VIEW] },
+      },
+      // Reports Dashboard
+      {
+        path: 'reports',
+        loadComponent: () => import('core-reports').then((m) => m.ReportDashboardComponent),
       },
     ],
   },

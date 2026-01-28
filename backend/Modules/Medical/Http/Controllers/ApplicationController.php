@@ -506,7 +506,7 @@ class ApplicationController extends Controller
         try {
             $application = DB::transaction(function () use ($id) {
                 $application = Application::findOrFail($id);
-                return $this->applicationService->submitForUnderwriting($application);
+                return $this->applicationService->submitForUnderwriting($application, request()->user());
             });
 
             return $this->success(
@@ -590,64 +590,6 @@ class ApplicationController extends Controller
     }
 
     /**
-     * Approve application.
-     * POST /v1/medical/applications/{id}/approve
-     */
-    public function approve(string $id): JsonResponse
-    {
-        try {
-            $application = DB::transaction(function () use ($id) {
-                $application = Application::findOrFail($id);
-                $underwriterId = request('underwriter_id') ?? $application->underwriter_id;
-                $notes = request('notes');
-                
-                return $this->applicationService->approveApplication($application, $underwriterId, $notes);
-            });
-
-            return $this->success(
-                new ApplicationResource($application),
-                'Application approved'
-            );
-        } catch (ModelNotFoundException $e) {
-            return $this->error('Application not found', 404);
-        } catch (Throwable $e) {
-            return $this->error($e->getMessage(), 500);
-        }
-    }
-
-    /**
-     * Decline application.
-     * POST /v1/medical/applications/{id}/decline
-     */
-    public function decline(string $id): JsonResponse
-    {
-        try {
-            $application = DB::transaction(function () use ($id) {
-                $application = Application::findOrFail($id);
-                
-                $reason = request('reason');
-                if (!$reason) {
-                    throw new Exception('Decline reason is required', 422);
-                }
-
-                $underwriterId = request('underwriter_id')  ?? $application->underwriter_id;
-                
-                return $this->applicationService->declineApplication($application, $underwriterId, $reason);
-            });
-
-            return $this->success(
-                new ApplicationResource($application),
-                'Application declined'
-            );
-        } catch (ModelNotFoundException $e) {
-            return $this->error('Application not found', 404);
-        } catch (Throwable $e) {
-            $code = $e->getCode() === 422 ? 422 : 500;
-            return $this->error($e->getMessage(), $code);
-        }
-    }
-
-    /**
      * Refer application for further review.
      * POST /v1/medical/applications/{id}/refer
      */
@@ -679,6 +621,149 @@ class ApplicationController extends Controller
         }
     }
 
+    // =========================================================================
+    // APPROVAL WORKFLOW ENDPOINTS
+    // =========================================================================
+
+    /**
+     * Get approval status for an application.
+     * GET /v1/medical/applications/{id}/approval-status
+     */
+    public function approvalStatus(string $id): JsonResponse
+    {
+        try {
+            $application = Application::findOrFail($id);
+            $status = $this->applicationService->getApprovalStatus($application);
+
+            return $this->success($status, 'Approval status retrieved');
+        } catch (ModelNotFoundException $e) {
+            return $this->error('Application not found', 404);
+        } catch (Throwable $e) {
+            return $this->error($e->getMessage(), 500);
+        }
+    }
+
+    /**
+     * Approve application at current approval step.
+     * POST /v1/medical/applications/{id}/approval/approve
+     */
+    public function approvalApprove(string $id): JsonResponse
+    {
+        try {
+            $result = DB::transaction(function () use ($id) {
+                $application = Application::findOrFail($id);
+                $comments = request('comments');
+
+                return $this->applicationService->approveApplicationStep(
+                    $application,
+                    request()->user(),
+                    $comments
+                );
+            });
+
+            $message = $result['is_final']
+                ? 'Application fully approved'
+                : 'Step approved, moved to next step';
+
+            return $this->success([
+                'application' => new ApplicationResource($result['application']),
+                'approval_status' => $result['application']->getApprovalProgress(),
+                'is_final' => $result['is_final'],
+            ], $message);
+        } catch (ModelNotFoundException $e) {
+            return $this->error('Application not found', 404);
+        } catch (Throwable $e) {
+            return $this->error($e->getMessage(), 422);
+        }
+    }
+
+    /**
+     * Reject application at current approval step.
+     * POST /v1/medical/applications/{id}/approval/reject
+     */
+    public function approvalReject(string $id): JsonResponse
+    {
+        try {
+            $reason = request('reason');
+            if (!$reason) {
+                return $this->error('Rejection reason is required', 422);
+            }
+
+            $result = DB::transaction(function () use ($id, $reason) {
+                $application = Application::findOrFail($id);
+
+                return $this->applicationService->rejectApplicationStep(
+                    $application,
+                    request()->user(),
+                    $reason
+                );
+            });
+
+            return $this->success([
+                'application' => new ApplicationResource($result['application']),
+                'approval_status' => $result['application']->getApprovalProgress(),
+            ], 'Application rejected');
+        } catch (ModelNotFoundException $e) {
+            return $this->error('Application not found', 404);
+        } catch (Throwable $e) {
+            return $this->error($e->getMessage(), 422);
+        }
+    }
+
+    /**
+     * Return application for amendment at current approval step.
+     * POST /v1/medical/applications/{id}/approval/return
+     */
+    public function approvalReturn(string $id): JsonResponse
+    {
+        try {
+            $reason = request('reason');
+            if (!$reason) {
+                return $this->error('Return reason is required', 422);
+            }
+
+            $result = DB::transaction(function () use ($id, $reason) {
+                $application = Application::findOrFail($id);
+
+                return $this->applicationService->returnApplicationStep(
+                    $application,
+                    request()->user(),
+                    $reason
+                );
+            });
+
+            return $this->success([
+                'application' => new ApplicationResource($result['application']),
+                'approval_status' => $result['application']->getApprovalProgress(),
+            ], 'Application returned for amendment');
+        } catch (ModelNotFoundException $e) {
+            return $this->error('Application not found', 404);
+        } catch (Throwable $e) {
+            return $this->error($e->getMessage(), 422);
+        }
+    }
+
+    /**
+     * Check if current user can approve the application.
+     * GET /v1/medical/applications/{id}/can-approve
+     */
+    public function canApprove(string $id): JsonResponse
+    {
+        try {
+            $application = Application::findOrFail($id);
+            $canApprove = $this->applicationService->canUserApprove($application, request()->user());
+
+            return $this->success([
+                'can_approve' => $canApprove,
+                'approval_status' => $application->getApprovalProgress(),
+            ], 'Approval permission checked');
+        } catch (ModelNotFoundException $e) {
+            return $this->error('Application not found', 404);
+        } catch (Throwable $e) {
+            return $this->error($e->getMessage(), 500);
+        }
+    }
+
     /**
      * Customer accepts the quote.
      * POST /v1/medical/applications/{id}/accept
@@ -689,7 +774,7 @@ class ApplicationController extends Controller
             $application = DB::transaction(function () use ($id) {
                 $application = Application::findOrFail($id);
                 $acceptanceReference = request('acceptance_reference');
-                
+
                 return $this->applicationService->acceptQuote($application, $acceptanceReference);
             });
 

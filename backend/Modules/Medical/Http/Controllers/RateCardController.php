@@ -504,6 +504,28 @@ class RateCardController extends Controller
         }
     }
 
+    /**
+     * Get rate cards dropdown for a plan (minimal data).
+     * GET /v1/medical/lookups/rate-cards?plan_id={planId}
+     */
+    public function dropdown(): JsonResponse
+    {
+        try {
+            // For lookups, return all rate cards (no filtering)
+            $query = RateCard::orderBy('name');
+
+            if ($planId = request('plan_id')) {
+                $query->where('plan_id', $planId);
+            }
+
+            $rateCards = $query->get(['id', 'code', 'name', 'plan_id']);
+
+            return $this->success($rateCards, 'Rate cards retrieved');
+        } catch (Throwable $e) {
+            return $this->error('Failed to retrieve rate cards dropdown', 500);
+        }
+    }
+
     // =========================================================================
     // RATE CARD TIERS
     // =========================================================================

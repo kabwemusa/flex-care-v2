@@ -82,11 +82,9 @@ export class MedicalApplicationDialog implements OnInit {
   readonly isEditMode = signal(false);
   readonly isSaving = computed(() => this.store.isSaving());
 
-  // Data Selectors
-  readonly schemes = computed(() => this.schemeStore.schemes());
-  readonly groups = computed(() => this.groupStore.groups());
-
-  // Dependent Dropdowns (Signal based)
+  // Dropdown data (loaded from permission-free lookup endpoints)
+  readonly schemes = signal<{ id: string; name: string; code: string }[]>([]);
+  readonly groups = signal<{ id: string; name: string; code: string }[]>([]);
   readonly plans = signal<{ id: string; name: string; code: string }[]>([]);
   readonly rateCards = signal<{ id: string; name: string; code: string }[]>([]);
 
@@ -175,34 +173,36 @@ export class MedicalApplicationDialog implements OnInit {
   }
 
   private loadDropdowns() {
-    this.schemeStore.loadAll();
-    this.groupStore.loadAll();
+    // Use permission-free lookup endpoints
+    this.schemeStore.loadDropdown().subscribe({
+      next: (res) => this.schemes.set(res.data.map((s: any) => ({ id: s.id, name: s.name, code: s.code }))),
+    });
+    this.groupStore.loadDropdown().subscribe({
+      next: (res) => this.groups.set(res.data.map((g: any) => ({ id: g.id, name: g.name, code: g.code }))),
+    });
   }
 
   private loadPlansForScheme(schemeId: string) {
-    this.planStore.loadByScheme(schemeId).subscribe({
+    // Use permission-free lookup endpoint
+    this.planStore.loadDropdown(schemeId).subscribe({
       next: (res) => {
         if (res.data) {
-          this.plans.set(res.data.map((p) => ({ id: p.id, name: p.name, code: p.code })));
-        }
-        // Don't reset if we are in the middle of patching (logic handled in patchForm)
-        if (this.form.get('plan_id')?.pristine) {
-          // this.form.patchValue({ plan_id: '', rate_card_id: '' }, { emitEvent: false });
+          this.plans.set(res.data.map((p: any) => ({ id: p.id, name: p.name, code: p.code })));
         }
       },
     });
   }
 
   private loadRateCardsForPlan(planId: string) {
-    this.rateCardStore.loadByPlan(planId).subscribe({
+    // Use permission-free lookup endpoint
+    this.rateCardStore.loadDropdown(planId).subscribe({
       next: (res) => {
         if (res.data) {
-          this.rateCards.set(res.data.map((r) => ({ id: r.id, name: r.name, code: r.code })));
+          this.rateCards.set(res.data.map((r: any) => ({ id: r.id, name: r.name, code: r.code })));
 
-          // Auto-select if only one active rate card and user hasn't selected one yet
-          const activeCards = res.data.filter((r) => r.is_active);
-          if (activeCards.length === 1 && !this.form.get('rate_card_id')?.value) {
-            this.form.patchValue({ rate_card_id: activeCards[0].id });
+          // Auto-select if only one rate card and user hasn't selected one yet
+          if (res.data.length === 1 && !this.form.get('rate_card_id')?.value) {
+            this.form.patchValue({ rate_card_id: res.data[0].id });
           }
         }
       },
@@ -233,13 +233,15 @@ export class MedicalApplicationDialog implements OnInit {
 
     // 2. Handle Cascading Data manually to ensure values stick
     if (app.scheme_id) {
-      this.planStore.loadByScheme(app.scheme_id).subscribe((res) => {
-        this.plans.set(res.data.map((p) => ({ id: p.id, name: p.name, code: p.code })));
+      // Use permission-free lookup endpoint
+      this.planStore.loadDropdown(app.scheme_id).subscribe((res) => {
+        this.plans.set(res.data.map((p: any) => ({ id: p.id, name: p.name, code: p.code })));
         this.form.patchValue({ plan_id: app.plan_id }, { emitEvent: true });
 
         if (app.plan_id) {
-          this.rateCardStore.loadByPlan(app.plan_id).subscribe((rcRes) => {
-            this.rateCards.set(rcRes.data.map((r) => ({ id: r.id, name: r.name, code: r.code })));
+          // Use permission-free lookup endpoint
+          this.rateCardStore.loadDropdown(app.plan_id).subscribe((rcRes) => {
+            this.rateCards.set(rcRes.data.map((r: any) => ({ id: r.id, name: r.name, code: r.code })));
             this.form.patchValue({ rate_card_id: app.rate_card_id });
           });
         }

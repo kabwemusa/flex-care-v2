@@ -629,6 +629,21 @@ export interface Application {
   can_be_accepted?: boolean;
   can_be_converted?: boolean;
 
+  // Approval workflow
+  approval_status?: {
+    has_request: boolean;
+    status?: string;
+    current_step?: {
+      id: string;
+      name: string;
+      group: string;
+      order: number;
+    };
+    progress_percentage?: number;
+    current_step_number?: number;
+    total_steps?: number;
+  };
+
   // Timestamps
   quoted_at?: string;
   submitted_at?: string;

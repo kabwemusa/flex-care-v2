@@ -24,7 +24,8 @@ import { MatDialog } from '@angular/material/dialog';
 
 // Domain Imports
 import { BillingStore, Payment, PaymentFilters, formatCurrency } from 'medical-data';
-import { FeedbackService, PageHeaderComponent } from 'shared';
+import { FeedbackService, PageHeaderComponent, PermissionDirective } from 'shared';
+import { MEDICAL_PERMISSIONS } from 'core-auth';
 import {
   PAYMENT_STATUS_STYLES,
   PAYMENT_FILTER_OPTIONS,
@@ -56,6 +57,7 @@ import { MedicalRecordPaymentDialog } from '../dialogs/medical-record-payment-di
     MatChipsModule,
     MatProgressSpinnerModule,
     PageHeaderComponent,
+    PermissionDirective,
   ],
   templateUrl: './medical-billing-payments.html',
 })
@@ -63,6 +65,9 @@ export class MedicalBillingPayments implements OnInit {
   readonly store = inject(BillingStore);
   private readonly feedback = inject(FeedbackService);
   private readonly dialog = inject(MatDialog);
+
+  // Permissions
+  readonly permissions = MEDICAL_PERMISSIONS;
 
   // Table
   displayedColumns = [

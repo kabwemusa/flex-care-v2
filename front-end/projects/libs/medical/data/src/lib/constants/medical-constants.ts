@@ -780,14 +780,28 @@ export const APPLICATION_SOURCES = [
 // ] as const;
 
 export const DOCUMENT_TYPES = [
+  // Policy document types
+  { value: 'certificate', label: 'Policy Certificate' },
+  { value: 'schedule', label: 'Policy Schedule' },
+  { value: 'endorsement', label: 'Endorsement' },
+  { value: 'terms', label: 'Terms & Conditions' },
+  { value: 'invoice', label: 'Invoice' },
+  { value: 'receipt', label: 'Receipt' },
+  { value: 'claim_form', label: 'Claim Form' },
+  { value: 'supporting_document', label: 'Supporting Document' },
+  { value: 'census_file', label: 'Census File' },
+  { value: 'declaration_form', label: 'Declaration Form' },
+  // Member/Application document types
+  { value: 'id_copy', label: 'ID Copy' },
   { value: 'id_document', label: 'ID Document' },
   { value: 'passport', label: 'Passport' },
   { value: 'birth_certificate', label: 'Birth Certificate' },
   { value: 'marriage_certificate', label: 'Marriage Certificate' },
   { value: 'medical_report', label: 'Medical Report' },
+  { value: 'photo', label: 'Photo' },
+  // Legacy/Other types
   { value: 'employment_letter', label: 'Employment Letter' },
   { value: 'bank_statement', label: 'Bank Statement' },
-  { value: 'declaration_form', label: 'Declaration Form' },
   { value: 'policy_document', label: 'Policy Document' },
   { value: 'other', label: 'Other' },
 ] as const;

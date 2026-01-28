@@ -4,6 +4,7 @@ import { Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 
+// Material Imports
 import { MatDialogModule, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -12,9 +13,11 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatTabsModule } from '@angular/material/tabs';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 
+// Domain Imports
 import { ApplicationStore } from 'medical-data';
 import { FeedbackService } from 'shared';
 
+// PDF Imports
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
@@ -24,20 +27,28 @@ export interface QuoteActionsDialogData {
   contactEmail?: string;
 }
 
-// Color scheme for corporate professional look
+// === DESIGN CONFIGURATION ===
+// Modern Navy & Slate Palette
 const COLORS = {
-  primary: [30, 58, 138] as [number, number, number],      // Deep Blue #1e3a8a
-  secondary: [59, 130, 246] as [number, number, number],   // Bright Blue #3b82f6
-  accent: [16, 185, 129] as [number, number, number],      // Emerald Green #10b981
-  dark: [15, 23, 42] as [number, number, number],          // Slate 900
-  text: [51, 65, 85] as [number, number, number],          // Slate 700
-  textLight: [100, 116, 139] as [number, number, number],  // Slate 500
-  border: [226, 232, 240] as [number, number, number],     // Slate 200
-  light: [248, 250, 252] as [number, number, number],      // Slate 50
-  white: [255, 255, 255] as [number, number, number],
-  success: [22, 101, 52] as [number, number, number],      // Green 800
-  successLight: [220, 252, 231] as [number, number, number], // Green 100
+  primary: '#1e3a8a', // Deep Navy
+  secondary: '#3b82f6', // Bright Blue (Accents)
+  text: '#1e293b', // Slate 800
+  textLight: '#64748b', // Slate 500
+  textMuted: '#94a3b8', // Slate 400
+  border: '#e2e8f0', // Light Gray
+  bgLight: '#f8fafc', // Off-white backgrounds
+  white: '#ffffff',
+  red: '#dc2626', // Risk/Alerts
+  green: '#16a34a', // Success/Discounts
 };
+
+// Helper: Convert Hex to RGB for jsPDF
+function hexToRgb(hex: string): [number, number, number] {
+  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  return result
+    ? [parseInt(result[1], 16), parseInt(result[2], 16), parseInt(result[3], 16)]
+    : [0, 0, 0];
+}
 
 @Component({
   selector: 'lib-medical-quote-actions-dialog',
@@ -74,35 +85,44 @@ export class MedicalQuoteActionsDialog {
     this.dialogRef.close();
   }
 
+  // ==========================================
+  // ACTION: DOWNLOAD
+  // ==========================================
   downloadQuote() {
     this.isDownloading.set(true);
 
     this.store.downloadQuote(this.data.applicationId).subscribe({
       next: (quoteData) => {
-        this.generatePDF(quoteData);
-        this.isDownloading.set(false);
-        this.feedback.success('Quote downloaded successfully');
+        try {
+          this.generatePDF(quoteData);
+          this.feedback.success('Quote downloaded successfully');
+        } catch (e) {
+          console.error(e);
+          this.feedback.error('Error generating PDF');
+        } finally {
+          this.isDownloading.set(false);
+        }
       },
       error: (err) => {
         this.isDownloading.set(false);
-        this.feedback.error(err?.error?.message || 'Failed to download quote');
+        this.feedback.error(err?.error?.message || 'Failed to download quote data');
       },
     });
   }
 
+  // ==========================================
+  // ACTION: EMAIL
+  // ==========================================
   sendEmail() {
     if (this.emailForm.invalid) {
       this.emailForm.markAllAsTouched();
       return;
     }
 
-    const formValue = this.emailForm.value;
     this.isSending.set(true);
+    const { email, message } = this.emailForm.value;
 
-    const email = formValue.email ?? undefined;
-    const message = formValue.message ?? undefined;
-
-    this.store.emailQuote(this.data.applicationId, email!, message).subscribe({
+    this.store.emailQuote(this.data.applicationId, email!, message || undefined).subscribe({
       next: () => {
         this.isSending.set(false);
         this.feedback.success(`Quote sent to ${email}`);
@@ -110,400 +130,328 @@ export class MedicalQuoteActionsDialog {
       },
       error: (err) => {
         this.isSending.set(false);
-        this.feedback.error(err?.error?.message || 'Failed to send quote email');
+        this.feedback.error(err?.error?.message || 'Failed to send email');
       },
     });
   }
 
+  // ==========================================
+  // PDF GENERATION ENGINE
+  // ==========================================
   private generatePDF(data: any) {
-    const doc = new jsPDF({
-      orientation: 'portrait',
-      unit: 'mm',
-      format: 'a4',
-    });
-
+    const doc = new jsPDF('portrait', 'mm', 'a4');
     const pageWidth = doc.internal.pageSize.getWidth();
     const pageHeight = doc.internal.pageSize.getHeight();
-    const margin = 15;
-    let yPos = margin;
+    const margin = 18;
+    let y = margin;
 
-    // ===== HEADER SECTION =====
-    yPos = this.drawHeader(doc, data, pageWidth, margin, yPos);
+    const currency = data.premium_breakdown?.currency || 'ZMW';
 
-    // ===== QUOTE INFO CARDS =====
-    yPos = this.drawQuoteInfoSection(doc, data, pageWidth, margin, yPos);
+    // --- 1. HEADER SECTION ---
 
-    // ===== COVERED MEMBERS TABLE =====
-    yPos = this.drawMembersTable(doc, data, pageWidth, margin, yPos);
+    // Brand (Left)
+    doc.setTextColor(...hexToRgb(COLORS.primary));
+    doc.setFontSize(22);
+    doc.setFont('helvetica', 'bold');
+    doc.text('FLEXCARE', margin, y + 5);
 
-    // ===== ADD-ONS TABLE (if any) =====
-    if (data.addons?.length > 0) {
-      yPos = this.drawAddonsTable(doc, data, pageWidth, margin, yPos);
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(...hexToRgb(COLORS.textLight));
+    doc.text('Medical Insurance Solutions', margin, y + 11);
+
+    // Contact Info (Small, below brand)
+    doc.setFontSize(8);
+    doc.text('Plot 123, Cairo Road, Lusaka', margin, y + 16);
+    doc.text('+260 211 123 456 | info@flexcare.co.zm', margin, y + 20);
+
+    // Meta Data (Right)
+    const rightX = pageWidth - margin;
+    doc.setFontSize(9);
+    doc.setTextColor(...hexToRgb(COLORS.textMuted));
+    doc.text('QUOTE REFERENCE', rightX, y + 5, { align: 'right' });
+
+    doc.setFontSize(14);
+    doc.setTextColor(...hexToRgb(COLORS.text));
+    doc.setFont('helvetica', 'bold');
+    doc.text(data.application_number || 'DRAFT', rightX, y + 11, { align: 'right' });
+
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(...hexToRgb(COLORS.textLight));
+    doc.text(`Issued: ${this.formatDate(data.quote_date)}`, rightX, y + 17, { align: 'right' });
+
+    // Valid Until (Red for urgency)
+    doc.setTextColor(...hexToRgb(COLORS.red));
+    doc.text(`Valid Until: ${this.formatDate(data.valid_until)}`, rightX, y + 22, {
+      align: 'right',
+    });
+
+    y += 30;
+
+    // Divider Line
+    doc.setDrawColor(...hexToRgb(COLORS.border));
+    doc.setLineWidth(0.5);
+    doc.line(margin, y, pageWidth - margin, y);
+    y += 10;
+
+    // --- 2. CLIENT & PLAN SUMMARY ---
+
+    // Left: Client Name
+    doc.setFontSize(8);
+    doc.setTextColor(...hexToRgb(COLORS.textMuted));
+    doc.text('PREPARED FOR', margin, y);
+
+    doc.setFontSize(12);
+    doc.setTextColor(...hexToRgb(COLORS.text));
+    doc.setFont('helvetica', 'bold');
+    doc.text(data.applicant_name || 'Valued Client', margin, y + 6);
+
+    // Right: Plan Name
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(...hexToRgb(COLORS.textMuted));
+    doc.text('SELECTED PLAN', rightX, y, { align: 'right' });
+
+    doc.setFontSize(12);
+    doc.setTextColor(...hexToRgb(COLORS.text));
+    doc.setFont('helvetica', 'bold');
+    doc.text(`${data.plan?.scheme || ''} - ${data.plan?.name || ''}`, rightX, y + 6, {
+      align: 'right',
+    });
+
+    // Subtext: Dates
+    doc.setFontSize(9);
+    doc.setTextColor(...hexToRgb(COLORS.textLight));
+    doc.setFont('helvetica', 'normal');
+    const period = `${this.formatDateShort(
+      data.policy_details?.proposed_start_date
+    )} to ${this.formatDateShort(data.policy_details?.proposed_end_date)}`;
+    doc.text(period, rightX, y + 11, { align: 'right' });
+
+    y += 20;
+
+    // --- 3. CENSUS CARDS (Modern Dashboard Look) ---
+
+    doc.setFontSize(10);
+    doc.setTextColor(...hexToRgb(COLORS.primary));
+    doc.setFont('helvetica', 'bold');
+    doc.text('COVERED LIVES BREAKDOWN', margin, y);
+    y += 5;
+
+    // Data Calculation
+    const members = data.members || [];
+    const census = this.calculateCensus(members);
+    const totalLives = census.principals + census.spouses + census.children + census.others;
+
+    const cardData = [
+      { label: 'Principals', value: census.principals },
+      { label: 'Spouses', value: census.spouses },
+      { label: 'Children', value: census.children },
+      { label: 'Others', value: census.others },
+      { label: 'Total', value: totalLives, isTotal: true },
+    ];
+
+    const gap = 4;
+    const cardWidth = (pageWidth - margin * 2 - gap * (cardData.length - 1)) / cardData.length;
+    const cardHeight = 22;
+
+    cardData.forEach((card, i) => {
+      const xPos = margin + i * (cardWidth + gap);
+
+      // Draw Card Background
+      if (card.isTotal) {
+        doc.setFillColor(...hexToRgb(COLORS.primary));
+        doc.setTextColor(255, 255, 255);
+      } else {
+        doc.setFillColor(...hexToRgb(COLORS.bgLight));
+        doc.setTextColor(...hexToRgb(COLORS.textLight));
+      }
+      doc.roundedRect(xPos, y, cardWidth, cardHeight, 2, 2, 'F');
+
+      // Label
+      doc.setFontSize(7);
+      doc.setFont('helvetica', 'normal');
+      doc.text(card.label.toUpperCase(), xPos + cardWidth / 2, y + 7, { align: 'center' });
+
+      // Value
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'bold');
+      if (!card.isTotal) doc.setTextColor(...hexToRgb(COLORS.text));
+      doc.text(card.value.toString(), xPos + cardWidth / 2, y + 16, { align: 'center' });
+    });
+
+    y += cardHeight + 15;
+
+    // --- 4. PREMIUM BREAKDOWN (AutoTable) ---
+
+    doc.setFontSize(10);
+    doc.setTextColor(...hexToRgb(COLORS.primary));
+    doc.text('PREMIUM BREAKDOWN', margin, y);
+    y += 5;
+
+    const pb = data.premium_breakdown || {};
+    const tableBody = [];
+
+    // Base
+    tableBody.push(['Base Premium', this.formatCurrency(pb.base_premium, currency)]);
+
+    // Addons
+    if (pb.addon_premium > 0) {
+      tableBody.push(['Add-On Benefits', this.formatCurrency(pb.addon_premium, currency)]);
     }
 
-    // ===== PREMIUM SUMMARY BOX =====
-    yPos = this.drawPremiumSummary(doc, data, pageWidth, margin, yPos);
+    // Loadings (Red Text)
+    if (pb.loading_amount > 0) {
+      tableBody.push([
+        'Risk Adjustments (Loadings)',
+        {
+          content: `+ ${this.formatCurrency(pb.loading_amount, currency)}`,
+          styles: { textColor: hexToRgb(COLORS.red) },
+        },
+      ]);
+    }
 
-    // ===== TERMS & CONDITIONS =====
-    this.drawTermsSection(doc, data, pageWidth, margin, yPos);
+    // Discounts (Green Text)
+    if (pb.discount_amount > 0) {
+      tableBody.push([
+        'Discounts Applied',
+        {
+          content: `- ${this.formatCurrency(pb.discount_amount, currency)}`,
+          styles: { textColor: hexToRgb(COLORS.green) },
+        },
+      ]);
+    }
 
-    // ===== FOOTER =====
-    this.drawFooter(doc, data, pageWidth, pageHeight, margin);
+    // Tax
+    if (pb.tax_amount > 0) {
+      tableBody.push(['Tax / Levies', this.formatCurrency(pb.tax_amount, currency)]);
+    }
 
-    // Open PDF in new tab
+    autoTable(doc, {
+      startY: y,
+      body: tableBody,
+      theme: 'plain', // Minimalist
+      styles: {
+        fontSize: 10,
+        cellPadding: 6,
+        textColor: hexToRgb(COLORS.text),
+        lineWidth: { bottom: 0.1 },
+        lineColor: hexToRgb(COLORS.border),
+      },
+      columnStyles: {
+        0: { cellWidth: 'auto' },
+        1: { halign: 'right', fontStyle: 'bold', cellWidth: 60 },
+      },
+      margin: { left: margin, right: margin },
+    });
+
+    // --- 5. TOTAL BOX ---
+
+    y = (doc as any).lastAutoTable.finalY + 10;
+
+    // Draw Blue Box
+    doc.setFillColor(...hexToRgb(COLORS.primary));
+    doc.roundedRect(margin, y, pageWidth - margin * 2, 24, 2, 2, 'F');
+
+    // Label
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'bold');
+    doc.text('TOTAL PAYABLE', margin + 10, y + 15);
+
+    // Amount
+    doc.setFontSize(16);
+    doc.text(this.formatCurrency(pb.gross_premium, currency), pageWidth - margin - 10, y + 15, {
+      align: 'right',
+    });
+
+    // Frequency Note
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(200, 200, 200); // Light gray text inside blue box
+    doc.text(
+      this.formatBillingFrequency(pb.billing_frequency) + ' Payment',
+      pageWidth - margin - 10,
+      y + 21,
+      { align: 'right' }
+    );
+
+    // --- 6. FOOTER ---
+
+    const footerY = pageHeight - 15;
+
+    // Line
+    doc.setDrawColor(...hexToRgb(COLORS.border));
+    doc.setLineWidth(0.3);
+    doc.line(margin, footerY - 5, pageWidth - margin, footerY - 5);
+
+    doc.setFontSize(7);
+    doc.setTextColor(...hexToRgb(COLORS.textMuted));
+    doc.text(
+      'Terms & Conditions Apply. Valid for 30 days. Underwriting required.',
+      margin,
+      footerY
+    );
+
+    doc.text(
+      `Generated on ${new Date().toLocaleDateString('en-GB')} • Page 1 of 1`,
+      pageWidth - margin,
+      footerY,
+      { align: 'right' }
+    );
+
+    // Save/Open
     const pdfBlob = doc.output('blob');
     const pdfUrl = URL.createObjectURL(pdfBlob);
     window.open(pdfUrl, '_blank');
   }
 
-  private drawHeader(doc: jsPDF, data: any, pageWidth: number, margin: number, _yPos: number): number {
-    // Draw header background stripe
-    doc.setFillColor(...COLORS.primary);
-    doc.rect(0, 0, pageWidth, 35, 'F');
+  // ==========================================
+  // HELPERS
+  // ==========================================
 
-    // Company branding
-    doc.setTextColor(...COLORS.white);
-    doc.setFontSize(22);
-    doc.setFont('helvetica', 'bold');
-    doc.text('FLEXCARE', margin, 15);
-
-    doc.setFontSize(10);
-    doc.setFont('helvetica', 'normal');
-    doc.text('Medical Insurance Solutions', margin, 22);
-
-    // Quote badge on right
-    const badgeX = pageWidth - margin - 55;
-    doc.setFillColor(...COLORS.white);
-    doc.roundedRect(badgeX, 6, 55, 23, 2, 2, 'F');
-
-    doc.setTextColor(...COLORS.textLight);
-    doc.setFontSize(7);
-    doc.setFont('helvetica', 'bold');
-    doc.text('QUOTE REFERENCE', badgeX + 27.5, 13, { align: 'center' });
-
-    doc.setTextColor(...COLORS.primary);
-    doc.setFontSize(12);
-    doc.setFont('helvetica', 'bold');
-    doc.text(data.application_number || 'N/A', badgeX + 27.5, 22, { align: 'center' });
-
-    // Decorative accent line below header
-    doc.setFillColor(...COLORS.accent);
-    doc.rect(0, 35, pageWidth, 2, 'F');
-
-    return 45;
-  }
-
-  private drawQuoteInfoSection(doc: jsPDF, data: any, pageWidth: number, margin: number, yPos: number): number {
-    const colWidth = (pageWidth - margin * 2 - 10) / 2;
-
-    // Left card - Client Info
-    this.drawInfoCard(doc, margin, yPos, colWidth, 45, [
-      { label: 'PREPARED FOR', value: data.applicant_name || 'Valued Customer', isMain: true },
-      { label: 'EMAIL', value: data.contact_email || '-' },
-      { label: 'PHONE', value: data.contact_phone || '-' },
-      { label: 'PLAN', value: `${data.plan?.scheme || ''} - ${data.plan?.name || ''}` },
-    ]);
-
-    // Right card - Quote Details
-    this.drawInfoCard(doc, margin + colWidth + 10, yPos, colWidth, 45, [
-      { label: 'DATE ISSUED', value: this.formatDate(data.quote_date), isMain: true },
-      { label: 'VALID UNTIL', value: this.formatDate(data.valid_until), highlight: true },
-      { label: 'POLICY TERM', value: `${data.policy_details?.policy_term_months || 12} Months` },
-      {
-        label: 'COVERAGE PERIOD',
-        value: `${this.formatDateShort(data.policy_details?.proposed_start_date)} - ${this.formatDateShort(data.policy_details?.proposed_end_date)}`,
-      },
-    ]);
-
-    return yPos + 52;
-  }
-
-  private drawInfoCard(
-    doc: jsPDF,
-    x: number,
-    y: number,
-    width: number,
-    height: number,
-    items: { label: string; value: string; isMain?: boolean; highlight?: boolean }[]
-  ) {
-    // Card background
-    doc.setFillColor(...COLORS.light);
-    doc.setDrawColor(...COLORS.border);
-    doc.roundedRect(x, y, width, height, 2, 2, 'FD');
-
-    let itemY = y + 6;
-    items.forEach((item) => {
-      // Label
-      doc.setTextColor(...COLORS.textLight);
-      doc.setFontSize(7);
-      doc.setFont('helvetica', 'bold');
-      doc.text(item.label, x + 5, itemY);
-
-      // Value
-      if (item.highlight) {
-        doc.setTextColor(239, 68, 68); // Red for expiry
-      } else if (item.isMain) {
-        doc.setTextColor(...COLORS.primary);
-      } else {
-        doc.setTextColor(...COLORS.text);
-      }
-      doc.setFontSize(item.isMain ? 11 : 9);
-      doc.setFont('helvetica', item.isMain ? 'bold' : 'normal');
-      doc.text(item.value, x + 5, itemY + 5);
-
-      itemY += item.isMain ? 13 : 10;
+  private calculateCensus(members: any[]) {
+    const census = { principals: 0, spouses: 0, children: 0, others: 0 };
+    members.forEach((m) => {
+      const rel = (m.relationship || '').toLowerCase();
+      if (rel.includes('principal') || rel.includes('self')) census.principals++;
+      else if (rel.includes('spouse') || rel.includes('partner')) census.spouses++;
+      else if (rel.includes('child') || rel.includes('son') || rel.includes('daughter'))
+        census.children++;
+      else census.others++;
     });
+    return census;
   }
 
-  private drawMembersTable(doc: jsPDF, data: any, _pageWidth: number, margin: number, yPos: number): number {
-    // Section title
-    doc.setTextColor(...COLORS.primary);
-    doc.setFontSize(11);
-    doc.setFont('helvetica', 'bold');
-    doc.text('COVERED MEMBERS', margin, yPos);
-
-    // Underline
-    doc.setDrawColor(...COLORS.primary);
-    doc.setLineWidth(0.5);
-    doc.line(margin, yPos + 2, margin + 40, yPos + 2);
-
-    yPos += 6;
-
-    const members = data.members || [];
-    const tableData = members.map((m: any) => [
-      m.name || '-',
-      m.relationship || 'Principal',
-      `${m.age || '-'} / ${m.gender || '-'}`,
-      'Covered',
-      this.formatCurrency(m.premium, data.premium_breakdown?.currency),
-    ]);
-
-    autoTable(doc, {
-      startY: yPos,
-      head: [['Member Name', 'Relationship', 'Age / Gender', 'Status', 'Premium']],
-      body: tableData.length > 0 ? tableData : [['No members defined', '', '', '', '']],
-      margin: { left: margin, right: margin },
-      theme: 'plain',
-      headStyles: {
-        fillColor: COLORS.primary,
-        textColor: COLORS.white,
-        fontStyle: 'bold',
-        fontSize: 8,
-        cellPadding: 4,
-      },
-      bodyStyles: {
-        textColor: COLORS.text,
-        fontSize: 9,
-        cellPadding: 4,
-      },
-      alternateRowStyles: {
-        fillColor: COLORS.light,
-      },
-      columnStyles: {
-        0: { fontStyle: 'bold', cellWidth: 50 },
-        1: { cellWidth: 30 },
-        2: { cellWidth: 30 },
-        3: { cellWidth: 25 },
-        4: { halign: 'right', fontStyle: 'bold', cellWidth: 35 },
-      },
-      didParseCell: (hookData) => {
-        // Style "Covered" status cell
-        if (hookData.section === 'body' && hookData.column.index === 3) {
-          hookData.cell.styles.textColor = COLORS.success;
-        }
-      },
-    });
-
-    return (doc as any).lastAutoTable.finalY + 8;
-  }
-
-  private drawAddonsTable(doc: jsPDF, data: any, _pageWidth: number, margin: number, yPos: number): number {
-    // Section title
-    doc.setTextColor(...COLORS.primary);
-    doc.setFontSize(11);
-    doc.setFont('helvetica', 'bold');
-    doc.text('SELECTED ADD-ONS', margin, yPos);
-
-    doc.setDrawColor(...COLORS.primary);
-    doc.setLineWidth(0.5);
-    doc.line(margin, yPos + 2, margin + 38, yPos + 2);
-
-    yPos += 6;
-
-    const addons = data.addons || [];
-    const tableData = addons.map((a: any) => [
-      a.name || '-',
-      this.formatCurrency(a.premium, data.premium_breakdown?.currency),
-    ]);
-
-    autoTable(doc, {
-      startY: yPos,
-      head: [['Add-on Description', 'Premium']],
-      body: tableData,
-      margin: { left: margin, right: margin },
-      theme: 'plain',
-      headStyles: {
-        fillColor: COLORS.primary,
-        textColor: COLORS.white,
-        fontStyle: 'bold',
-        fontSize: 8,
-        cellPadding: 4,
-      },
-      bodyStyles: {
-        textColor: COLORS.text,
-        fontSize: 9,
-        cellPadding: 4,
-      },
-      alternateRowStyles: {
-        fillColor: COLORS.light,
-      },
-      columnStyles: {
-        0: { cellWidth: 'auto' },
-        1: { halign: 'right', fontStyle: 'bold', cellWidth: 40 },
-      },
-    });
-
-    return (doc as any).lastAutoTable.finalY + 8;
-  }
-
-  private drawPremiumSummary(doc: jsPDF, data: any, pageWidth: number, margin: number, yPos: number): number {
-    const boxWidth = 85;
-    const boxX = pageWidth - margin - boxWidth;
-    const pb = data.premium_breakdown || {};
-
-    // Build summary items
-    const items: { label: string; value: string; isDiscount?: boolean; isTotal?: boolean }[] = [];
-
-    items.push({ label: 'Billing Frequency', value: this.formatBillingFrequency(pb.billing_frequency) });
-    items.push({ label: 'Base Premium', value: this.formatCurrency(pb.base_premium, pb.currency) });
-
-    if (pb.addon_premium > 0) {
-      items.push({ label: 'Add-ons', value: this.formatCurrency(pb.addon_premium, pb.currency) });
-    }
-    if (pb.loading_amount > 0) {
-      items.push({ label: 'Risk Loadings', value: this.formatCurrency(pb.loading_amount, pb.currency) });
-    }
-    if (pb.discount_amount > 0) {
-      items.push({
-        label: 'Discounts',
-        value: `-${this.formatCurrency(pb.discount_amount, pb.currency)}`,
-        isDiscount: true,
-      });
-    }
-    if (pb.tax_amount > 0) {
-      items.push({ label: 'Tax / VAT', value: this.formatCurrency(pb.tax_amount, pb.currency) });
-    }
-
-    items.push({ label: 'TOTAL PAYABLE', value: this.formatCurrency(pb.gross_premium, pb.currency), isTotal: true });
-
-    const rowHeight = 9;
-    const totalRowHeight = 14;
-    const boxHeight = (items.length - 1) * rowHeight + totalRowHeight + 4;
-
-    // Card background
-    doc.setFillColor(...COLORS.light);
-    doc.setDrawColor(...COLORS.border);
-    doc.roundedRect(boxX, yPos, boxWidth, boxHeight, 2, 2, 'FD');
-
-    let itemY = yPos + 7;
-    items.forEach((item) => {
-      if (item.isTotal) {
-        // Total row with primary background
-        doc.setFillColor(...COLORS.primary);
-        doc.roundedRect(boxX, itemY - 4, boxWidth, totalRowHeight, 0, 0, 'F');
-        // Round bottom corners
-        doc.roundedRect(boxX, itemY + 2, boxWidth, totalRowHeight - 6, 2, 2, 'F');
-
-        doc.setTextColor(...COLORS.white);
-        doc.setFontSize(10);
-        doc.setFont('helvetica', 'bold');
-        doc.text(item.label, boxX + 5, itemY + 4);
-        doc.text(item.value, boxX + boxWidth - 5, itemY + 4, { align: 'right' });
-      } else {
-        // Regular row
-        doc.setTextColor(item.isDiscount ? COLORS.success[0] : COLORS.textLight[0], item.isDiscount ? COLORS.success[1] : COLORS.textLight[1], item.isDiscount ? COLORS.success[2] : COLORS.textLight[2]);
-        doc.setFontSize(8);
-        doc.setFont('helvetica', 'normal');
-        doc.text(item.label, boxX + 5, itemY);
-
-        doc.setTextColor(item.isDiscount ? COLORS.success[0] : COLORS.text[0], item.isDiscount ? COLORS.success[1] : COLORS.text[1], item.isDiscount ? COLORS.success[2] : COLORS.text[2]);
-        doc.setFont('helvetica', 'bold');
-        doc.text(item.value, boxX + boxWidth - 5, itemY, { align: 'right' });
-
-        itemY += rowHeight;
-      }
-    });
-
-    return yPos + boxHeight + 10;
-  }
-
-  private drawTermsSection(doc: jsPDF, _data: any, pageWidth: number, margin: number, yPos: number) {
-    // Only draw if there's space
-    if (yPos > 240) return;
-
-    doc.setTextColor(...COLORS.textLight);
-    doc.setFontSize(7);
-    doc.setFont('helvetica', 'italic');
-
-    const termsText =
-      'Terms & Conditions: This quote is subject to the standard terms and conditions of the Medical Insurance Policy. ' +
-      'Final acceptance is subject to underwriting approval. Premium rates are subject to change based on underwriting assessment. ' +
-      'This quote does not constitute a contract of insurance until accepted and payment is received.';
-
-    const splitText = doc.splitTextToSize(termsText, pageWidth - margin * 2);
-    doc.text(splitText, margin, yPos);
-  }
-
-  private drawFooter(doc: jsPDF, _data: any, pageWidth: number, pageHeight: number, margin: number) {
-    const footerY = pageHeight - 12;
-
-    // Footer line
-    doc.setDrawColor(...COLORS.border);
-    doc.setLineWidth(0.3);
-    doc.line(margin, footerY - 5, pageWidth - margin, footerY - 5);
-
-    // Footer text
-    doc.setTextColor(...COLORS.textLight);
-    doc.setFontSize(7);
-    doc.setFont('helvetica', 'normal');
-
-    doc.text(`Generated on ${new Date().toLocaleString()}`, margin, footerY);
-    doc.text('FlexCare Medical Insurance Portal', pageWidth / 2, footerY, { align: 'center' });
-    doc.text('Page 1 of 1', pageWidth - margin, footerY, { align: 'right' });
-  }
-
-  private formatCurrency(amount: number, currency: string = 'KES'): string {
-    return `${currency} ${(amount || 0).toLocaleString('en-US', {
+  private formatCurrency(amount: any, currency = 'ZMW'): string {
+    const value = Number(amount) || 0; // Convert string '1000' to number 1000
+    return `${currency} ${value.toLocaleString('en-US', {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     })}`;
   }
 
-  private formatDate(date: string): string {
+  private formatDate(date: string | undefined): string {
     if (!date) return '-';
-    return new Date(date).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
+    return new Date(date).toLocaleDateString('en-GB', {
       day: 'numeric',
-    });
-  }
-
-  private formatDateShort(date: string): string {
-    if (!date) return '-';
-    return new Date(date).toLocaleDateString('en-US', {
-      year: 'numeric',
       month: 'short',
-      day: 'numeric',
+      year: 'numeric',
     });
   }
 
-  private formatBillingFrequency(frequency: string): string {
-    const map: Record<string, string> = {
-      monthly: 'Monthly',
-      quarterly: 'Quarterly',
-      semi_annual: 'Semi-Annual',
-      annual: 'Annual',
-    };
-    return map[frequency] || frequency || '-';
+  private formatDateShort(date: string | undefined): string {
+    if (!date) return '-';
+    return new Date(date).toLocaleDateString('en-GB', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+    });
+  }
+
+  private formatBillingFrequency(freq: string | undefined): string {
+    if (!freq) return 'Annual';
+    return freq.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
   }
 }

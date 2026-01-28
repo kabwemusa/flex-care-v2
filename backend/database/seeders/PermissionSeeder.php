@@ -135,6 +135,15 @@ class PermissionSeeder extends Seeder
             'medical.claims.approve',
             'medical.claims.reject',
 
+            // Billing & Invoicing
+            'medical.billing.view',
+            'medical.billing.invoices.create',
+            'medical.billing.invoices.send',
+            'medical.billing.invoices.cancel',
+            'medical.billing.payments.record',
+            'medical.billing.payments.allocate',
+            'medical.billing.payments.reverse',
+
             // Reports
             'medical.reports.view',
             'medical.reports.export',

@@ -90,10 +90,13 @@ export class PlanListStore {
     );
   }
 
+  /**
+   * Load plans for dropdown selection (uses permission-free lookup endpoint)
+   */
   loadDropdown(schemeId?: string) {
     const url = schemeId
-      ? `${this.apiUrl}/dropdown?scheme_id=${schemeId}`
-      : `${this.apiUrl}/dropdown`;
+      ? `/api/v1/medical/lookups/plans?scheme_id=${schemeId}`
+      : '/api/v1/medical/lookups/plans';
     return this.http.get<ApiResponse<DropdownOption[]>>(url);
   }
 

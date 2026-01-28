@@ -109,8 +109,11 @@ export class GroupStore {
     );
   }
 
+  /**
+   * Load groups for dropdown selection (uses permission-free lookup endpoint)
+   */
   loadDropdown() {
-    return this.http.get<ApiResponse<CorporateGroup[]>>(`${this.apiUrl}/dropdown`);
+    return this.http.get<ApiResponse<CorporateGroup[]>>('/api/v1/medical/lookups/groups');
   }
 
   loadMembers(applicationId: string, page = 1, perPage = 10) {

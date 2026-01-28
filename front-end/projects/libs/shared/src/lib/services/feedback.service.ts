@@ -2,7 +2,8 @@
 import { inject, Injectable } from '@angular/core';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatDialog } from '@angular/material/dialog';
-import { ConfirmationDialog } from 'shared';
+import { ConfirmationDialog } from '../components/confirmation-dialog/confirmation-dialog';
+import { PromptDialog, PromptDialogData } from '../components/prompt-dialog/prompt-dialog';
 import { firstValueFrom } from 'rxjs';
 
 @Injectable({ providedIn: 'root' })
@@ -43,5 +44,24 @@ export class FeedbackService {
       data: { title, message },
     });
     return (await firstValueFrom(dialogRef.afterClosed())) || false;
+  }
+
+  async prompt(
+    title: string,
+    message: string,
+    inputType: 'text' | 'textarea' = 'text',
+    options?: Partial<PromptDialogData>
+  ): Promise<string | null> {
+    const dialogRef = this.dialog.open(PromptDialog, {
+      width: '450px',
+      data: {
+        title,
+        message,
+        inputType,
+        minLength: 10,
+        ...options,
+      } as PromptDialogData,
+    });
+    return await firstValueFrom(dialogRef.afterClosed());
   }
 }

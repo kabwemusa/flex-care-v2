@@ -30,10 +30,12 @@ import {
   getLabelByValue,
   getStatusColor,
 } from 'medical-data';
+import { ApprovalStatusBadgeComponent } from 'core-approvals';
 
 import { MedicalApplicationDialog } from '../dialogs/medical-application-dialog/medical-application-dialog';
 import { MatDivider } from '@angular/material/divider';
-import { FeedbackService } from 'shared';
+import { FeedbackService, PermissionDirective } from 'shared';
+import { MEDICAL_PERMISSIONS } from 'core-auth';
 
 @Component({
   selector: 'lib-application-list',
@@ -57,6 +59,8 @@ import { FeedbackService } from 'shared';
     MatSnackBarModule,
     MatSidenavModule,
     MatDivider,
+    PermissionDirective,
+    ApprovalStatusBadgeComponent,
   ],
   templateUrl: './medical-application-list.html',
 })
@@ -65,6 +69,9 @@ export class MedicalApplicationList implements OnInit {
   private readonly router = inject(Router);
   private readonly dialog = inject(MatDialog);
   private readonly feedback = inject(FeedbackService);
+
+  // Permissions
+  readonly permissions = MEDICAL_PERMISSIONS;
 
   @ViewChild(MatSort) sort!: MatSort;
   @ViewChild(MatPaginator) paginator!: MatPaginator;

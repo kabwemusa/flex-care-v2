@@ -1,0 +1,229 @@
+<div class="space-y-6">
+  <!-- KPI Cards -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+    <lib-kpi-card
+      label="Total Invoiced"
+      [value]="reports()?.summary?.total_invoiced ?? 0"
+      format="currency"
+      icon="receipt_long"
+      [loading]="store.isLoadingBilling()"
+    />
+    <lib-kpi-card
+      label="Total Collected"
+      [value]="reports()?.summary?.total_collected ?? 0"
+      format="currency"
+      icon="payments"
+      color="success"
+      [loading]="store.isLoadingBilling()"
+    />
+    <lib-kpi-card
+      label="Outstanding"
+      [value]="reports()?.summary?.total_outstanding ?? 0"
+      format="currency"
+      icon="account_balance"
+      color="warning"
+      [loading]="store.isLoadingBilling()"
+    />
+    <lib-kpi-card
+      label="Collection Rate"
+      [value]="reports()?.summary?.collection_rate ?? 0"
+      format="percent"
+      icon="trending_up"
+      color="success"
+      [loading]="store.isLoadingBilling()"
+    />
+    <lib-kpi-card
+      label="Overdue"
+      [value]="reports()?.summary?.overdue_amount ?? 0"
+      format="currency"
+      icon="warning"
+      color="danger"
+      [subtitle]="(reports()?.summary?.overdue_count ?? 0) + ' invoices'"
+      [loading]="store.isLoadingBilling()"
+    />
+  </div>
+
+  <!-- Charts Row 1 -->
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <!-- Invoice Status Distribution -->
+    <lib-chart-container
+      title="Invoice Status Distribution"
+      subtitle="Current invoice status breakdown"
+      [loading]="store.isLoadingBilling()"
+      [empty]="!invoiceStatusSeries().length"
+    >
+      <apx-chart
+        [series]="invoiceStatusSeries()"
+        [labels]="invoiceStatusLabels()"
+        [colors]="invoiceStatusColors()"
+        [chart]="{ type: 'donut', height: 320 }"
+        [plotOptions]="donutChartOptions.plotOptions"
+        [dataLabels]="donutChartOptions.dataLabels"
+        [legend]="donutChartOptions.legend"
+        [responsive]="donutChartOptions.responsive"
+      />
+    </lib-chart-container>
+
+    <!-- Payment Methods -->
+    <lib-chart-container
+      title="Payment Method Distribution"
+      subtitle="Collections by payment method"
+      [loading]="store.isLoadingBilling()"
+      [empty]="!paymentMethodsSeries().length"
+    >
+      <apx-chart
+        [series]="paymentMethodsSeries()"
+        [labels]="paymentMethodsLabels()"
+        [colors]="paymentMethodColors"
+        [chart]="{ type: 'pie', height: 320 }"
+        [dataLabels]="percentDataLabels"
+        [legend]="donutChartOptions.legend"
+        [responsive]="donutChartOptions.responsive"
+      />
+    </lib-chart-container>
+  </div>
+
+  <!-- Charts Row 2 -->
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <!-- Invoiced vs Collected Trend -->
+    <lib-chart-container
+      title="Invoiced vs Collected"
+      subtitle="Monthly comparison"
+      [loading]="store.isLoadingBilling()"
+      [empty]="!collectionTrendSeries().length"
+    >
+      <apx-chart
+        [series]="collectionTrendSeries()"
+        [chart]="{ type: 'line', height: 320 }"
+        [colors]="[chartColors.primary, chartColors.success]"
+        [xaxis]="collectionTrendXAxis()"
+        [stroke]="{ width: [0, 3], curve: 'smooth' }"
+        [plotOptions]="{ bar: { borderRadius: 4, columnWidth: '60%' } }"
+        [dataLabels]="comboChartOptions.dataLabels"
+        [legend]="{ position: 'top' }"
+        [grid]="comboChartOptions.grid"
+        [yaxis]="currencyYAxis"
+      />
+    </lib-chart-container>
+
+    <!-- Aging Analysis -->
+    <lib-chart-container
+      title="Aging Analysis"
+      subtitle="Outstanding amounts by age bucket"
+      [loading]="store.isLoadingBilling()"
+      [empty]="!agingChartSeries().length"
+    >
+      <apx-chart
+        [series]="agingChartSeries()"
+        [chart]="{ type: 'bar', height: 320 }"
+        [colors]="agingChartColors"
+        [xaxis]="agingXAxis()"
+        [plotOptions]="{ bar: { borderRadius: 4, columnWidth: '60%', distributed: true } }"
+        [dataLabels]="currencyDataLabels"
+        [legend]="{ show: false }"
+        [grid]="stackedBarOptions.grid"
+        [yaxis]="currencyYAxis"
+      />
+    </lib-chart-container>
+  </div>
+
+  <!-- Daily Collections & Top Outstanding -->
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <!-- Daily Collections -->
+    <lib-chart-container
+      title="Daily Collections (Last 30 Days)"
+      subtitle="Payment amounts received per day"
+      [loading]="store.isLoadingBilling()"
+      [empty]="!dailyCollectionsSeries().length"
+    >
+      <apx-chart
+        [series]="dailyCollectionsSeries()"
+        [chart]="{ type: 'area', height: 320, sparkline: { enabled: false } }"
+        [colors]="[chartColors.success]"
+        [xaxis]="dailyCollectionsXAxis()"
+        [stroke]="{ curve: 'smooth', width: 2 }"
+        [fill]="{
+          type: 'gradient',
+          gradient: { shadeIntensity: 1, opacityFrom: 0.4, opacityTo: 0.1 }
+        }"
+        [dataLabels]="{ enabled: false }"
+        [grid]="{ borderColor: '#e2e8f0', strokeDashArray: 4 }"
+        [yaxis]="currencyYAxis"
+      />
+    </lib-chart-container>
+
+    <!-- Top Outstanding -->
+    <lib-chart-container
+      title="Top Outstanding Accounts"
+      subtitle="Policies with highest outstanding balances"
+      [loading]="store.isLoadingBilling()"
+      [empty]="!topOutstanding().length"
+      minHeight="auto"
+    >
+      <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200">
+          <thead>
+            <tr class="bg-gray-50">
+              <th
+                class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+              >
+                Policy
+              </th>
+              <th
+                class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+              >
+                Holder
+              </th>
+              <th
+                class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"
+              >
+                Outstanding
+              </th>
+              <th
+                class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"
+              >
+                Overdue Days
+              </th>
+            </tr>
+          </thead>
+          <tbody class="bg-white divide-y divide-gray-200">
+            @for (item of topOutstanding(); track item.policy_id) {
+            <tr class="hover:bg-gray-50">
+              <td class="px-4 py-3 text-sm font-medium text-blue-600">{{ item.policy_number }}</td>
+              <td class="px-4 py-3 text-sm text-gray-600">{{ item.holder_name }}</td>
+              <td class="px-4 py-3 text-sm text-right font-medium text-gray-900">
+                {{ formatCurrency(item.outstanding) }}
+              </td>
+              <td
+                class="px-4 py-3 text-sm text-right"
+                [class.text-red-600]="item.days_overdue > 60"
+                [class.text-amber-600]="item.days_overdue > 30 && item.days_overdue <= 60"
+                [class.text-gray-600]="item.days_overdue <= 30"
+              >
+                {{ item.days_overdue }}
+              </td>
+            </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </lib-chart-container>
+  </div>
+
+  <!-- Unallocated Payments Alert -->
+  @if ((reports()?.summary?.unallocated_payments ?? 0) > 0) {
+  <div class="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-start gap-3">
+    <div class="p-2 bg-amber-100 rounded-lg">
+      <mat-icon fontSet="material-symbols-rounded">help_outline</mat-icon>
+    </div>
+    <div>
+      <h4 class="font-medium text-amber-800">Unallocated Payments</h4>
+      <p class="text-sm text-amber-700 mt-1">
+        There are {{ formatCurrency(reports()?.summary?.unallocated_payments ?? 0) }} in payments
+        that have not been allocated to invoices. Consider reviewing and allocating these payments
+        to the appropriate invoices.
+      </p>
+    </div>
+  </div>
+  }
+</div>

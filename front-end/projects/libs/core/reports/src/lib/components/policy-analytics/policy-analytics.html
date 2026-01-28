@@ -1,0 +1,245 @@
+<div class="space-y-6">
+  <!-- KPI Cards -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+    <lib-kpi-card
+      label="Total Policies"
+      [value]="analytics()?.summary?.total_policies ?? 0"
+      icon="description"
+      [loading]="store.isLoadingPolicies()"
+    />
+    <lib-kpi-card
+      label="Active Policies"
+      [value]="analytics()?.summary?.active_policies ?? 0"
+      icon="verified_user"
+      color="success"
+      [loading]="store.isLoadingPolicies()"
+    />
+    <lib-kpi-card
+      label="Total Premium"
+      [value]="analytics()?.summary?.total_premium ?? 0"
+      format="currency"
+      icon="payments"
+      color="info"
+      [loading]="store.isLoadingPolicies()"
+    />
+    <lib-kpi-card
+      label="Avg Premium"
+      [value]="analytics()?.summary?.avg_premium ?? 0"
+      format="currency"
+      icon="calculate"
+      [loading]="store.isLoadingPolicies()"
+    />
+    <lib-kpi-card
+      label="Total Members"
+      [value]="analytics()?.summary?.total_members ?? 0"
+      icon="group"
+      color="info"
+      [loading]="store.isLoadingPolicies()"
+    />
+  </div>
+
+  <!-- Charts Row 1 -->
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <!-- Status Distribution -->
+    <lib-chart-container
+      title="Policy Status Distribution"
+      subtitle="Current status breakdown"
+      [loading]="store.isLoadingPolicies()"
+      [empty]="!statusChartSeries().length"
+    >
+      <apx-chart
+        [series]="statusChartSeries()"
+        [labels]="statusChartLabels()"
+        [colors]="statusChartColors()"
+        [chart]="{ type: 'donut', height: 320 }"
+        [plotOptions]="donutChartOptions.plotOptions"
+        [dataLabels]="donutChartOptions.dataLabels"
+        [legend]="donutChartOptions.legend"
+        [responsive]="donutChartOptions.responsive"
+      />
+    </lib-chart-container>
+
+    <!-- Type Distribution -->
+    <lib-chart-container
+      title="Policy Type Distribution"
+      subtitle="By policy category"
+      [loading]="store.isLoadingPolicies()"
+      [empty]="!typeChartSeries().length"
+    >
+      <apx-chart
+        [series]="typeChartSeries()"
+        [labels]="typeChartLabels()"
+        [colors]="typeChartColors"
+        [chart]="{ type: 'pie', height: 320 }"
+        [dataLabels]="percentDataLabels"
+        [legend]="donutChartOptions.legend"
+        [responsive]="donutChartOptions.responsive"
+      />
+    </lib-chart-container>
+  </div>
+
+  <!-- Charts Row 2 -->
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <!-- Premium Breakdown -->
+    <lib-chart-container
+      title="Premium Breakdown by Type"
+      subtitle="Base, addon, and loading components"
+      [loading]="store.isLoadingPolicies()"
+      [empty]="!premiumChartSeries().length"
+    >
+      <apx-chart
+        [series]="premiumChartSeries()"
+        [chart]="{ type: 'bar', height: 320, stacked: true }"
+        [colors]="premiumChartColors"
+        [xaxis]="premiumXAxis()"
+        [plotOptions]="stackedBarOptions.plotOptions"
+        [dataLabels]="stackedBarOptions.dataLabels"
+        [legend]="{ position: 'top' }"
+        [grid]="stackedBarOptions.grid"
+        [yaxis]="currencyYAxis"
+      />
+    </lib-chart-container>
+
+    <!-- Monthly Trend -->
+    <lib-chart-container
+      title="Policy Growth Trend"
+      subtitle="New vs cancelled policies over time"
+      [loading]="store.isLoadingPolicies()"
+      [empty]="!trendChartSeries().length"
+    >
+      <apx-chart
+        [series]="trendChartSeries()"
+        [chart]="{ type: 'line', height: 320 }"
+        [colors]="trendChartColors"
+        [xaxis]="trendXAxis()"
+        [stroke]="lineChartOptions.stroke"
+        [markers]="lineChartOptions.markers"
+        [dataLabels]="lineChartOptions.dataLabels"
+        [legend]="{ position: 'top' }"
+        [grid]="lineChartOptions.grid"
+      />
+    </lib-chart-container>
+  </div>
+
+  <!-- Renewal Pipeline & Top Plans -->
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <!-- Renewal Pipeline -->
+    <lib-chart-container
+      title="Renewal Pipeline"
+      subtitle="Policies expiring in the next 90 days"
+      [loading]="store.isLoadingPolicies()"
+      [empty]="!renewalData()"
+      minHeight="auto"
+    >
+      <div class="space-y-4 py-2">
+        <!-- 90 Days -->
+        <div>
+          <div class="flex justify-between text-sm mb-1">
+            <span class="text-gray-600">Expiring in 90 days</span>
+            <span class="font-medium">{{ renewalData()?.expiring_90_days ?? 0 }}</span>
+          </div>
+          <div class="h-3 bg-gray-100 rounded-full overflow-hidden">
+            <div
+              class="h-full bg-blue-500 rounded-full transition-all duration-500"
+              [style.width.%]="getPercentage(renewalData()?.expiring_90_days ?? 0)"
+            ></div>
+          </div>
+        </div>
+
+        <!-- 60 Days -->
+        <div>
+          <div class="flex justify-between text-sm mb-1">
+            <span class="text-gray-600">Expiring in 60 days</span>
+            <span class="font-medium">{{ renewalData()?.expiring_60_days ?? 0 }}</span>
+          </div>
+          <div class="h-3 bg-gray-100 rounded-full overflow-hidden">
+            <div
+              class="h-full bg-amber-500 rounded-full transition-all duration-500"
+              [style.width.%]="getPercentage(renewalData()?.expiring_60_days ?? 0)"
+            ></div>
+          </div>
+        </div>
+
+        <!-- 30 Days -->
+        <div>
+          <div class="flex justify-between text-sm mb-1">
+            <span class="text-gray-600">Expiring in 30 days</span>
+            <span class="font-medium text-red-600">{{ renewalData()?.expiring_30_days ?? 0 }}</span>
+          </div>
+          <div class="h-3 bg-gray-100 rounded-full overflow-hidden">
+            <div
+              class="h-full bg-red-500 rounded-full transition-all duration-500"
+              [style.width.%]="getPercentage(renewalData()?.expiring_30_days ?? 0)"
+            ></div>
+          </div>
+        </div>
+
+        <!-- Renewed -->
+        <div class="pt-2 border-t border-gray-200">
+          <div class="flex justify-between text-sm">
+            <span class="text-gray-600">Already Renewed</span>
+            <span class="font-medium text-green-600">{{ renewalData()?.renewed ?? 0 }}</span>
+          </div>
+        </div>
+      </div>
+    </lib-chart-container>
+
+    <!-- Top Plans -->
+    <lib-chart-container
+      title="Top Plans"
+      subtitle="Plans with most policies"
+      [loading]="store.isLoadingPolicies()"
+      [empty]="!topPlansChartSeries().length"
+    >
+      <apx-chart
+        [series]="topPlansChartSeries()"
+        [chart]="{ type: 'bar', height: 320 }"
+        [colors]="[chartColors.primary]"
+        [xaxis]="topPlansXAxis()"
+        [yaxis]="topPlansYAxis()"
+        [plotOptions]="{ bar: { horizontal: true, barHeight: '60%', borderRadius: 4 } }"
+        [dataLabels]="{ enabled: true }"
+        [grid]="horizontalBarOptions.grid"
+      />
+    </lib-chart-container>
+  </div>
+
+  <!-- Member Distribution Table -->
+  @if (analytics()?.member_distribution?.length) {
+    <lib-chart-container
+      title="Member Distribution by Policy Type"
+      subtitle="Principal and dependent breakdown"
+      [loading]="store.isLoadingPolicies()"
+      minHeight="auto"
+    >
+      <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200">
+          <thead>
+            <tr class="bg-gray-50">
+              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Policy Type</th>
+              <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Principal</th>
+              <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Spouse</th>
+              <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Child</th>
+              <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Parent</th>
+              <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
+            </tr>
+          </thead>
+          <tbody class="bg-white divide-y divide-gray-200">
+            @for (item of analytics()?.member_distribution ?? []; track item.policy_type) {
+              <tr class="hover:bg-gray-50">
+                <td class="px-4 py-3 text-sm font-medium text-gray-900">{{ policyTypeLabels[item.policy_type] ?? item.policy_type }}</td>
+                <td class="px-4 py-3 text-sm text-right text-gray-600">{{ item.principal | number }}</td>
+                <td class="px-4 py-3 text-sm text-right text-gray-600">{{ item.spouse | number }}</td>
+                <td class="px-4 py-3 text-sm text-right text-gray-600">{{ item.child | number }}</td>
+                <td class="px-4 py-3 text-sm text-right text-gray-600">{{ item.parent | number }}</td>
+                <td class="px-4 py-3 text-sm text-right font-medium text-gray-900">
+                  {{ (item.principal + item.spouse + item.child + item.parent) | number }}
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </lib-chart-container>
+  }
+</div>

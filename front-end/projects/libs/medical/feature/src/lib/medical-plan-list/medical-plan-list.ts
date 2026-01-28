@@ -39,7 +39,8 @@ import {
 } from 'medical-data';
 import { MedicalPlanListDialog } from '../dialogs/medical-plan-list-dialog/medical-plan-list-dialog';
 import { MedicalQuickQuoteDialog } from '../dialogs/medical-quick-quote-dialog/medical-quick-quote-dialog';
-import { FeedbackService, PageHeaderComponent } from 'shared';
+import { FeedbackService, PageHeaderComponent, PermissionDirective } from 'shared';
+import { MEDICAL_PERMISSIONS } from 'core-auth';
 
 @Component({
   selector: 'lib-medical-plans',
@@ -59,6 +60,7 @@ import { FeedbackService, PageHeaderComponent } from 'shared';
     MatFormFieldModule,
     MatSidenavModule,
     PageHeaderComponent,
+    PermissionDirective,
   ],
   templateUrl: './medical-plan-list.html',
 })
@@ -67,6 +69,9 @@ export class MedicalPlanList implements OnInit, AfterViewInit {
   readonly schemeStore = inject(SchemeListStore);
   private readonly dialog = inject(MatDialog);
   private readonly feedback = inject(FeedbackService);
+
+  // Permissions
+  readonly permissions = MEDICAL_PERMISSIONS;
 
   displayedColumns = ['status', 'name', 'scheme', 'type', 'tier', 'benefits', 'actions'];
   dataSource = new MatTableDataSource<MedicalPlan>([]);

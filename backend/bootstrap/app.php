@@ -22,7 +22,10 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'module' => \App\Http\Middleware\CheckModuleAccess::class,
             'role' => \Spatie\Permission\Middleware\RoleMiddleware::class,
-            'permission' => \Spatie\Permission\Middleware\PermissionMiddleware::class,
+            // Use custom permission middleware that extracts guard from permission name
+            // e.g., 'medical.schemes.view' -> checks against 'medical' guard
+            'permission' => \App\Http\Middleware\CheckPermission::class,
+            'spatie.permission' => \Spatie\Permission\Middleware\PermissionMiddleware::class,
             'role_or_permission' => \Spatie\Permission\Middleware\RoleOrPermissionMiddleware::class,
             'medical.permission' => \Modules\Medical\Http\Middleware\CheckMedicalPermission::class,
             'session.check' => \App\Http\Middleware\CheckSessionExpiration::class,

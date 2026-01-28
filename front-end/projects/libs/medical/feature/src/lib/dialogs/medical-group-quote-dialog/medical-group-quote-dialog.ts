@@ -66,8 +66,8 @@ export class MedicalGroupQuoteDialog {
   quoteResult = signal<GroupQuoteResult | null>(null);
   currentStep = signal<'configure' | 'results'>('configure');
 
-  // Data
-  readonly schemes = this.schemeStore.schemes;
+  // Data (loaded from permission-free lookup endpoints)
+  readonly schemes = signal<{ id: string; name: string; code: string }[]>([]);
   readonly plans = signal<{ id: string; name: string; code: string }[]>([]);
   readonly loading = this.quoteStore.isLoading;
   readonly billingFrequencies = [
@@ -90,8 +90,10 @@ export class MedicalGroupQuoteDialog {
       billing_frequency: ['monthly', Validators.required],
     });
 
-    // Load schemes
-    this.schemeStore.loadAll();
+    // Load schemes using permission-free lookup endpoint
+    this.schemeStore.loadDropdown().subscribe({
+      next: (res) => this.schemes.set(res.data.map((s: any) => ({ id: s.id, name: s.name, code: s.code }))),
+    });
 
     // Watch scheme changes to load plans
     this.quoteForm.get('scheme_id')?.valueChanges.subscribe((schemeId) => {
@@ -113,10 +115,11 @@ export class MedicalGroupQuoteDialog {
   }
 
   private loadPlansForScheme(schemeId: string) {
-    this.planStore.loadByScheme(schemeId).subscribe({
+    // Use permission-free lookup endpoint
+    this.planStore.loadDropdown(schemeId).subscribe({
       next: (res) => {
         if (res.data) {
-          this.plans.set(res.data.map((p) => ({ id: p.id, name: p.name, code: p.code })));
+          this.plans.set(res.data.map((p: any) => ({ id: p.id, name: p.name, code: p.code })));
         }
       },
     });

@@ -30,13 +30,15 @@ import {
   InvoiceFilters,
   formatCurrency,
 } from 'medical-data';
-import { FeedbackService, PageHeaderComponent } from 'shared';
+import { FeedbackService, PageHeaderComponent, PermissionDirective } from 'shared';
+import { MEDICAL_PERMISSIONS } from 'core-auth';
 import {
   INVOICE_STATUS_STYLES,
   INVOICE_FILTER_OPTIONS,
   BILLING_UI_CONFIG,
   INVOICE_CSV_CONFIG,
 } from 'medical-data';
+import { MedicalRecordPaymentDialog } from '../dialogs/medical-record-payment-dialog/medical-record-payment-dialog';
 
 @Component({
   selector: 'lib-medical-billing-invoices',
@@ -61,6 +63,7 @@ import {
     MatProgressSpinnerModule,
     MatDatepickerModule,
     PageHeaderComponent,
+    PermissionDirective,
   ],
   templateUrl: './medical-billing-invoices.html',
 })
@@ -68,6 +71,9 @@ export class MedicalBillingInvoices implements OnInit {
   readonly store = inject(BillingStore);
   private readonly feedback = inject(FeedbackService);
   private readonly dialog = inject(MatDialog);
+
+  // Permissions
+  readonly permissions = MEDICAL_PERMISSIONS;
 
   // Table
   displayedColumns = [
@@ -263,9 +269,38 @@ export class MedicalBillingInvoices implements OnInit {
 
   recordPayment(invoice: Invoice, event?: Event): void {
     event?.stopPropagation();
-    // This will open the record payment dialog
-    // For now, navigate to payments tab or open dialog
-    this.feedback.info('Navigate to payments to record a payment for this invoice');
+
+    const dialogRef = this.dialog.open(MedicalRecordPaymentDialog, {
+      maxWidth: '70vw',
+      maxHeight: '90vh',
+      disableClose: true,
+      panelClass: ['responsive-dialog', 'bg-white'],
+      autoFocus: false,
+      data: {
+        policyId: invoice.policy_id ?? invoice.policy?.id,
+        invoiceId: invoice.id,
+        suggestedAmount: invoice.balance,
+      },
+    });
+
+    dialogRef.afterClosed().subscribe((result) => {
+      if (result) {
+        this.store.recordPayment(result).subscribe({
+          next: () => {
+            this.feedback.success('Payment recorded successfully');
+            this.loadInvoices();
+            this.store.loadStats();
+            // Refresh the invoice details if it's open in the drawer
+            if (this.selectedInvoice()?.id === invoice.id) {
+              this.store.loadInvoice(invoice.id).subscribe({
+                next: () => this.selectedInvoice.set(this.store.selectedInvoice()),
+              });
+            }
+          },
+          error: (err) => this.feedback.error(err?.error?.message ?? 'Failed to record payment'),
+        });
+      }
+    });
   }
 
   private refreshAfterAction(invoiceId: string): void {

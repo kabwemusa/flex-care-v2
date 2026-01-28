@@ -53,13 +53,15 @@ import {
   ENDORSEMENT_FILTER_OPTIONS,
   ENDORSEMENT_UI_CONFIG,
 } from 'medical-data';
-import { FeedbackService, PageHeaderComponent } from 'shared';
+import { FeedbackService, PageHeaderComponent, PermissionDirective } from 'shared';
+import { MEDICAL_PERMISSIONS } from 'core-auth';
 import { MedicalMemberDetailDialog } from '../dialogs/medical-member-detail-dialog/medical-member-detail-dialog';
 import { MedicalMemberBenefitsDialog } from '../dialogs/medical-member-benefits-dialog/medical-member-benefits-dialog';
 import {
   MedicalEndorsementDialog,
   EndorsementDialogMode,
 } from '../dialogs/medical-endorsement-dialog/medical-endorsement-dialog';
+import { PolicyDocumentsComponent } from '../components/policy-documents/policy-documents';
 
 @Component({
   selector: 'lib-medical-policy-detail',
@@ -67,7 +69,6 @@ import {
   imports: [
     CommonModule,
     FormsModule,
-
     MatTabsModule,
     MatIconModule,
     MatButtonModule,
@@ -81,6 +82,8 @@ import {
     MatInputModule,
     MatSelectModule,
     MatPaginatorModule,
+    PolicyDocumentsComponent,
+    PermissionDirective,
   ],
   templateUrl: './medical-policy-detail.html',
 })
@@ -96,6 +99,8 @@ export class MedicalPolicyDetail implements OnInit {
   private readonly feedback = inject(FeedbackService);
   readonly memberUtil = inject(MemberUtilService);
 
+  readonly permissions = MEDICAL_PERMISSIONS;
+
   // Route param
   policyId = signal<string>('');
   activeTabIndex = signal(0);
@@ -109,7 +114,6 @@ export class MedicalPolicyDetail implements OnInit {
     { label: 'Overview', icon: 'info', key: 'overview' },
     { label: 'Members', icon: 'group', key: 'members' },
     { label: 'Endorsements', icon: 'assignment', key: 'endorsements' },
-    { label: 'Add-ons', icon: 'add_circle', key: 'addons' },
     { label: 'Documents', icon: 'description', key: 'documents' },
   ];
 
@@ -317,14 +321,15 @@ export class MedicalPolicyDetail implements OnInit {
   }
 
   getStatusClasses(status: string): string {
-    const config = getStatusConfig(this.POLICY_STATUSES, status);
-    // Compose utility classes from the status config (bgColor + color)
-    return `${config?.bgColor ?? ''} ${config?.color ?? ''}`.trim();
-  }
-  getStatusDotColor(status: string): string {
-    const config = getStatusConfig(this.POLICY_STATUSES, status);
-    // Use the configured color for the status dot if present
-    return config?.color ?? '';
+    const colorMap: Record<string, string> = {
+      pending: 'bg-amber-50 text-amber-700 border-amber-200',
+      active: 'bg-green-50 text-green-700 border-green-200',
+      suspended: 'bg-orange-50 text-orange-700 border-orange-200',
+      cancelled: 'bg-red-50 text-red-700 border-red-200',
+      expired: 'bg-slate-100 text-slate-700 border-slate-200',
+      lapsed: 'bg-rose-50 text-rose-700 border-rose-200',
+    };
+    return colorMap[status] || 'bg-slate-100 text-slate-700 border-slate-200';
   }
 
   // Data for endorsement dialog
@@ -343,7 +348,7 @@ export class MedicalPolicyDetail implements OnInit {
     if (!policy) return;
 
     const dialogRef = this.dialog.open(MedicalEndorsementDialog, {
-      minWidth: '60vw',
+      minWidth: '70vw',
       maxHeight: '90vh',
       data: {
         policy,
@@ -568,9 +573,14 @@ export class MedicalPolicyDetail implements OnInit {
 
   // Open member benefits dialog
   viewMemberBenefits(member: Member): void {
+    this.memberStore.loadBenefitBalances(member.id);
     this.dialog.open(MedicalMemberBenefitsDialog, {
       maxWidth: '90vw',
-      data: { member },
+      data: {
+        member_id: member.id,
+        member_name: member.full_name,
+        policy_number: member.member_number || '',
+      },
       panelClass: ['responsive-dialog', 'bg-white'],
       autoFocus: false,
     });

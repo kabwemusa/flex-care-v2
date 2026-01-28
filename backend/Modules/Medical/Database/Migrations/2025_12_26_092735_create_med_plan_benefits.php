@@ -31,80 +31,77 @@ return new class extends Migration
         // ======================================================================
         
         Schema::create('med_plan_benefits', function (Blueprint $table) {
-            $table->uuid('id')->primary();
-            
+
+            // --- Primary Key (EXPLICIT) ---
+            $table->uuid('id');
+            $table->primary('id');
+        
             // --- References ---
             $table->uuid('plan_id');
             $table->uuid('benefit_id');
-            
-            $table->foreign('plan_id')
-                  ->references('id')
-                  ->on('med_plans')
-                  ->cascadeOnDelete();
-                  
-            $table->foreign('benefit_id')
-                  ->references('id')
-                  ->on('med_benefits')
-                  ->cascadeOnDelete();
-            
-            // --- Sub-limit Reference ---
-            // If this benefit is a sub-limit of another plan_benefit
-            // e.g., Surgery (K50k) is sub-limit of In-Patient (K100k)
+        
+            // --- Sub-limit Reference (self hierarchy) ---
             $table->uuid('parent_plan_benefit_id')->nullable();
-            $table->foreign('parent_plan_benefit_id')
-                  ->references('id')
-                  ->on('med_plan_benefits')
-                  ->nullOnDelete();
-            
-            // --- Limit Overrides (NULL = use benefit defaults) ---
+        
+            // --- Limit Overrides ---
             $table->string('limit_type')->nullable();
             $table->string('limit_frequency')->nullable();
             $table->string('limit_basis')->nullable();
-            
-            // --- The Actual Limits ---
-            $table->decimal('limit_amount', 15, 2)->nullable();   // K50,000
-            $table->unsignedInteger('limit_count')->nullable();   // 12 visits
-            $table->unsignedInteger('limit_days')->nullable();    // 30 days
-            
-            // --- Per-Event/Per-Day Caps (within overall limit) ---
-            $table->decimal('per_claim_limit', 15, 2)->nullable();  // Max K10k per claim
-            $table->decimal('per_day_limit', 15, 2)->nullable();    // Max K500 per day
-            $table->unsignedInteger('max_claims_per_year')->nullable(); // Max 4 claims
-            
-            // --- Waiting Period Override (days) ---
+        
+            // --- Actual Limits ---
+            $table->decimal('limit_amount', 15, 2)->nullable();
+            $table->unsignedInteger('limit_count')->nullable();
+            $table->unsignedInteger('limit_days')->nullable();
+        
+            // --- Per-Event Caps ---
+            $table->decimal('per_claim_limit', 15, 2)->nullable();
+            $table->decimal('per_day_limit', 15, 2)->nullable();
+            $table->unsignedInteger('max_claims_per_year')->nullable();
+        
+            // --- Waiting Period ---
             $table->unsignedInteger('waiting_period_days')->nullable();
-            
-            // --- Cost Sharing Override ---
+        
+            // --- Cost Sharing ---
             $table->json('cost_sharing')->nullable();
-            /*
-                {
-                    "co_pay_type": "fixed",
-                    "co_pay_amount": 100,
-                    "co_insurance": 10,
-                    "applies_to": "all"  // all, in_network, out_of_network
-                }
-            */
-            
-            // --- Network Restriction ---
-            $table->string('network_restriction')->nullable(); // in_network_only, preferred, any
-            
+        
+            // --- Network ---
+            $table->string('network_restriction')->nullable();
+        
             // --- Status ---
-            $table->boolean('is_covered')->default(true);    // false = explicitly not covered
-            $table->boolean('is_visible')->default(true);    // Show in benefit schedule
-            
+            $table->boolean('is_covered')->default(true);
+            $table->boolean('is_visible')->default(true);
+        
             // --- Display ---
-            $table->string('display_value')->nullable();     // "K50,000" or "12 visits"
-            $table->text('notes')->nullable();               // Plan-specific terms
+            $table->string('display_value')->nullable();
+            $table->text('notes')->nullable();
             $table->unsignedInteger('sort_order')->default(0);
-            
+        
             // --- Audit ---
             $table->timestamps();
             $table->softDeletes();
-            
-            // --- Constraints ---
+        
+            // --- Indexes & Uniques ---
             $table->unique(['plan_id', 'benefit_id'], 'unique_plan_benefit');
             $table->index(['plan_id', 'is_covered']);
+            $table->index('parent_plan_benefit_id');
+        
+            // --- Foreign Keys (DEFINED LAST) ---
+            $table->foreign('plan_id')
+                ->references('id')
+                ->on('med_plans')
+                ->cascadeOnDelete();
+        
+            $table->foreign('benefit_id')
+                ->references('id')
+                ->on('med_benefits')
+                ->cascadeOnDelete();
+        
+            $table->foreign('parent_plan_benefit_id')
+                ->references('id')
+                ->on('med_plan_benefits')
+                ->nullOnDelete();
         });
+        
 
         // ======================================================================
         // 2. PLAN BENEFIT MEMBER LIMITS - Different limits per member type/age

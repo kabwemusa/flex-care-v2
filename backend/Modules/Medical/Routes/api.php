@@ -27,6 +27,7 @@ use Modules\Medical\Constants\MedicalConstants;
 | All routes are protected by:
 | - auth:sanctum - Requires valid authentication token
 | - module:medical - Requires user to have Medical module access
+| - permission:* - Requires specific permission for each action
 |
 */
 
@@ -37,439 +38,502 @@ Route::prefix('v1/medical')
     // =========================================================================
     // SCHEMES
     // =========================================================================
-    Route::get('schemes/dropdown', [SchemeController::class, 'dropdown']);
-    Route::post('schemes/{id}/activate', [SchemeController::class, 'activate']);
-    Route::apiResource('schemes', SchemeController::class);
+    Route::middleware(['permission:medical.schemes.view'])->group(function () {
+        Route::get('schemes', [SchemeController::class, 'index']);
+        Route::get('schemes/dropdown', [SchemeController::class, 'dropdown']);
+        Route::get('schemes/{scheme}', [SchemeController::class, 'show']);
+    });
+    Route::post('schemes', [SchemeController::class, 'store'])->middleware('permission:medical.schemes.create');
+    Route::put('schemes/{scheme}', [SchemeController::class, 'update'])->middleware('permission:medical.schemes.update');
+    Route::delete('schemes/{scheme}', [SchemeController::class, 'destroy'])->middleware('permission:medical.schemes.delete');
+    Route::post('schemes/{id}/activate', [SchemeController::class, 'activate'])->middleware('permission:medical.schemes.activate');
 
     // =========================================================================
     // PLANS
     // =========================================================================
-    Route::get('plans/dropdown', [PlanController::class, 'dropdown']);
-    Route::post('plans/compare', [PlanController::class, 'compare']);
-    Route::post('plans/{plan}/clone', [PlanController::class, 'clone']);
-    Route::post('plans/{plan}/activate', [PlanController::class, 'activate']);
-    Route::get('plans/{plan}/export-pdf', [PlanController::class, 'exportPdf']);
-    Route::get('schemes/{scheme}/plans', [PlanController::class, 'byScheme']);
-    Route::apiResource('plans', PlanController::class);
+    Route::middleware(['permission:medical.plans.view'])->group(function () {
+        Route::get('plans', [PlanController::class, 'index']);
+        Route::get('plans/dropdown', [PlanController::class, 'dropdown']);
+        Route::get('plans/{plan}', [PlanController::class, 'show']);
+        Route::post('plans/compare', [PlanController::class, 'compare']);
+        Route::get('plans/{plan}/export-pdf', [PlanController::class, 'exportPdf']);
+        Route::get('schemes/{scheme}/plans', [PlanController::class, 'byScheme']);
+    });
+    Route::post('plans', [PlanController::class, 'store'])->middleware('permission:medical.plans.create');
+    Route::put('plans/{plan}', [PlanController::class, 'update'])->middleware('permission:medical.plans.update');
+    Route::delete('plans/{plan}', [PlanController::class, 'destroy'])->middleware('permission:medical.plans.delete');
+    Route::post('plans/{plan}/clone', [PlanController::class, 'clone'])->middleware('permission:medical.plans.create');
+    Route::post('plans/{plan}/activate', [PlanController::class, 'activate'])->middleware('permission:medical.plans.configure');
 
     // =========================================================================
     // BENEFITS
     // =========================================================================
-    
-    // Benefit Categories
-    Route::get('benefit-categories', [BenefitController::class, 'categories']);
-    Route::post('benefit-categories', [BenefitController::class, 'storeCategory']);
-
-    // Benefit Catalog
-    Route::get('benefits/tree', [BenefitController::class, 'tree']);
-    Route::apiResource('benefits', BenefitController::class);
-
-    // Plan Benefits Configuration
-    Route::get('plans/{plan}/benefits', [BenefitController::class, 'planBenefits']);
-    Route::post('plans/{plan}/benefits', [BenefitController::class, 'addToPlan']);
-    Route::post('plans/{plan}/benefits/bulk', [BenefitController::class, 'bulkAddToPlan']);
-    Route::get('plans/{plan}/benefit-schedule', [BenefitController::class, 'schedule']);
-    Route::put('plan-benefits/{planBenefit}', [BenefitController::class, 'updatePlanBenefit']);
-    Route::delete('plan-benefits/{planBenefit}', [BenefitController::class, 'removeFromPlan']);
-
-    // Eligibility Check
-    Route::post('benefits/check-eligibility', [BenefitController::class, 'checkEligibility']);
+    Route::middleware(['permission:medical.plans.view'])->group(function () {
+        Route::get('benefit-categories', [BenefitController::class, 'categories']);
+        Route::get('benefits/tree', [BenefitController::class, 'tree']);
+        Route::get('benefits', [BenefitController::class, 'index']);
+        Route::get('benefits/{benefit}', [BenefitController::class, 'show']);
+        Route::get('plans/{plan}/benefits', [BenefitController::class, 'planBenefits']);
+        Route::get('plans/{plan}/benefit-schedule', [BenefitController::class, 'schedule']);
+        Route::post('benefits/check-eligibility', [BenefitController::class, 'checkEligibility']);
+    });
+    Route::middleware(['permission:medical.plans.configure'])->group(function () {
+        Route::post('benefit-categories', [BenefitController::class, 'storeCategory']);
+        Route::post('benefits', [BenefitController::class, 'store']);
+        Route::put('benefits/{benefit}', [BenefitController::class, 'update']);
+        Route::delete('benefits/{benefit}', [BenefitController::class, 'destroy']);
+        Route::post('plans/{plan}/benefits', [BenefitController::class, 'addToPlan']);
+        Route::post('plans/{plan}/benefits/bulk', [BenefitController::class, 'bulkAddToPlan']);
+        Route::put('plan-benefits/{planBenefit}', [BenefitController::class, 'updatePlanBenefit']);
+        Route::delete('plan-benefits/{planBenefit}', [BenefitController::class, 'removeFromPlan']);
+    });
 
     // =========================================================================
     // RATE CARDS
     // =========================================================================
-    Route::get('plans/{plan}/rate-cards', [RateCardController::class, 'byPlan']);
-    Route::post('rate-cards/{rateCard}/activate', [RateCardController::class, 'activate']);
-    Route::post('rate-cards/{rateCard}/clone', [RateCardController::class, 'clone']);
-    Route::post('rate-cards/{rateCard}/calculate', [RateCardController::class, 'calculate']);
-    
-    // Rate Card Entries
-    Route::post('rate-cards/{rateCard}/entries', [RateCardController::class, 'addEntry']);
-    Route::post('rate-cards/{rateCard}/entries/bulk', [RateCardController::class, 'bulkImportEntries']);
-    Route::put('rate-card-entries/{entry}', [RateCardController::class, 'updateEntry']);
-    Route::delete('rate-card-entries/{entry}', [RateCardController::class, 'deleteEntry']);
+    Route::middleware(['permission:medical.rate_cards.view'])->group(function () {
+        Route::get('rate-cards', [RateCardController::class, 'index']);
+        Route::get('rate-cards/{rateCard}', [RateCardController::class, 'show']);
+        Route::get('plans/{plan}/rate-cards', [RateCardController::class, 'byPlan']);
+        Route::post('rate-cards/{rateCard}/calculate', [RateCardController::class, 'calculate']);
+    });
+    Route::post('rate-cards', [RateCardController::class, 'store'])->middleware('permission:medical.rate_cards.create');
+    Route::put('rate-cards/{rateCard}', [RateCardController::class, 'update'])->middleware('permission:medical.rate_cards.update');
+    Route::delete('rate-cards/{rateCard}', [RateCardController::class, 'destroy'])->middleware('permission:medical.rate_cards.delete');
+    Route::post('rate-cards/{rateCard}/activate', [RateCardController::class, 'activate'])->middleware('permission:medical.rate_cards.activate');
+    Route::post('rate-cards/{rateCard}/clone', [RateCardController::class, 'clone'])->middleware('permission:medical.rate_cards.create');
 
-    // Rate Card Tiers
-    Route::post('rate-cards/{rateCard}/tiers', [RateCardController::class, 'addTier']);
-    Route::put('rate-card-tiers/{tier}', [RateCardController::class, 'updateTier']);
-    Route::delete('rate-card-tiers/{tier}', [RateCardController::class, 'deleteTier']);
-
-    Route::apiResource('rate-cards', RateCardController::class);
+    // Rate Card Entries & Tiers
+    Route::middleware(['permission:medical.rate_cards.update'])->group(function () {
+        Route::post('rate-cards/{rateCard}/entries', [RateCardController::class, 'addEntry']);
+        Route::post('rate-cards/{rateCard}/entries/bulk', [RateCardController::class, 'bulkImportEntries']);
+        Route::put('rate-card-entries/{entry}', [RateCardController::class, 'updateEntry']);
+        Route::delete('rate-card-entries/{entry}', [RateCardController::class, 'deleteEntry']);
+        Route::post('rate-cards/{rateCard}/tiers', [RateCardController::class, 'addTier']);
+        Route::put('rate-card-tiers/{tier}', [RateCardController::class, 'updateTier']);
+        Route::delete('rate-card-tiers/{tier}', [RateCardController::class, 'deleteTier']);
+    });
 
     // =========================================================================
     // ADDONS
     // =========================================================================
-    Route::get('addons/dropdown', [AddonController::class, 'dropdown']);
-    Route::post('addons/{addon}/activate', [AddonController::class, 'activate']);
+    Route::middleware(['permission:medical.addons.view'])->group(function () {
+        Route::get('addons', [AddonController::class, 'index']);
+        Route::get('addons/dropdown', [AddonController::class, 'dropdown']);
+        Route::get('addons/{addon}', [AddonController::class, 'show']);
+        Route::get('plans/{plan}/addons', [AddonController::class, 'planAddons']);
+        Route::get('plans/{plan}/available-addons', [AddonController::class, 'availableAddons']);
+    });
+    Route::post('addons', [AddonController::class, 'store'])->middleware('permission:medical.addons.create');
+    Route::put('addons/{addon}', [AddonController::class, 'update'])->middleware('permission:medical.addons.update');
+    Route::delete('addons/{addon}', [AddonController::class, 'destroy'])->middleware('permission:medical.addons.delete');
+    Route::post('addons/{addon}/activate', [AddonController::class, 'activate'])->middleware('permission:medical.addons.update');
 
-    // Addon Benefits
-    Route::post('addons/{addon}/benefits', [AddonController::class, 'addBenefit']);
-    Route::put('addon-benefits/{addonBenefit}', [AddonController::class, 'updateBenefit']);
-    Route::delete('addon-benefits/{addonBenefit}', [AddonController::class, 'removeBenefit']);
-
-    // Addon Rates
-    Route::post('addons/{addon}/rates', [AddonController::class, 'addRate']);
-    Route::post('addon-rates/{addonRate}/activate', [AddonController::class, 'activateRate']);
+    // Addon Configuration
+    Route::middleware(['permission:medical.addons.update'])->group(function () {
+        Route::post('addons/{addon}/benefits', [AddonController::class, 'addBenefit']);
+        Route::put('addon-benefits/{addonBenefit}', [AddonController::class, 'updateBenefit']);
+        Route::delete('addon-benefits/{addonBenefit}', [AddonController::class, 'removeBenefit']);
+        Route::post('addons/{addon}/rates', [AddonController::class, 'addRate']);
+        Route::post('addon-rates/{addonRate}/activate', [AddonController::class, 'activateRate']);
+    });
 
     // Plan Addons Configuration
-    Route::get('plans/{plan}/addons', [AddonController::class, 'planAddons']);
-    Route::post('plans/{plan}/addons', [AddonController::class, 'configurePlanAddon']);
-    Route::get('plans/{plan}/available-addons', [AddonController::class, 'availableAddons']);
-    Route::put('plan-addons/{planAddon}', [AddonController::class, 'updatePlanAddon']);
-    Route::delete('plan-addons/{planAddon}', [AddonController::class, 'removePlanAddon']);
-
-    Route::apiResource('addons', AddonController::class);
+    Route::middleware(['permission:medical.plans.configure'])->group(function () {
+        Route::post('plans/{plan}/addons', [AddonController::class, 'configurePlanAddon']);
+        Route::put('plan-addons/{planAddon}', [AddonController::class, 'updatePlanAddon']);
+        Route::delete('plan-addons/{planAddon}', [AddonController::class, 'removePlanAddon']);
+    });
 
     // =========================================================================
     // PLAN EXCLUSIONS
     // =========================================================================
-    Route::get('plans/{plan}/exclusions', [PlanExclusionController::class, 'index']);
-    Route::post('plans/{plan}/exclusions', [PlanExclusionController::class, 'store']);
-    Route::post('plans/{plan}/exclusions/bulk-delete', [PlanExclusionController::class, 'bulkDelete']);
-    Route::get('plan-exclusions/{planExclusion}', [PlanExclusionController::class, 'show']);
-    Route::put('plan-exclusions/{planExclusion}', [PlanExclusionController::class, 'update']);
-    Route::delete('plan-exclusions/{planExclusion}', [PlanExclusionController::class, 'destroy']);
-    Route::post('plan-exclusions/{planExclusion}/activate', [PlanExclusionController::class, 'activate']);
+    Route::middleware(['permission:medical.plans.view'])->group(function () {
+        Route::get('plans/{plan}/exclusions', [PlanExclusionController::class, 'index']);
+        Route::get('plan-exclusions/{planExclusion}', [PlanExclusionController::class, 'show']);
+    });
+    Route::middleware(['permission:medical.plans.configure'])->group(function () {
+        Route::post('plans/{plan}/exclusions', [PlanExclusionController::class, 'store']);
+        Route::post('plans/{plan}/exclusions/bulk-delete', [PlanExclusionController::class, 'bulkDelete']);
+        Route::put('plan-exclusions/{planExclusion}', [PlanExclusionController::class, 'update']);
+        Route::delete('plan-exclusions/{planExclusion}', [PlanExclusionController::class, 'destroy']);
+        Route::post('plan-exclusions/{planExclusion}/activate', [PlanExclusionController::class, 'activate']);
+    });
 
     // =========================================================================
     // DISCOUNTS & PROMO CODES
     // =========================================================================
-    Route::get('plans/{plan}/discounts', [DiscountController::class, 'forPlan']);
-    Route::post('discounts/simulate', [DiscountController::class, 'simulate']);
-    Route::apiResource('discount-rules', DiscountController::class);
-
-    // Promo Codes
-    Route::post('promo-codes/validate', [DiscountController::class, 'validatePromoCode']);
-    Route::post('promo-codes/apply', [DiscountController::class, 'applyPromoCode']);
-    Route::get('promo-codes', [DiscountController::class, 'promoCodes']);
-    Route::post('promo-codes', [DiscountController::class, 'storePromoCode']);
-    Route::get('promo-codes/{promoCode}', [DiscountController::class, 'showPromoCode']);
-    Route::put('promo-codes/{promoCode}', [DiscountController::class, 'updatePromoCode']);
-    Route::delete('promo-codes/{promoCode}', [DiscountController::class, 'destroyPromoCode']);
+    Route::middleware(['permission:medical.plans.view'])->group(function () {
+        Route::get('plans/{plan}/discounts', [DiscountController::class, 'forPlan']);
+        Route::post('discounts/simulate', [DiscountController::class, 'simulate']);
+        Route::get('discount-rules', [DiscountController::class, 'index']);
+        Route::get('discount-rules/{discountRule}', [DiscountController::class, 'show']);
+        Route::post('promo-codes/validate', [DiscountController::class, 'validatePromoCode']);
+        Route::get('promo-codes', [DiscountController::class, 'promoCodes']);
+        Route::get('promo-codes/{promoCode}', [DiscountController::class, 'showPromoCode']);
+    });
+    Route::middleware(['permission:medical.plans.configure'])->group(function () {
+        Route::post('discount-rules', [DiscountController::class, 'store']);
+        Route::put('discount-rules/{discountRule}', [DiscountController::class, 'update']);
+        Route::delete('discount-rules/{discountRule}', [DiscountController::class, 'destroy']);
+        Route::post('promo-codes/apply', [DiscountController::class, 'applyPromoCode']);
+        Route::post('promo-codes', [DiscountController::class, 'storePromoCode']);
+        Route::put('promo-codes/{promoCode}', [DiscountController::class, 'updatePromoCode']);
+        Route::delete('promo-codes/{promoCode}', [DiscountController::class, 'destroyPromoCode']);
+    });
 
     // =========================================================================
     // QUOTES (Quick quotes without creating application)
     // =========================================================================
-    Route::post('quotes', [QuoteController::class, 'generate']);
-    Route::post('quotes/compare', [QuoteController::class, 'compare']);
-    Route::post('group-quotes', [QuoteController::class, 'groupQuote']);
-    Route::get('plans/{plan}/quick-quote', [QuoteController::class, 'quickQuote']);
-    Route::post('quotes/convert-frequency', [QuoteController::class, 'convertFrequency']);
-    
-    // Quick quote via ApplicationController (alternative endpoint)
-    Route::post('quote', [ApplicationController::class, 'generateQuote']);
+    Route::middleware(['permission:medical.applications.quote'])->group(function () {
+        Route::post('quotes', [QuoteController::class, 'generate']);
+        Route::post('quotes/compare', [QuoteController::class, 'compare']);
+        Route::post('group-quotes', [QuoteController::class, 'groupQuote']);
+        Route::get('plans/{plan}/quick-quote', [QuoteController::class, 'quickQuote']);
+        Route::post('quotes/convert-frequency', [QuoteController::class, 'convertFrequency']);
+        Route::post('quote', [ApplicationController::class, 'generateQuote']);
+    });
 
     // =========================================================================
     // LOADING RULES
     // =========================================================================
-    Route::get('loading-rules/search', [LoadingController::class, 'search']);
-    Route::get('loading-rules/categories', [LoadingController::class, 'categories']);
-    Route::get('loading-rules/by-category/{category}', [LoadingController::class, 'byCategory']);
-    Route::get('loading-rules/options/{identifier}', [LoadingController::class, 'options']);
-    Route::post('loadings/calculate', [LoadingController::class, 'calculate']);
-    Route::apiResource('loading-rules', LoadingController::class);
+    Route::middleware(['permission:medical.underwriting.view'])->group(function () {
+        Route::get('loading-rules', [LoadingController::class, 'index']);
+        Route::get('loading-rules/search', [LoadingController::class, 'search']);
+        Route::get('loading-rules/categories', [LoadingController::class, 'categories']);
+        Route::get('loading-rules/by-category/{category}', [LoadingController::class, 'byCategory']);
+        Route::get('loading-rules/options/{identifier}', [LoadingController::class, 'options']);
+        Route::get('loading-rules/{loadingRule}', [LoadingController::class, 'show']);
+        Route::post('loadings/calculate', [LoadingController::class, 'calculate']);
+    });
+    Route::middleware(['permission:medical.plans.configure'])->group(function () {
+        Route::post('loading-rules', [LoadingController::class, 'store']);
+        Route::put('loading-rules/{loadingRule}', [LoadingController::class, 'update']);
+        Route::delete('loading-rules/{loadingRule}', [LoadingController::class, 'destroy']);
+    });
 
     // =========================================================================
     // CORPORATE GROUPS
     // =========================================================================
     Route::prefix('groups')->group(function () {
-        Route::get('/', [GroupController::class, 'index']);
-        Route::get('/dropdown', [GroupController::class, 'dropdown']);
-        Route::post('/', [GroupController::class, 'store']);
-        Route::get('/{id}', [GroupController::class, 'show']);
-        Route::put('/{id}', [GroupController::class, 'update']);
-        Route::delete('/{id}', [GroupController::class, 'destroy']);
-        
-        // Status actions
-        Route::post('/{id}/activate', [GroupController::class, 'activate']);
-        Route::post('/{id}/suspend', [GroupController::class, 'suspend']);
-        
-        // Contacts
-        Route::get('/{groupId}/contacts', [GroupController::class, 'contacts']);
-        Route::post('/{groupId}/contacts', [GroupController::class, 'addContact']);
-        Route::put('/{groupId}/contacts/{contactId}', [GroupController::class, 'updateContact']);
-        Route::delete('/{groupId}/contacts/{contactId}', [GroupController::class, 'removeContact']);
-        Route::post('/{groupId}/contacts/{contactId}/primary', [GroupController::class, 'setPrimaryContact']);
+        Route::middleware(['permission:medical.groups.view'])->group(function () {
+            Route::get('/', [GroupController::class, 'index']);
+            Route::get('/dropdown', [GroupController::class, 'dropdown']);
+            Route::get('/{id}', [GroupController::class, 'show']);
+            Route::get('/{groupId}/contacts', [GroupController::class, 'contacts']);
+            Route::get('/{id}/plan-distribution', [GroupController::class, 'planDistribution']);
+        });
+        Route::post('/', [GroupController::class, 'store'])->middleware('permission:medical.groups.create');
+        Route::put('/{id}', [GroupController::class, 'update'])->middleware('permission:medical.groups.update');
+        Route::delete('/{id}', [GroupController::class, 'destroy'])->middleware('permission:medical.groups.delete');
 
-        // Plan Distribution
-        Route::get('/{id}/plan-distribution', [GroupController::class, 'planDistribution']);
+        // Status actions
+        Route::post('/{id}/activate', [GroupController::class, 'activate'])->middleware('permission:medical.groups.update');
+        Route::post('/{id}/suspend', [GroupController::class, 'suspend'])->middleware('permission:medical.groups.update');
+
+        // Contacts
+        Route::middleware(['permission:medical.groups.update'])->group(function () {
+            Route::post('/{groupId}/contacts', [GroupController::class, 'addContact']);
+            Route::put('/{groupId}/contacts/{contactId}', [GroupController::class, 'updateContact']);
+            Route::delete('/{groupId}/contacts/{contactId}', [GroupController::class, 'removeContact']);
+            Route::post('/{groupId}/contacts/{contactId}/primary', [GroupController::class, 'setPrimaryContact']);
+        });
     });
 
     // =========================================================================
     // APPLICATIONS (Application-First Workflow)
     // =========================================================================
     Route::prefix('applications')->group(function () {
-        // CRUD
-        Route::get('/', [ApplicationController::class, 'index']);
-        Route::post('/', [ApplicationController::class, 'store']);
-        Route::get('/stats', [ApplicationController::class, 'stats']);
+        // View permissions
+        Route::middleware(['permission:medical.applications.view'])->group(function () {
+            Route::get('/', [ApplicationController::class, 'index']);
+            Route::get('/stats', [ApplicationController::class, 'stats']);
+            Route::get('/{id}', [ApplicationController::class, 'show']);
+            Route::get('/{id}/members', [ApplicationController::class, 'members']);
+            Route::get('/{id}/documents', [ApplicationController::class, 'documents']);
+            Route::get('/{id}/documents/{documentId}/download', [ApplicationController::class, 'downloadDocument']);
+            Route::get('/{id}/approval-status', [ApplicationController::class, 'approvalStatus']);
+            Route::get('/{id}/can-approve', [ApplicationController::class, 'canApprove']);
+        });
 
-        // Corporate Census Import
-        Route::post('/import-census', [ApplicationController::class, 'importCensus']);
-        Route::post('/create-from-census', [ApplicationController::class, 'createFromCensus']);
-        Route::post('/create-multi-plan-from-census', [ApplicationController::class, 'createMultiPlanFromCensus']);
+        // Create permissions
+        Route::middleware(['permission:medical.applications.create'])->group(function () {
+            Route::post('/', [ApplicationController::class, 'store']);
+            Route::post('/import-census', [ApplicationController::class, 'importCensus']);
+            Route::post('/create-from-census', [ApplicationController::class, 'createFromCensus']);
+            Route::post('/create-multi-plan-from-census', [ApplicationController::class, 'createMultiPlanFromCensus']);
+        });
 
-        Route::get('/{id}', [ApplicationController::class, 'show']);
-        Route::patch('/{id}', [ApplicationController::class, 'update']);
-        Route::delete('/{id}', [ApplicationController::class, 'destroy']);
+        // Update permissions
+        Route::middleware(['permission:medical.applications.update'])->group(function () {
+            Route::patch('/{id}', [ApplicationController::class, 'update']);
+            Route::post('/{id}/members', [ApplicationController::class, 'addMember']);
+            Route::patch('/{appId}/members/{memberId}', [ApplicationController::class, 'updateMember']);
+            Route::delete('/{appId}/members/{memberId}', [ApplicationController::class, 'removeMember']);
+            Route::post('/{id}/addons', [ApplicationController::class, 'addAddon']);
+            Route::delete('/{id}/addons/{addonId}', [ApplicationController::class, 'removeAddon']);
+            Route::post('/{id}/promo-code', [ApplicationController::class, 'applyPromoCode']);
+            Route::post('/{id}/documents', [ApplicationController::class, 'uploadDocument']);
+        });
 
-        // Workflow Actions
-        Route::post('/{id}/calculate-premium', [ApplicationController::class, 'calculatePremium']);
-        Route::post('/{id}/quote', [ApplicationController::class, 'markAsQuoted']);
-        Route::get('/{id}/quote/download', [ApplicationController::class, 'downloadQuote']);
-        Route::post('/{id}/quote/email', [ApplicationController::class, 'emailQuote']);
-        Route::post('/{id}/submit', [ApplicationController::class, 'submit']);
-        Route::post('/{id}/start-underwriting', [ApplicationController::class, 'startUnderwriting']);
-        Route::post('/{id}/regenerate-quote', [ApplicationController::class, 'regenerateQuote']);
-        Route::post('/{id}/approve', [ApplicationController::class, 'approve']);
-        Route::post('/{id}/decline', [ApplicationController::class, 'decline']);
-        Route::post('/{id}/refer', [ApplicationController::class, 'refer']);
-        Route::post('/{id}/accept', [ApplicationController::class, 'accept']);
-        Route::post('/{id}/convert', [ApplicationController::class, 'convert']);
-        Route::post('/{id}/cancel', [ApplicationController::class, 'cancel']);
+        Route::delete('/{id}', [ApplicationController::class, 'destroy'])->middleware('permission:medical.applications.delete');
 
-        // Application Members
-        Route::get('/{id}/members', [ApplicationController::class, 'members']);
-        Route::post('/{id}/members', [ApplicationController::class, 'addMember']);
-        Route::put('/{appId}/members/{memberId}', [ApplicationController::class, 'updateMember']);
-        Route::delete('/{appId}/members/{memberId}', [ApplicationController::class, 'removeMember']);
+        // Quote permissions
+        Route::middleware(['permission:medical.applications.quote'])->group(function () {
+            Route::post('/{id}/calculate-premium', [ApplicationController::class, 'calculatePremium']);
+            Route::post('/{id}/quote', [ApplicationController::class, 'markAsQuoted']);
+            Route::get('/{id}/quote/download', [ApplicationController::class, 'downloadQuote']);
+            Route::post('/{id}/quote/email', [ApplicationController::class, 'emailQuote']);
+            Route::post('/{id}/regenerate-quote', [ApplicationController::class, 'regenerateQuote']);
+        });
 
-        // Member Underwriting
-        Route::post('/{appId}/members/{memberId}/underwrite', [ApplicationController::class, 'underwriteMember']);
-        Route::post('/{appId}/members/{memberId}/loadings', [ApplicationController::class, 'addMemberLoading']);
-        Route::post('/{appId}/members/{memberId}/exclusions', [ApplicationController::class, 'addMemberExclusion']);
+        // Submit permission
+        Route::post('/{id}/submit', [ApplicationController::class, 'submit'])->middleware('permission:medical.applications.submit');
+        Route::post('/{id}/accept', [ApplicationController::class, 'accept'])->middleware('permission:medical.applications.update');
+        Route::post('/{id}/cancel', [ApplicationController::class, 'cancel'])->middleware('permission:medical.applications.update');
 
-        // Application Addons
-        Route::post('/{id}/addons', [ApplicationController::class, 'addAddon']);
-        Route::delete('/{id}/addons/{addonId}', [ApplicationController::class, 'removeAddon']);
+        // Underwriting permissions
+        Route::middleware(['permission:medical.underwriting.assess'])->group(function () {
+            Route::post('/{id}/start-underwriting', [ApplicationController::class, 'startUnderwriting']);
+            Route::post('/{appId}/members/{memberId}/underwrite', [ApplicationController::class, 'underwriteMember']);
+        });
+        Route::middleware(['permission:medical.underwriting.add_loading'])->group(function () {
+            Route::post('/{appId}/members/{memberId}/loadings', [ApplicationController::class, 'addMemberLoading']);
+        });
+        Route::middleware(['permission:medical.underwriting.add_exclusion'])->group(function () {
+            Route::post('/{appId}/members/{memberId}/exclusions', [ApplicationController::class, 'addMemberExclusion']);
+        });
+        Route::post('/{id}/refer', [ApplicationController::class, 'refer'])->middleware('permission:medical.underwriting.assess');
 
-        // Promo Code
-        Route::post('/{id}/promo-code', [ApplicationController::class, 'applyPromoCode']);
+        // Approval Workflow Actions
+        Route::post('/{id}/approval/approve', [ApplicationController::class, 'approvalApprove'])->middleware('permission:medical.underwriting.approve');
+        Route::post('/{id}/approval/reject', [ApplicationController::class, 'approvalReject'])->middleware('permission:medical.underwriting.reject');
+        Route::post('/{id}/approval/return', [ApplicationController::class, 'approvalReturn'])->middleware('permission:medical.underwriting.assess');
 
-        // Documents
-        Route::get('/{id}/documents', [ApplicationController::class, 'documents']);
-        Route::post('/{id}/documents', [ApplicationController::class, 'uploadDocument']);
-        Route::get('/{id}/documents/{documentId}/download', [ApplicationController::class, 'downloadDocument']);
+        // Convert to policy
+        Route::post('/{id}/convert', [ApplicationController::class, 'convert'])->middleware('permission:medical.policies.create');
     });
 
     // =========================================================================
     // POLICIES
     // =========================================================================
     Route::prefix('policies')->group(function () {
-        Route::get('/', [PolicyController::class, 'index']);
-        Route::get('/stats', [PolicyController::class, 'stats']);
-        Route::get('/for-renewal', [PolicyController::class, 'forRenewal']);
-        // NOTE: POST / (store) removed - policies created via application conversion
-        Route::get('/{id}', [PolicyController::class, 'show']);
-        Route::put('/{id}', [PolicyController::class, 'update']);
-        Route::delete('/{id}', [PolicyController::class, 'destroy']);
-        
-        // Create Renewal Application from Policy
-        Route::post('/{id}/renewal-application', [ApplicationController::class, 'createRenewalApplication']);
-        
+        // View permissions
+        Route::middleware(['permission:medical.policies.view'])->group(function () {
+            Route::get('/', [PolicyController::class, 'index']);
+            Route::get('/stats', [PolicyController::class, 'stats']);
+            Route::get('/for-renewal', [PolicyController::class, 'forRenewal']);
+            Route::get('/{id}', [PolicyController::class, 'show']);
+            Route::get('/{id}/documents', [PolicyController::class, 'documents']);
+            Route::get('/{id}/documents/{documentId}/download', [PolicyController::class, 'downloadDocument']);
+            Route::get('/{policyId}/endorsements', [EndorsementController::class, 'forPolicy']);
+        });
+
+        // Update permissions
+        Route::middleware(['permission:medical.policies.update'])->group(function () {
+            Route::put('/{id}', [PolicyController::class, 'update']);
+            Route::post('/{id}/documents', [PolicyController::class, 'uploadDocument']);
+            Route::post('/{id}/calculate-premium', [PolicyController::class, 'calculatePremium']);
+        });
+
+        Route::delete('/{id}', [PolicyController::class, 'destroy'])->middleware('permission:medical.policies.update');
+
         // Status actions
-        Route::post('/{id}/activate', [PolicyController::class, 'activate']);
-        Route::post('/{id}/suspend', [PolicyController::class, 'suspend']);
-        Route::post('/{id}/cancel', [PolicyController::class, 'cancel']);
-        Route::post('/{id}/reinstate', [PolicyController::class, 'reinstate']);
-        
-        // Underwriting (legacy - for policies not created via application workflow)
-        Route::post('/{id}/approve', [PolicyController::class, 'approve']);
-        Route::post('/{id}/decline', [PolicyController::class, 'decline']);
-        Route::post('/{id}/refer', [PolicyController::class, 'refer']);
-        
-        // Renewal (legacy - prefer using /renewal-application)
-        Route::post('/{id}/renew', [PolicyController::class, 'renew']);
-        
-        // Premium
-        Route::post('/{id}/calculate-premium', [PolicyController::class, 'calculatePremium']);
+        Route::post('/{id}/activate', [PolicyController::class, 'activate'])->middleware('permission:medical.policies.update');
+        Route::post('/{id}/suspend', [PolicyController::class, 'suspend'])->middleware('permission:medical.policies.suspend');
+        Route::post('/{id}/cancel', [PolicyController::class, 'cancel'])->middleware('permission:medical.policies.cancel');
+        Route::post('/{id}/reinstate', [PolicyController::class, 'reinstate'])->middleware('permission:medical.policies.reinstate');
+
+        // Renewal
+        Route::post('/{id}/renewal-application', [ApplicationController::class, 'createRenewalApplication'])->middleware('permission:medical.policies.renew');
+        Route::post('/{id}/renew', [PolicyController::class, 'renew'])->middleware('permission:medical.policies.renew');
+
+        // Legacy underwriting (for policies not created via application workflow)
+        Route::post('/{id}/approve', [PolicyController::class, 'approve'])->middleware('permission:medical.underwriting.approve');
+        Route::post('/{id}/decline', [PolicyController::class, 'decline'])->middleware('permission:medical.underwriting.reject');
+        Route::post('/{id}/refer', [PolicyController::class, 'refer'])->middleware('permission:medical.underwriting.assess');
 
         // Members (mid-term additions/removals)
-        Route::post('/{id}/members', [PolicyController::class, 'addMember']);
-        Route::delete('/{id}/members/{memberId}', [PolicyController::class, 'removeMember']);
+        Route::post('/{id}/members', [PolicyController::class, 'addMember'])->middleware('permission:medical.members.add');
+        Route::delete('/{id}/members/{memberId}', [PolicyController::class, 'removeMember'])->middleware('permission:medical.members.remove');
 
         // Addons (mid-term modifications)
-        Route::post('/{id}/addons', [PolicyController::class, 'addAddon']);
-        Route::delete('/{id}/addons/{addonId}', [PolicyController::class, 'removeAddon']);
-        
-        // Documents
-        Route::get('/{id}/documents', [PolicyController::class, 'documents']);
-        Route::post('/{id}/documents', [PolicyController::class, 'uploadDocument']);
-        
-        // Issue cards for all members
-        Route::post('/{policyId}/issue-cards', [MemberController::class, 'issueCardsForPolicy']);
+        Route::post('/{id}/addons', [PolicyController::class, 'addAddon'])->middleware('permission:medical.policies.update');
+        Route::delete('/{id}/addons/{addonId}', [PolicyController::class, 'removeAddon'])->middleware('permission:medical.policies.update');
 
-        // Endorsements for a specific policy
-        Route::get('/{policyId}/endorsements', [EndorsementController::class, 'forPolicy']);
+        // Issue cards for all members
+        Route::post('/{policyId}/issue-cards', [MemberController::class, 'issueCardsForPolicy'])->middleware('permission:medical.members.update');
     });
 
     // =========================================================================
     // ENDORSEMENTS
     // =========================================================================
     Route::prefix('endorsements')->group(function () {
-        Route::get('/', [EndorsementController::class, 'index']);
-        Route::get('/stats', [EndorsementController::class, 'stats']);
-        Route::get('/types', [EndorsementController::class, 'types']);
-        Route::get('/statuses', [EndorsementController::class, 'statuses']);
-        Route::post('/', [EndorsementController::class, 'store']);
-        Route::get('/{id}', [EndorsementController::class, 'show']);
-
-        // Workflow actions
-        Route::post('/{id}/approve', [EndorsementController::class, 'approve']);
-        Route::post('/{id}/reject', [EndorsementController::class, 'reject']);
-        Route::post('/{id}/process', [EndorsementController::class, 'process']);
-        Route::post('/{id}/cancel', [EndorsementController::class, 'cancel']);
+        Route::middleware(['permission:medical.policies.view'])->group(function () {
+            Route::get('/', [EndorsementController::class, 'index']);
+            Route::get('/stats', [EndorsementController::class, 'stats']);
+            Route::get('/types', [EndorsementController::class, 'types']);
+            Route::get('/statuses', [EndorsementController::class, 'statuses']);
+            Route::get('/{id}', [EndorsementController::class, 'show']);
+        });
+        Route::post('/', [EndorsementController::class, 'store'])->middleware('permission:medical.policies.update');
+        Route::post('/{id}/approve', [EndorsementController::class, 'approve'])->middleware('permission:medical.underwriting.approve');
+        Route::post('/{id}/reject', [EndorsementController::class, 'reject'])->middleware('permission:medical.underwriting.reject');
+        Route::post('/{id}/process', [EndorsementController::class, 'process'])->middleware('permission:medical.policies.update');
+        Route::post('/{id}/cancel', [EndorsementController::class, 'cancel'])->middleware('permission:medical.policies.update');
     });
 
     // =========================================================================
     // CLAIMS
     // =========================================================================
     Route::prefix('claims')->group(function () {
-        Route::get('/', [ClaimController::class, 'index']);
-        Route::get('/stats', [ClaimController::class, 'stats']);
-        Route::get('/types', [ClaimController::class, 'types']);
-        Route::get('/statuses', [ClaimController::class, 'statuses']);
-        Route::get('/rejection-reasons', [ClaimController::class, 'rejectionReasons']);
-        Route::post('/check-benefit-eligibility', [ClaimController::class, 'checkBenefitEligibility']);
-        Route::post('/', [ClaimController::class, 'store']);
-        Route::get('/{id}', [ClaimController::class, 'show']);
-        Route::put('/{id}', [ClaimController::class, 'update']);
+        Route::middleware(['permission:medical.claims.view'])->group(function () {
+            Route::get('/', [ClaimController::class, 'index']);
+            Route::get('/stats', [ClaimController::class, 'stats']);
+            Route::get('/types', [ClaimController::class, 'types']);
+            Route::get('/statuses', [ClaimController::class, 'statuses']);
+            Route::get('/rejection-reasons', [ClaimController::class, 'rejectionReasons']);
+            Route::post('/check-benefit-eligibility', [ClaimController::class, 'checkBenefitEligibility']);
+            Route::get('/{id}', [ClaimController::class, 'show']);
+        });
+
+        Route::post('/', [ClaimController::class, 'store'])->middleware('permission:medical.claims.view');
+        Route::put('/{id}', [ClaimController::class, 'update'])->middleware('permission:medical.claims.process');
 
         // Workflow actions
-        Route::post('/{id}/start-review', [ClaimController::class, 'startReview']);
-        Route::post('/{id}/request-documents', [ClaimController::class, 'requestDocuments']);
-        Route::post('/{id}/adjudicate', [ClaimController::class, 'adjudicate']);
-        Route::post('/{id}/approve', [ClaimController::class, 'approve']);
-        Route::post('/{id}/reject', [ClaimController::class, 'reject']);
-        Route::post('/{id}/pay', [ClaimController::class, 'pay']);
-        Route::post('/{id}/close', [ClaimController::class, 'close']);
-        Route::post('/{id}/assign', [ClaimController::class, 'assign']);
+        Route::middleware(['permission:medical.claims.process'])->group(function () {
+            Route::post('/{id}/start-review', [ClaimController::class, 'startReview']);
+            Route::post('/{id}/request-documents', [ClaimController::class, 'requestDocuments']);
+            Route::post('/{id}/adjudicate', [ClaimController::class, 'adjudicate']);
+            Route::post('/{id}/assign', [ClaimController::class, 'assign']);
+            Route::post('/{id}/lines', [ClaimController::class, 'addLine']);
+            Route::post('/{id}/documents', [ClaimController::class, 'uploadDocument']);
+            Route::post('/{id}/notes', [ClaimController::class, 'addNote']);
+        });
 
-        // Claim lines
-        Route::post('/{id}/lines', [ClaimController::class, 'addLine']);
-
-        // Documents
-        Route::post('/{id}/documents', [ClaimController::class, 'uploadDocument']);
-
-        // Notes
-        Route::post('/{id}/notes', [ClaimController::class, 'addNote']);
+        Route::post('/{id}/approve', [ClaimController::class, 'approve'])->middleware('permission:medical.claims.approve');
+        Route::post('/{id}/reject', [ClaimController::class, 'reject'])->middleware('permission:medical.claims.reject');
+        Route::post('/{id}/pay', [ClaimController::class, 'pay'])->middleware('permission:medical.claims.approve');
+        Route::post('/{id}/close', [ClaimController::class, 'close'])->middleware('permission:medical.claims.process');
     });
 
-    // Claims for a specific policy
-    Route::get('policies/{policyId}/claims', [ClaimController::class, 'forPolicy']);
-
-    // Claims for a specific member
-    Route::get('members/{memberId}/claims', [ClaimController::class, 'forMember']);
+    // Claims for a specific policy/member
+    Route::get('policies/{policyId}/claims', [ClaimController::class, 'forPolicy'])->middleware('permission:medical.claims.view');
+    Route::get('members/{memberId}/claims', [ClaimController::class, 'forMember'])->middleware('permission:medical.claims.view');
 
     // =========================================================================
     // BILLING (Invoices & Payments)
     // =========================================================================
     Route::prefix('billing')->group(function () {
-        // Statistics & Dashboard
-        Route::get('/stats', [BillingController::class, 'stats']);
-        Route::get('/action-required', [BillingController::class, 'actionRequired']);
-        Route::get('/unallocated-payments', [BillingController::class, 'unallocatedPayments']);
+        // View permissions
+        Route::middleware(['permission:medical.billing.view'])->group(function () {
+            Route::get('/stats', [BillingController::class, 'stats']);
+            Route::get('/action-required', [BillingController::class, 'actionRequired']);
+            Route::get('/unallocated-payments', [BillingController::class, 'unallocatedPayments']);
+            Route::get('/invoice-types', [BillingController::class, 'invoiceTypes']);
+            Route::get('/invoice-statuses', [BillingController::class, 'invoiceStatuses']);
+            Route::get('/payment-methods', [BillingController::class, 'paymentMethods']);
+            Route::get('/payment-statuses', [BillingController::class, 'paymentStatuses']);
+            Route::get('/invoices', [BillingController::class, 'invoices']);
+            Route::get('/invoices/{id}', [BillingController::class, 'showInvoice']);
+            Route::get('/payments', [BillingController::class, 'payments']);
+            Route::get('/payments/{id}', [BillingController::class, 'showPayment']);
+        });
 
-        // Reference Data
-        Route::get('/invoice-types', [BillingController::class, 'invoiceTypes']);
-        Route::get('/invoice-statuses', [BillingController::class, 'invoiceStatuses']);
-        Route::get('/payment-methods', [BillingController::class, 'paymentMethods']);
-        Route::get('/payment-statuses', [BillingController::class, 'paymentStatuses']);
+        // Invoice actions
+        Route::post('/invoices/{id}/send', [BillingController::class, 'sendInvoice'])->middleware('permission:medical.billing.invoices.send');
+        Route::post('/invoices/{id}/cancel', [BillingController::class, 'cancelInvoice'])->middleware('permission:medical.billing.invoices.cancel');
+        Route::post('/invoices/{id}/write-off', [BillingController::class, 'writeOffInvoice'])->middleware('permission:medical.billing.invoices.cancel');
+        Route::post('/invoices/{invoiceId}/payments', [BillingController::class, 'recordPaymentForInvoice'])->middleware('permission:medical.billing.payments.record');
 
-        // Invoices
-        Route::get('/invoices', [BillingController::class, 'invoices']);
-        Route::get('/invoices/{id}', [BillingController::class, 'showInvoice']);
-        Route::post('/invoices/{id}/send', [BillingController::class, 'sendInvoice']);
-        Route::post('/invoices/{id}/cancel', [BillingController::class, 'cancelInvoice']);
-        Route::post('/invoices/{id}/write-off', [BillingController::class, 'writeOffInvoice']);
-        Route::post('/invoices/{invoiceId}/payments', [BillingController::class, 'recordPaymentForInvoice']);
-
-        // Payments
-        Route::get('/payments', [BillingController::class, 'payments']);
-        Route::get('/payments/{id}', [BillingController::class, 'showPayment']);
-        Route::post('/payments', [BillingController::class, 'recordPayment']);
-        Route::post('/payments/{paymentId}/allocate', [BillingController::class, 'allocatePayment']);
-        Route::post('/payments/{paymentId}/auto-allocate', [BillingController::class, 'autoAllocatePayment']);
-        Route::post('/payments/{id}/confirm', [BillingController::class, 'confirmPayment']);
-        Route::post('/payments/{id}/bounce', [BillingController::class, 'bouncePayment']);
-        Route::post('/payments/{id}/reverse', [BillingController::class, 'reversePayment']);
-        Route::post('/payments/{id}/reconcile', [BillingController::class, 'reconcilePayment']);
+        // Payment actions
+        Route::post('/payments', [BillingController::class, 'recordPayment'])->middleware('permission:medical.billing.payments.record');
+        Route::post('/payments/{paymentId}/allocate', [BillingController::class, 'allocatePayment'])->middleware('permission:medical.billing.payments.allocate');
+        Route::post('/payments/{paymentId}/auto-allocate', [BillingController::class, 'autoAllocatePayment'])->middleware('permission:medical.billing.payments.allocate');
+        Route::post('/payments/{id}/confirm', [BillingController::class, 'confirmPayment'])->middleware('permission:medical.billing.payments.record');
+        Route::post('/payments/{id}/bounce', [BillingController::class, 'bouncePayment'])->middleware('permission:medical.billing.payments.record');
+        Route::post('/payments/{id}/reverse', [BillingController::class, 'reversePayment'])->middleware('permission:medical.billing.payments.reverse');
+        Route::post('/payments/{id}/reconcile', [BillingController::class, 'reconcilePayment'])->middleware('permission:medical.billing.payments.record');
 
         // Allocations
-        Route::delete('/allocations/{allocationId}', [BillingController::class, 'reverseAllocation']);
+        Route::delete('/allocations/{allocationId}', [BillingController::class, 'reverseAllocation'])->middleware('permission:medical.billing.payments.reverse');
     });
 
     // Policy Billing
-    Route::get('policies/{policyId}/invoices', [BillingController::class, 'invoicesForPolicy']);
-    Route::get('policies/{policyId}/payments', [BillingController::class, 'paymentsForPolicy']);
-    Route::get('policies/{policyId}/billing-summary', [BillingController::class, 'policyBillingSummary']);
-    Route::post('policies/{policyId}/generate-invoice', [BillingController::class, 'generateInvoice']);
-    Route::post('policies/{policyId}/generate-recurring-invoice', [BillingController::class, 'generateRecurringInvoice']);
+    Route::get('policies/{policyId}/invoices', [BillingController::class, 'invoicesForPolicy'])->middleware('permission:medical.billing.view');
+    Route::get('policies/{policyId}/payments', [BillingController::class, 'paymentsForPolicy'])->middleware('permission:medical.billing.view');
+    Route::get('policies/{policyId}/billing-summary', [BillingController::class, 'policyBillingSummary'])->middleware('permission:medical.billing.view');
+    Route::post('policies/{policyId}/generate-invoice', [BillingController::class, 'generateInvoice'])->middleware('permission:medical.billing.invoices.create');
+    Route::post('policies/{policyId}/generate-recurring-invoice', [BillingController::class, 'generateRecurringInvoice'])->middleware('permission:medical.billing.invoices.create');
 
     // Group Billing
-    Route::get('groups/{groupId}/invoices', [BillingController::class, 'invoicesForGroup']);
+    Route::get('groups/{groupId}/invoices', [BillingController::class, 'invoicesForGroup'])->middleware('permission:medical.billing.view');
 
     // Endorsement Invoice Generation
-    Route::post('endorsements/{endorsementId}/generate-invoice', [BillingController::class, 'generateEndorsementInvoice']);
+    Route::post('endorsements/{endorsementId}/generate-invoice', [BillingController::class, 'generateEndorsementInvoice'])->middleware('permission:medical.billing.invoices.create');
 
     // =========================================================================
     // MEMBERS
     // =========================================================================
     Route::prefix('members')->group(function () {
-        Route::get('/', [MemberController::class, 'index']);
-        Route::get('/stats', [MemberController::class, 'stats']);
-        // NOTE: Member creation for NEW policies happens via applications
-        // This endpoint is for mid-term additions to existing policies
-        Route::post('/', [MemberController::class, 'store']);
-        Route::get('/{id}', [MemberController::class, 'show']);
-        Route::put('/{id}', [MemberController::class, 'update']);
-        Route::delete('/{id}', [MemberController::class, 'destroy']);
-        
-        // Status actions
-        Route::post('/{id}/activate', [MemberController::class, 'activate']);
-        Route::post('/{id}/suspend', [MemberController::class, 'suspend']);
-        Route::post('/{id}/terminate', [MemberController::class, 'terminate']);
-        Route::post('/{id}/deceased', [MemberController::class, 'markDeceased']);
-        
-        // Card management
-        Route::post('/{id}/issue-card', [MemberController::class, 'issueCard']);
-        Route::post('/{id}/activate-card', [MemberController::class, 'activateCard']);
-        Route::post('/{id}/block-card', [MemberController::class, 'blockCard']);
+        // View permissions
+        Route::middleware(['permission:medical.members.view'])->group(function () {
+            Route::get('/', [MemberController::class, 'index']);
+            Route::get('/stats', [MemberController::class, 'stats']);
+            Route::get('/{id}', [MemberController::class, 'show']);
+            Route::get('/{id}/eligibility', [MemberController::class, 'checkEligibility']);
+            Route::get('/{id}/benefits', [MemberController::class, 'benefitBalances']);
+            Route::get('/{id}/benefits/{benefitId}/history', [MemberController::class, 'benefitHistory']);
+            Route::get('/{id}/dependents', [MemberController::class, 'dependents']);
+            Route::get('/{id}/loadings', [MemberController::class, 'loadings']);
+            Route::get('/{id}/exclusions', [MemberController::class, 'exclusions']);
+            Route::get('/{id}/documents', [MemberController::class, 'documents']);
+        });
 
-        // Plan Management
-        Route::post('/{id}/change-plan', [MemberController::class, 'changePlan']);
-        
-        // Eligibility
-        Route::get('/{id}/eligibility', [MemberController::class, 'checkEligibility']);
-        
-        // Benefit Balances
-        Route::get('/{id}/benefits', [MemberController::class, 'benefitBalances']);
-        Route::get('/{id}/benefits/{benefitId}/history', [MemberController::class, 'benefitHistory']);
-        
-        // Dependents
-        Route::get('/{id}/dependents', [MemberController::class, 'dependents']);
-        Route::post('/{id}/dependents', [MemberController::class, 'addDependent']);
-        
-        // Loadings
-        Route::get('/{id}/loadings', [MemberController::class, 'loadings']);
-        Route::post('/{id}/loadings', [MemberController::class, 'addLoading']);
-        Route::delete('/{memberId}/loadings/{loadingId}', [MemberController::class, 'removeLoading']);
-        
-        // Exclusions
-        Route::get('/{id}/exclusions', [MemberController::class, 'exclusions']);
-        Route::post('/{id}/exclusions', [MemberController::class, 'addExclusion']);
-        Route::delete('/{memberId}/exclusions/{exclusionId}', [MemberController::class, 'removeExclusion']);
-        
-        // Documents
-        Route::get('/{id}/documents', [MemberController::class, 'documents']);
-        Route::post('/{id}/documents', [MemberController::class, 'uploadDocument']);
-        Route::post('/{memberId}/documents/{documentId}/verify', [MemberController::class, 'verifyDocument']);
+        // Add member (mid-term)
+        Route::post('/', [MemberController::class, 'store'])->middleware('permission:medical.members.add');
+
+        // Update permissions
+        Route::middleware(['permission:medical.members.update'])->group(function () {
+            Route::put('/{id}', [MemberController::class, 'update']);
+            Route::post('/{id}/activate', [MemberController::class, 'activate']);
+            Route::post('/{id}/issue-card', [MemberController::class, 'issueCard']);
+            Route::post('/{id}/activate-card', [MemberController::class, 'activateCard']);
+            Route::post('/{id}/block-card', [MemberController::class, 'blockCard']);
+            Route::post('/{id}/change-plan', [MemberController::class, 'changePlan']);
+            Route::post('/{id}/dependents', [MemberController::class, 'addDependent']);
+            Route::post('/{id}/documents', [MemberController::class, 'uploadDocument']);
+            Route::post('/{memberId}/documents/{documentId}/verify', [MemberController::class, 'verifyDocument']);
+        });
+
+        // Remove/status change permissions
+        Route::delete('/{id}', [MemberController::class, 'destroy'])->middleware('permission:medical.members.remove');
+        Route::post('/{id}/suspend', [MemberController::class, 'suspend'])->middleware('permission:medical.members.suspend');
+        Route::post('/{id}/terminate', [MemberController::class, 'terminate'])->middleware('permission:medical.members.exit');
+        Route::post('/{id}/deceased', [MemberController::class, 'markDeceased'])->middleware('permission:medical.members.exit');
+
+        // Underwriting permissions for loadings/exclusions
+        Route::post('/{id}/loadings', [MemberController::class, 'addLoading'])->middleware('permission:medical.underwriting.add_loading');
+        Route::delete('/{memberId}/loadings/{loadingId}', [MemberController::class, 'removeLoading'])->middleware('permission:medical.underwriting.add_loading');
+        Route::post('/{id}/exclusions', [MemberController::class, 'addExclusion'])->middleware('permission:medical.underwriting.add_exclusion');
+        Route::delete('/{memberId}/exclusions/{exclusionId}', [MemberController::class, 'removeExclusion'])->middleware('permission:medical.underwriting.add_exclusion');
     });
 
     // =========================================================================
-    // LOOKUPS (Constants for dropdowns)
+    // LOOKUPS (Reference data for dropdowns) - No specific permission needed
+    // These endpoints return minimal data for dropdown selections and are
+    // accessible to any user with medical module access.
     // =========================================================================
     Route::prefix('lookups')->group(function () {
+        // Entity lookups for dropdowns (active items only, minimal fields)
+        // These are for selecting items in forms, not for managing them
+        Route::get('/schemes', [SchemeController::class, 'dropdown']);
+        Route::get('/plans', [PlanController::class, 'dropdown']);  // Supports ?scheme_id= filter
+        Route::get('/rate-cards', [RateCardController::class, 'dropdown']);  // Supports ?plan_id= filter
+        Route::get('/addons', [AddonController::class, 'dropdown']);
+        Route::get('/groups', [GroupController::class, 'dropdown']);
+
+        // Constant lookups
         Route::get('/policy-types', fn() => response()->json([
             'data' => MedicalConstants::POLICY_TYPES
         ]));
@@ -512,9 +576,6 @@ Route::prefix('v1/medical')
         Route::get('/card-statuses', fn() => response()->json([
             'data' => MedicalConstants::CARD_STATUSES
         ]));
-        // Route::get('/document-types', fn() => response()->json([
-        //     'data' => MedicalConstants::DOCUMENT_TYPES
-        // ]));
         Route::get('/application-sources', fn() => response()->json([
             'data' => MedicalConstants::APPLICATION_SOURCES
         ]));
@@ -581,7 +642,6 @@ Route::prefix('v1/medical')
                 'contact_types' => MedicalConstants::CONTACT_TYPES,
                 'group_statuses' => MedicalConstants::GROUP_STATUSES,
                 'card_statuses' => MedicalConstants::CARD_STATUSES,
-                // 'document_types' => MedicalConstants::DOCUMENT_TYPES,
                 'application_sources' => MedicalConstants::APPLICATION_SOURCES,
                 'benefit_types' => MedicalConstants::BENEFIT_TYPES,
                 'limit_types' => MedicalConstants::LIMIT_TYPES,

@@ -30,7 +30,8 @@ import { MatDrawer, MatSidenavModule } from '@angular/material/sidenav';
 // Domain/Shared Imports
 import { MedicalScheme, SchemeListStore, MARKET_SEGMENTS, getLabelByValue } from 'medical-data';
 import { MedicalSchemeDialog } from '../dialogs/medical-scheme-dialog/medical-scheme-dialog';
-import { FeedbackService, PageHeaderComponent } from 'shared';
+import { FeedbackService, PageHeaderComponent, PermissionDirective } from 'shared';
+import { MEDICAL_PERMISSIONS } from 'core-auth';
 
 @Component({
   selector: 'lib-medical-schemes',
@@ -50,6 +51,7 @@ import { FeedbackService, PageHeaderComponent } from 'shared';
     MatFormFieldModule,
     MatSidenavModule,
     PageHeaderComponent,
+    PermissionDirective,
   ],
   templateUrl: './medical-scheme-list.html',
   // styleUrls: ['./medical-scheme-list.scss'],
@@ -58,6 +60,9 @@ export class MedicalSchemesList implements OnInit, AfterViewInit {
   readonly store = inject(SchemeListStore);
   private readonly dialog = inject(MatDialog);
   private readonly feedback = inject(FeedbackService);
+
+  // Permissions
+  readonly permissions = MEDICAL_PERMISSIONS;
 
   displayedColumns = ['status', 'name', 'segment', 'plans', 'effective', 'actions'];
   dataSource = new MatTableDataSource<MedicalScheme>([]);

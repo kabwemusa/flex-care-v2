@@ -166,6 +166,7 @@
       <div class="p-4 border-t bg-slate-50 flex gap-2">
         @if (selectedInvoice()!.status === 'draft') {
         <button
+          *libPermission="permissions.BILLING_INVOICES_SEND"
           mat-flat-button
           color="primary"
           class="flex-1"
@@ -176,6 +177,7 @@
         </button>
         } @if (selectedInvoice()!.balance > 0 && selectedInvoice()!.status !== 'cancelled') {
         <button
+          *libPermission="permissions.BILLING_PAYMENTS_RECORD"
           mat-flat-button
           color="accent"
           class="flex-1"
@@ -185,7 +187,7 @@
           Record Payment
         </button>
         } @if (selectedInvoice()!.status !== 'paid' && selectedInvoice()!.status !== 'cancelled') {
-        <button mat-stroked-button color="warn" (click)="cancelInvoice(selectedInvoice()!)">
+        <button *libPermission="permissions.BILLING_INVOICES_CANCEL" mat-stroked-button color="warn" (click)="cancelInvoice(selectedInvoice()!)">
           <mat-icon fontSet="material-symbols-rounded">cancel</mat-icon>
           Cancel
         </button>
@@ -466,19 +468,19 @@
                   <span>View Details</span>
                 </button>
                 @if (invoice.status === 'draft') {
-                <button mat-menu-item (click)="sendInvoice(invoice)">
+                <button *libPermission="permissions.BILLING_INVOICES_SEND" mat-menu-item (click)="sendInvoice(invoice)">
                   <mat-icon fontSet="material-symbols-rounded">send</mat-icon>
                   <span>Send Invoice</span>
                 </button>
                 } @if (invoice.balance > 0 && invoice.status !== 'cancelled') {
-                <button mat-menu-item (click)="recordPayment(invoice)">
+                <button *libPermission="permissions.BILLING_PAYMENTS_RECORD" mat-menu-item (click)="recordPayment(invoice)">
                   <mat-icon fontSet="material-symbols-rounded">payment</mat-icon>
                   <span>Record Payment</span>
                 </button>
                 }
                 <mat-divider></mat-divider>
                 @if (invoice.status !== 'paid' && invoice.status !== 'cancelled') {
-                <button mat-menu-item class="text-red-600" (click)="cancelInvoice(invoice)">
+                <button *libPermission="permissions.BILLING_INVOICES_CANCEL" mat-menu-item class="text-red-600" (click)="cancelInvoice(invoice)">
                   <mat-icon fontSet="material-symbols-rounded" class="text-red-600"
                     >cancel</mat-icon
                   >

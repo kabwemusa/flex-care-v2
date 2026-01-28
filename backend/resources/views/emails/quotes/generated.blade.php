@@ -1,167 +1,157 @@
-<!DOCTYPE html>
-<html>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
 <head>
-    <title>Quote - {{ $application->application_number }}</title>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <style>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Quote #{{ $application->application_number }}</title>
+    <style type="text/css">
         /* RESET */
-        body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; margin: 0; padding: 0; background: #f8fafc; color: #334155; font-size: 14px; line-height: 1.6; -webkit-font-smoothing: antialiased; }
-
-        /* CONTAINER */
-        .wrapper { width: 100%; background-color: #f8fafc; padding: 40px 0; }
-        .email-container { max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
-
-        /* HEADER */
-        .header { background: #1e3a8a; padding: 30px 40px; }
-        .header h1 { color: #ffffff; font-size: 24px; font-weight: 800; margin: 0; letter-spacing: 1px; }
-        .header p { color: rgba(255,255,255,0.8); font-size: 12px; margin: 5px 0 0 0; }
-        .accent-line { height: 4px; background: #10b981; }
-
-        /* CONTENT */
-        .content-padding { padding: 40px; }
-
-        /* TYPOGRAPHY */
-        h1, h2, h3 { margin: 0; color: #1e3a8a; }
-        .text-sm { font-size: 12px; color: #64748b; }
-        .font-bold { font-weight: 700; }
-        .text-right { text-align: right; }
-
-        /* GREETING */
-        .greeting { margin-bottom: 25px; }
-        .greeting h2 { font-size: 18px; margin-bottom: 10px; }
-        .greeting p { color: #64748b; margin: 0; }
-
-        /* CUSTOM MESSAGE */
-        .custom-message { background: #f0f9ff; border-left: 4px solid #3b82f6; padding: 15px 20px; margin-bottom: 25px; border-radius: 0 6px 6px 0; }
-        .custom-message p { margin: 0; color: #334155; font-style: italic; }
-
-        /* QUOTE SUMMARY BOX */
-        .quote-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 25px; margin-bottom: 25px; }
-        .quote-ref { display: inline-block; background: #1e3a8a; color: #ffffff; padding: 8px 16px; border-radius: 4px; font-size: 14px; font-weight: 700; margin-bottom: 15px; }
-        .quote-details { margin-top: 15px; }
-        .quote-details table { width: 100%; }
-        .quote-details td { padding: 8px 0; border-bottom: 1px solid #e2e8f0; }
-        .quote-details tr:last-child td { border-bottom: none; }
-        .quote-details .label { color: #64748b; font-size: 12px; text-transform: uppercase; font-weight: 600; }
-        .quote-details .value { color: #1e3a8a; font-weight: 600; text-align: right; }
-
-        /* TOTAL BOX */
-        .total-box { background: #1e3a8a; color: #ffffff; padding: 20px 25px; border-radius: 6px; margin-bottom: 25px; }
-        .total-box table { width: 100%; }
-        .total-box .label { font-size: 14px; opacity: 0.9; }
-        .total-box .amount { font-size: 24px; font-weight: 700; text-align: right; }
-
-        /* CTA BUTTON */
-        .cta-section { text-align: center; margin: 30px 0; }
-        .cta-button { display: inline-block; background: #10b981; color: #ffffff; padding: 14px 35px; border-radius: 6px; text-decoration: none; font-weight: 700; font-size: 14px; }
-        .cta-button:hover { background: #059669; }
-
-        /* ATTACHMENT NOTE */
-        .attachment-note { background: #fef3c7; border: 1px solid #fcd34d; border-radius: 6px; padding: 15px 20px; margin-bottom: 25px; }
-        .attachment-note p { margin: 0; color: #92400e; font-size: 13px; }
-        .attachment-note strong { color: #78350f; }
-
-        /* FOOTER */
-        .footer { background: #f8fafc; padding: 25px 40px; text-align: center; border-top: 1px solid #e2e8f0; }
-        .footer p { margin: 5px 0; color: #94a3b8; font-size: 11px; }
-        .footer a { color: #3b82f6; text-decoration: none; }
+        body { margin: 0; padding: 0; background-color: #f3f4f6; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased; color: #1f2937; }
+        table { border-collapse: collapse !important; width: 100%; }
+        a { text-decoration: none; }
+        
+        /* UTILITIES */
+        .wrapper { background-color: #f3f4f6; padding: 40px 0; }
+        .container { background-color: #ffffff; max-width: 600px; margin: 0 auto; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); }
+        .text-muted { color: #6b7280; font-size: 14px; }
+        .text-dark { color: #111827; font-size: 14px; font-weight: 500; }
+        .text-red { color: #ef4444; }
+        .text-green { color: #10b981; }
+        
+        /* RESPONSIVE */
+        @media only screen and (max-width: 600px) {
+            .wrapper { padding: 10px; }
+            .content { padding: 20px !important; }
+        }
     </style>
 </head>
-<body>
+<body style="margin: 0; padding: 0; background-color: #f3f4f6;">
+
     <div class="wrapper">
-        <div class="email-container">
-            <!-- Header -->
-            <div class="header">
-                <h1>FLEXCARE</h1>
-                <p>Medical Insurance Solutions</p>
-            </div>
-            <div class="accent-line"></div>
-
-            <!-- Content -->
-            <div class="content-padding">
-                <!-- Greeting -->
-                <div class="greeting">
-                    <h2>Dear {{ $application->applicant_name ?? 'Valued Customer' }},</h2>
-                    <p>Thank you for your interest in FlexCare Medical Insurance. Please find your personalized quote below.</p>
-                </div>
-
-                @if($customMessage)
-                <!-- Custom Message -->
-                <div class="custom-message">
-                    <p>"{{ $customMessage }}"</p>
-                </div>
-                @endif
-
-                <!-- Attachment Note -->
-                <div class="attachment-note">
-                    <p><strong>📎 PDF Attached:</strong> A detailed quote document is attached to this email for your records.</p>
-                </div>
-
-                <!-- Quote Summary Box -->
-                <div class="quote-box">
-                    <div class="quote-ref">{{ $application->application_number }}</div>
-
-                    <div class="quote-details">
-                        <table>
-                            <tr>
-                                <td class="label">Plan</td>
-                                <td class="value">{{ $application->scheme->name ?? '' }} - {{ $application->plan->name ?? '' }}</td>
-                            </tr>
-                            <tr>
-                                <td class="label">Covered Members</td>
-                                <td class="value">{{ $application->members->count() }} {{ $application->members->count() === 1 ? 'Member' : 'Members' }}</td>
-                            </tr>
-                            <tr>
-                                <td class="label">Policy Term</td>
-                                <td class="value">{{ $application->policy_term_months ?? 12 }} Months</td>
-                            </tr>
-                            <tr>
-                                <td class="label">Start Date</td>
-                                <td class="value">{{ \Carbon\Carbon::parse($application->proposed_start_date)->format('d M Y') }}</td>
-                            </tr>
-                            <tr>
-                                <td class="label">Quote Valid Until</td>
-                                <td class="value" style="color: #ef4444;">{{ \Carbon\Carbon::parse($application->valid_until ?? now()->addDays(30))->format('d M Y') }}</td>
-                            </tr>
-                        </table>
-                    </div>
-                </div>
-
-                <!-- Total Box -->
-                <div class="total-box">
-                    <table>
+        <table align="center" border="0" cellpadding="0" cellspacing="0" class="container" width="600" style="background-color: #ffffff;">
+            
+            <tr>
+                <td style="padding: 30px 40px; border-bottom: 1px solid #f3f4f6;">
+                    <table border="0" cellpadding="0" cellspacing="0">
                         <tr>
-                            <td class="label">Total {{ ucfirst($application->billing_frequency ?? 'Annual') }} Premium</td>
-                            <td class="amount">{{ $application->currency ?? 'ZMW' }} {{ number_format($application->gross_premium ?? 0, 2) }}</td>
+                            <td style="font-size: 20px; font-weight: 800; color: #1e3a8a; letter-spacing: -0.5px;">FLEXCARE</td>
+                            <td align="right" style="color: #9ca3af; font-size: 12px; font-weight: 500;">
+                                REF: {{ $application->application_number }}
+                            </td>
                         </tr>
                     </table>
-                </div>
+                </td>
+            </tr>
 
-                <!-- Next Steps -->
-                <div style="margin-bottom: 25px;">
-                    <h3 style="font-size: 14px; margin-bottom: 10px; color: #1e3a8a;">Next Steps</h3>
-                    <ol style="margin: 0; padding-left: 20px; color: #64748b; font-size: 13px;">
-                        <li style="margin-bottom: 8px;">Review the attached PDF quote for complete details</li>
-                        <li style="margin-bottom: 8px;">Contact us if you have any questions</li>
-                        <li style="margin-bottom: 8px;">Accept the quote to proceed with your policy</li>
-                    </ol>
-                </div>
+            <tr>
+                <td class="content" style="padding: 40px;">
+                    
+                    <p style="margin: 0 0 15px 0; font-size: 16px; color: #374151;">
+                        Hi {{ $application->applicant_name }},
+                    </p>
+                    <p style="margin: 0 0 30px 0; font-size: 15px; color: #6b7280; line-height: 1.5;">
+                        Your medical insurance quote for <strong>{{ $application->members->count() }} lives</strong> is ready for review.
+                    </p>
 
-                <!-- Help Section -->
-                <div style="text-align: center; padding: 20px; background: #f8fafc; border-radius: 6px;">
-                    <p style="margin: 0 0 5px 0; color: #64748b; font-size: 13px;">Have questions? We're here to help.</p>
-                    <p style="margin: 0; color: #1e3a8a; font-weight: 600;">Contact our support team</p>
-                </div>
-            </div>
+                    <table border="0" cellpadding="0" cellspacing="0" style="margin-bottom: 30px;">
+                        
+                        <tr>
+                            <td style="padding-bottom: 12px;" class="text-muted">Base Premium</td>
+                            <td align="right" style="padding-bottom: 12px;" class="text-dark">
+                                {{ $application->currency }} {{ number_format($application->base_premium, 2) }}
+                            </td>
+                        </tr>
 
-            <!-- Footer -->
-            <div class="footer">
-                <p><strong>FlexCare Medical Insurance</strong></p>
-                <p>This quote is subject to standard terms and conditions. Final acceptance is subject to underwriting approval.</p>
-                <p style="margin-top: 15px;">Generated on {{ now()->format('d M Y, g:i A') }}</p>
-            </div>
-        </div>
+                        @if(($application->addon_premium ?? 0) > 0)
+                        <tr>
+                            <td style="padding-bottom: 12px;" class="text-muted">Selected Add-ons</td>
+                            <td align="right" style="padding-bottom: 12px;" class="text-dark">
+                                {{ $application->currency }} {{ number_format($application->addon_premium, 2) }}
+                            </td>
+                        </tr>
+                        @endif
+
+                        @if(($application->loading_amount ?? 0) > 0)
+                        <tr>
+                            <td style="padding-bottom: 12px; color: #ef4444; font-size: 14px;">
+                                Risk Adjustments
+                            </td>
+                            <td align="right" style="padding-bottom: 12px; color: #ef4444; font-size: 14px; font-weight: 500;">
+                                + {{ $application->currency }} {{ number_format($application->loading_amount, 2) }}
+                            </td>
+                        </tr>
+                        @endif
+
+                        @if(($application->discount_amount ?? 0) > 0)
+                        <tr>
+                            <td style="padding-bottom: 12px; color: #10b981; font-size: 14px;">
+                                Discount
+                            </td>
+                            <td align="right" style="padding-bottom: 12px; color: #10b981; font-size: 14px; font-weight: 500;">
+                                - {{ $application->currency }} {{ number_format($application->discount_amount, 2) }}
+                            </td>
+                        </tr>
+                        @endif
+
+                        <tr>
+                            <td style="padding-bottom: 15px;" class="text-muted">Taxes / Levies</td>
+                            <td align="right" style="padding-bottom: 15px;" class="text-dark">
+                                {{ $application->currency }} {{ number_format($application->tax_amount, 2) }}
+                            </td>
+                        </tr>
+
+                        <tr>
+                            <td colspan="2" style="border-top: 1px solid #e5e7eb; height: 1px;"></td>
+                        </tr>
+
+                        <tr>
+                            <td style="padding-top: 15px; font-size: 16px; font-weight: 700; color: #111827;">
+                                Total Payable
+                            </td>
+                            <td align="right" style="padding-top: 15px; font-size: 24px; font-weight: 800; color: #1e3a8a; letter-spacing: -0.5px;">
+                                <span style="font-size: 14px; vertical-align: middle;">{{ $application->currency }}</span> {{ number_format($application->gross_premium, 2) }}
+                            </td>
+                        </tr>
+                    </table>
+
+                    <table border="0" cellpadding="0" cellspacing="0">
+                        <tr>
+                            <td align="center">
+                                <a href="#" style="background-color: #2563eb; color: #ffffff; padding: 14px 40px; border-radius: 99px; font-size: 14px; font-weight: 600; display: inline-block; box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.4);">
+                                    Accept Quote
+                                </a>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td align="center" style="padding-top: 25px;">
+                                <p style="margin: 0; font-size: 13px; color: #6b7280; background-color: #f9fafb; padding: 8px 16px; border-radius: 6px; display: inline-block;">
+                                    📎 <strong>Detailed Quote Attached</strong> (PDF)
+                                </p>
+                            </td>
+                        </tr>
+                    </table>
+
+                </td>
+            </tr>
+            
+            <tr>
+                <td style="background-color: #f9fafb; padding: 20px; text-align: center; border-top: 1px solid #f3f4f6;">
+                    <p style="margin: 0; font-size: 11px; color: #9ca3af;">
+                        Quote valid until {{ \Carbon\Carbon::parse($application->valid_until)->format('d M Y') }}
+                    </p>
+                </td>
+            </tr>
+
+        </table>
+
+        <table align="center" border="0" cellpadding="0" cellspacing="0" width="600">
+            <tr>
+                <td align="center" style="padding-top: 20px; color: #9ca3af; font-size: 11px;">
+                    FlexCare Medical Insurance Ltd • Lusaka, Zambia
+                </td>
+            </tr>
+        </table>
     </div>
+
 </body>
 </html>

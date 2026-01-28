@@ -68,8 +68,11 @@ export class SchemeListStore {
     );
   }
 
+  /**
+   * Load schemes for dropdown selection (uses permission-free lookup endpoint)
+   */
   loadDropdown() {
-    return this.http.get<ApiResponse<MedicalScheme[]>>(`${this.apiUrl}/dropdown`);
+    return this.http.get<ApiResponse<MedicalScheme[]>>('/api/v1/medical/lookups/schemes');
   }
 
   create(scheme: Partial<MedicalScheme>) {

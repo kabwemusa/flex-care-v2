@@ -319,6 +319,32 @@ export class PolicyStore {
   }
 
   // =========================================================================
+  // DOCUMENT OPERATIONS
+  // =========================================================================
+
+  loadDocuments(policyId: string) {
+    return this.http.get<ApiResponse<any[]>>(`${this.apiUrl}/${policyId}/documents`);
+  }
+
+  uploadDocument(policyId: string, formData: FormData) {
+    return this.http
+      .post<ApiResponse<any>>(`${this.apiUrl}/${policyId}/documents`, formData)
+      .pipe(
+        tap({
+          next: () => {
+            // Reload policy to get updated data
+            this.loadOne(policyId).subscribe();
+          },
+        })
+      );
+  }
+
+  downloadDocument(policyId: string, documentId: string, inline = false) {
+    const url = `${this.apiUrl}/${policyId}/documents/${documentId}/download${inline ? '?inline=true' : ''}`;
+    return this.http.get(url, { responseType: 'blob', observe: 'response' });
+  }
+
+  // =========================================================================
   // UTILITY METHODS
   // =========================================================================
 

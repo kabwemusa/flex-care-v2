@@ -42,8 +42,9 @@ import {
   POLICY_UI_CONFIG,
   POLICY_STATUS_STYLES,
 } from 'medical-data';
-import { FeedbackService, PageHeaderComponent } from 'shared';
+import { FeedbackService, PageHeaderComponent, PermissionDirective } from 'shared';
 import { MedicalAddMemberToPolicyDialog } from '../dialogs/medical-add-member-to-policy-dialog/medical-add-member-to-policy-dialog';
+import { MEDICAL_PERMISSIONS } from 'core-auth';
 
 @Component({
   selector: 'lib-medical-policies-list',
@@ -67,6 +68,7 @@ import { MedicalAddMemberToPolicyDialog } from '../dialogs/medical-add-member-to
     MatChipsModule,
     MatProgressSpinnerModule,
     PageHeaderComponent,
+    PermissionDirective,
   ],
   templateUrl: './medical-policies-list.html',
 })
@@ -74,6 +76,9 @@ export class MedicalPoliciesList implements OnInit {
   readonly store = inject(PolicyStore);
   private readonly feedback = inject(FeedbackService);
   private readonly dialog = inject(MatDialog);
+
+  // Permissions
+  readonly permissions = MEDICAL_PERMISSIONS;
 
   // Table
   displayedColumns = ['status', 'policy_number', 'holder', 'plan', 'members', 'dates', 'premium', 'actions'];

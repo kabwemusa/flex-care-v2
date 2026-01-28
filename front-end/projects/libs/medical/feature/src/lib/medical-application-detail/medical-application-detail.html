@@ -49,6 +49,7 @@
         <div class="flex items-center gap-1 flex-wrap">
           @if (canEdit()) {
           <button
+            *libPermission="permissions.APPLICATIONS_UPDATE"
             mat-icon-button
             (click)="editApplication()"
             matTooltip="Edit Application"
@@ -58,6 +59,7 @@
           </button>
           } @switch (app.status) { @case ('draft') {
           <button
+            *libPermission="permissions.APPLICATIONS_QUOTE"
             mat-icon-button
             (click)="calculatePremium()"
             [disabled]="isSaving()"
@@ -67,6 +69,7 @@
             <mat-icon fontSet="material-symbols-rounded">calculate</mat-icon>
           </button>
           <button
+            *libPermission="permissions.APPLICATIONS_QUOTE"
             mat-flat-button
             color="primary"
             (click)="generateQuote()"
@@ -86,6 +89,7 @@
             Quote
           </button>
           <button
+            *libPermission="permissions.APPLICATIONS_SUBMIT"
             mat-flat-button
             color="primary"
             (click)="submitForUnderwriting()"
@@ -96,18 +100,66 @@
             Submit for UW
           </button>
           } @case ('submitted') {
-          <button
-            mat-flat-button
-            color="accent"
-            (click)="startUnderwriting()"
-            [disabled]="isSaving()"
-            matTooltip="Start Underwriting Process"
-          >
-            <mat-icon fontSet="material-symbols-rounded">policy</mat-icon>
-            Start Underwriting
-          </button>
+          <!-- Show different actions based on approval workflow status -->
+          @if (hasPendingApproval()) {
+            <!-- Has pending approval workflow -->
+            @if (canApproveApplication()) {
+              <!-- User can approve - show approval actions -->
+              <button
+                *libPermission="permissions.UNDERWRITING_APPROVE"
+                mat-icon-button
+                (click)="approvalReturn()"
+                [disabled]="isSaving()"
+                matTooltip="Return for Amendment"
+                class="!text-amber-600 hover:!bg-amber-50"
+              >
+                <mat-icon fontSet="material-symbols-rounded">undo</mat-icon>
+              </button>
+              <button
+                *libPermission="permissions.UNDERWRITING_REJECT"
+                mat-icon-button
+                (click)="approvalReject()"
+                [disabled]="isSaving()"
+                matTooltip="Reject Application"
+                class="!text-red-600 hover:!bg-red-50"
+              >
+                <mat-icon fontSet="material-symbols-rounded">cancel</mat-icon>
+              </button>
+              <button
+                *libPermission="permissions.UNDERWRITING_APPROVE"
+                mat-flat-button
+                (click)="approvalApprove()"
+                [disabled]="isSaving()"
+                matTooltip="Approve this Step"
+                class="!bg-emerald-600 hover:!bg-emerald-700"
+              >
+                <mat-icon fontSet="material-symbols-rounded">check_circle</mat-icon>
+                Approve Step
+              </button>
+            } @else {
+              <!-- User cannot approve - show pending status -->
+              <span class="inline-flex items-center rounded-full bg-amber-100 text-amber-800 border border-amber-200 px-3 py-1 text-sm font-medium">
+                <mat-icon fontSet="material-symbols-rounded" class="!text-[16px] mr-1">hourglass_empty</mat-icon>
+                Pending Approval
+              </span>
+            }
+          } @else {
+            <!-- No approval workflow - show legacy start underwriting button -->
+            <button
+              *libPermission="permissions.UNDERWRITING_ASSESS"
+              mat-flat-button
+              color="accent"
+              (click)="startUnderwriting()"
+              [disabled]="isSaving()"
+              matTooltip="Start Underwriting Process"
+            >
+              <mat-icon fontSet="material-symbols-rounded">policy</mat-icon>
+              Start Underwriting
+            </button>
+          }
           } @case ('underwriting') {
           <button
+            *libPermission="permissions.APPLICATIONS_QUOTE"
             mat-icon-button
             (click)="regenerateQuote()"
             [disabled]="isSaving()"
@@ -126,6 +178,7 @@
           </button>
           <div class="w-px h-6 bg-slate-200 mx-1"></div>
           <button
+            *libPermission="permissions.UNDERWRITING_ASSESS"
             mat-icon-button
             (click)="referApplication()"
             [disabled]="isSaving()"
@@ -134,25 +187,72 @@
           >
             <mat-icon fontSet="material-symbols-rounded">forward</mat-icon>
           </button>
-          <button
-            mat-icon-button
-            (click)="declineApplication()"
-            [disabled]="isSaving()"
-            matTooltip="Decline Application"
-            class="!text-red-600 hover:!bg-red-50"
-          >
-            <mat-icon fontSet="material-symbols-rounded">cancel</mat-icon>
-          </button>
-          <button
-            mat-flat-button
-            color="primary"
-            (click)="approveApplication()"
-            [disabled]="isSaving()"
-            matTooltip="Approve Application"
-          >
-            <mat-icon fontSet="material-symbols-rounded">check_circle</mat-icon>
-            Approve
-          </button>
+          <!-- Approval Workflow Actions -->
+          @if (hasPendingApproval()) {
+            @if (canApproveApplication()) {
+              <!-- User can approve this step -->
+              <button
+                *libPermission="permissions.UNDERWRITING_APPROVE"
+                mat-icon-button
+                (click)="approvalReturn()"
+                [disabled]="isSaving()"
+                matTooltip="Return for Amendment"
+                class="!text-amber-600 hover:!bg-amber-50"
+              >
+                <mat-icon fontSet="material-symbols-rounded">undo</mat-icon>
+              </button>
+              <button
+                *libPermission="permissions.UNDERWRITING_REJECT"
+                mat-icon-button
+                (click)="approvalReject()"
+                [disabled]="isSaving()"
+                matTooltip="Reject Application"
+                class="!text-red-600 hover:!bg-red-50"
+              >
+                <mat-icon fontSet="material-symbols-rounded">cancel</mat-icon>
+              </button>
+              <button
+                *libPermission="permissions.UNDERWRITING_APPROVE"
+                mat-flat-button
+                (click)="approvalApprove()"
+                [disabled]="isSaving()"
+                matTooltip="Approve this Step"
+                class="!bg-emerald-600 hover:!bg-emerald-700"
+              >
+                <mat-icon fontSet="material-symbols-rounded">check_circle</mat-icon>
+                Approve Step
+              </button>
+            } @else {
+              <!-- User cannot approve - show pending status -->
+              <span class="inline-flex items-center rounded-full bg-amber-100 text-amber-800 border border-amber-200 px-3 py-1 text-sm font-medium">
+                <mat-icon fontSet="material-symbols-rounded" class="!text-[16px] mr-1">hourglass_empty</mat-icon>
+                Pending Approval
+              </span>
+            }
+          } @else {
+            <!-- No approval workflow - show legacy decline/approve buttons -->
+            <button
+              *libPermission="permissions.UNDERWRITING_REJECT"
+              mat-icon-button
+              (click)="declineApplication()"
+              [disabled]="isSaving()"
+              matTooltip="Decline Application"
+              class="!text-red-600 hover:!bg-red-50"
+            >
+              <mat-icon fontSet="material-symbols-rounded">cancel</mat-icon>
+            </button>
+            <button
+              *libPermission="permissions.UNDERWRITING_APPROVE"
+              mat-flat-button
+              color="primary"
+              (click)="approveApplication()"
+              [disabled]="isSaving()"
+              matTooltip="Approve Application"
+            >
+              <mat-icon fontSet="material-symbols-rounded">check_circle</mat-icon>
+              Approve
+            </button>
+          }
           } @case ('approved') {
           <button
             mat-icon-button
@@ -163,6 +263,7 @@
             <mat-icon fontSet="material-symbols-rounded">description</mat-icon>
           </button>
           <button
+            *libPermission="permissions.APPLICATIONS_UPDATE"
             mat-flat-button
             color="primary"
             (click)="acceptApplication()"
@@ -174,6 +275,7 @@
           </button>
           } @case ('accepted') {
           <button
+            *libPermission="permissions.POLICIES_CREATE"
             mat-flat-button
             color="primary"
             (click)="convertToPolicy()"
@@ -204,7 +306,7 @@
               </p>
             </div>
             @if (canEdit()) {
-            <button mat-flat-button color="primary" (click)="addMember()">
+            <button *libPermission="permissions.MEMBERS_ADD" mat-flat-button color="primary" (click)="addMember()">
               <mat-icon fontSet="material-symbols-rounded">person_add</mat-icon>
               Add Member
             </button>
@@ -218,7 +320,7 @@
             </mat-icon>
             <p class="text-slate-500 mb-4">No members added yet</p>
             @if (canEdit()) {
-            <button mat-stroked-button color="primary" (click)="addMember()">
+            <button *libPermission="permissions.MEMBERS_ADD" mat-stroked-button color="primary" (click)="addMember()">
               Add First Member
             </button>
             }
@@ -553,6 +655,101 @@
 
       <!-- Sidebar -->
       <div class="space-y-6">
+        <!-- Approval Status Card -->
+        @if (approvalStatus(); as status) {
+          @if (status.has_request) {
+            <div class="rounded-xl border border-primary/20 bg-primary/5 shadow-sm p-6">
+              <div class="flex items-center gap-2 mb-4">
+                <mat-icon fontSet="material-symbols-rounded" class="!text-[24px] text-primary">fact_check</mat-icon>
+                <h2 class="text-base font-semibold text-slate-900">Approval Status</h2>
+              </div>
+
+              <!-- Status Badge -->
+              <div class="mb-4">
+                @switch (status.status) {
+                  @case ('pending') {
+                    <span class="inline-flex items-center rounded-full bg-amber-100 text-amber-800 border border-amber-200 px-3 py-1 text-sm font-medium">
+                      <mat-icon fontSet="material-symbols-rounded" class="!text-[16px] mr-1">pending</mat-icon>
+                      Pending Approval
+                    </span>
+                  }
+                  @case ('approved') {
+                    <span class="inline-flex items-center rounded-full bg-green-100 text-green-800 border border-green-200 px-3 py-1 text-sm font-medium">
+                      <mat-icon fontSet="material-symbols-rounded" class="!text-[16px] mr-1">check_circle</mat-icon>
+                      Fully Approved
+                    </span>
+                  }
+                  @case ('rejected') {
+                    <span class="inline-flex items-center rounded-full bg-red-100 text-red-800 border border-red-200 px-3 py-1 text-sm font-medium">
+                      <mat-icon fontSet="material-symbols-rounded" class="!text-[16px] mr-1">cancel</mat-icon>
+                      Rejected
+                    </span>
+                  }
+                  @case ('returned') {
+                    <span class="inline-flex items-center rounded-full bg-orange-100 text-orange-800 border border-orange-200 px-3 py-1 text-sm font-medium">
+                      <mat-icon fontSet="material-symbols-rounded" class="!text-[16px] mr-1">undo</mat-icon>
+                      Returned for Amendment
+                    </span>
+                  }
+                }
+              </div>
+
+              <!-- Current Step Info -->
+              @if (status.current_step) {
+                <div class="space-y-3">
+                  <div class="flex items-center justify-between text-sm">
+                    <span class="text-slate-500">Current Step</span>
+                    <span class="font-medium text-slate-900">{{ status.current_step.name }}</span>
+                  </div>
+                  <div class="flex items-center justify-between text-sm">
+                    <span class="text-slate-500">Approval Group</span>
+                    <span class="text-slate-700">{{ status.current_step.group }}</span>
+                  </div>
+                  <div class="flex items-center justify-between text-sm">
+                    <span class="text-slate-500">Progress</span>
+                    <span class="text-slate-700">Step {{ status.current_step_number }} of {{ status.total_steps }}</span>
+                  </div>
+
+                  <!-- Progress Bar -->
+                  <div>
+                    <div class="w-full bg-slate-200 rounded-full h-2">
+                      <div
+                        class="bg-primary rounded-full h-2 transition-all duration-300"
+                        [style.width.%]="status.progress_percentage"
+                      ></div>
+                    </div>
+                    <p class="text-xs text-slate-500 mt-1 text-right">{{ status.progress_percentage }}% complete</p>
+                  </div>
+                </div>
+              }
+
+              <!-- Initiated Info -->
+              @if (status.initiated_by) {
+                <div class="mt-4 pt-4 border-t border-slate-200">
+                  <div class="flex items-center justify-between text-sm">
+                    <span class="text-slate-500">Initiated By</span>
+                    <span class="text-slate-700">{{ status.initiated_by.name }}</span>
+                  </div>
+                  <div class="flex items-center justify-between text-sm mt-1">
+                    <span class="text-slate-500">Submitted At</span>
+                    <span class="text-slate-700">{{ formatDate(status.initiated_at) }}</span>
+                  </div>
+                </div>
+              }
+
+              <!-- Action Prompt -->
+              @if (canApproveApplication()) {
+                <div class="mt-4 p-3 rounded-lg bg-emerald-50 border border-emerald-200">
+                  <div class="flex items-center gap-2 text-emerald-800">
+                    <mat-icon fontSet="material-symbols-rounded" class="!text-[18px]">info</mat-icon>
+                    <span class="text-sm font-medium">Your approval is required</span>
+                  </div>
+                </div>
+              }
+            </div>
+          }
+        }
+
         <!-- Premium Summary Card -->
         <div class="rounded-xl border border-slate-200 bg-white shadow-sm p-6">
           <h2 class="text-base font-semibold text-slate-900 mb-4">Premium Summary</h2>

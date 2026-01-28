@@ -180,13 +180,14 @@ class SchemeController extends Controller
     /**
      * Get schemes for dropdown/select.
      * GET /v1/medical/schemes/dropdown
+     * GET /v1/medical/lookups/schemes
      */
     public function dropdown(): JsonResponse
     {
         try {
-            $schemes = Scheme::active()
-                ->effective()
-                ->orderBy('name')
+            // For lookups, return all schemes (no filtering)
+            // Same behavior as loadAll/index
+            $schemes = Scheme::orderBy('name')
                 ->get(['id', 'code', 'name', 'market_segment']);
 
             return $this->success($schemes, 'Schemes retrieved');

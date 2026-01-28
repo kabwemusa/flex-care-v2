@@ -10,7 +10,13 @@
           <p class="mt-1 text-sm text-slate-500">Manage insurance applications and quotes</p>
         </div>
         <div class="flex gap-2">
-          <button mat-flat-button color="primary" class="!rounded-lg" (click)="openCreateDialog()">
+          <button
+            *libPermission="permissions.APPLICATIONS_CREATE"
+            mat-flat-button
+            color="primary"
+            class="!rounded-lg"
+            (click)="openCreateDialog()"
+          >
             <mat-icon fontSet="material-symbols-rounded">add</mat-icon>
             New Application
           </button>
@@ -215,17 +221,25 @@
                 mat-header-cell
                 *matHeaderCellDef
                 mat-sort-header
-                class="!bg-slate-50 !px-4 !py-3 text-xs font-semibold uppercase tracking-wider text-slate-500 !w-28"
+                class="!bg-slate-50 !px-4 !py-3 text-xs font-semibold uppercase tracking-wider text-slate-500 !w-36"
               >
                 Status
               </th>
               <td mat-cell *matCellDef="let app" class="!px-4 !py-3">
-                <span
-                  [class]="getStatusClass(app.status)"
-                  class="inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium"
-                >
-                  {{ getStatusLabel(app.status) }}
-                </span>
+                <div class="flex flex-col gap-1">
+                  <span
+                    [class]="getStatusClass(app.status)"
+                    class="inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium w-fit"
+                  >
+                    {{ getStatusLabel(app.status) }}
+                  </span>
+                  @if (app.approval_status?.has_request) {
+                  <lib-approval-status-badge
+                    [approvalStatus]="app.approval_status"
+                    displayMode="compact"
+                  ></lib-approval-status-badge>
+                  }
+                </div>
               </td>
             </ng-container>
 
@@ -367,29 +381,50 @@
                     <span>Open Full Page</span>
                   </button>
                   @if (canEdit(app)) {
-                  <button mat-menu-item (click)="editApplication(app)">
+                  <button
+                    *libPermission="permissions.APPLICATIONS_UPDATE"
+                    mat-menu-item
+                    (click)="editApplication(app)"
+                  >
                     <mat-icon fontSet="material-symbols-rounded">edit</mat-icon>
                     <span>Edit</span>
                   </button>
                   }
                   <mat-divider></mat-divider>
                   @if (app.status === 'draft') {
-                  <button mat-menu-item (click)="calculatePremium(app)">
+                  <button
+                    *libPermission="permissions.APPLICATIONS_QUOTE"
+                    mat-menu-item
+                    (click)="calculatePremium(app)"
+                  >
                     <mat-icon fontSet="material-symbols-rounded">calculate</mat-icon>
                     <span>Calculate Premium</span>
                   </button>
-                  <button mat-menu-item (click)="markAsQuoted(app)">
+                  <button
+                    *libPermission="permissions.APPLICATIONS_QUOTE"
+                    mat-menu-item
+                    (click)="markAsQuoted(app)"
+                  >
                     <mat-icon fontSet="material-symbols-rounded">request_quote</mat-icon>
                     <span>Generate Quote</span>
                   </button>
                   } @if (canSubmit(app)) {
-                  <button mat-menu-item (click)="submitApplication(app)">
+                  <button
+                    *libPermission="permissions.APPLICATIONS_SUBMIT"
+                    mat-menu-item
+                    (click)="submitApplication(app)"
+                  >
                     <mat-icon fontSet="material-symbols-rounded">send</mat-icon>
                     <span>Submit for UW</span>
                   </button>
                   } @if (canEdit(app)) {
-                  <mat-divider></mat-divider>
-                  <button mat-menu-item (click)="deleteApplication(app)" class="!text-red-600">
+                  <mat-divider *libPermission="permissions.APPLICATIONS_DELETE"></mat-divider>
+                  <button
+                    *libPermission="permissions.APPLICATIONS_DELETE"
+                    mat-menu-item
+                    (click)="deleteApplication(app)"
+                    class="!text-red-600"
+                  >
                     <mat-icon fontSet="material-symbols-rounded" class="!text-red-600"
                       >delete</mat-icon
                     >
@@ -416,7 +451,12 @@
                     description
                   </mat-icon>
                   <p class="text-slate-500">No applications found</p>
-                  <button mat-stroked-button color="primary" (click)="openCreateDialog()">
+                  <button
+                    *libPermission="permissions.APPLICATIONS_CREATE"
+                    mat-stroked-button
+                    color="primary"
+                    (click)="openCreateDialog()"
+                  >
                     Create New Application
                   </button>
                 </div>
@@ -490,6 +530,46 @@
           </span>
           }
         </div>
+
+        <!-- Approval Status -->
+        @if (app.approval_status?.has_request) {
+        <div class="rounded-lg border border-slate-200 p-4">
+          <div class="flex items-center justify-between mb-2">
+            <h3 class="text-sm font-medium text-slate-500">Approval Progress</h3>
+            <lib-approval-status-badge
+              [approvalStatus]="app.approval_status"
+              displayMode="compact"
+            ></lib-approval-status-badge>
+          </div>
+          @if (app.approval_status?.current_step) {
+          <div class="space-y-2">
+            <div class="flex items-center justify-between text-sm">
+              <span class="text-slate-500">Current Step</span>
+              <span class="font-medium text-slate-900">{{
+                app.approval_status?.current_step?.name
+              }}</span>
+            </div>
+            <div class="flex items-center justify-between text-sm">
+              <span class="text-slate-500">Assigned To</span>
+              <span class="text-slate-900">{{ app.approval_status?.current_step?.group }}</span>
+            </div>
+            <div class="flex items-center gap-2 mt-2">
+              <div class="flex-1 h-2 bg-slate-200 rounded-full overflow-hidden">
+                <div
+                  class="h-full bg-blue-500 rounded-full transition-all"
+                  [style.width.%]="app.approval_status?.progress_percentage || 0"
+                ></div>
+              </div>
+              <span class="text-xs text-slate-500">
+                {{ app.approval_status?.current_step_number }}/{{
+                  app.approval_status?.total_steps
+                }}
+              </span>
+            </div>
+          </div>
+          }
+        </div>
+        }
 
         <!-- Applicant Info -->
         <div class="rounded-lg border border-slate-200 p-4">
@@ -667,7 +747,12 @@
         class="flex items-center justify-end gap-3 border-t border-slate-100 px-6 py-4 bg-slate-50"
       >
         @if (canEdit(app)) {
-        <button mat-stroked-button class="!border-slate-200" (click)="editApplication(app)">
+        <button
+          *libPermission="permissions.APPLICATIONS_UPDATE"
+          mat-stroked-button
+          class="!border-slate-200"
+          (click)="editApplication(app)"
+        >
           <mat-icon fontSet="material-symbols-rounded">edit</mat-icon>
           Edit
         </button>

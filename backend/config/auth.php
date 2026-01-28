@@ -40,6 +40,29 @@ return [
             'driver' => 'session',
             'provider' => 'users',
         ],
+
+        // Module-specific guards for Spatie Permission
+        // These all use the same User model/provider, but allow
+        // separate permission namespaces per module
+        'medical' => [
+            'driver' => 'session',
+            'provider' => 'users',
+        ],
+
+        'life' => [
+            'driver' => 'session',
+            'provider' => 'users',
+        ],
+
+        'motor' => [
+            'driver' => 'session',
+            'provider' => 'users',
+        ],
+
+        'travel' => [
+            'driver' => 'session',
+            'provider' => 'users',
+        ],
     ],
 
     /*

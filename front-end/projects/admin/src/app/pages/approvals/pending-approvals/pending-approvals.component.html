@@ -1,0 +1,309 @@
+<div class="min-h-screen bg-white">
+  <!-- Header -->
+  <div class="border-b border-slate-100 sticky top-0 bg-white/80 backdrop-blur-md z-20">
+    <div class="max-w-6xl mx-auto px-6 py-6">
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 class="text-2xl font-bold tracking-tight text-slate-900">Approvals</h1>
+          <p class="text-slate-500 text-sm mt-1">
+            Review and action pending approval requests
+          </p>
+        </div>
+
+        <!-- Stats Summary -->
+        <div class="flex items-center gap-4">
+          <div class="flex items-center gap-2 px-4 py-2 bg-amber-50 rounded-lg border border-amber-100">
+            <mat-icon fontSet="material-symbols-rounded" class="!text-amber-600 !text-xl">
+              pending_actions
+            </mat-icon>
+            <div>
+              <p class="text-xs text-amber-600 font-medium">Pending</p>
+              <p class="text-lg font-bold text-amber-700">{{ store.pendingCount() }}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tabs & Filter -->
+      <div class="mt-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <!-- Tab Buttons -->
+        <div class="flex items-center gap-1 p-1 bg-slate-100 rounded-lg">
+          <button
+            (click)="onTabChange('pending')"
+            class="px-4 py-2 text-sm font-medium rounded-md transition-colors"
+            [class.bg-white]="activeTab() === 'pending'"
+            [class.text-slate-900]="activeTab() === 'pending'"
+            [class.shadow-sm]="activeTab() === 'pending'"
+            [class.text-slate-600]="activeTab() !== 'pending'"
+          >
+            Pending
+            @if (store.pendingCount() > 0) {
+              <span class="ml-2 px-2 py-0.5 text-xs font-semibold bg-amber-100 text-amber-700 rounded-full">
+                {{ store.pendingCount() }}
+              </span>
+            }
+          </button>
+          <button
+            (click)="onTabChange('history')"
+            class="px-4 py-2 text-sm font-medium rounded-md transition-colors"
+            [class.bg-white]="activeTab() === 'history'"
+            [class.text-slate-900]="activeTab() === 'history'"
+            [class.shadow-sm]="activeTab() === 'history'"
+            [class.text-slate-600]="activeTab() !== 'history'"
+          >
+            My History
+          </button>
+        </div>
+
+        <!-- Entity Type Filter -->
+        @if (activeTab() === 'pending') {
+          <div class="flex items-center gap-2">
+            <span class="text-sm text-slate-500">Filter by:</span>
+            <div class="flex flex-wrap gap-2">
+              <button
+                (click)="clearFilter()"
+                class="px-3 py-1.5 text-xs font-medium rounded-full transition-colors border"
+                [class.bg-slate-900]="!selectedEntityType()"
+                [class.text-white]="!selectedEntityType()"
+                [class.border-slate-900]="!selectedEntityType()"
+                [class.bg-white]="selectedEntityType()"
+                [class.text-slate-600]="selectedEntityType()"
+                [class.border-slate-200]="selectedEntityType()"
+                [class.hover:border-slate-300]="selectedEntityType()"
+              >
+                All
+              </button>
+              @for (type of entityTypes; track type.code) {
+                @if (statsByEntityType()[type.code]) {
+                  <button
+                    (click)="filterByEntityType(type.code)"
+                    class="px-3 py-1.5 text-xs font-medium rounded-full transition-colors border flex items-center gap-1"
+                    [class.bg-slate-900]="selectedEntityType() === type.code"
+                    [class.text-white]="selectedEntityType() === type.code"
+                    [class.border-slate-900]="selectedEntityType() === type.code"
+                    [class.bg-white]="selectedEntityType() !== type.code"
+                    [class.text-slate-600]="selectedEntityType() !== type.code"
+                    [class.border-slate-200]="selectedEntityType() !== type.code"
+                    [class.hover:border-slate-300]="selectedEntityType() !== type.code"
+                  >
+                    {{ type.label }}
+                    <span class="text-[10px] opacity-70">({{ statsByEntityType()[type.code] }})</span>
+                  </button>
+                }
+              }
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+
+  <!-- Content -->
+  <div class="max-w-6xl mx-auto px-6 py-8">
+    <!-- Loading State -->
+    @if (store.isLoading()) {
+      <div class="flex flex-col items-center justify-center py-24 space-y-4">
+        <mat-spinner diameter="32" class="opacity-60"></mat-spinner>
+        <p class="text-sm text-slate-400">Loading approvals...</p>
+      </div>
+    }
+
+    <!-- Pending Tab -->
+    @if (!store.isLoading() && activeTab() === 'pending') {
+      @if (filteredPendingApprovals().length > 0) {
+        <div class="space-y-3">
+          @for (approval of filteredPendingApprovals(); track approval.id) {
+            <div
+              (click)="navigateToEntity(approval)"
+              class="group border border-slate-200 rounded-xl p-5 hover:border-slate-300 hover:shadow-md transition-all cursor-pointer bg-white"
+            >
+              <div class="flex items-start justify-between gap-4">
+                <!-- Left: Entity Info -->
+                <div class="flex items-start gap-4 flex-1 min-w-0">
+                  <div
+                    class="h-12 w-12 rounded-xl flex items-center justify-center shrink-0"
+                    [ngClass]="getEntityTypeColor(approval.entity_type)"
+                  >
+                    <mat-icon fontSet="material-symbols-rounded" class="!text-2xl">
+                      {{ getEntityTypeIcon(approval.entity_type) }}
+                    </mat-icon>
+                  </div>
+
+                  <div class="flex-1 min-w-0">
+                    <div class="flex items-center gap-2 flex-wrap">
+                      <span
+                        class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium"
+                        [ngClass]="getEntityTypeColor(approval.entity_type)"
+                      >
+                        {{ getEntityTypeLabel(approval.entity_type) }}
+                      </span>
+                      <span class="text-slate-300">•</span>
+                      <span class="text-sm font-semibold text-slate-900 truncate">
+                        {{ approval.entity_reference }}
+                      </span>
+                    </div>
+
+                    <p class="text-sm text-slate-600 mt-1">
+                      <span class="font-medium">{{ approval.workflow.name }}</span>
+                    </p>
+
+                    <div class="flex items-center gap-4 mt-2 text-xs text-slate-500">
+                      <span class="flex items-center gap-1">
+                        <mat-icon fontSet="material-symbols-rounded" class="!text-sm">person</mat-icon>
+                        {{ approval.initiated_by.name }}
+                      </span>
+                      <span class="flex items-center gap-1">
+                        <mat-icon fontSet="material-symbols-rounded" class="!text-sm">schedule</mat-icon>
+                        {{ getTimeAgo(approval.created_at) }}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Right: Step & Actions -->
+                <div class="flex flex-col items-end gap-3 shrink-0">
+                  <!-- Current Step Info -->
+                  <div class="text-right">
+                    <p class="text-xs text-slate-500">Current Step</p>
+                    <p class="text-sm font-medium text-slate-900">{{ approval.current_step.name }}</p>
+                    <div class="flex items-center gap-1 mt-1 justify-end">
+                      <div class="w-16 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                        <div
+                          class="h-full bg-blue-500 rounded-full transition-all"
+                          [style.width.%]="approval.progress.percentage"
+                        ></div>
+                      </div>
+                      <span class="text-[10px] text-slate-400">
+                        {{ approval.progress.current }}/{{ approval.progress.total }}
+                      </span>
+                    </div>
+                  </div>
+
+                  <!-- Action Buttons -->
+                  <div class="flex items-center gap-2">
+                    <button
+                      mat-icon-button
+                      (click)="returnItem(approval, $event)"
+                      matTooltip="Return for Amendment"
+                      class="!text-amber-600 hover:!bg-amber-50"
+                    >
+                      <mat-icon fontSet="material-symbols-rounded">undo</mat-icon>
+                    </button>
+                    <button
+                      mat-icon-button
+                      (click)="rejectItem(approval, $event)"
+                      matTooltip="Reject"
+                      class="!text-red-600 hover:!bg-red-50"
+                    >
+                      <mat-icon fontSet="material-symbols-rounded">cancel</mat-icon>
+                    </button>
+                    <button
+                      mat-flat-button
+                      (click)="approveItem(approval, $event)"
+                      class="!bg-emerald-600 !text-white hover:!bg-emerald-700 !h-9 !px-4"
+                    >
+                      <mat-icon fontSet="material-symbols-rounded" class="!text-lg mr-1">check</mat-icon>
+                      Approve
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          }
+        </div>
+      } @else {
+        <div class="border-2 border-dashed border-slate-200 rounded-xl p-12 text-center bg-slate-50/50">
+          <div
+            class="h-14 w-14 bg-white rounded-full flex items-center justify-center shadow-sm mx-auto mb-4 text-slate-400"
+          >
+            <mat-icon fontSet="material-symbols-rounded" class="!text-3xl">task_alt</mat-icon>
+          </div>
+          <h3 class="text-base font-semibold text-slate-900">All caught up!</h3>
+          <p class="text-sm text-slate-500 mt-1">
+            @if (selectedEntityType()) {
+              No pending {{ getEntityTypeLabel(selectedEntityType()).toLowerCase() }} approvals.
+            } @else {
+              You have no pending approval requests at the moment.
+            }
+          </p>
+          @if (selectedEntityType()) {
+            <button mat-stroked-button (click)="clearFilter()" class="!mt-4">
+              View All Approvals
+            </button>
+          }
+        </div>
+      }
+    }
+
+    <!-- History Tab -->
+    @if (!store.isLoading() && activeTab() === 'history') {
+      @if (store.approvalHistory().length > 0) {
+        <div class="space-y-3">
+          @for (item of store.approvalHistory(); track item.id) {
+            <div class="border border-slate-200 rounded-xl p-4 bg-white">
+              <div class="flex items-start justify-between gap-4">
+                <div class="flex items-start gap-3 flex-1">
+                  <div
+                    class="h-8 w-8 rounded-full flex items-center justify-center shrink-0"
+                    [ngClass]="getActionBadgeColor(item.action)"
+                  >
+                    <mat-icon fontSet="material-symbols-rounded" class="!text-lg">
+                      @switch (item.action) {
+                        @case ('approved') { check }
+                        @case ('rejected') { close }
+                        @case ('returned') { undo }
+                      }
+                    </mat-icon>
+                  </div>
+
+                  <div class="flex-1 min-w-0">
+                    <div class="flex items-center gap-2 flex-wrap">
+                      <span
+                        class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium capitalize"
+                        [ngClass]="getActionBadgeColor(item.action)"
+                      >
+                        {{ item.action_label }}
+                      </span>
+                      <span class="text-sm text-slate-600">
+                        {{ item.request.workflow_name }} - {{ item.step.name }}
+                      </span>
+                    </div>
+
+                    @if (item.comments) {
+                      <p class="text-sm text-slate-600 mt-2 bg-slate-50 rounded-lg p-3 italic">
+                        "{{ item.comments }}"
+                      </p>
+                    }
+
+                    <p class="text-xs text-slate-400 mt-2">
+                      {{ formatDate(item.actioned_at) }}
+                    </p>
+                  </div>
+                </div>
+
+                <span
+                  class="text-xs px-2 py-1 rounded-full shrink-0"
+                  [ngClass]="getEntityTypeColor(item.request.entity_type)"
+                >
+                  {{ getEntityTypeLabel(item.request.entity_type) }}
+                </span>
+              </div>
+            </div>
+          }
+        </div>
+      } @else {
+        <div class="border-2 border-dashed border-slate-200 rounded-xl p-12 text-center bg-slate-50/50">
+          <div
+            class="h-14 w-14 bg-white rounded-full flex items-center justify-center shadow-sm mx-auto mb-4 text-slate-400"
+          >
+            <mat-icon fontSet="material-symbols-rounded" class="!text-3xl">history</mat-icon>
+          </div>
+          <h3 class="text-base font-semibold text-slate-900">No approval history</h3>
+          <p class="text-sm text-slate-500 mt-1">
+            Your approval actions will appear here.
+          </p>
+        </div>
+      }
+    }
+  </div>
+</div>

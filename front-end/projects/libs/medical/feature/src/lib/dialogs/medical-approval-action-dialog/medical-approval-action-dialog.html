@@ -1,0 +1,221 @@
+<!-- libs/medical/feature/src/lib/dialogs/medical-approval-action-dialog/medical-approval-action-dialog.html -->
+
+<div class="flex flex-col max-h-[90vh] min-w-[500px]">
+  <!-- Header -->
+  <div class="flex items-center justify-between border-b border-slate-200 px-6 py-4">
+    <div class="flex items-center gap-3">
+      @switch (data.action) {
+        @case ('approve') {
+          <div class="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-100">
+            <mat-icon fontSet="material-symbols-rounded" class="!text-[24px] text-emerald-600">check_circle</mat-icon>
+          </div>
+        }
+        @case ('reject') {
+          <div class="flex h-10 w-10 items-center justify-center rounded-full bg-red-100">
+            <mat-icon fontSet="material-symbols-rounded" class="!text-[24px] text-red-600">cancel</mat-icon>
+          </div>
+        }
+        @case ('return') {
+          <div class="flex h-10 w-10 items-center justify-center rounded-full bg-amber-100">
+            <mat-icon fontSet="material-symbols-rounded" class="!text-[24px] text-amber-600">undo</mat-icon>
+          </div>
+        }
+      }
+      <div>
+        <h2 class="text-lg font-semibold text-slate-900">{{ actionConfig.title }}</h2>
+        @if (data.applicationNumber) {
+          <p class="text-sm text-slate-500">{{ data.applicationNumber }}</p>
+        }
+      </div>
+    </div>
+    <button mat-icon-button (click)="cancel()" class="!text-slate-400">
+      <mat-icon fontSet="material-symbols-rounded">close</mat-icon>
+    </button>
+  </div>
+
+  <!-- Content -->
+  <form [formGroup]="form" (ngSubmit)="submit()" class="flex-1 overflow-y-auto px-6 py-6">
+    <div class="space-y-4">
+      <!-- Current Step Info -->
+      @if (approvalStatus(); as status) {
+        @if (status.has_request && status.current_step) {
+          <div class="rounded-lg border border-slate-200 bg-slate-50 p-4">
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-sm font-medium text-slate-700">Current Approval Step</span>
+              <span class="text-xs text-slate-500">
+                Step {{ status.current_step_number }} of {{ status.total_steps }}
+              </span>
+            </div>
+            <div class="flex items-center gap-2">
+              <mat-icon fontSet="material-symbols-rounded" class="!text-[18px] text-primary">group</mat-icon>
+              <span class="font-medium text-slate-900">{{ status.current_step.name }}</span>
+              <span class="text-slate-500">-</span>
+              <span class="text-sm text-slate-600">{{ status.current_step.group }}</span>
+            </div>
+            <!-- Progress Bar -->
+            <div class="mt-3">
+              <div class="w-full bg-slate-200 rounded-full h-2">
+                <div
+                  class="bg-primary rounded-full h-2 transition-all duration-300"
+                  [style.width.%]="status.progress_percentage"
+                ></div>
+              </div>
+              <p class="text-xs text-slate-500 mt-1 text-right">{{ status.progress_percentage }}% complete</p>
+            </div>
+          </div>
+        }
+      }
+
+      <!-- Action Info Alert -->
+      @switch (data.action) {
+        @case ('approve') {
+          <div class="rounded-lg border border-emerald-200 bg-emerald-50 p-4">
+            <div class="flex gap-3">
+              <mat-icon fontSet="material-symbols-rounded" class="!text-[20px] text-emerald-600">info</mat-icon>
+              <div class="flex-1">
+                <h3 class="text-sm font-medium text-emerald-900">Approval Confirmation</h3>
+                <p class="mt-1 text-sm text-emerald-700">
+                  {{ actionConfig.description }}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Optional Comments for Approve -->
+          <mat-form-field appearance="outline" class="w-full">
+            <mat-label>Comments (Optional)</mat-label>
+            <textarea
+              matInput
+              formControlName="comments"
+              rows="4"
+              placeholder="Add any comments for this approval..."
+            ></textarea>
+            <mat-hint>Optional comments will be recorded in the approval history</mat-hint>
+          </mat-form-field>
+        }
+        @case ('reject') {
+          <div class="rounded-lg border border-red-200 bg-red-50 p-4">
+            <div class="flex gap-3">
+              <mat-icon fontSet="material-symbols-rounded" class="!text-[20px] text-red-600">warning</mat-icon>
+              <div class="flex-1">
+                <h3 class="text-sm font-medium text-red-900">Rejection Warning</h3>
+                <p class="mt-1 text-sm text-red-700">
+                  {{ actionConfig.description }}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Required Reason for Reject -->
+          <mat-form-field appearance="outline" class="w-full">
+            <mat-label>Rejection Reason</mat-label>
+            <textarea
+              matInput
+              formControlName="reason"
+              rows="6"
+              placeholder="Provide a detailed reason for rejecting this application..."
+            ></textarea>
+            <mat-hint>Minimum 10 characters required</mat-hint>
+            @if (form.get('reason')?.hasError('required') && form.get('reason')?.touched) {
+              <mat-error>Rejection reason is required</mat-error>
+            } @else if (form.get('reason')?.hasError('minlength') && form.get('reason')?.touched) {
+              <mat-error>Reason must be at least 10 characters (currently {{ form.get('reason')?.value?.length || 0 }})</mat-error>
+            } @else if (form.get('reason')?.hasError('maxlength')) {
+              <mat-error>Reason cannot exceed 1000 characters</mat-error>
+            }
+          </mat-form-field>
+        }
+        @case ('return') {
+          <div class="rounded-lg border border-amber-200 bg-amber-50 p-4">
+            <div class="flex gap-3">
+              <mat-icon fontSet="material-symbols-rounded" class="!text-[20px] text-amber-600">info</mat-icon>
+              <div class="flex-1">
+                <h3 class="text-sm font-medium text-amber-900">Return for Amendment</h3>
+                <p class="mt-1 text-sm text-amber-700">
+                  {{ actionConfig.description }}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Required Reason for Return -->
+          <mat-form-field appearance="outline" class="w-full">
+            <mat-label>Amendment Required</mat-label>
+            <textarea
+              matInput
+              formControlName="reason"
+              rows="6"
+              placeholder="Describe what amendments are needed..."
+            ></textarea>
+            <mat-hint>Minimum 10 characters required</mat-hint>
+            @if (form.get('reason')?.hasError('required') && form.get('reason')?.touched) {
+              <mat-error>Amendment reason is required</mat-error>
+            } @else if (form.get('reason')?.hasError('minlength') && form.get('reason')?.touched) {
+              <mat-error>Reason must be at least 10 characters (currently {{ form.get('reason')?.value?.length || 0 }})</mat-error>
+            } @else if (form.get('reason')?.hasError('maxlength')) {
+              <mat-error>Reason cannot exceed 1000 characters</mat-error>
+            }
+          </mat-form-field>
+        }
+      }
+    </div>
+  </form>
+
+  <!-- Footer -->
+  <div class="flex items-center justify-end gap-3 border-t border-slate-200 px-6 py-4">
+    <button mat-stroked-button type="button" (click)="cancel()" [disabled]="isSubmitting()">
+      Cancel
+    </button>
+    @switch (data.action) {
+      @case ('approve') {
+        <button
+          mat-flat-button
+          color="primary"
+          type="submit"
+          (click)="submit()"
+          [disabled]="isSubmitting()"
+          class="!bg-emerald-600 hover:!bg-emerald-700"
+        >
+          @if (isSubmitting()) {
+            <mat-spinner diameter="20" class="inline-block mr-2"></mat-spinner>
+          } @else {
+            <mat-icon fontSet="material-symbols-rounded">check_circle</mat-icon>
+          }
+          {{ actionConfig.buttonLabel }}
+        </button>
+      }
+      @case ('reject') {
+        <button
+          mat-flat-button
+          color="warn"
+          type="submit"
+          (click)="submit()"
+          [disabled]="form.invalid || isSubmitting()"
+        >
+          @if (isSubmitting()) {
+            <mat-spinner diameter="20" class="inline-block mr-2"></mat-spinner>
+          } @else {
+            <mat-icon fontSet="material-symbols-rounded">cancel</mat-icon>
+          }
+          {{ actionConfig.buttonLabel }}
+        </button>
+      }
+      @case ('return') {
+        <button
+          mat-flat-button
+          type="submit"
+          (click)="submit()"
+          [disabled]="form.invalid || isSubmitting()"
+          class="!bg-amber-600 hover:!bg-amber-700 !text-white"
+        >
+          @if (isSubmitting()) {
+            <mat-spinner diameter="20" class="inline-block mr-2"></mat-spinner>
+          } @else {
+            <mat-icon fontSet="material-symbols-rounded">undo</mat-icon>
+          }
+          {{ actionConfig.buttonLabel }}
+        </button>
+      }
+    }
+  </div>
+</div>

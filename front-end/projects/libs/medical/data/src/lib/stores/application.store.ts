@@ -643,6 +643,83 @@ export class ApplicationStore {
   }
 
   // =========================================================================
+  // APPROVAL WORKFLOW OPERATIONS
+  // =========================================================================
+
+  /**
+   * Get approval status for an application
+   */
+  getApprovalStatus(id: string) {
+    return this.http.get<ApiResponse<any>>(`${this.apiUrl}/${id}/approval-status`);
+  }
+
+  /**
+   * Check if current user can approve the application
+   */
+  canApprove(id: string) {
+    return this.http.get<ApiResponse<{ can_approve: boolean; approval_status: any }>>(
+      `${this.apiUrl}/${id}/can-approve`
+    );
+  }
+
+  /**
+   * Approve application at current approval step
+   */
+  approvalApprove(id: string, comments?: string) {
+    this.state.update((s) => ({ ...s, saving: true }));
+
+    return this.http
+      .post<ApiResponse<{ application: Application; approval_status: any; is_final: boolean }>>(
+        `${this.apiUrl}/${id}/approval/approve`,
+        { comments }
+      )
+      .pipe(
+        tap({
+          next: (res) => this.updateApplicationInState(id, res.data.application),
+          error: () => this.state.update((s) => ({ ...s, saving: false })),
+        })
+      );
+  }
+
+  /**
+   * Reject application at current approval step
+   */
+  approvalReject(id: string, reason: string) {
+    this.state.update((s) => ({ ...s, saving: true }));
+
+    return this.http
+      .post<ApiResponse<{ application: Application; approval_status: any }>>(
+        `${this.apiUrl}/${id}/approval/reject`,
+        { reason }
+      )
+      .pipe(
+        tap({
+          next: (res) => this.updateApplicationInState(id, res.data.application),
+          error: () => this.state.update((s) => ({ ...s, saving: false })),
+        })
+      );
+  }
+
+  /**
+   * Return application for amendment at current approval step
+   */
+  approvalReturn(id: string, reason: string) {
+    this.state.update((s) => ({ ...s, saving: true }));
+
+    return this.http
+      .post<ApiResponse<{ application: Application; approval_status: any }>>(
+        `${this.apiUrl}/${id}/approval/return`,
+        { reason }
+      )
+      .pipe(
+        tap({
+          next: (res) => this.updateApplicationInState(id, res.data.application),
+          error: () => this.state.update((s) => ({ ...s, saving: false })),
+        })
+      );
+  }
+
+  // =========================================================================
   // DOCUMENT OPERATIONS
   // =========================================================================
 

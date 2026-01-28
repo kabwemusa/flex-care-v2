@@ -577,6 +577,8 @@ final class MedicalConstants
     public const DOC_TYPE_MEDICAL_REPORT = 'medical_report';
     public const DOC_TYPE_DECLARATION = 'declaration_form';
     public const DOC_TYPE_PHOTO = 'photo';
+    public const DOC_TYPE_SUPPORTING = 'supporting_document';
+    public const DOC_TYPE_CENSUS = 'census_file';
 
     public const POLICY_DOCUMENT_TYPES = [
         self::DOC_TYPE_CERTIFICATE => 'Policy Certificate',
@@ -586,6 +588,9 @@ final class MedicalConstants
         self::DOC_TYPE_INVOICE => 'Invoice',
         self::DOC_TYPE_RECEIPT => 'Receipt',
         self::DOC_TYPE_CLAIM_FORM => 'Claim Form',
+        self::DOC_TYPE_SUPPORTING => 'Supporting Document',
+        self::DOC_TYPE_CENSUS => 'Census File',
+        self::DOC_TYPE_DECLARATION => 'Declaration Form',
     ];
 
     public const MEMBER_DOCUMENT_TYPES = [

@@ -5,6 +5,8 @@ namespace Modules\Medical\Http\Controllers;
 use Illuminate\Routing\Controller;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Modules\Medical\Models\Policy;
 use Modules\Medical\Models\PolicyDocument;
@@ -583,6 +585,39 @@ class PolicyController extends Controller
         } catch (Throwable $e) {
             $code = $e->getCode() === 422 ? 422 : 500;
             return $this->error('File upload failed: ' . $e->getMessage(), $code);
+        }
+    }
+
+    /**
+     * Download/view policy document.
+     * GET /v1/medical/policies/{id}/documents/{documentId}/download
+     */
+    public function downloadDocument(string $id, string $documentId): StreamedResponse|JsonResponse
+    {
+        try {
+            $document = PolicyDocument::where('policy_id', $id)
+                ->where('id', $documentId)
+                ->active()
+                ->firstOrFail();
+
+            if (!Storage::disk('private')->exists($document->file_path)) {
+                return $this->error('File not found', 404);
+            }
+
+            $disposition = request()->query('inline') === 'true' ? 'inline' : 'attachment';
+
+            return Storage::disk('private')->download(
+                $document->file_path,
+                $document->file_name,
+                [
+                    'Content-Type' => $document->mime_type,
+                    'Content-Disposition' => "{$disposition}; filename=\"{$document->file_name}\"",
+                ]
+            );
+        } catch (ModelNotFoundException $e) {
+            return $this->error('Document not found', 404);
+        } catch (Throwable $e) {
+            return $this->error('Failed to download document: ' . $e->getMessage(), 500);
         }
     }
 

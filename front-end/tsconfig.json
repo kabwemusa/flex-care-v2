@@ -5,9 +5,11 @@
   "compilerOptions": {
     "paths": {
       "core-auth": ["./projects/libs/core/auth/src/public-api.ts"],
+      "core-approvals": ["./projects/libs/core/approvals/src/public-api.ts"],
       "core-config": ["./projects/libs/core/config/src/public-api.ts"],
       "core-guards": ["./projects/libs/core/guards/src/public-api.ts"],
       "core-http": ["./projects/libs/core/http/src/public-api.ts"],
+      "core-reports": ["./projects/libs/core/reports/src/public-api.ts"],
       "medical-data": ["./projects/libs/medical/data/src/public-api.ts"],
       "medical-feature": ["./projects/libs/medical/feature/src/public-api.ts"],
       "medical-ui": ["./projects/libs/medical/ui/src/public-api.ts"],
@@ -46,6 +48,12 @@
       "path": "./projects/libs/core/auth/tsconfig.spec.json"
     },
     {
+      "path": "./projects/libs/core/approvals/tsconfig.lib.json"
+    },
+    {
+      "path": "./projects/libs/core/approvals/tsconfig.spec.json"
+    },
+    {
       "path": "./projects/libs/core/http/tsconfig.lib.json"
     },
     {
@@ -62,6 +70,12 @@
     },
     {
       "path": "./projects/libs/core/config/tsconfig.spec.json"
+    },
+    {
+      "path": "./projects/libs/core/reports/tsconfig.lib.json"
+    },
+    {
+      "path": "./projects/libs/core/reports/tsconfig.spec.json"
     },
     {
       "path": "./projects/libs/shared/tsconfig.lib.json"
