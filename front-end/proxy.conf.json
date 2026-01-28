@@ -1,6 +1,6 @@
 {
   "/api": {
-    "target": "http://flex-care-v2-production-022b.up.railway.app",
+    "target": "https://flex-care-v2-production-022b.up.railway.app",
     "secure": false,
     "changeOrigin": true,
     "logLevel": "debug"

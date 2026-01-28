@@ -13,7 +13,7 @@ export interface AppConfig {
 export class ConfigService {
   private config: AppConfig = {
     // apiUrl: 'http://localhost:8000',
-    apiUrl: 'http://flex-care-v2-production-022b.up.railway.app',
+    apiUrl: 'https://flex-care-v2-production-022b.up.railway.app',
     production: false,
     appName: 'FlexCare',
     version: '1.0.0',
