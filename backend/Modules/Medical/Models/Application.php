@@ -136,20 +136,19 @@ class Application extends BaseModel
     protected function generateApplicationNumber(): string
     {
         $prefix = MedicalConstants::PREFIX_APPLICATION;
-        $year = date('Y');
-        
+        $year   = date('Y');
+    
         $lastNumber = static::where('application_number', 'like', "{$prefix}{$year}%")
-            ->orderByRaw('CAST(SUBSTRING(application_number, -6) AS UNSIGNED) DESC')
+            ->orderByRaw('CAST(RIGHT(application_number, 6) AS INTEGER) DESC')
             ->value('application_number');
-
-        if ($lastNumber) {
-            $sequence = (int) substr($lastNumber, -6) + 1;
-        } else {
-            $sequence = 1;
-        }
-
+    
+        $sequence = $lastNumber
+            ? ((int) substr($lastNumber, -6) + 1)
+            : 1;
+    
         return sprintf('%s%s-%06d', $prefix, $year, $sequence);
     }
+    
 
     // =========================================================================
     // RELATIONSHIPS
