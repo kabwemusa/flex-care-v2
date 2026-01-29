@@ -22,6 +22,7 @@ use App\Models\ApprovalRequest;
 use App\Models\User;
 use Carbon\Carbon;
 use Exception;
+use Illuminate\Support\Facades\Log;
 
 class ApplicationService
 {
@@ -78,28 +79,105 @@ class ApplicationService
         });
     }
 
+    // public function addMembersToApplication(Application $application, array $members): void
+    // {
+    //     $principalMap = [];
+
+    //     foreach ($members as $memberData) {
+    //         $memberType = $memberData['member_type'] ?? MedicalConstants::MEMBER_TYPE_PRINCIPAL;
+            
+    //         // Resolve Principal ID
+    //         $principalId = null;
+    //         if ($memberType !== MedicalConstants::MEMBER_TYPE_PRINCIPAL) {
+    //             if (!empty($memberData['principal_member_id'])) {
+    //                 $principalId = $memberData['principal_member_id']; // Direct ID passed (unlikely in new creation)
+    //             } elseif (!empty($principalMap)) {
+    //                 $principalId = reset($principalMap); // Link to the first principal created in this batch
+    //             }
+    //         }
+
+    //         // Calculate Age
+    //         $dob = $memberData['date_of_birth'] ?? null;
+    //         $ageAtInception = null;
+    //         if ($dob) {
+    //             $inceptionDate = $application->proposed_start_date ?? now();
+    //             $ageAtInception = Carbon::parse($dob)->diffInYears($inceptionDate);
+    //         }
+
+    //         $member = ApplicationMember::create([
+    //             'application_id' => $application->id,
+    //             'member_type' => $memberType,
+    //             'principal_member_id' => $principalId,
+    //             'relationship' => $memberData['relationship'] ?? null,
+    //             'title' => $memberData['title'] ?? null,
+    //             'first_name' => $memberData['first_name'],
+    //             'middle_name' => $memberData['middle_name'] ?? null,
+    //             'last_name' => $memberData['last_name'],
+    //             'date_of_birth' => $dob,
+    //             'gender' => $memberData['gender'] ?? null,
+    //             'marital_status' => $memberData['marital_status'] ?? null,
+    //             'national_id' => $memberData['national_id'] ?? null,
+    //             'passport_number' => $memberData['passport_number'] ?? null,
+    //             'email' => $memberData['email'] ?? null,
+    //             'phone' => $memberData['phone'] ?? null,
+    //             'mobile' => $memberData['mobile'] ?? null,
+    //             'address' => $memberData['address'] ?? null,
+    //             'city' => $memberData['city'] ?? null,
+    //             'employee_number' => $memberData['employee_number'] ?? null,
+    //             'job_title' => $memberData['job_title'] ?? null,
+    //             'department' => $memberData['department'] ?? null,
+    //             'employment_date' => $memberData['employment_date'] ?? null,
+    //             'salary' => $memberData['salary'] ?? null,
+    //             'salary_band' => $memberData['salary_band'] ?? null,
+    //             'age_at_inception' => $ageAtInception,
+    //             'has_pre_existing_conditions' => $memberData['has_pre_existing_conditions'] ?? false,
+    //             'declared_conditions' => $memberData['declared_conditions'] ?? null,
+    //             'medical_history_notes' => $memberData['medical_history_notes'] ?? null,
+    //         ]);
+
+    //         if ($memberType === MedicalConstants::MEMBER_TYPE_PRINCIPAL) {
+    //             $principalMap[$member->id] = $member->id;
+    //         }
+
+    //         // Calculate individual premium immediately
+    //         $this->premiumService->calculateApplicationMemberPremium($member, $application->rateCard);
+    //     }
+    // }
+
+
     public function addMembersToApplication(Application $application, array $members): void
     {
-        $principalMap = [];
+        // Use a variable to track the *current* principal in the loop context
+        $currentPrincipalId = null;
 
         foreach ($members as $memberData) {
             $memberType = $memberData['member_type'] ?? MedicalConstants::MEMBER_TYPE_PRINCIPAL;
             
-            // Resolve Principal ID
+            // 1. Resolve Principal ID
             $principalId = null;
-            if ($memberType !== MedicalConstants::MEMBER_TYPE_PRINCIPAL) {
+            
+            if ($memberType === MedicalConstants::MEMBER_TYPE_PRINCIPAL) {
+                // This member is a principal; they have no parent
+                $principalId = null;
+            } else {
+                // This is a dependent.
+                // Priority 1: Did the frontend pass a specific principal ID?
                 if (!empty($memberData['principal_member_id'])) {
-                    $principalId = $memberData['principal_member_id']; // Direct ID passed (unlikely in new creation)
-                } elseif (!empty($principalMap)) {
-                    $principalId = reset($principalMap); // Link to the first principal created in this batch
+                    $principalId = $memberData['principal_member_id'];
+                } 
+                // Priority 2: Use the most recently created principal in this loop
+                elseif ($currentPrincipalId) {
+                    $principalId = $currentPrincipalId;
                 }
             }
 
-            // Calculate Age
+            // 2. Calculate Age (Fixing the Float vs Int PostgreSQL error)
             $dob = $memberData['date_of_birth'] ?? null;
-            $ageAtInception = null;
+            $ageAtInception = 0; // Default to 0 if no DOB
+            
             if ($dob) {
-                $inceptionDate = $application->proposed_start_date ?? now();
+                $inceptionDate = $application->proposed_start_date ? Carbon::parse($application->proposed_start_date) : now();
+                // diffInYears returns an INT, solving your Postgres error
                 $ageAtInception = Carbon::parse($dob)->diffInYears($inceptionDate);
             }
 
@@ -128,21 +206,24 @@ class ApplicationService
                 'employment_date' => $memberData['employment_date'] ?? null,
                 'salary' => $memberData['salary'] ?? null,
                 'salary_band' => $memberData['salary_band'] ?? null,
-                'age_at_inception' => $ageAtInception,
+                'age_at_inception' => (int) $ageAtInception, // Explicit cast for safety
                 'has_pre_existing_conditions' => $memberData['has_pre_existing_conditions'] ?? false,
                 'declared_conditions' => $memberData['declared_conditions'] ?? null,
                 'medical_history_notes' => $memberData['medical_history_notes'] ?? null,
             ]);
 
+            // 3. Update Current Principal Tracker
             if ($memberType === MedicalConstants::MEMBER_TYPE_PRINCIPAL) {
-                $principalMap[$member->id] = $member->id;
+                $currentPrincipalId = $member->id;
             }
 
-            // Calculate individual premium immediately
-            $this->premiumService->calculateApplicationMemberPremium($member, $application->rateCard);
+            // 4. Calculate Premium
+            // Ensure rateCard is loaded to avoid N+1 or null errors
+            if ($application->relationLoaded('rateCard') || $application->rateCard) {
+                $this->premiumService->calculateApplicationMemberPremium($member, $application->rateCard);
+            }
         }
     }
-
     public function addAddonsToApplication(Application $application, array $addons): void
     {
         foreach ($addons as $addonData) {
@@ -263,9 +344,9 @@ class ApplicationService
             try {
                 // Initiate the approval workflow
                 $application->submitForApproval($submittedBy);
-                \Log::info('Approval workflow initiated for application: ' . $application->id);
-            } catch (\Exception $e) {
-                \Log::error('Failed to initiate approval workflow: ' . $e->getMessage(), [
+                Log::info('Approval workflow initiated for application: ' . $application->id);
+            } catch (Exception $e) {
+                Log::error('Failed to initiate approval workflow: ' . $e->getMessage(), [
                     'application_id' => $application->id,
                     'entity_type' => $application->getApprovalEntityType(),
                     'error' => $e->getMessage()
@@ -274,7 +355,7 @@ class ApplicationService
                 throw new Exception('Failed to initiate approval workflow: ' . $e->getMessage());
             }
         } else {
-            \Log::info('No approval workflow found for application entity type: ' . $application->getApprovalEntityType());
+            Log::info('No approval workflow found for application entity type: ' . $application->getApprovalEntityType());
         }
 
         return $application->fresh();
