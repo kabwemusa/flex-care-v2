@@ -93,7 +93,7 @@ class ApplicationMember extends BaseModel
             // Calculate age at inception
             if ($model->date_of_birth && $model->application) {
                 $inceptionDate = $model->application->proposed_start_date ?? now();
-                $model->age_at_inception = $model->date_of_birth->diffInYears($inceptionDate);
+                $model->age_at_inception = (int) $model->date_of_birth->diffInYears($inceptionDate);
             }
         });
 

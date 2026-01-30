@@ -278,7 +278,7 @@ class ApplicationService
             'middle_name' => $memberData['middle_name'] ?? null,
             'last_name' => $memberData['last_name'],
             'date_of_birth' => $dob,
-            'age_at_inception' => $ageAtInception,
+            'age_at_inception' => $ageAtInception !== null ? (int) $ageAtInception : null,
             'gender' => $memberData['gender'],
             'national_id' => $memberData['national_id'] ?? null,
             'email' => $memberData['email'] ?? null,
@@ -973,8 +973,8 @@ class ApplicationService
      */
     protected function copyMemberToApplication(Application $application, Member $member, ?string $principalAppId): ApplicationMember
     {
-        $ageAtInception = $member->date_of_birth 
-            ? $member->date_of_birth->diffInYears($application->proposed_start_date)
+        $ageAtInception = $member->date_of_birth
+            ? (int) $member->date_of_birth->diffInYears($application->proposed_start_date)
             : null;
 
         // 1. Extract existing loadings to JSON format
