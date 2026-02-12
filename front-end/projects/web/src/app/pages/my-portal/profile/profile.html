@@ -1,0 +1,521 @@
+<div class="space-y-6 fc-fade-in">
+  <!-- Header with Avatar -->
+  <div
+    class="relative bg-linear-to-br from-teal-600 via-teal-700 to-cyan-700 rounded-2xl p-6 lg:p-8 text-white overflow-hidden"
+  >
+    <!-- Decorative shapes -->
+    <div class="absolute inset-0 overflow-hidden">
+      <div class="absolute -top-24 -right-24 w-64 h-64 bg-white/5 rounded-full blur-2xl"></div>
+      <div class="absolute -bottom-32 -left-16 w-80 h-80 bg-white/5 rounded-full blur-3xl"></div>
+    </div>
+
+    <div class="relative flex flex-col sm:flex-row sm:items-center gap-5">
+      @if (profile(); as p) {
+      <!-- Large Avatar -->
+      <div class="relative">
+        <div
+          class="absolute -inset-1 bg-linear-to-r from-white/30 to-white/10 rounded-full blur-sm"
+        ></div>
+        <div
+          class="relative w-20 h-20 rounded-full bg-white/10 backdrop-blur flex items-center justify-center ring-4 ring-white/20"
+        >
+          <span class="text-3xl font-semibold text-white/90">
+            {{ p.first_name?.charAt(0) }}{{ p.last_name?.charAt(0) }}
+          </span>
+        </div>
+      </div>
+      <div class="flex-1">
+        <h1 class="text-2xl font-semibold tracking-tight">{{ p.first_name }} {{ p.last_name }}</h1>
+        <p class="text-teal-200 text-sm mt-1 font-mono">{{ p.member_number }}</p>
+        <div class="flex items-center gap-2 mt-2">
+          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+          <span class="text-teal-100 text-sm">Active Member</span>
+        </div>
+      </div>
+      }
+      @if (!editMode() && profile()) {
+      <button
+        (click)="editMode.set(true)"
+        class="inline-flex items-center gap-2 bg-white/10 backdrop-blur text-white font-medium text-sm px-5 py-2.5 rounded-xl hover:bg-white/20 transition-colors"
+      >
+        <span class="material-symbols-rounded" style="font-size: 18px">edit</span>
+        Edit Profile
+      </button>
+      }
+    </div>
+  </div>
+
+  <!-- Messages -->
+  @if (success()) {
+  <div
+    class="bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-3 flex items-center gap-3 fc-fade-in"
+  >
+    <span class="material-symbols-rounded text-emerald-600" style="font-size: 20px"
+      >check_circle</span
+    >
+    <p class="text-sm text-emerald-700 font-medium">{{ success() }}</p>
+  </div>
+  } @if (error() && !loading()) {
+  <div
+    class="bg-red-50 border border-red-200 rounded-xl px-4 py-3 flex items-center gap-3 fc-fade-in"
+  >
+    <span class="material-symbols-rounded text-red-600" style="font-size: 20px">error</span>
+    <p class="text-sm text-red-700 font-medium">{{ error() }}</p>
+  </div>
+  }
+
+  <!-- Loading State -->
+  @if (loading()) {
+  <div class="flex items-center justify-center py-20">
+    <div class="flex flex-col items-center gap-4">
+      <div
+        class="w-12 h-12 border-3 border-teal-600 border-t-transparent rounded-full animate-spin"
+      ></div>
+      <p class="text-sm text-gray-500">Loading your profile...</p>
+    </div>
+  </div>
+  }
+
+  <!-- Profile Content -->
+  @if (profile(); as p) {
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <!-- Main Info -->
+    <div class="lg:col-span-2 space-y-6">
+      <!-- Personal Information -->
+      <div class="bg-white rounded-2xl border border-gray-100 overflow-hidden fc-stagger">
+        <div class="px-6 py-5 border-b border-gray-100">
+          <div class="flex items-center gap-3">
+            <div
+              class="w-10 h-10 rounded-xl bg-linear-to-br from-teal-100 to-cyan-100 flex items-center justify-center"
+            >
+              <span class="material-symbols-rounded text-teal-600" style="font-size: 22px"
+                >person</span
+              >
+            </div>
+            <div>
+              <h2 class="font-semibold text-gray-900">Personal Information</h2>
+              <p class="text-sm text-gray-500">Your basic account details</p>
+            </div>
+          </div>
+        </div>
+        <div class="p-6 space-y-5">
+          <div class="grid grid-cols-2 gap-5">
+            <div>
+              <label class="flex items-center gap-1.5 text-xs font-medium text-gray-500 mb-2">
+                <span class="material-symbols-rounded" style="font-size: 14px">badge</span>
+                First Name
+              </label>
+              <p class="text-sm font-medium text-gray-900 bg-gray-50 px-4 py-2.5 rounded-xl">
+                {{ p.first_name }}
+              </p>
+            </div>
+            <div>
+              <label class="flex items-center gap-1.5 text-xs font-medium text-gray-500 mb-2">
+                <span class="material-symbols-rounded" style="font-size: 14px">badge</span>
+                Last Name
+              </label>
+              <p class="text-sm font-medium text-gray-900 bg-gray-50 px-4 py-2.5 rounded-xl">
+                {{ p.last_name }}
+              </p>
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-5">
+            <div>
+              <label class="flex items-center gap-1.5 text-xs font-medium text-gray-500 mb-2">
+                <span class="material-symbols-rounded" style="font-size: 14px">cake</span>
+                Date of Birth
+              </label>
+              <p class="text-sm font-medium text-gray-900 bg-gray-50 px-4 py-2.5 rounded-xl">
+                {{ p.date_of_birth | date : 'MMM d, y' }}
+              </p>
+            </div>
+            <div>
+              <label class="flex items-center gap-1.5 text-xs font-medium text-gray-500 mb-2">
+                <span class="material-symbols-rounded" style="font-size: 14px">wc</span>
+                Gender
+              </label>
+              <p class="text-sm font-medium text-gray-900 bg-gray-50 px-4 py-2.5 rounded-xl">
+                {{ p.gender }}
+              </p>
+            </div>
+          </div>
+          <div>
+            <label class="flex items-center gap-1.5 text-xs font-medium text-gray-500 mb-2">
+              <span class="material-symbols-rounded" style="font-size: 14px">tag</span>
+              Member Number
+            </label>
+            <p
+              class="text-sm font-mono font-medium text-gray-900 bg-gray-50 px-4 py-2.5 rounded-xl"
+            >
+              {{ p.member_number }}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Contact Information -->
+      <div class="bg-white rounded-2xl border border-gray-100 overflow-hidden fc-stagger">
+        <div class="px-6 py-5 border-b border-gray-100">
+          <div class="flex items-center gap-3">
+            <div
+              class="w-10 h-10 rounded-xl bg-linear-to-br from-violet-100 to-purple-100 flex items-center justify-center"
+            >
+              <span class="material-symbols-rounded text-violet-600" style="font-size: 22px"
+                >contact_mail</span
+              >
+            </div>
+            <div>
+              <h2 class="font-semibold text-gray-900">Contact Information</h2>
+              <p class="text-sm text-gray-500">How we can reach you</p>
+            </div>
+          </div>
+        </div>
+        <div class="p-6 space-y-5">
+          <div>
+            <label class="flex items-center gap-1.5 text-xs font-medium text-gray-500 mb-2">
+              <span class="material-symbols-rounded" style="font-size: 14px">mail</span>
+              Email Address
+            </label>
+            <p class="text-sm font-medium text-gray-900 bg-gray-50 px-4 py-2.5 rounded-xl">
+              {{ p.email }}
+            </p>
+          </div>
+          <div>
+            <label class="flex items-center gap-1.5 text-xs font-medium text-gray-500 mb-2">
+              <span class="material-symbols-rounded" style="font-size: 14px">call</span>
+              Phone Number
+            </label>
+            @if (editMode()) {
+            <input
+              type="tel"
+              [value]="p.phone"
+              (input)="updateField('phone', $any($event.target).value)"
+              class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all"
+              placeholder="Enter phone number"
+            />
+            } @else {
+            <p class="text-sm font-medium text-gray-900 bg-gray-50 px-4 py-2.5 rounded-xl">
+              {{ p.phone || '—' }}
+            </p>
+            }
+          </div>
+          <div>
+            <label class="flex items-center gap-1.5 text-xs font-medium text-gray-500 mb-2">
+              <span class="material-symbols-rounded" style="font-size: 14px">location_on</span>
+              Address
+            </label>
+            @if (editMode()) {
+            <textarea
+              [value]="p.address"
+              (input)="updateField('address', $any($event.target).value)"
+              rows="2"
+              class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent resize-none transition-all"
+              placeholder="Enter your address"
+            ></textarea>
+            } @else {
+            <p class="text-sm font-medium text-gray-900 bg-gray-50 px-4 py-2.5 rounded-xl">
+              {{ p.address || '—' }}
+            </p>
+            }
+          </div>
+        </div>
+      </div>
+
+      <!-- Emergency Contact -->
+      <div class="bg-white rounded-2xl border border-gray-100 overflow-hidden fc-stagger">
+        <div class="px-6 py-5 border-b border-gray-100">
+          <div class="flex items-center gap-3">
+            <div
+              class="w-10 h-10 rounded-xl bg-linear-to-br from-red-100 to-rose-100 flex items-center justify-center"
+            >
+              <span class="material-symbols-rounded text-red-600" style="font-size: 22px"
+                >emergency</span
+              >
+            </div>
+            <div>
+              <h2 class="font-semibold text-gray-900">Emergency Contact</h2>
+              <p class="text-sm text-gray-500">Who to contact in case of emergency</p>
+            </div>
+          </div>
+        </div>
+        <div class="p-6 space-y-5">
+          <div>
+            <label class="flex items-center gap-1.5 text-xs font-medium text-gray-500 mb-2">
+              <span class="material-symbols-rounded" style="font-size: 14px">person</span>
+              Contact Name
+            </label>
+            @if (editMode()) {
+            <input
+              type="text"
+              [value]="p.emergency_contact_name"
+              (input)="updateField('emergency_contact_name', $any($event.target).value)"
+              class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all"
+              placeholder="Emergency contact name"
+            />
+            } @else {
+            <p class="text-sm font-medium text-gray-900 bg-gray-50 px-4 py-2.5 rounded-xl">
+              {{ p.emergency_contact_name || '—' }}
+            </p>
+            }
+          </div>
+          <div>
+            <label class="flex items-center gap-1.5 text-xs font-medium text-gray-500 mb-2">
+              <span class="material-symbols-rounded" style="font-size: 14px">call</span>
+              Contact Phone
+            </label>
+            @if (editMode()) {
+            <input
+              type="tel"
+              [value]="p.emergency_contact_phone"
+              (input)="updateField('emergency_contact_phone', $any($event.target).value)"
+              class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all"
+              placeholder="Emergency contact phone"
+            />
+            } @else {
+            <p class="text-sm font-medium text-gray-900 bg-gray-50 px-4 py-2.5 rounded-xl">
+              {{ p.emergency_contact_phone || '—' }}
+            </p>
+            }
+          </div>
+        </div>
+
+        @if (editMode()) {
+        <div class="px-6 py-4 bg-gray-50 flex justify-end gap-3 border-t border-gray-100">
+          <button
+            (click)="cancelEdit()"
+            class="px-5 py-2.5 text-sm font-medium text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-xl transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            (click)="saveProfile()"
+            [disabled]="saving()"
+            class="inline-flex items-center gap-2 bg-linear-to-r from-teal-500 to-cyan-500 text-white font-medium text-sm px-5 py-2.5 rounded-xl hover:shadow-lg hover:shadow-teal-500/25 transition-all disabled:from-gray-200 disabled:to-gray-200 disabled:text-gray-400 disabled:shadow-none"
+          >
+            @if (saving()) {
+            <span
+              class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"
+            ></span>
+            }
+            Save Changes
+          </button>
+        </div>
+        }
+      </div>
+    </div>
+
+    <!-- Sidebar -->
+    <div class="space-y-6">
+      <!-- Account Security -->
+      <div class="bg-white rounded-2xl border border-gray-100 overflow-hidden fc-stagger">
+        <div class="px-6 py-5 border-b border-gray-100">
+          <div class="flex items-center gap-3">
+            <div
+              class="w-10 h-10 rounded-xl bg-linear-to-br from-amber-100 to-orange-100 flex items-center justify-center"
+            >
+              <span class="material-symbols-rounded text-amber-600" style="font-size: 22px"
+                >security</span
+              >
+            </div>
+            <div>
+              <h2 class="font-semibold text-gray-900">Account Security</h2>
+              <p class="text-sm text-gray-500">Keep your account safe</p>
+            </div>
+          </div>
+        </div>
+        <div class="p-4 space-y-2">
+          <button
+            (click)="openPasswordModal()"
+            class="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 transition-colors text-left group"
+          >
+            <div
+              class="w-10 h-10 rounded-xl bg-teal-50 flex items-center justify-center group-hover:bg-teal-100 transition-colors"
+            >
+              <span class="material-symbols-rounded text-teal-600">lock</span>
+            </div>
+            <div class="flex-1">
+              <p class="font-medium text-gray-900 text-sm">Change Password</p>
+              <p class="text-xs text-gray-500">Update your account password</p>
+            </div>
+            <span
+              class="material-symbols-rounded text-gray-300 group-hover:text-teal-600 group-hover:translate-x-0.5 transition-all"
+              style="font-size: 20px"
+              >chevron_right</span
+            >
+          </button>
+          <button
+            class="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 transition-colors text-left group"
+          >
+            <div
+              class="w-10 h-10 rounded-xl bg-violet-50 flex items-center justify-center group-hover:bg-violet-100 transition-colors"
+            >
+              <span class="material-symbols-rounded text-violet-600">devices</span>
+            </div>
+            <div class="flex-1">
+              <p class="font-medium text-gray-900 text-sm">Active Sessions</p>
+              <p class="text-xs text-gray-500">Manage logged-in devices</p>
+            </div>
+            <span
+              class="material-symbols-rounded text-gray-300 group-hover:text-violet-600 group-hover:translate-x-0.5 transition-all"
+              style="font-size: 20px"
+              >chevron_right</span
+            >
+          </button>
+        </div>
+
+        <!-- Security Status -->
+        <div class="px-4 pb-4">
+          <div class="bg-linear-to-r from-emerald-50 to-green-50 rounded-xl p-3 border border-emerald-100">
+            <div class="flex items-center gap-2">
+              <span class="material-symbols-rounded text-emerald-600" style="font-size: 18px"
+                >verified_user</span
+              >
+              <span class="text-xs font-medium text-emerald-700">Account secured</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Actions -->
+      <div class="bg-white rounded-2xl border border-gray-100 overflow-hidden fc-stagger">
+        <div class="px-6 py-5 border-b border-gray-100">
+          <h2 class="font-semibold text-gray-900">Quick Actions</h2>
+        </div>
+        <div class="p-4 space-y-2">
+          <a
+            routerLink="/portal/id-cards"
+            class="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 transition-colors group"
+          >
+            <div
+              class="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center group-hover:bg-emerald-100 transition-colors"
+            >
+              <span class="material-symbols-rounded text-emerald-600">badge</span>
+            </div>
+            <div class="flex-1">
+              <p class="font-medium text-gray-900 text-sm">Download ID Card</p>
+              <p class="text-xs text-gray-500">Get your member ID card</p>
+            </div>
+            <span
+              class="material-symbols-rounded text-gray-300 group-hover:text-emerald-600 group-hover:translate-x-0.5 transition-all"
+              style="font-size: 20px"
+              >arrow_forward</span
+            >
+          </a>
+          <a
+            routerLink="/portal/policy"
+            class="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 transition-colors group"
+          >
+            <div
+              class="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center group-hover:bg-amber-100 transition-colors"
+            >
+              <span class="material-symbols-rounded text-amber-600">description</span>
+            </div>
+            <div class="flex-1">
+              <p class="font-medium text-gray-900 text-sm">View Policy</p>
+              <p class="text-xs text-gray-500">Check your coverage details</p>
+            </div>
+            <span
+              class="material-symbols-rounded text-gray-300 group-hover:text-amber-600 group-hover:translate-x-0.5 transition-all"
+              style="font-size: 20px"
+              >arrow_forward</span
+            >
+          </a>
+        </div>
+      </div>
+
+      <!-- Logout -->
+      <button
+        (click)="logout()"
+        class="w-full flex items-center justify-center gap-2 p-4 bg-red-50 text-red-600 font-medium text-sm rounded-xl hover:bg-red-100 border border-red-100 transition-colors fc-stagger"
+      >
+        <span class="material-symbols-rounded" style="font-size: 20px">logout</span>
+        Sign Out
+      </button>
+    </div>
+  </div>
+  }
+</div>
+
+<!-- Password Change Modal -->
+@if (showPasswordModal()) {
+<div class="fixed inset-0 bg-gray-900/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 fc-fade-in">
+  <div class="bg-white rounded-2xl w-full max-w-md overflow-hidden shadow-2xl">
+    <div
+      class="px-6 py-5 border-b border-gray-100 flex items-center justify-between bg-linear-to-r from-teal-50 to-cyan-50"
+    >
+      <div class="flex items-center gap-3">
+        <div
+          class="w-10 h-10 rounded-xl bg-teal-100 flex items-center justify-center"
+        >
+          <span class="material-symbols-rounded text-teal-600" style="font-size: 22px">lock</span>
+        </div>
+        <h3 class="font-semibold text-gray-900">Change Password</h3>
+      </div>
+      <button
+        (click)="closePasswordModal()"
+        class="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+      >
+        <span class="material-symbols-rounded" style="font-size: 20px">close</span>
+      </button>
+    </div>
+    <div class="p-6 space-y-5">
+      @if (passwordError()) {
+      <div class="bg-red-50 border border-red-100 rounded-xl px-4 py-3 flex items-center gap-2">
+        <span class="material-symbols-rounded text-red-500" style="font-size: 18px">error</span>
+        <p class="text-sm text-red-600">{{ passwordError() }}</p>
+      </div>
+      }
+      <div>
+        <label class="flex items-center gap-1.5 text-sm font-medium text-gray-700 mb-2">
+          <span class="material-symbols-rounded" style="font-size: 16px">key</span>
+          New Password
+        </label>
+        <input
+          type="password"
+          [value]="passwordForm().new_password"
+          (input)="updatePasswordField('new_password', $any($event.target).value)"
+          placeholder="Enter new password"
+          class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all"
+        />
+      </div>
+      <div>
+        <label class="flex items-center gap-1.5 text-sm font-medium text-gray-700 mb-2">
+          <span class="material-symbols-rounded" style="font-size: 16px">check_circle</span>
+          Confirm New Password
+        </label>
+        <input
+          type="password"
+          [value]="passwordForm().confirm_password"
+          (input)="updatePasswordField('confirm_password', $any($event.target).value)"
+          placeholder="Confirm new password"
+          class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all"
+        />
+      </div>
+      <p class="text-xs text-gray-500 flex items-center gap-1">
+        <span class="material-symbols-rounded" style="font-size: 14px">info</span>
+        Password must be at least 8 characters long
+      </p>
+    </div>
+    <div class="px-6 py-4 bg-gray-50 flex justify-end gap-3 border-t border-gray-100">
+      <button
+        (click)="closePasswordModal()"
+        class="px-5 py-2.5 text-sm font-medium text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-xl transition-colors"
+      >
+        Cancel
+      </button>
+      <button
+        (click)="changePassword()"
+        [disabled]="passwordSaving()"
+        class="inline-flex items-center gap-2 bg-linear-to-r from-teal-500 to-cyan-500 text-white font-medium text-sm px-5 py-2.5 rounded-xl hover:shadow-lg hover:shadow-teal-500/25 transition-all disabled:from-gray-200 disabled:to-gray-200 disabled:text-gray-400 disabled:shadow-none"
+      >
+        @if (passwordSaving()) {
+        <span
+          class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"
+        ></span>
+        }
+        Update Password
+      </button>
+    </div>
+  </div>
+</div>
+}

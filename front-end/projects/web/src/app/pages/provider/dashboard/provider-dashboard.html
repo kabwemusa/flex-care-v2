@@ -1,0 +1,116 @@
+<!-- Loading -->
+@if (loading()) {
+  <div class="min-h-[60vh] flex items-center justify-center">
+    <div class="text-center">
+      <div class="inline-block w-8 h-8 border-4 border-violet-200 border-t-violet-600 rounded-full animate-spin"></div>
+      <p class="text-gray-500 mt-3">Loading dashboard...</p>
+    </div>
+  </div>
+}
+
+<!-- Error -->
+@if (!loading() && error()) {
+  <div class="min-h-[60vh] flex items-center justify-center px-4">
+    <div class="text-center max-w-md">
+      <span class="material-symbols-rounded text-red-400" style="font-size: 48px">error</span>
+      <h2 class="text-lg font-semibold text-gray-900 mt-3 mb-1">Failed to load dashboard</h2>
+      <p class="text-gray-500 text-sm">{{ error() }}</p>
+    </div>
+  </div>
+}
+
+<!-- Dashboard Content -->
+@if (!loading() && profile()) {
+  <!-- Header -->
+  <div class="mb-6">
+    <div class="flex items-start justify-between">
+      <div>
+        <h1 class="text-2xl font-bold text-gray-900">{{ profile()!.name }}</h1>
+        <p class="text-gray-500 text-sm mt-0.5">{{ providerTypeLabel(profile()!.provider_type) }} · {{ profile()!.provider_code }}</p>
+      </div>
+      <div class="flex items-center gap-2">
+        <span [class]="profile()!.status === 'active'
+          ? 'inline-flex items-center gap-1 text-xs font-medium bg-green-100 text-green-700 px-2.5 py-1 rounded-full'
+          : profile()!.status === 'pending'
+            ? 'inline-flex items-center gap-1 text-xs font-medium bg-amber-100 text-amber-700 px-2.5 py-1 rounded-full'
+            : 'inline-flex items-center gap-1 text-xs font-medium bg-gray-100 text-gray-600 px-2.5 py-1 rounded-full'">
+          <span class="w-1.5 h-1.5 rounded-full"
+            [class]="profile()!.status === 'active' ? 'bg-green-500' : profile()!.status === 'pending' ? 'bg-amber-500' : 'bg-gray-400'"></span>
+          {{ profile()!.status | titlecase }}
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Quick Stats -->
+  <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+    <div class="bg-white rounded-xl border border-gray-200 p-5">
+      <p class="text-xs font-medium text-gray-500 uppercase tracking-wide">Total Claims</p>
+      <p class="text-2xl font-bold text-gray-900 mt-1">{{ profile()!.total_claims_count | number }}</p>
+    </div>
+    <div class="bg-white rounded-xl border border-gray-200 p-5">
+      <p class="text-xs font-medium text-gray-500 uppercase tracking-wide">Approved Claims</p>
+      <p class="text-2xl font-bold text-green-600 mt-1">{{ profile()!.approved_claims_count | number }}</p>
+    </div>
+    <div class="bg-white rounded-xl border border-gray-200 p-5">
+      <p class="text-xs font-medium text-gray-500 uppercase tracking-wide">Total Amount</p>
+      <p class="text-2xl font-bold text-gray-900 mt-1">ZMW {{ profile()!.total_claims_amount | number:'1.0-0' }}</p>
+    </div>
+  </div>
+
+  <!-- Provider Details -->
+  <div class="bg-white rounded-xl border border-gray-200 p-6 mb-6">
+    <h2 class="text-sm font-semibold text-gray-800 mb-4">Facility Details</h2>
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+      <div>
+        <p class="text-gray-500 text-xs">Email</p>
+        <p class="text-gray-900">{{ profile()!.email }}</p>
+      </div>
+      <div>
+        <p class="text-gray-500 text-xs">Phone</p>
+        <p class="text-gray-900">{{ profile()!.phone }}</p>
+      </div>
+      <div class="sm:col-span-2">
+        <p class="text-gray-500 text-xs">Address</p>
+        <p class="text-gray-900">{{ profile()!.address }}, {{ profile()!.city }}</p>
+      </div>
+      @if (profile()!.is_network_provider) {
+        <div>
+          <p class="text-gray-500 text-xs">Network Status</p>
+          <p class="text-gray-900">
+            <span class="inline-flex items-center gap-1">
+              <span class="material-symbols-rounded text-green-500" style="font-size: 16px">verified</span>
+              Network Provider
+              @if (profile()!.network_tier) {
+                <span class="text-xs text-gray-400">({{ profile()!.network_tier | titlecase }})</span>
+              }
+            </span>
+          </p>
+        </div>
+      }
+    </div>
+  </div>
+
+  <!-- Quick Actions -->
+  <div class="bg-white rounded-xl border border-gray-200 p-6">
+    <h2 class="text-sm font-semibold text-gray-800 mb-4">Quick Actions</h2>
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <a routerLink="/provider/eligibility" class="flex flex-col items-center gap-2 p-4 rounded-xl border border-gray-200 hover:border-violet-200 hover:bg-violet-50 transition-colors text-center">
+        <span class="material-symbols-rounded text-violet-600" style="font-size: 28px">verified_user</span>
+        <span class="text-xs font-medium text-gray-700">Check Eligibility</span>
+      </a>
+      <a routerLink="/provider/preauth" class="flex flex-col items-center gap-2 p-4 rounded-xl border border-gray-200 hover:border-violet-200 hover:bg-violet-50 transition-colors text-center">
+        <span class="material-symbols-rounded text-violet-600" style="font-size: 28px">fact_check</span>
+        <span class="text-xs font-medium text-gray-700">Pre-Authorization</span>
+      </a>
+      <a routerLink="/provider/claims" class="flex flex-col items-center gap-2 p-4 rounded-xl border border-gray-200 hover:border-violet-200 hover:bg-violet-50 transition-colors text-center">
+        <span class="material-symbols-rounded text-violet-600" style="font-size: 28px">receipt_long</span>
+        <span class="text-xs font-medium text-gray-700">Submit Claim</span>
+      </a>
+      <button (click)="logout()" class="flex flex-col items-center gap-2 p-4 rounded-xl border border-gray-200 hover:border-red-200 hover:bg-red-50 transition-colors text-center">
+        <span class="material-symbols-rounded text-gray-400" style="font-size: 28px">logout</span>
+        <span class="text-xs font-medium text-gray-500">Sign Out</span>
+      </button>
+    </div>
+  </div>
+}

@@ -11,7 +11,6 @@ class BenefitResource extends JsonResource
     {
         return [
             'id' => $this->id,
-            'category_id' => $this->category_id,
             'parent_id' => $this->parent_id,
             'code' => $this->code,
             'name' => $this->name,
@@ -30,7 +29,6 @@ class BenefitResource extends JsonResource
             'is_root' => $this->is_root,
             'has_children' => $this->has_children,
             'full_path' => $this->full_path,
-            'category' => new BenefitCategoryResource($this->whenLoaded('category')),
             'parent' => new BenefitResource($this->whenLoaded('parent')),
             'children' => BenefitResource::collection($this->whenLoaded('children')),
             'created_at' => $this->created_at?->toIso8601String(),

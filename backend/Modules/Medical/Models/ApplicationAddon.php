@@ -65,10 +65,6 @@ class ApplicationAddon extends Model
         return $this->belongsTo(Addon::class, 'addon_id');
     }
 
-    public function addonRate(): BelongsTo
-    {
-        return $this->belongsTo(AddonRate::class, 'addon_rate_id');
-    }
 
     // =========================================================================
     // SCOPES

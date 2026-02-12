@@ -105,6 +105,10 @@ export class MedicalGroupsList implements OnInit, AfterViewInit {
   readonly formatCurrency = formatCurrency;
 
   // Computed
+  readonly totalMembers = computed(() =>
+    this.store.groups().reduce((sum, g) => sum + (g.stats?.total_application_members || 0), 0)
+  );
+
   hasActiveFilters = computed(
     () =>
       this.searchTerm() !== '' ||

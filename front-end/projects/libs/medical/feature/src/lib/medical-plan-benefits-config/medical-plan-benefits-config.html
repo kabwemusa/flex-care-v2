@@ -67,38 +67,34 @@
   } @else {
   <!-- Benefit Groups -->
   <div class="space-y-3">
-    @for (group of benefitGroups(); track group.categoryId) {
+    @for (group of benefitGroups(); track group.typeValue) {
     <div class="rounded-xl border border-slate-200 bg-white overflow-hidden">
-      <!-- Category Header -->
+      <!-- Group Header -->
       <button
         class="w-full flex items-center justify-between p-4 hover:bg-slate-50 transition-colors"
-        (click)="toggleCategory(group.categoryId)"
+        (click)="toggleGroup(group.typeValue)"
       >
         <div class="flex items-center gap-3">
-          <div
-            class="flex h-9 w-9 items-center justify-center rounded-lg"
-            [style.background-color]="group.color + '15'"
-          >
+          <div class="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-50">
             <mat-icon
               fontSet="material-symbols-rounded"
-              [style.color]="group.color"
-              class="!text-[20px]"
+              class="!text-blue-600 !text-[20px]"
               >{{ group.icon }}</mat-icon
             >
           </div>
           <div class="text-left">
-            <h4 class="font-medium text-slate-900">{{ group.category }}</h4>
+            <h4 class="font-medium text-slate-900">{{ group.type }}</h4>
             <p class="text-xs text-slate-500">{{ group.benefits.length }} benefits</p>
           </div>
         </div>
 
         <mat-icon fontSet="material-symbols-rounded" class="!text-slate-400">
-          {{ isCategoryExpanded(group.categoryId) ? 'expand_less' : 'expand_more' }}
+          {{ isGroupExpanded(group.typeValue) ? 'expand_less' : 'expand_more' }}
         </mat-icon>
       </button>
 
       <!-- Benefits List -->
-      @if (isCategoryExpanded(group.categoryId)) {
+      @if (isGroupExpanded(group.typeValue)) {
       <div class="border-t border-slate-100">
         @for (pb of group.benefits; track pb.id; let last = $last) {
         <!-- Main Benefit Row -->

@@ -8,10 +8,12 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Modules\Medical\Models\Group;
 use Modules\Medical\Models\GroupContact;
+use Modules\Medical\Models\ApplicationMember;
 use Modules\Medical\Http\Requests\GroupRequest;
 use Modules\Medical\Http\Requests\GroupContactRequest;
 use Modules\Medical\Http\Resources\GroupResource;
 use Modules\Medical\Http\Resources\GroupContactResource;
+use Modules\Medical\Http\Resources\ApplicationMemberResource;
 use App\Traits\ApiResponse;
 use Throwable;
 use Exception;
@@ -28,7 +30,8 @@ class GroupController extends Controller
     {
         try {
             $query = Group::query()
-                ->with(['primaryContact']);
+                ->with(['primaryContact'])
+                ->withCount('applicationMembers');
             
             // Search
             if ($search = request('search')) {
@@ -115,7 +118,7 @@ class GroupController extends Controller
                     // 'activeMembers' => fn($m) => $m->orderBy('member_type')
                 ]),
             ])
-            ->withCount(['policies', 'contacts', 'applications'])
+            ->withCount(['policies', 'contacts', 'applications', 'applicationMembers'])
             ->findOrFail($id);
 
             return $this->success(
@@ -253,6 +256,58 @@ class GroupController extends Controller
             return $this->success($groups, 'Groups retrieved');
         } catch (Throwable $e) {
             return $this->error('Failed to retrieve groups list', 500);
+        }
+    }
+
+    /**
+     * List members across all applications for a group.
+     * GET /v1/medical/groups/{id}/members
+     *
+     * Optional filters: ?application_id=&member_type=&search=
+     */
+    public function members(string $id): JsonResponse
+    {
+        try {
+            $group = Group::findOrFail($id);
+
+            $applicationIds = $group->applications()->pluck('id');
+
+            $query = ApplicationMember::whereIn('application_id', $applicationIds)
+                ->with(['principal:id,first_name,last_name'])
+                ->orderBy('member_type')
+                ->orderBy('created_at');
+
+            // Filter by specific application
+            if ($appId = request('application_id')) {
+                $query->where('application_id', $appId);
+            }
+
+            // Filter by member type
+            if ($type = request('member_type')) {
+                $query->where('member_type', $type);
+            }
+
+            // Search
+            if ($search = request('search')) {
+                $query->where(function ($q) use ($search) {
+                    $q->where('first_name', 'LIKE', "%{$search}%")
+                      ->orWhere('last_name', 'LIKE', "%{$search}%")
+                      ->orWhere('email', 'LIKE', "%{$search}%")
+                      ->orWhere('national_id', 'LIKE', "%{$search}%")
+                      ->orWhere('employee_number', 'LIKE', "%{$search}%");
+                });
+            }
+
+            $members = $query->paginate(request('per_page', 20));
+
+            return $this->paginated(
+                ApplicationMemberResource::collection($members),
+                'Group members retrieved'
+            );
+        } catch (ModelNotFoundException $e) {
+            return $this->error('Group not found', 404);
+        } catch (Throwable $e) {
+            return $this->error('Failed to retrieve group members: ' . $e->getMessage(), 500);
         }
     }
 

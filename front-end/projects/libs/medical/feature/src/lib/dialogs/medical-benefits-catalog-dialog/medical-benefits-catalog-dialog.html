@@ -1,11 +1,11 @@
 <!-- libs/medical/ui/src/lib/dialogs/benefit-dialog/benefit-dialog.component.html -->
 
-<div class="flex max-h-[90vh] w-full flex-col overflow-hidden bg-white sm:w-[70vw]">
+<div class="flex max-h-[90vh] w-full flex-col overflow-hidden rounded-lg bg-white sm:w-[70vw]">
   <!-- Header -->
   <div class="flex items-center justify-between border-b border-slate-100 px-6 py-4">
     <div class="flex items-center gap-3">
       <div
-        class="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100 text-blue-600"
+        class="flex h-10 w-10 items-center justify-center rounded-sm bg-blue-100 text-blue-600"
       >
         <mat-icon fontSet="material-symbols-rounded">
           {{ isEditMode ? 'edit' : 'add_circle' }}
@@ -39,6 +39,14 @@
       (selectionChange)="onStepChange($event.selectedIndex)"
       class="!bg-transparent"
     >
+      <ng-template matStepperIcon="edit">
+        <mat-icon fontSet="material-symbols-rounded" class="!text-green-600">check</mat-icon>
+      </ng-template>
+
+      <ng-template matStepperIcon="done">
+        <mat-icon fontSet="material-symbols-rounded" class="!text-green-600">check</mat-icon>
+      </ng-template>
+
       <!-- Step 1: Basic Information -->
       <mat-step [stepControl]="basicInfoForm" label="Basic Info">
         <form [formGroup]="basicInfoForm" class="p-6 space-y-5">
@@ -46,51 +54,69 @@
             Define the benefit's identity and classification within the catalog.
           </p>
 
-          <!-- Category -->
+          <!-- Benefit Type -->
           <div class="flex flex-col gap-1.5">
             <label class="text-sm font-medium text-slate-700">
-              Category <span class="text-red-500">*</span>
+              Benefit Type <span class="text-red-500">*</span>
             </label>
-            <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
-              <mat-select formControlName="category_id" placeholder="Select category">
+            <mat-form-field appearance="fill" class="w-full minimal-input" subscriptSizing="dynamic">
+              <mat-select formControlName="benefit_type" placeholder="Select type">
                 <mat-select-trigger>
-                  @if (basicInfoForm.get('category_id')?.value; as catId) {
-                  <span class="flex items-center gap-2">
-                    <mat-icon
-                      fontSet="material-symbols-rounded"
-                      [style.color]="getCategoryColor(catId)"
-                      class="!text-[18px]"
-                      >{{ getCategoryIcon(catId) }}</mat-icon
-                    >
-                    <span>{{ getCategoryName(catId) }}</span>
-                  </span>
+                  @if (basicInfoForm.get('benefit_type')?.value; as typeValue) {
+                  <span>{{ getBenefitTypeLabel(typeValue) }}</span>
                   }
                 </mat-select-trigger>
-                @for (category of store.categories(); track category.id) {
-                <mat-option [value]="category.id">
+                @for (type of benefitTypes; track type.value) {
+                <mat-option [value]="type.value">
                   <div class="flex items-center gap-2">
-                    <mat-icon
-                      fontSet="material-symbols-rounded"
-                      [style.color]="category.color"
-                      class="!text-[18px]"
-                      >{{ category.icon || 'folder' }}</mat-icon
-                    >
-                    <span>{{ category.name }}</span>
+                    <mat-icon fontSet="material-symbols-rounded" class="!text-[18px]">{{
+                      type.icon
+                    }}</mat-icon>
+                    <span>{{ type.label }}</span>
                   </div>
                 </mat-option>
                 }
               </mat-select>
-              @if (basicInfoForm.get('category_id')?.hasError('required')) {
-              <mat-error>Please select a category</mat-error>
+              @if (basicInfoForm.get('benefit_type')?.hasError('required')) {
+              <mat-error>Please select a benefit type</mat-error>
               }
             </mat-form-field>
           </div>
 
-          <!-- Parent Benefit (for sub-benefits) -->
+          <!-- Benefit Name -->
+          <div class="flex flex-col gap-1.5">
+            <label class="text-sm font-medium text-slate-700">
+              Benefit Name <span class="text-red-500">*</span>
+            </label>
+            <mat-form-field appearance="fill" class="w-full minimal-input" subscriptSizing="dynamic">
+              <input matInput formControlName="name" placeholder="e.g. Hospital Room & Board" />
+              <mat-icon matSuffix fontSet="material-symbols-rounded" class="!text-slate-400"
+                >badge</mat-icon
+              >
+              @if (basicInfoForm.get('name')?.hasError('required')) {
+              <mat-error>Benefit name is required</mat-error>
+              }
+            </mat-form-field>
+          </div>
+
+          <!-- Display Name -->
+          <div class="flex flex-col gap-1.5">
+            <label class="text-sm font-medium text-slate-700">Display Name</label>
+            <mat-form-field appearance="fill" class="w-full minimal-input" subscriptSizing="dynamic">
+              <input
+                matInput
+                formControlName="display_name"
+                placeholder="Optional friendly name for members"
+              />
+            </mat-form-field>
+            <p class="text-xs text-slate-400">Shown to members if different from internal name</p>
+          </div>
+
+          <!-- Parent Benefit (optional, for sub-benefits) -->
           @if (parentBenefits.length > 0 || data?.parent_id) {
           <div class="flex flex-col gap-1.5">
-            <label class="text-sm font-medium text-slate-700">Parent Benefit</label>
-            <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+            <label class="text-sm font-medium text-slate-700">Parent Benefit <span class="text-xs font-normal text-slate-400">(optional)</span></label>
+            <mat-form-field appearance="fill" class="w-full minimal-input" subscriptSizing="dynamic">
               <mat-select formControlName="parent_id" placeholder="None (Root benefit)">
                 <mat-select-trigger>
                   @if (basicInfoForm.get('parent_id')?.value; as parentId) {
@@ -116,78 +142,15 @@
               </mat-select>
             </mat-form-field>
             <p class="text-xs text-slate-400">
-              Select if this is a sub-benefit under another benefit
+              Leave as "None" for a root benefit, or select a parent to create a sub-benefit
             </p>
           </div>
           }
 
-          <!-- Benefit Name -->
-          <div class="flex flex-col gap-1.5">
-            <label class="text-sm font-medium text-slate-700">
-              Benefit Name <span class="text-red-500">*</span>
-            </label>
-            <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
-              <input matInput formControlName="name" placeholder="e.g. Hospital Room & Board" />
-              <mat-icon matSuffix fontSet="material-symbols-rounded" class="!text-slate-400"
-                >badge</mat-icon
-              >
-              @if (basicInfoForm.get('name')?.hasError('required')) {
-              <mat-error>Benefit name is required</mat-error>
-              }
-            </mat-form-field>
-          </div>
-
-          <!-- Display Name -->
-          <div class="flex flex-col gap-1.5">
-            <label class="text-sm font-medium text-slate-700">Display Name</label>
-            <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
-              <input
-                matInput
-                formControlName="display_name"
-                placeholder="Optional friendly name for members"
-              />
-            </mat-form-field>
-            <p class="text-xs text-slate-400">Shown to members if different from internal name</p>
-          </div>
-
-          <!-- Benefit Type -->
-          <div class="flex flex-col gap-1.5">
-            <label class="text-sm font-medium text-slate-700">
-              Benefit Type <span class="text-red-500">*</span>
-            </label>
-            <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
-              <mat-select formControlName="benefit_type" placeholder="Select type">
-                <mat-select-trigger>
-                  @if (basicInfoForm.get('benefit_type')?.value; as typeValue) {
-                  <span class="flex items-center gap-2">
-                    <mat-icon fontSet="material-symbols-rounded" class="!text-[18px]">
-                      {{ getBenefitTypeIcon(typeValue) }}
-                    </mat-icon>
-                    <span>{{ getBenefitTypeLabel(typeValue) }}</span>
-                  </span>
-                  }
-                </mat-select-trigger>
-                @for (type of benefitTypes; track type.value) {
-                <mat-option [value]="type.value">
-                  <div class="flex items-center gap-2">
-                    <mat-icon fontSet="material-symbols-rounded" class="!text-[18px]">{{
-                      type.icon
-                    }}</mat-icon>
-                    <span>{{ type.label }}</span>
-                  </div>
-                </mat-option>
-                }
-              </mat-select>
-              @if (basicInfoForm.get('benefit_type')?.hasError('required')) {
-              <mat-error>Please select a benefit type</mat-error>
-              }
-            </mat-form-field>
-          </div>
-
           <!-- Description -->
           <div class="flex flex-col gap-1.5">
             <label class="text-sm font-medium text-slate-700">Description</label>
-            <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+            <mat-form-field appearance="fill" class="w-full minimal-input" subscriptSizing="dynamic">
               <textarea
                 matInput
                 formControlName="description"
@@ -222,7 +185,7 @@
           <!-- Limit Type -->
           <div class="flex flex-col gap-1.5">
             <label class="text-sm font-medium text-slate-700">Default Limit Type</label>
-            <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+            <mat-form-field appearance="fill" class="w-full minimal-input" subscriptSizing="dynamic">
               <mat-select formControlName="default_limit_type">
                 <mat-select-trigger>
                   @if (limitsForm.get('default_limit_type')?.value; as limitType) {
@@ -244,7 +207,7 @@
           <!-- Limit Frequency -->
           <div class="flex flex-col gap-1.5">
             <label class="text-sm font-medium text-slate-700">Default Limit Frequency</label>
-            <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+            <mat-form-field appearance="fill" class="w-full minimal-input" subscriptSizing="dynamic">
               <mat-select formControlName="default_limit_frequency">
                 <mat-select-trigger>
                   @if (limitsForm.get('default_limit_frequency')?.value; as freq) {
@@ -262,7 +225,7 @@
           <!-- Limit Basis -->
           <div class="flex flex-col gap-1.5">
             <label class="text-sm font-medium text-slate-700">Default Limit Basis</label>
-            <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+            <mat-form-field appearance="fill" class="w-full minimal-input" subscriptSizing="dynamic">
               <mat-select formControlName="default_limit_basis">
                 <mat-select-trigger>
                   @if (limitsForm.get('default_limit_basis')?.value; as basis) {
@@ -344,7 +307,7 @@
           <!-- Applicable Member Types -->
           <div class="flex flex-col gap-1.5">
             <label class="text-sm font-medium text-slate-700">Applicable Member Types</label>
-            <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+            <mat-form-field appearance="fill" class="w-full minimal-input" subscriptSizing="dynamic">
               <mat-select
                 formControlName="applicable_member_types"
                 multiple
@@ -389,35 +352,48 @@
 
   <!-- Footer with Navigation -->
   <div class="flex items-center justify-between border-t border-slate-100 bg-slate-50 px-6 py-4">
-    <div class="text-xs text-slate-500">Step {{ currentStep() + 1 }} of 3</div>
+    <div class="flex items-center gap-2">
+      <div class="text-xs text-slate-500">Step {{ currentStep() + 1 }} of 3</div>
+      <div class="flex gap-1 ml-2">
+        @for (step of [0, 1, 2]; track step) {
+        <div
+          [class]="
+            step === currentStep()
+              ? 'w-6 h-1.5 rounded-full bg-primary'
+              : step < currentStep()
+              ? 'w-1.5 h-1.5 rounded-full bg-primary/60'
+              : 'w-1.5 h-1.5 rounded-full bg-slate-300'
+          "
+        ></div>
+        }
+      </div>
+    </div>
 
-    <div class="flex items-center gap-3">
+    <div class="flex items-center gap-2">
       <button mat-button (click)="dialogRef.close()" class="!text-slate-600 hover:!bg-slate-200">
         Cancel
       </button>
 
-      <!-- Back Button -->
       @if (!isFirstStep) {
-      <button mat-stroked-button (click)="prevStep()" class="!border-slate-300">
-        <mat-icon fontSet="material-symbols-rounded">arrow_back</mat-icon>
-        Back
-      </button>
-      }
-
-      <!-- Next Button -->
-      @if (!isLastStep) {
       <button
-        mat-flat-button
-        color="primary"
+        mat-icon-button
+        (click)="prevStep()"
+        matTooltip="Previous step"
+        class="!text-slate-600 hover:!bg-slate-200"
+      >
+        <mat-icon fontSet="material-symbols-rounded">chevron_left</mat-icon>
+      </button>
+      } @if (!isLastStep) {
+      <button
+        mat-icon-button
         [disabled]="!canGoNext"
         (click)="nextStep()"
-        class="!px-6 !rounded-lg"
+        matTooltip="Next step"
+        class="!text-primary"
       >
-        Next
-        <mat-icon fontSet="material-symbols-rounded">arrow_forward</mat-icon>
+        <mat-icon fontSet="material-symbols-rounded">chevron_right</mat-icon>
       </button>
       } @else {
-      <!-- Save Button (only on last step) -->
       <button
         mat-flat-button
         color="primary"

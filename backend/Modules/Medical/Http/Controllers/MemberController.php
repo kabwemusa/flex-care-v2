@@ -328,70 +328,73 @@ class MemberController extends Controller
         }
     }
 
-    // /**
-    //  * Terminate member.
-    //  * POST /v1/medical/members/{id}/terminate
-    //  */
-    // public function terminate(string $id): JsonResponse
-    // {
-    //     try {
-    //         $member = DB::transaction(function () use ($id) {
-    //             $member = Member::findOrFail($id);
+    /**
+     * Terminate member.
+     * POST /v1/medical/members/{id}/terminate
+     */
+    public function terminate(string $id): JsonResponse
+    {
+        try {
+            $member = DB::transaction(function () use ($id) {
+                $member = Member::findOrFail($id);
 
-    //             $reason = request('reason', 'terminated');
-    //             $notes = request('notes');
+                $reason = request('reason', 'terminated');
+                $notes = request('notes');
+                $effectiveDate = request('effective_date');
 
-    //             $member->terminate($reason, $notes);
+                $member->terminate($reason, $notes);
 
-    //             // If principal, terminate dependents too
-    //             if ($member->is_principal) {
-    //                 $member->dependents()
-    //                     ->whereNotIn('status', [MedicalConstants::MEMBER_STATUS_TERMINATED, MedicalConstants::MEMBER_STATUS_DECEASED])
-    //                     ->each(fn($dep) => $dep->terminate('principal_terminated', 'Principal member terminated'));
-    //             }
+                // If principal, terminate dependents too
+                if ($member->is_principal && request('include_dependents', false)) {
+                    $member->dependents()
+                        ->whereNotIn('status', [MedicalConstants::MEMBER_STATUS_TERMINATED, MedicalConstants::MEMBER_STATUS_DECEASED])
+                        ->each(fn($dep) => $dep->terminate('principal_terminated', 'Principal member terminated'));
+                }
 
-    //             // Update policy
-    //             $member->policy->updateMemberCounts();
-    //             $this->premiumCalculator->calculatePolicyPremium($member->policy);
+                // Update policy member counts
+                if ($member->policy) {
+                    $member->policy->updateMemberCounts();
+                }
 
-    //             return $member->fresh();
-    //         });
+                return $member->fresh();
+            });
 
-    //         return $this->success(
-    //             new MemberResource($member),
-    //             'Member terminated'
-    //         );
-    //     } catch (Throwable $e) {
-    //         return $this->error('Failed to terminate member', 500);
-    //     }
-    // }
+            return $this->success(
+                new MemberResource($member),
+                'Member terminated'
+            );
+        } catch (Throwable $e) {
+            return $this->error('Failed to terminate member: ' . $e->getMessage(), 500);
+        }
+    }
 
-    // /**
-    //  * Mark member as deceased.
-    //  * POST /v1/medical/members/{id}/deceased
-    //  */
-    // public function markDeceased(string $id): JsonResponse
-    // {
-    //     try {
-    //         $member = DB::transaction(function () use ($id) {
-    //             $member = Member::findOrFail($id);
-    //             $member->markDeceased(request('notes'));
+    /**
+     * Mark member as deceased.
+     * POST /v1/medical/members/{id}/deceased
+     */
+    public function markDeceased(string $id): JsonResponse
+    {
+        try {
+            $member = DB::transaction(function () use ($id) {
+                $member = Member::findOrFail($id);
+                $member->markDeceased(request('notes'));
 
-    //             // Update policy
-    //             $member->policy->updateMemberCounts();
-    //             $this->premiumCalculator->calculatePolicyPremium($member->policy);
+                // Update policy member counts
+                if ($member->policy) {
+                    $member->policy->updateMemberCounts();
+                }
 
-    //             return $member->fresh();
-    //         });
+                return $member->fresh();
+            });
 
-    //         return $this->success(
-    //             new MemberResource($member),
-    //             'Member marked as deceased'
-    //         );
-    //     } catch (Throwable $e) {
-    //         return $this->error('Failed to update member status', 500);
-    //     }
-    // }
+            return $this->success(
+                new MemberResource($member),
+                'Member marked as deceased'
+            );
+        } catch (Throwable $e) {
+            return $this->error('Failed to update member status: ' . $e->getMessage(), 500);
+        }
+    }
 
     // // =========================================================================
     // // CARD MANAGEMENT

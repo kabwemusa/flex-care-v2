@@ -1,0 +1,207 @@
+<!-- Header -->
+<div class="mb-6">
+  <h1 class="text-2xl font-bold text-gray-900">Eligibility Check</h1>
+  <p class="text-gray-500 text-sm mt-0.5">Verify member eligibility and view available benefits</p>
+</div>
+
+<!-- Search Form -->
+<div class="bg-white rounded-xl border border-gray-200 p-5 mb-6">
+  <div class="flex gap-3">
+    <div class="flex-1">
+      <label class="block text-xs font-medium text-gray-500 mb-1">Member Card Number</label>
+      <input
+        type="text"
+        [value]="cardNumber()"
+        (input)="cardNumber.set(inputValue($event))"
+        (keyup.enter)="checkEligibility()"
+        placeholder="e.g. FC-2026-000001"
+        class="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+      />
+    </div>
+    <div class="flex items-end">
+      <button
+        (click)="checkEligibility()"
+        [disabled]="loading() || !cardNumber().trim()"
+        class="bg-violet-600 text-white font-medium text-sm px-6 py-2.5 rounded-lg hover:bg-violet-700 transition-colors disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed"
+      >
+        @if (loading()) {
+          <span class="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></span>
+        }
+        Check
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Error -->
+@if (error()) {
+  <div class="bg-red-50 border border-red-200 rounded-xl p-4 mb-6">
+    <div class="flex items-center gap-2">
+      <span class="material-symbols-rounded text-red-500" style="font-size: 20px">error</span>
+      <p class="text-sm text-red-600">{{ error() }}</p>
+    </div>
+  </div>
+}
+
+<!-- Results -->
+@if (result()) {
+  <!-- Eligibility Status -->
+  <div [class]="result()!.is_eligible
+    ? 'bg-green-50 border border-green-200 rounded-xl p-5 mb-6'
+    : 'bg-red-50 border border-red-200 rounded-xl p-5 mb-6'">
+    <div class="flex items-center gap-3">
+      <div [class]="result()!.is_eligible
+        ? 'w-12 h-12 rounded-full bg-green-100 flex items-center justify-center'
+        : 'w-12 h-12 rounded-full bg-red-100 flex items-center justify-center'">
+        <span class="material-symbols-rounded" [class]="result()!.is_eligible ? 'text-green-600' : 'text-red-600'" style="font-size: 28px">
+          {{ result()!.is_eligible ? 'verified_user' : 'gpp_bad' }}
+        </span>
+      </div>
+      <div>
+        <p [class]="result()!.is_eligible ? 'text-lg font-bold text-green-800' : 'text-lg font-bold text-red-800'">
+          {{ result()!.is_eligible ? 'ELIGIBLE' : 'NOT ELIGIBLE' }}
+        </p>
+        <p [class]="result()!.is_eligible ? 'text-sm text-green-600' : 'text-sm text-red-600'">{{ result()!.message }}</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Member Info -->
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+    <!-- Member Details -->
+    <div class="bg-white rounded-xl border border-gray-200 p-5">
+      <h2 class="text-sm font-semibold text-gray-800 mb-4 flex items-center gap-2">
+        <span class="material-symbols-rounded text-violet-500" style="font-size: 18px">person</span>
+        Member Details
+      </h2>
+      <div class="space-y-3 text-sm">
+        <div class="flex justify-between">
+          <span class="text-gray-500">Name</span>
+          <span class="font-medium text-gray-900">{{ result()!.member.first_name }} {{ result()!.member.last_name }}</span>
+        </div>
+        <div class="flex justify-between">
+          <span class="text-gray-500">Member Number</span>
+          <span class="font-mono text-gray-900">{{ result()!.member.member_number }}</span>
+        </div>
+        <div class="flex justify-between">
+          <span class="text-gray-500">Type</span>
+          <span class="text-gray-900">{{ memberTypeLabel(result()!.member.member_type) }}</span>
+        </div>
+        <div class="flex justify-between">
+          <span class="text-gray-500">Date of Birth</span>
+          <span class="text-gray-900">{{ result()!.member.date_of_birth | date:'mediumDate' }}</span>
+        </div>
+        <div class="flex justify-between">
+          <span class="text-gray-500">Gender</span>
+          <span class="text-gray-900">{{ result()!.member.gender === 'M' ? 'Male' : 'Female' }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Policy Details -->
+    <div class="bg-white rounded-xl border border-gray-200 p-5">
+      <h2 class="text-sm font-semibold text-gray-800 mb-4 flex items-center gap-2">
+        <span class="material-symbols-rounded text-violet-500" style="font-size: 18px">description</span>
+        Policy Details
+      </h2>
+      <div class="space-y-3 text-sm">
+        <div class="flex justify-between">
+          <span class="text-gray-500">Policy Number</span>
+          <span class="font-mono text-gray-900">{{ result()!.policy.policy_number }}</span>
+        </div>
+        <div class="flex justify-between">
+          <span class="text-gray-500">Plan</span>
+          <span class="text-gray-900">{{ result()!.plan.name }}</span>
+        </div>
+        <div class="flex justify-between">
+          <span class="text-gray-500">Tier</span>
+          <span class="text-gray-900">{{ result()!.plan.tier_level | titlecase }}</span>
+        </div>
+        <div class="flex justify-between">
+          <span class="text-gray-500">Status</span>
+          <span [class]="result()!.policy.status === 'active'
+            ? 'inline-flex items-center gap-1 text-green-700 font-medium'
+            : 'inline-flex items-center gap-1 text-gray-600'">
+            {{ result()!.policy.status | titlecase }}
+          </span>
+        </div>
+        <div class="flex justify-between">
+          <span class="text-gray-500">Valid Until</span>
+          <span class="text-gray-900">{{ result()!.policy.end_date | date:'mediumDate' }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Benefits -->
+  @if (result()!.benefits.length > 0) {
+    <div class="bg-white rounded-xl border border-gray-200 p-5">
+      <h2 class="text-sm font-semibold text-gray-800 mb-4 flex items-center gap-2">
+        <span class="material-symbols-rounded text-violet-500" style="font-size: 18px">medical_services</span>
+        Benefits ({{ result()!.benefits.length }})
+      </h2>
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead>
+            <tr class="text-left text-xs text-gray-500 border-b border-gray-100">
+              <th class="pb-2 font-medium">Benefit</th>
+              <th class="pb-2 font-medium text-right">Limit</th>
+              <th class="pb-2 font-medium text-right">Used</th>
+              <th class="pb-2 font-medium text-right">Available</th>
+              <th class="pb-2 font-medium text-center">Status</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-100">
+            @for (b of result()!.benefits; track b.benefit_code) {
+              <tr>
+                <td class="py-3">
+                  <p class="font-medium text-gray-900">{{ b.benefit_name }}</p>
+                  <p class="text-xs text-gray-400 font-mono">{{ b.benefit_code }}</p>
+                </td>
+                <td class="py-3 text-right text-gray-700">
+                  @if (b.limit_amount !== null) {
+                    ZMW {{ b.limit_amount | number:'1.0-0' }}
+                  } @else {
+                    <span class="text-gray-400">Unlimited</span>
+                  }
+                </td>
+                <td class="py-3 text-right text-gray-700">ZMW {{ b.used_amount | number:'1.0-0' }}</td>
+                <td class="py-3 text-right font-medium" [class]="b.available_amount !== null && b.available_amount > 0 ? 'text-green-600' : 'text-gray-400'">
+                  @if (b.available_amount !== null) {
+                    ZMW {{ b.available_amount | number:'1.0-0' }}
+                  } @else {
+                    <span class="text-green-600">Unlimited</span>
+                  }
+                </td>
+                <td class="py-3 text-center">
+                  @if (b.in_waiting_period) {
+                    <span class="inline-flex items-center gap-1 text-xs font-medium bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">
+                      Waiting
+                    </span>
+                  } @else if (b.is_covered) {
+                    <span class="inline-flex items-center gap-1 text-xs font-medium bg-green-100 text-green-700 px-2 py-0.5 rounded-full">
+                      Covered
+                    </span>
+                  } @else {
+                    <span class="inline-flex items-center gap-1 text-xs font-medium bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">
+                      Not Covered
+                    </span>
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  }
+}
+
+<!-- Empty State -->
+@if (!result() && !loading() && !error()) {
+  <div class="bg-white rounded-xl border border-gray-200 p-12 text-center">
+    <span class="material-symbols-rounded text-gray-300" style="font-size: 48px">search</span>
+    <h2 class="text-lg font-semibold text-gray-800 mt-3 mb-1">Check Member Eligibility</h2>
+    <p class="text-gray-500 text-sm">Enter a member card number above to verify eligibility and view benefits.</p>
+  </div>
+}

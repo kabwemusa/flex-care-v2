@@ -1,0 +1,255 @@
+<!-- Header -->
+<div class="flex items-center justify-between mb-6">
+  <div>
+    <h1 class="text-2xl font-bold text-gray-900">Claims</h1>
+    <p class="text-gray-500 text-sm mt-0.5">Submit and track medical claims</p>
+  </div>
+  <button
+    (click)="showForm.set(!showForm())"
+    class="bg-violet-600 text-white font-medium text-sm px-4 py-2 rounded-lg hover:bg-violet-700 transition-colors flex items-center gap-2"
+  >
+    <span class="material-symbols-rounded" style="font-size: 18px">{{ showForm() ? 'close' : 'add' }}</span>
+    {{ showForm() ? 'Cancel' : 'New Claim' }}
+  </button>
+</div>
+
+<!-- New Claim Form -->
+@if (showForm()) {
+  <div class="bg-white rounded-xl border border-gray-200 p-6 mb-6">
+    <h2 class="text-lg font-semibold text-gray-900 mb-5">Submit New Claim</h2>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div>
+        <label class="block text-xs font-medium text-gray-500 mb-1">Member Card Number *</label>
+        <input
+          type="text"
+          [value]="cardNumber()"
+          (input)="cardNumber.set(inputValue($event))"
+          placeholder="e.g. FC-2026-000001"
+          class="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+        />
+      </div>
+
+      <div>
+        <label class="block text-xs font-medium text-gray-500 mb-1">Claim Type *</label>
+        <select
+          [value]="claimType()"
+          (change)="claimType.set(selectValue($event))"
+          class="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+        >
+          <option value="outpatient">Outpatient</option>
+          <option value="inpatient">Inpatient</option>
+          <option value="maternity">Maternity</option>
+          <option value="dental">Dental</option>
+          <option value="optical">Optical</option>
+          <option value="wellness">Wellness</option>
+        </select>
+      </div>
+
+      <div>
+        <label class="block text-xs font-medium text-gray-500 mb-1">Service Date *</label>
+        <input
+          type="date"
+          [value]="serviceDate()"
+          (input)="serviceDate.set(inputValue($event))"
+          class="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+        />
+      </div>
+
+      <div>
+        <label class="block text-xs font-medium text-gray-500 mb-1">Pre-Auth Number (if any)</label>
+        <input
+          type="text"
+          [value]="preauthNumber()"
+          (input)="preauthNumber.set(inputValue($event))"
+          placeholder="PA-2026-000001"
+          class="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+        />
+      </div>
+
+      <div class="sm:col-span-2">
+        <label class="block text-xs font-medium text-gray-500 mb-1">Diagnosis *</label>
+        <input
+          type="text"
+          [value]="diagnosis()"
+          (input)="diagnosis.set(inputValue($event))"
+          placeholder="Primary diagnosis"
+          class="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+        />
+      </div>
+
+      <div>
+        <label class="block text-xs font-medium text-gray-500 mb-1">Service Code</label>
+        <input
+          type="text"
+          [value]="serviceCode()"
+          (input)="serviceCode.set(inputValue($event))"
+          placeholder="e.g. CONSULT"
+          class="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+        />
+      </div>
+
+      <div>
+        <label class="block text-xs font-medium text-gray-500 mb-1">Amount (ZMW) *</label>
+        <input
+          type="number"
+          [value]="amount()"
+          (input)="amount.set(inputValue($event))"
+          placeholder="0.00"
+          min="0"
+          step="0.01"
+          class="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+        />
+      </div>
+
+      <div class="sm:col-span-2">
+        <label class="block text-xs font-medium text-gray-500 mb-1">Service Description</label>
+        <input
+          type="text"
+          [value]="serviceDescription()"
+          (input)="serviceDescription.set(inputValue($event))"
+          placeholder="Description of services rendered"
+          class="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+        />
+      </div>
+    </div>
+
+    @if (submitError()) {
+      <div class="bg-red-50 border border-red-200 rounded-lg px-4 py-3 mt-4">
+        <p class="text-sm text-red-600">{{ submitError() }}</p>
+      </div>
+    }
+
+    <button
+      (click)="submitClaim()"
+      [disabled]="submitLoading() || !cardNumber().trim() || !diagnosis().trim() || !amount()"
+      class="w-full mt-5 bg-violet-600 text-white font-medium text-sm py-2.5 rounded-lg hover:bg-violet-700 transition-colors disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed"
+    >
+      @if (submitLoading()) {
+        <span class="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></span>
+      }
+      Submit Claim
+    </button>
+  </div>
+}
+
+<!-- Success Result -->
+@if (submitResult()) {
+  <div class="bg-green-50 border border-green-200 rounded-xl p-5 mb-6">
+    <div class="flex items-start gap-3">
+      <div class="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
+        <span class="material-symbols-rounded text-green-600" style="font-size: 24px">check_circle</span>
+      </div>
+      <div class="flex-1">
+        <p class="font-semibold text-green-800">Claim Submitted Successfully</p>
+        <p class="text-sm text-green-600 mt-0.5">Claim Number: <span class="font-mono">{{ submitResult()!.claim_number }}</span></p>
+        <p class="text-xs text-green-600 mt-1">Amount: ZMW {{ submitResult()!.submitted_amount | number:'1.2-2' }} · Status: {{ submitResult()!.status | titlecase }}</p>
+      </div>
+      <button (click)="submitResult.set(null)" class="text-green-600 hover:text-green-800">
+        <span class="material-symbols-rounded" style="font-size: 20px">close</span>
+      </button>
+    </div>
+  </div>
+}
+
+<!-- Search -->
+<div class="bg-white rounded-xl border border-gray-200 p-5 mb-6">
+  <h2 class="text-sm font-semibold text-gray-800 mb-3">Lookup Claim</h2>
+  <div class="flex gap-3">
+    <div class="flex-1">
+      <input
+        type="text"
+        [value]="searchNumber()"
+        (input)="searchNumber.set(inputValue($event))"
+        (keyup.enter)="searchClaim()"
+        placeholder="Enter claim number (e.g. CLM-2026-000001)"
+        class="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+      />
+    </div>
+    <button
+      (click)="searchClaim()"
+      [disabled]="searchLoading() || !searchNumber().trim()"
+      class="bg-gray-100 text-gray-700 font-medium text-sm px-5 py-2.5 rounded-lg hover:bg-gray-200 transition-colors disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed"
+    >
+      @if (searchLoading()) {
+        <span class="inline-block w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin"></span>
+      } @else {
+        Search
+      }
+    </button>
+  </div>
+</div>
+
+<!-- Search Error -->
+@if (searchError()) {
+  <div class="bg-red-50 border border-red-200 rounded-xl p-4 mb-6">
+    <div class="flex items-center gap-2">
+      <span class="material-symbols-rounded text-red-500" style="font-size: 20px">error</span>
+      <p class="text-sm text-red-600">{{ searchError() }}</p>
+    </div>
+  </div>
+}
+
+<!-- Search Result -->
+@if (searchResult()) {
+  <div class="bg-white rounded-xl border border-gray-200 p-5">
+    <div class="flex items-start justify-between mb-4">
+      <div>
+        <p class="font-mono text-lg font-bold text-gray-900">{{ searchResult()!.claim_number }}</p>
+        <p class="text-sm text-gray-500">{{ searchResult()!.member.first_name }} {{ searchResult()!.member.last_name }}</p>
+      </div>
+      <span [class]="'inline-flex items-center text-xs font-medium px-2.5 py-1 rounded-full ' + statusClass(searchResult()!.status)">
+        {{ searchResult()!.status | titlecase }}
+      </span>
+    </div>
+
+    <div class="grid grid-cols-2 sm:grid-cols-3 gap-4 text-sm">
+      <div>
+        <p class="text-gray-500 text-xs">Claim Type</p>
+        <p class="text-gray-900">{{ searchResult()!.claim_type | titlecase }}</p>
+      </div>
+      <div>
+        <p class="text-gray-500 text-xs">Service Date</p>
+        <p class="text-gray-900">{{ searchResult()!.service_date | date:'mediumDate' }}</p>
+      </div>
+      <div>
+        <p class="text-gray-500 text-xs">Submitted Amount</p>
+        <p class="text-gray-900 font-medium">ZMW {{ searchResult()!.submitted_amount | number:'1.2-2' }}</p>
+      </div>
+      @if (searchResult()!.approved_amount !== null) {
+        <div>
+          <p class="text-gray-500 text-xs">Approved Amount</p>
+          <p class="text-green-600 font-medium">ZMW {{ searchResult()!.approved_amount | number:'1.2-2' }}</p>
+        </div>
+      }
+      @if (searchResult()!.copay_amount !== null && searchResult()!.copay_amount! > 0) {
+        <div>
+          <p class="text-gray-500 text-xs">Co-pay</p>
+          <p class="text-amber-600 font-medium">ZMW {{ searchResult()!.copay_amount | number:'1.2-2' }}</p>
+        </div>
+      }
+      @if (searchResult()!.payable_amount !== null) {
+        <div>
+          <p class="text-gray-500 text-xs">Payable to Provider</p>
+          <p class="text-violet-600 font-semibold">ZMW {{ searchResult()!.payable_amount | number:'1.2-2' }}</p>
+        </div>
+      }
+    </div>
+
+    @if (searchResult()!.rejection_reason) {
+      <div class="mt-4 p-3 bg-red-50 rounded-lg">
+        <p class="text-xs font-medium text-red-700">Rejection Reason</p>
+        <p class="text-sm text-red-600 mt-0.5">{{ searchResult()!.rejection_reason }}</p>
+      </div>
+    }
+  </div>
+}
+
+<!-- Empty State -->
+@if (!showForm() && !searchResult() && !submitResult() && !searchError()) {
+  <div class="bg-white rounded-xl border border-gray-200 p-12 text-center">
+    <span class="material-symbols-rounded text-gray-300" style="font-size: 48px">receipt_long</span>
+    <h2 class="text-lg font-semibold text-gray-800 mt-3 mb-1">Claims Management</h2>
+    <p class="text-gray-500 text-sm">Search for an existing claim or submit a new one.</p>
+  </div>
+}

@@ -1,13 +1,11 @@
 <!-- libs/medical/feature/src/lib/dialogs/medical-quote-actions-dialog/medical-quote-actions-dialog.html -->
 
-<div class="flex flex-col max-h-[90vh]">
+<div class="flex flex-col max-h-[90vh] rounded-lg">
   <!-- Header -->
   <div class="flex items-center justify-between border-b border-slate-200 px-6 py-4">
     <div class="flex items-center gap-3">
       <div class="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100">
-        <mat-icon fontSet="material-symbols-rounded" class="!text-[24px] text-blue-600"
-          >request_quote</mat-icon
-        >
+        <mat-icon fontSet="material-symbols-rounded" class="text-blue-600">request_quote</mat-icon>
       </div>
       <div>
         <h2 class="text-lg font-semibold text-slate-900">Quote Actions</h2>
@@ -26,9 +24,7 @@
       <div class="p-6">
         <div class="mb-6 rounded-lg border border-blue-200 bg-blue-50 p-4">
           <div class="flex gap-3">
-            <mat-icon fontSet="material-symbols-rounded" class="!text-[20px] text-blue-600"
-              >info</mat-icon
-            >
+            <mat-icon fontSet="material-symbols-rounded" class="text-blue-600">info</mat-icon>
             <div class="flex-1">
               <h3 class="text-sm font-medium text-blue-900">Download Quote as PDF</h3>
               <p class="mt-1 text-sm text-blue-700">
@@ -44,31 +40,31 @@
             <h4 class="mb-2 text-sm font-medium text-slate-700">Quote will include:</h4>
             <ul class="space-y-1 text-sm text-slate-600">
               <li class="flex items-center gap-2">
-                <mat-icon fontSet="material-symbols-rounded" class="!text-[16px] text-green-600"
+                <mat-icon fontSet="material-symbols-rounded" class="text-green-600"
                   >check_circle</mat-icon
                 >
                 Customer information
               </li>
               <li class="flex items-center gap-2">
-                <mat-icon fontSet="material-symbols-rounded" class="!text-[16px] text-green-600"
+                <mat-icon fontSet="material-symbols-rounded" class="text-green-600"
                   >check_circle</mat-icon
                 >
                 Plan details and coverage
               </li>
               <li class="flex items-center gap-2">
-                <mat-icon fontSet="material-symbols-rounded" class="!text-[16px] text-green-600"
+                <mat-icon fontSet="material-symbols-rounded" class="text-green-600"
                   >check_circle</mat-icon
                 >
                 Member list with individual premiums
               </li>
               <li class="flex items-center gap-2">
-                <mat-icon fontSet="material-symbols-rounded" class="!text-[16px] text-green-600"
+                <mat-icon fontSet="material-symbols-rounded" class="text-green-600"
                   >check_circle</mat-icon
                 >
                 Complete premium breakdown
               </li>
               <li class="flex items-center gap-2">
-                <mat-icon fontSet="material-symbols-rounded" class="!text-[16px] text-green-600"
+                <mat-icon fontSet="material-symbols-rounded" class="text-green-600"
                   >check_circle</mat-icon
                 >
                 Policy period and validity dates
@@ -100,7 +96,7 @@
       <form [formGroup]="emailForm" (ngSubmit)="sendEmail()" class="p-6">
         <div class="mb-6 rounded-lg border border-green-200 bg-green-50 p-4">
           <div class="flex gap-3">
-            <mat-icon fontSet="material-symbols-rounded" class="!text-[20px] text-green-600"
+            <mat-icon fontSet="material-symbols-rounded" class="text-green-600"
               >forward_to_inbox</mat-icon
             >
             <div class="flex-1">

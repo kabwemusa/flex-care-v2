@@ -11,8 +11,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
-import { MatCheckboxModule } from '@angular/material/checkbox';
-import { MatChipsModule } from '@angular/material/chips';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { STEPPER_GLOBAL_OPTIONS } from '@angular/cdk/stepper';
 
 import {
@@ -40,8 +39,7 @@ import {
     MatSlideToggleModule,
     MatButtonModule,
     MatIconModule,
-    MatCheckboxModule,
-    MatChipsModule,
+    MatTooltipModule,
   ],
   providers: [
     {
@@ -76,14 +74,13 @@ export class MedicalBenefitsCatalogDialog implements OnInit {
 
   ngOnInit() {
     this.isEditMode = !!this.data?.id;
-    this.store.loadCategories();
+    this.store.loadBenefits();
     this.initForms();
   }
 
   private initForms() {
     // Step 1: Basic Information
     this.basicInfoForm = this.fb.group({
-      category_id: [this.data?.category_id || '', Validators.required],
       parent_id: [this.data?.parent_id || null],
       name: [this.data?.name || '', [Validators.required, Validators.minLength(2)]],
       display_name: [this.data?.display_name || ''],
@@ -162,24 +159,10 @@ export class MedicalBenefitsCatalogDialog implements OnInit {
     return getLabelByValue(LIMIT_BASES, value);
   }
 
-  getCategoryName(categoryId: string): string {
-    return this.store.categories().find((c) => c.id === categoryId)?.name || '';
-  }
-
-  getCategoryIcon(categoryId: string): string {
-    return this.store.categories().find((c) => c.id === categoryId)?.icon || 'folder';
-  }
-
-  getCategoryColor(categoryId: string): string {
-    return this.store.categories().find((c) => c.id === categoryId)?.color || '#6b7280';
-  }
-
   get parentBenefits(): Benefit[] {
-    const categoryId = this.basicInfoForm.get('category_id')?.value;
-    if (!categoryId) return [];
     return this.store
       .benefits()
-      .filter((b) => b.category_id === categoryId && !b.parent_id && b.id !== this.data?.id);
+      .filter((b) => !b.parent_id && b.id !== this.data?.id);
   }
 
   getParentBenefitName(parentId: string): string {

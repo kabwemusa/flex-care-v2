@@ -81,7 +81,7 @@
             <div>
               <div class="text-sm font-medium text-slate-500">Total Members</div>
               <div class="mt-2 text-2xl font-bold tracking-tight text-amber-600">
-                <!-- {{ store.totalMembers() }} -->
+                {{ totalMembers() }}
               </div>
             </div>
             <div class="flex h-10 w-10 items-center justify-center rounded-full bg-amber-100">
@@ -234,7 +234,7 @@
               <span
                 class="inline-flex items-center justify-center min-w-[2rem] px-2 py-0.5 bg-amber-50 text-amber-700 rounded text-sm font-medium"
               >
-                {{ row.active_members_count || 0 }}
+                {{ row.stats?.total_application_members || 0 }}
               </span>
             </td>
           </ng-container>
@@ -351,7 +351,7 @@
   </mat-drawer-content>
 
   <!-- Detail Drawer -->
-  <mat-drawer #detailDrawer mode="over" position="end" class="!w-[480px]">
+  <mat-drawer #detailDrawer mode="over" position="end" class="!w-[600px]">
     @if (selectedGroup(); as group) {
     <div class="h-full flex flex-col bg-white">
       <!-- Drawer Header -->

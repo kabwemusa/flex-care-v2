@@ -23,11 +23,10 @@ class PremiumService
      */
     public function calculateApplicationPremium(Application $application): array
     {
-        // Eager load everything needed for calculation
         $application->load([
             'rateCard.entries',
             'rateCard.tiers',
-            'activeMembers', // Scope: active members only
+            'activeMembers',
             'activeAddons.addon',
             'plan'
         ]);
@@ -37,32 +36,90 @@ class PremiumService
             return ['success' => false, 'message' => 'No rate card assigned to application'];
         }
 
-        // 1. Calculate Base Premium (Members)
+        // 1. Calculate Base Premium branching on effective premium_basis
         $basePremium = 0;
         $loadingAmount = 0;
         $memberBreakdown = [];
+        $memberCount = $application->activeMembers->count();
+        $effectiveBasis = $this->resolveEffectivePremiumBasis($rateCard);
 
-        // Determine if we use Tiered (Family) pricing or Per-Member pricing
-        // Note: Logic here assumes Per-Member accumulation. 
-        // If your RateCard is strictly Tiered (flat family fee), logic needs to check RateCard::is_tiered
-        
-        foreach ($application->activeMembers as $member) {
-            $memberResult = $this->calculateApplicationMemberPremium($member, $rateCard);
-            
-            if ($memberResult['success']) {
-                $basePremium += $memberResult['base_premium'];
-                $loadingAmount += $memberResult['loading_amount'];
-                
-                $memberBreakdown[] = [
-                    'member_id' => $member->id,
-                    'name' => $member->full_name,
-                    'type' => $member->member_type,
-                    'age' => $member->age_at_inception ?? $member->age,
-                    'base' => $memberResult['base_premium'],
-                    'loading' => $memberResult['loading_amount'],
-                    'total' => $memberResult['total_premium'],
-                ];
-            }
+        switch ($effectiveBasis) {
+            case MedicalConstants::PREMIUM_BASIS_TIERED:
+                $tieredResult = $this->calculateTieredPremium($rateCard, $memberCount);
+                $basePremium = $tieredResult['base_premium'];
+
+                // Distribute base evenly for loading calculation context, then sum loadings
+                $perMemberBase = $memberCount > 0 ? round($basePremium / $memberCount, 2) : 0;
+                foreach ($application->activeMembers as $member) {
+                    $memberLoading = $this->calculateMemberLoadingAmount($member, $perMemberBase);
+                    $loadingAmount += $memberLoading;
+
+                    $member->forceFill([
+                        'base_premium' => $perMemberBase,
+                        'loading_amount' => $memberLoading,
+                        'total_premium' => $perMemberBase + $memberLoading,
+                    ])->saveQuietly();
+
+                    $memberBreakdown[] = [
+                        'member_id' => $member->id,
+                        'name' => $member->full_name,
+                        'type' => $member->member_type,
+                        'age' => $member->age_at_inception ?? $member->age,
+                        'base' => $perMemberBase,
+                        'loading' => $memberLoading,
+                        'total' => $perMemberBase + $memberLoading,
+                    ];
+                }
+                break;
+
+            case MedicalConstants::PREMIUM_BASIS_PER_FAMILY:
+                $familyResult = $this->calculatePerFamilyPremium($rateCard);
+                $basePremium = $familyResult['base_premium'];
+
+                // Sum member loadings (use full family premium as loading context)
+                foreach ($application->activeMembers as $member) {
+                    $memberLoading = $this->calculateMemberLoadingAmount($member, $basePremium);
+                    $loadingAmount += $memberLoading;
+
+                    $member->forceFill([
+                        'loading_amount' => $memberLoading,
+                        'total_premium' => $memberLoading,
+                    ])->saveQuietly();
+
+                    if ($memberLoading > 0) {
+                        $memberBreakdown[] = [
+                            'member_id' => $member->id,
+                            'name' => $member->full_name,
+                            'type' => $member->member_type,
+                            'age' => $member->age_at_inception ?? $member->age,
+                            'base' => 0,
+                            'loading' => $memberLoading,
+                            'total' => $memberLoading,
+                        ];
+                    }
+                }
+                break;
+
+            default: // per_member
+                foreach ($application->activeMembers as $member) {
+                    $memberResult = $this->calculateApplicationMemberPremium($member, $rateCard, true);
+
+                    if ($memberResult['success']) {
+                        $basePremium += $memberResult['base_premium'];
+                        $loadingAmount += $memberResult['loading_amount'];
+
+                        $memberBreakdown[] = [
+                            'member_id' => $member->id,
+                            'name' => $member->full_name,
+                            'type' => $member->member_type,
+                            'age' => $member->age_at_inception ?? $member->age,
+                            'base' => $memberResult['base_premium'],
+                            'loading' => $memberResult['loading_amount'],
+                            'total' => $memberResult['total_premium'],
+                        ];
+                    }
+                }
+                break;
         }
 
         // 2. Calculate Addons
@@ -77,16 +134,15 @@ class PremiumService
                 $addon,
                 $application->plan_id,
                 $basePremium,
-                $application->activeMembers->count()
+                $memberCount
             );
 
             if ($addonResult['success']) {
                 $premium = $addonResult['premium'];
                 $addonPremium += $premium;
 
-                // Update the pivot record
                 $appAddon->premium = $premium;
-                $appAddon->save();
+                $appAddon->saveQuietly();
 
                 $addonBreakdown[] = [
                     'addon_name' => $addon->name,
@@ -96,32 +152,39 @@ class PremiumService
         }
 
         // 3. Final Totals
-        $discountAmount = (float) $application->discount_amount; // Calculated by DiscountService previously
+        $discountAmount = (float) $application->discount_amount;
         $totalPremium = $basePremium + $addonPremium + $loadingAmount - $discountAmount;
 
-        // Tax - configured in config/medical.php
         $taxRate = config('medical.tax_rate', 0.05);
         $taxAmount = round($totalPremium * $taxRate, 2);
         $grossPremium = $totalPremium + $taxAmount;
 
-        // 4. Save to DB
-        $application->update([
+        // 4. Save to DB (use direct update to avoid re-triggering hooks)
+        $application->forceFill([
             'base_premium' => round($basePremium, 2),
             'addon_premium' => round($addonPremium, 2),
             'loading_amount' => round($loadingAmount, 2),
             'total_premium' => round($totalPremium, 2),
             'tax_amount' => $taxAmount,
             'gross_premium' => round($grossPremium, 2),
-        ]);
+        ])->saveQuietly();
+
+        // Update member counts without re-triggering premium hooks
+        $application->forceFill([
+            'member_count' => $memberCount,
+            'principal_count' => $application->activeMembers->where('member_type', MedicalConstants::MEMBER_TYPE_PRINCIPAL)->count(),
+            'dependent_count' => $application->activeMembers->where('member_type', '!=', MedicalConstants::MEMBER_TYPE_PRINCIPAL)->count(),
+        ])->saveQuietly();
 
         return [
             'success' => true,
             'gross_premium' => $grossPremium,
             'currency' => $application->currency,
             'annual_amount' => $this->annualize($grossPremium, $application->billing_frequency),
+            'premium_basis' => $effectiveBasis,
             'breakdown' => [
                 'members' => $memberBreakdown,
-                'addons' => $addonBreakdown
+                'addons' => $addonBreakdown,
             ]
         ];
     }
@@ -134,7 +197,7 @@ class PremiumService
         $policy->load([
             'rateCard.entries',
             'rateCard.tiers',
-            'members', // Note: Policy usually calculates for ALL active members
+            'members',
             'policyAddons.addon',
             'plan'
         ]);
@@ -144,27 +207,45 @@ class PremiumService
             return ['success' => false, 'message' => 'No rate card assigned'];
         }
 
-        // 1. Calculate Members
+        // 1. Calculate Members based on premium_basis
         $basePremium = 0;
         $loadingAmount = 0;
         $activeMemberCount = 0;
 
+        // Count active members first (needed for tiered)
         foreach ($policy->members as $member) {
-            // Skip terminated members for premium calculation if you only want active billing
-            if ($member->status === MedicalConstants::MEMBER_STATUS_TERMINATED) {
-                continue;
+            if ($member->status !== MedicalConstants::MEMBER_STATUS_TERMINATED) {
+                $activeMemberCount++;
             }
+        }
 
-            $activeMemberCount++;
-            
-            // Calculate individual member premium
-            $memberResult = $this->calculatePolicyMemberPremium($member, $policy);
-            
-            $basePremium += $memberResult;
-            
-            // Loadings are stored in the member_loadings table or summed on the member model
-            // Assuming the Member model has a 'loading_amount' field updated by calculatePolicyMemberPremium
-            $loadingAmount += $member->loading_amount;
+        $effectiveBasis = $this->resolveEffectivePremiumBasis($rateCard);
+
+        switch ($effectiveBasis) {
+            case MedicalConstants::PREMIUM_BASIS_TIERED:
+                // Tiered: flat family fee, skip per-member calculation
+                $tieredResult = $this->calculateTieredPremium($rateCard, $activeMemberCount);
+                $basePremium = $tieredResult['base_premium'];
+                break;
+
+            case MedicalConstants::PREMIUM_BASIS_PER_FAMILY:
+                // Per-family: single flat rate
+                $familyResult = $this->calculatePerFamilyPremium($rateCard);
+                $basePremium = $familyResult['base_premium'];
+                break;
+
+            default: // per_member
+                // Per-member: calculate each active member individually
+                foreach ($policy->members as $member) {
+                    if ($member->status === MedicalConstants::MEMBER_STATUS_TERMINATED) {
+                        continue;
+                    }
+
+                    $memberResult = $this->calculatePolicyMemberPremium($member, $policy);
+                    $basePremium += $memberResult;
+                    $loadingAmount += $member->loading_amount;
+                }
+                break;
         }
 
         // 2. Calculate Addons
@@ -173,16 +254,13 @@ class PremiumService
             if (!$policyAddon->is_active) continue;
 
             $addon = $policyAddon->addon;
-            // Calculate addon price (similar logic to applications)
-            // Note: For policies, usually the price is fixed at inception/renewal, 
-            // but we recalculate here to ensure consistency if members change.
             $res = $this->calculateAddonPremium(
-                $addon, 
-                $policy->plan_id, 
-                $basePremium, 
+                $addon,
+                $policy->plan_id,
+                $basePremium,
                 $activeMemberCount
             );
-            
+
             if ($res['success']) {
                 $policyAddon->premium = $res['premium'];
                 $policyAddon->save();
@@ -194,7 +272,6 @@ class PremiumService
         $discountAmount = (float) $policy->discount_amount;
         $totalPremium = $basePremium + $addonPremium + $loadingAmount - $discountAmount;
 
-        // Tax - configured in config/medical.php
         $taxRate = config('medical.tax_rate', 0.05);
         $taxAmount = round($totalPremium * $taxRate, 2);
         $grossPremium = $totalPremium + $taxAmount;
@@ -218,6 +295,7 @@ class PremiumService
 
     /**
      * Calculate premium for a single Policy Member.
+     * Applies member_type_factors from the rate card.
      */
     public function calculatePolicyMemberPremium(Member $member, ?Policy $policy = null): float
     {
@@ -226,26 +304,23 @@ class PremiumService
 
         if (!$rateCard) return 0.0;
 
-        // 1. Base Rate
-        // Use age_at_inception if set (standard insurance practice), otherwise current age
         $age = $member->age_at_inception ?? $member->age;
-        
+
         $entry = $this->findRateEntry($rateCard, $age, $member->member_type, $member->gender);
 
         $base = 0.0;
         if ($entry) {
-            $base = (float) $entry->base_premium;
+            $rawBase = (float) $entry->base_premium;
+            $factor = $rateCard->getMemberTypeFactor($member->member_type);
+            $base = round($rawBase * $factor, 2);
         }
 
-        // 2. Loadings
-        // In Policy context, loadings are usually materialized in `med_member_loadings` table
-        // We sum active loadings attached to this member
+        // Loadings from med_member_loadings table
         $loadingAmount = $member->activeLoadings()
             ->sum('loading_amount');
 
-        // 3. Update Member Record
         $total = $base + $loadingAmount;
-        
+
         $member->update([
             'base_premium' => $base,
             'loading_amount' => $loadingAmount,
@@ -257,36 +332,47 @@ class PremiumService
 
     /**
      * Calculate single member premium for Application (DB Model).
+     * Applies member_type_factors from the rate card.
+     *
+     * @param bool $quiet  When true, uses saveQuietly() to prevent cascading hook recalculations
+     *                     (used during batch calculation in calculateApplicationPremium).
      */
-    public function calculateApplicationMemberPremium(ApplicationMember $member, RateCard $rateCard): array
+    public function calculateApplicationMemberPremium(ApplicationMember $member, RateCard $rateCard, bool $quiet = false): array
     {
         $age = $member->age_at_inception ?? $member->age;
-        
-        // Lookup Rate
+
         $entry = $this->findRateEntry($rateCard, $age, $member->member_type, $member->gender);
 
         if (!$entry) {
-            return ['success' => false, 'message' => "No rate found for {$member->member_type} (Age: $age)"];
+            // Tiered/per_family rate cards don't require per-member entries
+            if ($rateCard->premium_basis !== MedicalConstants::PREMIUM_BASIS_PER_MEMBER) {
+                $basePremium = 0.0;
+            } else {
+                return ['success' => false, 'message' => "No rate found for {$member->member_type} (Age: $age)"];
+            }
+        } else {
+            $rawPremium = (float) $entry->base_premium;
+            $factor = $rateCard->getMemberTypeFactor($member->member_type);
+            $basePremium = round($rawPremium * $factor, 2);
         }
-
-        $basePremium = (float) $entry->base_premium; // Assuming 'base_premium' column in rate_card_entries table
 
         // Apply Loadings (Underwriting)
         $loadingAmount = $this->calculateMemberLoadingAmount($member, $basePremium);
         $total = $basePremium + $loadingAmount;
 
-        // Save to DB
-        $member->update([
+        $member->forceFill([
             'base_premium' => $basePremium,
             'loading_amount' => $loadingAmount,
-            'total_premium' => $total
+            'total_premium' => $total,
         ]);
+
+        $quiet ? $member->saveQuietly() : $member->save();
 
         return [
             'success' => true,
             'base_premium' => $basePremium,
             'loading_amount' => $loadingAmount,
-            'total_premium' => $total
+            'total_premium' => $total,
         ];
     }
 
@@ -296,53 +382,40 @@ class PremiumService
 
     /**
      * Generate a quote from raw data (No DB persistence).
-     * Used by RateCardController::calculate
+     * Used by PublicQuoteController and RateCardController::calculate.
+     *
+     * @param RateCard $rateCard   The rate card to price against
+     * @param array    $membersData Array of member data (age, member_type, gender)
+     * @param array    $addonIds   User-selected addon IDs
+     * @param string|null $planId  Plan ID for mandatory addon injection and addon pricing
      */
-    public function calculateQuote(RateCard $rateCard, array $membersData, array $addonIds = []): array
+    public function calculateQuote(RateCard $rateCard, array $membersData, array $addonIds = [], ?string $planId = null): array
     {
         $rateCard->load(['entries', 'tiers']);
-        
-        $basePremium = 0;
-        $memberBreakdown = [];
+
         $memberCount = count($membersData);
+        $effectivePlanId = $planId ?? $rateCard->plan_id;
 
-        // 1. Calculate Member Base
-        foreach ($membersData as $index => $data) {
-            $age = $data['age'];
-            $type = $data['member_type'];
-            $gender = $data['gender'] ?? null;
+        // 1. Calculate Base Premium using effective premium_basis strategy
+        $effectiveBasis = $this->resolveEffectivePremiumBasis($rateCard);
+        $baseResult = match ($effectiveBasis) {
+            MedicalConstants::PREMIUM_BASIS_TIERED => $this->calculateTieredPremium($rateCard, $memberCount),
+            MedicalConstants::PREMIUM_BASIS_PER_FAMILY => $this->calculatePerFamilyPremium($rateCard),
+            default => $this->calculatePerMemberPremium($rateCard, $membersData),
+        };
 
-            $entry = $this->findRateEntry($rateCard, $age, $type, $gender);
+        $basePremium = $baseResult['base_premium'];
+        $memberBreakdown = $baseResult['member_breakdown'];
 
-            if ($entry) {
-                $amount = (float) $entry->base_premium;
-                $basePremium += $amount;
-                
-                $memberBreakdown[] = [
-                    'index' => $index,
-                    'type' => $type,
-                    'age' => $age,
-                    'amount' => $amount
-                ];
-            }
-        }
+        // 2. Auto-inject mandatory addons for the plan
+        if ($effectivePlanId) {
+            $mandatoryAddonIds = PlanAddon::where('plan_id', $effectivePlanId)
+                ->where('is_active', true)
+                ->mandatory()
+                ->pluck('addon_id')
+                ->toArray();
 
-        // 2. Handle Tiers (If Rate Card is Tiered)
-        // If tiered, we might override the per-member sum with a flat family fee
-        if ($rateCard->is_tiered) {
-            $tier = $this->findApplicableTier($rateCard, $memberCount);
-            if ($tier) {
-                // Logic: Either override base, or multiply. 
-                // Assuming 'tier_premium' is a flat fee for the group based on your models
-                if ($tier->tier_premium > 0) {
-                    $basePremium = $tier->tier_premium;
-                    // Check for extra members logic if defined
-                    if ($tier->max_members && $memberCount > $tier->max_members && $tier->extra_member_premium > 0) {
-                        $extras = $memberCount - $tier->max_members;
-                        $basePremium += ($extras * $tier->extra_member_premium);
-                    }
-                }
-            }
+            $addonIds = array_values(array_unique(array_merge($addonIds, $mandatoryAddonIds)));
         }
 
         // 3. Calculate Addons
@@ -352,12 +425,13 @@ class PremiumService
         if (!empty($addonIds)) {
             $addons = Addon::whereIn('id', $addonIds)->get();
             foreach ($addons as $addon) {
-                $res = $this->calculateAddonPremium($addon, $rateCard->plan_id, $basePremium, $memberCount);
+                $res = $this->calculateAddonPremium($addon, $effectivePlanId, $basePremium, $memberCount);
                 if ($res['success']) {
                     $addonPremium += $res['premium'];
                     $addonBreakdown[] = [
                         'name' => $addon->name,
-                        'amount' => $res['premium']
+                        'amount' => $res['premium'],
+                        'is_included' => $res['is_included'] ?? false,
                     ];
                 }
             }
@@ -368,18 +442,101 @@ class PremiumService
         return [
             'success' => true,
             'currency' => $rateCard->currency,
+            'premium_basis' => $effectiveBasis,
             'base_premium' => round($basePremium, 2),
             'addon_premium' => round($addonPremium, 2),
             'total_premium' => round($total, 2),
             'breakdown' => [
                 'members' => $memberBreakdown,
-                'addons' => $addonBreakdown
-            ]
+                'addons' => $addonBreakdown,
+            ],
         ];
     }
 
     // =========================================================================
-    // 3. SHARED CALCULATION LOGIC
+    // 3. PREMIUM BASIS STRATEGIES
+    // =========================================================================
+
+    /**
+     * Per-member age-banded calculation with member_type_factors applied.
+     * Each member is rated individually based on their age band.
+     */
+    protected function calculatePerMemberPremium(RateCard $rateCard, array $membersData): array
+    {
+        $basePremium = 0;
+        $memberBreakdown = [];
+
+        foreach ($membersData as $index => $data) {
+            $age = $data['age'];
+            $type = $data['member_type'];
+            $gender = $data['gender'] ?? null;
+
+            $entry = $this->findRateEntry($rateCard, $age, $type, $gender);
+
+            if ($entry) {
+                $rawPremium = (float) $entry->base_premium;
+                $factor = $rateCard->getMemberTypeFactor($type);
+                $amount = round($rawPremium * $factor, 2);
+            } else {
+                $amount = 0;
+            }
+
+            $basePremium += $amount;
+            $memberBreakdown[] = [
+                'index' => $index,
+                'type' => $type,
+                'age' => $age,
+                'amount' => $amount,
+            ];
+        }
+
+        return [
+            'base_premium' => $basePremium,
+            'member_breakdown' => $memberBreakdown,
+        ];
+    }
+
+    /**
+     * Tiered (family-size) flat premium.
+     * No per-member age-band lookup; premium determined by member count.
+     */
+    protected function calculateTieredPremium(RateCard $rateCard, int $memberCount): array
+    {
+        $basePremium = 0;
+        $tier = $this->findApplicableTier($rateCard, $memberCount);
+
+        if ($tier && $tier->tier_premium > 0) {
+            $basePremium = (float) $tier->tier_premium;
+            if ($tier->max_members && $memberCount > $tier->max_members && $tier->extra_member_premium > 0) {
+                $extras = $memberCount - $tier->max_members;
+                $basePremium += ($extras * (float) $tier->extra_member_premium);
+            }
+        }
+
+        return [
+            'base_premium' => $basePremium,
+            'member_breakdown' => [],
+        ];
+    }
+
+    /**
+     * Per-family flat premium.
+     * Single rate regardless of member count or ages.
+     * Uses the first rate card entry's base_premium as the flat family rate.
+     */
+    protected function calculatePerFamilyPremium(RateCard $rateCard): array
+    {
+        $entry = $rateCard->entries->first();
+        $basePremium = $entry ? (float) $entry->base_premium : 0;
+
+        return [
+            'base_premium' => $basePremium,
+            'member_breakdown' => [],
+        ];
+    }
+
+    // =========================================================================
+    // 4. SHARED CALCULATION LOGIC
     // =========================================================================
 
     /**
@@ -387,7 +544,7 @@ class PremiumService
      */
     public function calculateAddonPremium(Addon $addon, string $planId, float $basePremium, int $memberCount): array
     {
-        // 1. Check if included in plan
+        // 1. Check if included in plan (no additional charge)
         $planAddon = PlanAddon::where('plan_id', $planId)
             ->where('addon_id', $addon->id)
             ->first();
@@ -412,31 +569,25 @@ class PremiumService
      */
     protected function calculateMemberLoadingAmount(ApplicationMember|Member $member, float $basePremium): float
     {
-        // 'applied_loadings' should be cast to array in the model
         $loadings = $member->applied_loadings ?? [];
         if (empty($loadings)) return 0;
 
         $total = 0;
-        
+
         foreach ($loadings as $loading) {
-            // If loading_amount is already calculated (from LoadingRule), use it directly
             if (isset($loading['loading_amount'])) {
                 $total += (float) $loading['loading_amount'];
                 continue;
             }
 
-            // If loading_rule_id is provided, look up and use LoadingRule
             if (!empty($loading['loading_rule_id'])) {
                 $rule = \Modules\Medical\Models\LoadingRule::find($loading['loading_rule_id']);
                 if ($rule) {
-                    // Use LoadingRule's calculateLoading method (handles min/max caps)
                     $total += $rule->calculateLoading($basePremium);
                     continue;
                 }
             }
 
-            // Fallback: Manual calculation (backward compatibility)
-            // Support both 'type' and 'loading_type' for compatibility
             $loadingType = $loading['loading_type'] ?? $loading['type'] ?? 'fixed';
             $value = (float) ($loading['value'] ?? $loading['loading_value'] ?? 0);
 
@@ -446,30 +597,58 @@ class PremiumService
                 $total += $value;
             }
         }
-        
+
         return round($total, 2);
     }
 
     // =========================================================================
-    // 4. HELPERS
+    // 5. HELPERS
     // =========================================================================
 
     /**
-     * Find specific rate card entry.
+     * Resolve the effective premium basis for a rate card.
+     *
+     * If the configured premium_basis doesn't match what's actually available
+     * (e.g. tiered but no tiers configured, or per_member but no entries),
+     * fall back intelligently to avoid silent zero premiums.
+     */
+    protected function resolveEffectivePremiumBasis(RateCard $rateCard): string
+    {
+        $configured = $rateCard->premium_basis;
+        $hasEntries = $rateCard->entries->isNotEmpty();
+        $hasTiers   = $rateCard->tiers->isNotEmpty();
+
+        // Configured strategy has data → use it as-is
+        if ($configured === MedicalConstants::PREMIUM_BASIS_TIERED && $hasTiers) {
+            return $configured;
+        }
+        if ($configured === MedicalConstants::PREMIUM_BASIS_PER_FAMILY && $hasEntries) {
+            return $configured;
+        }
+        if ($configured === MedicalConstants::PREMIUM_BASIS_PER_MEMBER && $hasEntries) {
+            return $configured;
+        }
+
+        // Configured strategy has NO data → fall back to what's available
+        if ($hasTiers) {
+            return MedicalConstants::PREMIUM_BASIS_TIERED;
+        }
+        if ($hasEntries) {
+            return MedicalConstants::PREMIUM_BASIS_PER_MEMBER;
+        }
+
+        // Nothing configured at all — return the original (will produce zero)
+        return $configured;
+    }
+
+    /**
+     * Find specific rate card entry matching age band, member type, and gender.
      */
     protected function findRateEntry(RateCard $rateCard, int $age, string $type, ?string $gender): ?object
     {
-        // Prioritize exact match (Member Type + Gender + Age)
         return $rateCard->entries->first(function ($e) use ($age, $type, $gender, $rateCard) {
-            // Check Age
-            // Use 'min_age' and 'max_age' as per standard RateCardEntry model
             $ageMatch = $age >= $e->min_age && $age <= $e->max_age;
-            
-            // Check Type (if entry defines it, otherwise generic)
-            // If rate card doesn't distinguish types, ignore this check
             $typeMatch = empty($e->member_type) || $e->member_type === $type;
-
-            // Check Gender
             $genderMatch = $rateCard->is_unisex || empty($e->gender) || $e->gender === $gender;
 
             return $ageMatch && $typeMatch && $genderMatch;
@@ -479,7 +658,7 @@ class PremiumService
     protected function findApplicableTier(RateCard $rateCard, int $count): ?object
     {
         return $rateCard->tiers->first(function ($t) use ($count) {
-            return $count >= $t->min_members && 
+            return $count >= $t->min_members &&
                    ($t->max_members === null || $count <= $t->max_members);
         });
     }
@@ -496,13 +675,9 @@ class PremiumService
 
     /**
      * Convert an annual amount to a specific billing period amount.
-     * e.g. 1200 Annual -> 100 Monthly
-     * * @param float $annualAmount The total annual premium
-     * @param string $frequency The billing frequency (monthly, quarterly, etc)
      */
     public function periodize(float $annualAmount, string $frequency): float
     {
-        // Prevent division by zero if amount is 0
         if ($annualAmount <= 0) {
             return 0.0;
         }
@@ -512,31 +687,20 @@ class PremiumService
             MedicalConstants::BILLING_QUARTERLY => round($annualAmount / 4, 2),
             MedicalConstants::BILLING_SEMI_ANNUAL => round($annualAmount / 2, 2),
             MedicalConstants::BILLING_ANNUAL => round($annualAmount, 2),
-            // Default to monthly if frequency is unknown or invalid
             default => round($annualAmount / 12, 2),
         };
     }
 
     /**
      * Convert premium from one frequency to another.
-     * e.g. 100 Monthly -> 1200 Annual OR 1200 Annual -> 100 Monthly
-     *
-     * @param float $premium The premium amount in the source frequency
-     * @param string $fromFrequency The current frequency
-     * @param string $toFrequency The target frequency
-     * @return float The converted premium amount
      */
     public function convertFrequency(float $premium, string $fromFrequency, string $toFrequency): float
     {
-        // If frequencies are the same, no conversion needed
         if ($fromFrequency === $toFrequency) {
             return round($premium, 2);
         }
 
-        // First, convert to annual
         $annualPremium = $this->annualize($premium, $fromFrequency);
-
-        // Then convert to target frequency
         return $this->periodize($annualPremium, $toFrequency);
     }
 }

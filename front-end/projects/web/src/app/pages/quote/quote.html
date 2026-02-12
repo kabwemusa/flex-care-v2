@@ -1,0 +1,750 @@
+<!-- ─── Page Header ────────────────────────────────────────────────────── -->
+<section class="bg-gradient-to-b from-teal-50/40 via-white to-white border-b border-gray-100 pt-16">
+  <div class="max-w-4xl mx-auto px-4 sm:px-6 py-12 text-center">
+    <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-teal-50 border border-teal-100 mb-4 fc-fade-in">
+      <span class="material-symbols-rounded text-teal-600" style="font-size: 16px">calculate</span>
+      <span class="text-xs font-medium text-teal-700">Quick Quote</span>
+    </div>
+    <h1 class="text-2xl sm:text-4xl font-semibold text-gray-900 mb-3 tracking-tight fc-slide-up">Get Your Personalized Quote</h1>
+    <p class="text-gray-500 font-light text-base max-w-xl mx-auto fc-slide-up fc-slide-up-delay-1">
+      Choose your plan, add your family members, and see your premium—all in under 2 minutes.
+    </p>
+  </div>
+</section>
+
+<!-- ─── Step Progress Bar ────────────────────────────────────────────── -->
+<div class="max-w-2xl mx-auto px-4 sm:px-6 pt-10 pb-2">
+  <!-- Mobile: Compact Step Indicator -->
+  <div class="sm:hidden flex items-center justify-center gap-2 mb-6">
+    <div class="flex items-center gap-1.5">
+      @for (s of [1, 2, 3]; track s) {
+        <div class="flex items-center gap-1.5">
+          <div class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-medium transition-all duration-300"
+            [class]="step() > s
+              ? 'bg-teal-600 text-white'
+              : step() === s
+                ? 'bg-teal-600 text-white shadow-sm shadow-teal-200'
+                : 'bg-gray-200 text-gray-400'">
+            @if (step() > s) {
+              <span class="material-symbols-rounded fc-success-pulse" style="font-size: 14px">check</span>
+            } @else {
+              {{ s }}
+            }
+          </div>
+          @if (s < 3) {
+            <div class="w-6 h-0.5 transition-all duration-500"
+              [class]="step() > s ? 'bg-teal-500' : 'bg-gray-200'"></div>
+          }
+        </div>
+      }
+    </div>
+    <span class="text-xs font-medium ml-2"
+      [class]="step() === 1 ? 'text-teal-700' : step() === 2 ? 'text-teal-700' : 'text-teal-700'">
+      {{ ['', 'Choose Plan', 'Add Members', 'Get Quote'][step()] }}
+    </span>
+  </div>
+
+  <!-- Desktop: Full Step Progress -->
+  <div class="hidden sm:flex items-center justify-between relative">
+    <!-- Connecting line background -->
+    <div class="absolute top-5 left-12 right-12 h-1 bg-gray-100 rounded-full"></div>
+    <!-- Connecting line progress -->
+    <div class="absolute top-5 left-12 h-1 bg-linear-to-r from-teal-500 to-teal-600 rounded-full transition-all duration-700 ease-out"
+      [style.width]="step() === 1 ? '0%' : step() === 2 ? 'calc(50% - 24px)' : 'calc(100% - 96px)'"></div>
+
+    @for (s of [1, 2, 3]; track s) {
+      <button
+        (click)="canNavigateToStep(s) ? goToStep(s) : null"
+        [disabled]="!canNavigateToStep(s)"
+        class="relative z-10 flex flex-col items-center group transition-all duration-300"
+        [class.cursor-pointer]="canNavigateToStep(s)"
+        [class.cursor-not-allowed]="!canNavigateToStep(s)">
+        <div class="w-10 h-10 rounded-full flex items-center justify-center text-sm font-medium transition-all duration-300 shadow-sm"
+          [class]="step() > s
+            ? 'bg-teal-600 text-white shadow-teal-200'
+            : step() === s
+              ? 'bg-teal-600 text-white ring-4 ring-teal-50 shadow-teal-300 scale-110'
+              : 'bg-white border-2 border-gray-200 text-gray-400 group-hover:border-gray-300'">
+          @if (step() > s) {
+            <span class="material-symbols-rounded fc-success-pulse" style="font-size: 18px">check</span>
+          } @else {
+            {{ s }}
+          }
+        </div>
+        <div class="mt-3 text-center">
+          <span class="text-sm font-medium block transition-colors duration-200"
+            [class]="step() >= s ? 'text-teal-700' : 'text-gray-400 group-hover:text-gray-500'">
+            {{ ['', 'Choose Plan', 'Add Members', 'Get Quote'][s] }}
+          </span>
+          <span class="text-xs text-gray-400 font-light mt-0.5 block">
+            {{ ['', 'Select your coverage', "Who's covered?", 'See your premium'][s] }}
+          </span>
+        </div>
+      </button>
+    }
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     STEP 1: Choose Plan
+     ═══════════════════════════════════════════════════════════════════════ -->
+@if (step() === 1) {
+  <div class="max-w-6xl mx-auto px-4 sm:px-6 py-10 fc-fade-in">
+
+    <!-- Filter Tabs (pill style with icons) -->
+    <div class="flex flex-wrap gap-2 justify-center mb-10">
+      @for (tab of [
+        ['all', 'All Plans', 'grid_view'],
+        ['individual', 'Individual', 'person'],
+        ['family', 'Family', 'family_restroom'],
+        ['corporate', 'Corporate', 'business']
+      ]; track tab[0]) {
+        <button
+          (click)="setPlanFilter(tab[0])"
+          class="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 shadow-sm"
+          [class]="planFilter() === tab[0]
+            ? 'bg-teal-600 text-white shadow-teal-200 scale-105'
+            : 'bg-white text-gray-600 hover:bg-gray-50 border border-gray-200 hover:border-gray-300'"
+        >
+          <span class="material-symbols-rounded" style="font-size: 18px">{{ tab[2] }}</span>
+          <span>{{ tab[1] }}</span>
+          @if (planFilter() === tab[0] && !plansLoading()) {
+            <span class="text-xs bg-white/20 px-1.5 py-0.5 rounded-full">{{ filteredPlans().length }}</span>
+          }
+        </button>
+      }
+    </div>
+
+    <!-- Loading -->
+    @if (plansLoading()) {
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+        @for (i of [1,2,3]; track i) {
+          <div class="fc-card p-5 animate-pulse">
+            <div class="flex items-center gap-3 mb-4">
+              <div class="w-10 h-10 bg-gray-100 rounded-xl"></div>
+              <div class="h-4 bg-gray-100 rounded w-24"></div>
+            </div>
+            <div class="h-3 bg-gray-50 rounded w-full mb-2"></div>
+            <div class="h-3 bg-gray-50 rounded w-2/3"></div>
+          </div>
+        }
+      </div>
+    }
+
+    <!-- Plan Cards (selectable) -->
+    @if (!plansLoading()) {
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 fc-stagger">
+        @for (plan of filteredPlans(); track plan.id) {
+          <button
+            (click)="selectPlan(plan)"
+            class="group relative fc-card p-6 text-left focus:outline-none focus:ring-2 focus:ring-teal-400 focus:ring-offset-2 overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1 hover:border-teal-200"
+          >
+            <!-- Tier color accent bar (left side) -->
+            <div class="absolute left-0 top-0 bottom-0 w-1 transition-all duration-300"
+              [class]="plan.tier_level === 1 ? 'bg-gray-300 group-hover:w-1.5' : plan.tier_level === 2 ? 'bg-teal-500 group-hover:w-1.5' : plan.tier_level === 3 ? 'bg-violet-500 group-hover:w-1.5' : 'bg-amber-500 group-hover:w-1.5'">
+            </div>
+
+            <!-- Top: Icon + Tier Badge -->
+            <div class="flex items-start justify-between mb-4">
+              <div class="w-12 h-12 rounded-xl flex items-center justify-center transition-all duration-300 shadow-sm group-hover:scale-110 group-hover:shadow-md"
+                [class]="plan.tier_level === 1 ? 'bg-linear-to-br from-gray-50 to-gray-100' : plan.tier_level === 2 ? 'bg-linear-to-br from-teal-50 to-teal-100' : plan.tier_level === 3 ? 'bg-linear-to-br from-violet-50 to-violet-100' : 'bg-linear-to-br from-amber-50 to-amber-100'">
+                <span class="material-symbols-rounded transition-colors duration-300" style="font-size: 24px"
+                  [class]="plan.tier_level === 1 ? 'text-gray-600 group-hover:text-gray-700' : plan.tier_level === 2 ? 'text-teal-600 group-hover:text-teal-700' : plan.tier_level === 3 ? 'text-violet-600 group-hover:text-violet-700' : 'text-amber-600 group-hover:text-amber-700'">
+                  {{ planTypeIcon(plan.plan_type) }}
+                </span>
+              </div>
+              <span class="text-xs font-medium px-3 py-1 rounded-full transition-all duration-300"
+                [class]="plan.tier_level === 1 ? 'bg-gray-100 text-gray-700 group-hover:bg-gray-200' : plan.tier_level === 2 ? 'bg-teal-50 text-teal-700 group-hover:bg-teal-100' : plan.tier_level === 3 ? 'bg-violet-50 text-violet-700 group-hover:bg-violet-100' : 'bg-amber-50 text-amber-700 group-hover:bg-amber-100'">
+                {{ tierLabel(plan.tier_level) }}
+              </span>
+            </div>
+
+            <!-- Plan Name + Details -->
+            <h3 class="text-base font-medium text-gray-900 mb-1 group-hover:text-teal-700 transition-colors">{{ plan.name }}</h3>
+            <p class="text-xs text-gray-400 font-light capitalize mb-4">{{ plan.plan_type }} · {{ plan.scheme.name }}</p>
+
+            <!-- Benefits Count -->
+            <div class="flex gap-4 text-xs">
+              <div class="flex items-center gap-1.5 text-gray-500 group-hover:text-teal-600 transition-colors">
+                <span class="material-symbols-rounded" style="font-size: 16px">verified</span>
+                <span class="font-medium">{{ plan.plan_benefits_count }} Benefits</span>
+              </div>
+              <div class="flex items-center gap-1.5 text-gray-500 group-hover:text-violet-600 transition-colors">
+                <span class="material-symbols-rounded" style="font-size: 16px">add_circle</span>
+                <span class="font-medium">{{ plan.plan_addons_count }} Add-ons</span>
+              </div>
+            </div>
+
+            <!-- Hover: Select CTA -->
+            <div class="mt-4 pt-4 border-t border-gray-100 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-2 group-hover:translate-y-0">
+              <div class="flex items-center gap-2 text-teal-600 text-sm font-medium">
+                <span>Select Plan</span>
+                <span class="material-symbols-rounded transition-transform group-hover:translate-x-1" style="font-size: 18px">arrow_forward</span>
+              </div>
+            </div>
+          </button>
+        }
+      </div>
+
+      @if (filteredPlans().length === 0) {
+        <div class="text-center py-16 fc-fade-in">
+          <span class="material-symbols-rounded text-gray-300" style="font-size: 48px">search_off</span>
+          <p class="text-gray-400 mt-3 font-light text-sm">No plans match this filter.</p>
+        </div>
+      }
+    }
+  </div>
+}
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     STEP 2: Your Team
+     ═══════════════════════════════════════════════════════════════════════ -->
+@if (step() === 2) {
+  <div class="max-w-3xl mx-auto px-4 sm:px-6 py-8 fc-fade-in">
+
+    <!-- Selected Plan Banner -->
+    @if (selectedPlan()) {
+      <div class="flex items-center justify-between bg-teal-50/60 border border-teal-100 rounded-xl px-4 py-3 mb-8">
+        <div class="flex items-center gap-3">
+          <span class="material-symbols-rounded text-teal-600" style="font-size: 20px">check_circle</span>
+          <div>
+            <p class="text-sm font-medium text-gray-900">{{ selectedPlan()!.name }}</p>
+            <p class="text-xs text-gray-400 font-light capitalize">{{ selectedPlan()!.plan_type }} plan</p>
+          </div>
+        </div>
+        <button (click)="step.set(1)" class="text-xs text-teal-600 hover:text-teal-800 font-medium transition-colors">Change</button>
+      </div>
+    }
+
+    <!-- Members List -->
+    <div class="flex items-center justify-between mb-6">
+      <div>
+        <h2 class="text-lg font-medium text-gray-900">Who's covered?</h2>
+        <p class="text-sm text-gray-500 font-light mt-0.5">Add everyone who needs coverage</p>
+      </div>
+      <div class="flex items-center gap-2 text-sm">
+        <span class="material-symbols-rounded text-teal-600" style="font-size: 18px">group</span>
+        <span class="font-medium text-gray-700">{{ members().length }} member{{ members().length > 1 ? 's' : '' }}</span>
+      </div>
+    </div>
+
+    <div class="space-y-4 mb-8">
+      @for (member of members(); track $index) {
+        <div class="group fc-card p-5 border-l-4 transition-all duration-300 hover:shadow-md fc-slide-up"
+          [style.border-left-color]="$index === 0 ? '#14b8a6' : member.member_type === 'spouse' ? '#8b5cf6' : member.member_type === 'child' ? '#f59e0b' : '#10b981'"
+          [style.animation-delay]="($index * 0.05) + 's'">
+          <div class="flex items-center justify-between mb-4">
+            <div class="flex items-center gap-3">
+              <!-- Member Type Icon -->
+              <div class="w-10 h-10 rounded-full flex items-center justify-center shadow-sm"
+                [class]="$index === 0 ? 'bg-linear-to-br from-teal-50 to-teal-100' : member.member_type === 'spouse' ? 'bg-linear-to-br from-violet-50 to-violet-100' : member.member_type === 'child' ? 'bg-linear-to-br from-amber-50 to-amber-100' : 'bg-linear-to-br from-emerald-50 to-emerald-100'">
+                <span class="material-symbols-rounded" style="font-size: 20px"
+                  [class]="$index === 0 ? 'text-teal-600' : member.member_type === 'spouse' ? 'text-violet-600' : member.member_type === 'child' ? 'text-amber-600' : 'text-emerald-600'">
+                  {{ $index === 0 ? 'person' : member.member_type === 'spouse' ? 'favorite' : member.member_type === 'child' ? 'child_care' : 'elderly' }}
+                </span>
+              </div>
+              <div>
+                <span class="text-sm font-medium block"
+                  [class]="$index === 0 ? 'text-teal-700' : member.member_type === 'spouse' ? 'text-violet-700' : member.member_type === 'child' ? 'text-amber-700' : 'text-emerald-700'">
+                  {{ $index === 0 ? 'Principal Member' : memberTypeLabel(member.member_type) }}
+                </span>
+                @if ($index === 0) {
+                  <span class="text-xs text-gray-400 font-light">Primary policy holder</span>
+                }
+              </div>
+            </div>
+            @if ($index > 0) {
+              <button (click)="removeMember($index)" class="w-8 h-8 rounded-lg flex items-center justify-center text-gray-400 hover:text-red-600 hover:bg-red-50 transition-all duration-200 opacity-0 group-hover:opacity-100">
+                <span class="material-symbols-rounded" style="font-size: 20px">delete</span>
+              </button>
+            }
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div>
+              <label class="fc-label flex items-center gap-1">
+                <span class="material-symbols-rounded" style="font-size: 14px">badge</span>
+                Name <span class="text-gray-400 font-light">(optional)</span>
+              </label>
+              <input
+                type="text"
+                [value]="member.name"
+                (input)="updateMember($index, 'name', $event.target!.value)"
+                placeholder="e.g. John Doe"
+                class="fc-input"
+              />
+            </div>
+            <div>
+              <label class="fc-label flex items-center gap-1">
+                <span class="material-symbols-rounded" style="font-size: 14px">cake</span>
+                Age <span class="text-red-500">*</span>
+              </label>
+              <input
+                type="number"
+                [value]="member.age"
+                (input)="updateMember($index, 'age', +$event.target!.value)"
+                min="0"
+                max="120"
+                placeholder="Enter age"
+                class="fc-input"
+                [class.fc-input-error]="member.age <= 0 || member.age > 120"
+              />
+              @if (member.age <= 0 || member.age > 120) {
+                <p class="fc-error-text">Age must be between 1 and 120</p>
+              }
+            </div>
+            <div>
+              <label class="fc-label flex items-center gap-1">
+                <span class="material-symbols-rounded" style="font-size: 14px">wc</span>
+                Gender <span class="text-red-500">*</span>
+              </label>
+              <select
+                [value]="member.gender"
+                (change)="updateMember($index, 'gender', selectValue($event))"
+                class="fc-input"
+              >
+                <option value="M">Male</option>
+                <option value="F">Female</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+
+    <!-- Add Dependent Buttons -->
+    <div class="bg-gray-50 rounded-xl p-5 mb-8">
+      <div class="flex items-center gap-2 mb-3">
+        <span class="material-symbols-rounded text-gray-500" style="font-size: 18px">group_add</span>
+        <span class="text-sm font-medium text-gray-700">Add Dependents</span>
+      </div>
+      <div class="flex flex-wrap gap-2">
+        @if (canAddDependent('spouse')) {
+          <button
+            (click)="addMember('spouse')"
+            class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-white border border-gray-200 text-sm font-medium text-gray-700 hover:bg-violet-50 hover:border-violet-200 hover:text-violet-700 transition-all duration-200 shadow-sm hover:shadow-md"
+          >
+            <span class="material-symbols-rounded" style="font-size: 16px">favorite</span>
+            <span>Add Spouse</span>
+          </button>
+        }
+        @if (canAddDependent('child')) {
+          <button
+            (click)="addMember('child')"
+            class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-white border border-gray-200 text-sm font-medium text-gray-700 hover:bg-amber-50 hover:border-amber-200 hover:text-amber-700 transition-all duration-200 shadow-sm hover:shadow-md"
+          >
+            <span class="material-symbols-rounded" style="font-size: 16px">child_care</span>
+            <span>Add Child</span>
+          </button>
+        }
+        @if (canAddDependent('parent')) {
+          <button
+            (click)="addMember('parent')"
+            class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-white border border-gray-200 text-sm font-medium text-gray-700 hover:bg-emerald-50 hover:border-emerald-200 hover:text-emerald-700 transition-all duration-200 shadow-sm hover:shadow-md"
+          >
+            <span class="material-symbols-rounded" style="font-size: 16px">elderly</span>
+            <span>Add Parent</span>
+          </button>
+        }
+        @if (!canAddDependent('spouse') && !canAddDependent('child') && !canAddDependent('parent')) {
+          <p class="text-sm text-gray-500 font-light">You've added the maximum number of dependents</p>
+        }
+      </div>
+    </div>
+
+    <!-- Navigation -->
+    <div class="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-3">
+      <button (click)="step.set(1)" class="fc-btn-ghost text-sm order-2 sm:order-1">
+        <span class="material-symbols-rounded" style="font-size: 18px">arrow_back</span>
+        Change Plan
+      </button>
+      <button
+        (click)="goToStep(3)"
+        [disabled]="!isStep2Valid()"
+        class="fc-btn-primary-lg shadow-lg shadow-teal-200/50 order-1 sm:order-2"
+        [class.opacity-50]="!isStep2Valid()"
+        [class.cursor-not-allowed]="!isStep2Valid()"
+      >
+        <span class="material-symbols-rounded" style="font-size: 20px">calculate</span>
+        Calculate My Quote
+        <span class="material-symbols-rounded" style="font-size: 20px">arrow_forward</span>
+      </button>
+    </div>
+    @if (!isStep2Valid()) {
+      <p class="text-center text-sm text-amber-600 mt-4 flex items-center justify-center gap-2">
+        <span class="material-symbols-rounded" style="font-size: 16px">info</span>
+        <span>Please enter valid age (1-120) for all members</span>
+      </p>
+    }
+  </div>
+}
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     STEP 3: Your Quote
+     ═══════════════════════════════════════════════════════════════════════ -->
+@if (step() === 3) {
+  <div class="max-w-5xl mx-auto px-4 sm:px-6 py-8 fc-fade-in">
+    <div class="grid grid-cols-1 lg:grid-cols-5 gap-8">
+
+      <!-- Left: Options ───────────────────────────────────────────────── -->
+      <div class="lg:col-span-2 space-y-5">
+
+        <!-- Billing Frequency -->
+        <div class="fc-card p-5">
+          <h3 class="text-sm font-medium text-gray-900 mb-3">Billing Frequency</h3>
+          <div class="flex rounded-lg border border-gray-200 overflow-hidden">
+            @for (freq of ['monthly', 'quarterly', 'semi_annual', 'annual']; track freq) {
+              <button
+                (click)="billingFrequency.set(freq); calculateQuote()"
+                class="flex-1 py-2 text-xs text-center transition-all duration-200"
+                [class]="billingFrequency() === freq
+                  ? 'bg-teal-600 text-white font-medium'
+                  : 'text-gray-500 hover:bg-gray-50'"
+              >{{ frequencyLabel(freq) }}</button>
+            }
+          </div>
+        </div>
+
+        <!-- Addons -->
+        @if (addons().length > 0) {
+          <div class="fc-card p-5 space-y-4">
+
+            <!-- Included Add-ons (no extra charge) -->
+            @if (includedAddons().length > 0) {
+              <div>
+                <div class="flex items-center gap-2 mb-2">
+                  <span class="material-symbols-rounded text-emerald-500" style="font-size: 16px">check_circle</span>
+                  <h3 class="text-sm font-medium text-gray-900">Included with Plan</h3>
+                </div>
+                <div class="space-y-1">
+                  @for (addon of includedAddons(); track addon.id) {
+                    <div class="flex items-start gap-3 p-2.5 rounded-xl bg-emerald-50/50">
+                      <span class="material-symbols-rounded text-emerald-500 mt-0.5" style="font-size: 18px">verified</span>
+                      <div class="flex-1 min-w-0">
+                        <p class="text-sm font-medium text-gray-800">{{ addon.name }}</p>
+                        <p class="text-xs text-gray-400 font-light truncate">{{ addon.description }}</p>
+                      </div>
+                      <span class="text-xs font-medium text-emerald-600 bg-emerald-100 px-2 py-0.5 rounded-full whitespace-nowrap">Included</span>
+                    </div>
+                  }
+                </div>
+              </div>
+            }
+
+            <!-- Required Add-ons (auto-selected, cannot deselect) -->
+            @if (mandatoryAddons().length > 0) {
+              <div>
+                <div class="flex items-center gap-2 mb-2">
+                  <span class="material-symbols-rounded text-amber-500" style="font-size: 16px">lock</span>
+                  <h3 class="text-sm font-medium text-gray-900">Required Add-ons</h3>
+                </div>
+                <div class="space-y-1">
+                  @for (addon of mandatoryAddons(); track addon.id) {
+                    <label class="flex items-start gap-3 p-2.5 rounded-xl bg-amber-50/30 cursor-not-allowed">
+                      <input
+                        type="checkbox"
+                        [checked]="true"
+                        disabled
+                        class="mt-0.5 rounded accent-amber-600 opacity-60"
+                      />
+                      <div class="flex-1 min-w-0">
+                        <p class="text-sm font-medium text-gray-800">{{ addon.name }}</p>
+                        <p class="text-xs text-gray-400 font-light truncate">{{ addon.description }}</p>
+                      </div>
+                      @if (addon.amount) {
+                        <span class="text-xs font-medium text-amber-700 whitespace-nowrap">{{ addon.currency }} {{ addon.amount | number:'1.2-2' }}</span>
+                      }
+                      @if (addon.percentage) {
+                        <span class="text-xs font-medium text-amber-700 whitespace-nowrap">{{ addon.percentage }}%</span>
+                      }
+                    </label>
+                  }
+                </div>
+              </div>
+            }
+
+            <!-- Optional Add-ons (user can select/deselect) -->
+            @if (optionalAddons().length > 0) {
+              <div>
+                <div class="flex items-center gap-2 mb-2">
+                  <span class="material-symbols-rounded text-violet-500" style="font-size: 16px">add_circle</span>
+                  <h3 class="text-sm font-medium text-gray-900">Optional Add-ons</h3>
+                </div>
+                <div class="space-y-1">
+                  @for (addon of optionalAddons(); track addon.id) {
+                    <label class="flex items-start gap-3 p-2.5 rounded-xl hover:bg-gray-50 cursor-pointer transition-colors">
+                      <input
+                        type="checkbox"
+                        [checked]="isAddonSelected(addon.id)"
+                        (change)="toggleAddon(addon.id)"
+                        class="mt-0.5 rounded accent-teal-600"
+                      />
+                      <div class="flex-1 min-w-0">
+                        <p class="text-sm font-medium text-gray-800">{{ addon.name }}</p>
+                        <p class="text-xs text-gray-400 font-light truncate">{{ addon.description }}</p>
+                      </div>
+                      @if (addon.amount) {
+                        <span class="text-xs font-medium text-gray-500 whitespace-nowrap">{{ addon.currency }} {{ addon.amount | number:'1.2-2' }}</span>
+                      }
+                      @if (addon.percentage) {
+                        <span class="text-xs font-medium text-gray-500 whitespace-nowrap">{{ addon.percentage }}%</span>
+                      }
+                    </label>
+                  }
+                </div>
+              </div>
+            }
+          </div>
+        }
+
+        <!-- Promo Code -->
+        <div class="fc-card p-5">
+          <h3 class="text-sm font-medium text-gray-900 mb-2">Promo Code</h3>
+          <div class="flex gap-2">
+            <input
+              type="text"
+              [value]="promoCode()"
+              (input)="promoCode.set($event.target!.value)"
+              placeholder="Enter code"
+              class="fc-input flex-1"
+            />
+            <button
+              (click)="calculateQuote()"
+              class="fc-btn-outline text-xs"
+            >Apply</button>
+          </div>
+        </div>
+
+        <!-- Back -->
+        <button (click)="step.set(2)" class="fc-btn-ghost text-sm">
+          <span class="material-symbols-rounded" style="font-size: 16px">arrow_back</span>
+          Back
+        </button>
+      </div>
+
+      <!-- Right: Quote Summary ────────────────────────────────────────── -->
+      <div class="lg:col-span-3">
+        <div class="fc-card p-6 sticky top-24">
+
+          <!-- Loading State -->
+          @if (quoteLoading()) {
+            <div class="text-center py-14">
+              <div class="inline-block w-7 h-7 border-3 border-teal-200 border-t-teal-600 rounded-full animate-spin"></div>
+              <p class="text-gray-400 mt-3 text-sm font-light">Calculating your quote...</p>
+            </div>
+          }
+
+          <!-- Error State -->
+          @if (quoteError()) {
+            <div class="bg-red-50 border border-red-100 rounded-xl px-4 py-3 text-center">
+              <p class="text-red-600 text-sm font-light">{{ quoteError() }}</p>
+            </div>
+          }
+
+          <!-- Quote Result -->
+          @if (!quoteLoading() && quoteResult()) {
+            <div class="fc-fade-in">
+            <!-- Plan + Members Header -->
+            <div class="bg-linear-to-r from-teal-50 to-cyan-50 rounded-xl p-4 mb-5">
+              <div class="flex items-start justify-between mb-3">
+                <div class="flex items-center gap-3">
+                  <div class="w-12 h-12 rounded-xl bg-white shadow-sm flex items-center justify-center">
+                    <span class="material-symbols-rounded text-teal-600" style="font-size: 24px">verified</span>
+                  </div>
+                  <div>
+                    <p class="text-base font-medium text-gray-900">{{ quoteResult()!.plan.name }}</p>
+                    <p class="text-xs text-gray-500 font-light flex items-center gap-2 mt-0.5">
+                      <span class="flex items-center gap-1">
+                        <span class="material-symbols-rounded" style="font-size: 14px">group</span>
+                        {{ members().length }} member{{ members().length > 1 ? 's' : '' }}
+                      </span>
+                      <span>·</span>
+                      <span>{{ frequencyLabel(billingFrequency()) }}</span>
+                    </p>
+                  </div>
+                </div>
+              </div>
+              <div class="flex items-center gap-2 text-xs">
+                <span class="material-symbols-rounded text-teal-600" style="font-size: 14px">schedule</span>
+                <span class="text-gray-600">Valid until {{ quoteResult()!.valid_until | date:'MMM d, yyyy' }}</span>
+              </div>
+            </div>
+
+            <!-- Member Breakdown -->
+            <div class="space-y-2 mb-5">
+              <div class="flex items-center gap-2 mb-3">
+                <span class="material-symbols-rounded text-gray-400" style="font-size: 16px">group</span>
+                <p class="text-xs font-medium text-gray-500 uppercase tracking-wider">Premium Breakdown</p>
+              </div>
+
+              @if (isPerMemberPricing()) {
+                <!-- Per-member age-banded: show individual premiums -->
+                @for (m of quoteResult()!.members; track $index) {
+                  <div class="flex items-center justify-between p-2.5 rounded-lg hover:bg-gray-50 transition-colors fc-slide-up"
+                    [style.animation-delay]="($index * 0.05) + 's'">
+                    <div class="flex items-center gap-2.5">
+                      <div class="w-8 h-8 rounded-lg flex items-center justify-center"
+                        [class]="m.member_type === 'principal' ? 'bg-teal-50' : m.member_type === 'spouse' ? 'bg-violet-50' : m.member_type === 'child' ? 'bg-amber-50' : 'bg-emerald-50'">
+                        <span class="material-symbols-rounded text-sm" style="font-size: 16px"
+                          [class]="m.member_type === 'principal' ? 'text-teal-600' : m.member_type === 'spouse' ? 'text-violet-600' : m.member_type === 'child' ? 'text-amber-600' : 'text-emerald-600'">
+                          {{ m.member_type === 'principal' ? 'person' : m.member_type === 'spouse' ? 'favorite' : m.member_type === 'child' ? 'child_care' : 'elderly' }}
+                        </span>
+                      </div>
+                      <div>
+                        <span class="text-sm font-medium text-gray-700 block">{{ memberTypeLabel(m.member_type) }}</span>
+                        <span class="text-xs text-gray-400 font-light">Age {{ m.age }}{{ m.gender ? ' · ' + (m.gender === 'M' ? 'Male' : 'Female') : '' }}</span>
+                      </div>
+                    </div>
+                    <span class="text-sm font-semibold text-gray-800">{{ quoteResult()!.currency }} {{ m.premium | number:'1.2-2' }}</span>
+                  </div>
+                }
+              } @else {
+                <!-- Tiered / Per-family: show flat rate notice -->
+                <div class="flex items-center justify-between p-3 rounded-lg bg-teal-50/50">
+                  <div class="flex items-center gap-2.5">
+                    <div class="w-8 h-8 rounded-lg bg-teal-100 flex items-center justify-center">
+                      <span class="material-symbols-rounded text-teal-600" style="font-size: 16px">family_restroom</span>
+                    </div>
+                    <div>
+                      <span class="text-sm font-medium text-gray-700 block">
+                        {{ quoteResult()!.premium_basis === 'tiered' ? 'Family Tier Rate' : 'Family Flat Rate' }}
+                      </span>
+                      <span class="text-xs text-gray-400 font-light">{{ members().length }} member{{ members().length > 1 ? 's' : '' }} covered</span>
+                    </div>
+                  </div>
+                  <span class="text-sm font-semibold text-gray-800">{{ quoteResult()!.currency }} {{ quoteResult()!.base_premium | number:'1.2-2' }}</span>
+                </div>
+              }
+
+              <div class="flex justify-between pt-2 mt-2 border-t border-gray-200">
+                <span class="text-sm font-medium text-gray-600">Base Premium</span>
+                <span class="text-sm font-semibold text-gray-800">{{ quoteResult()!.currency }} {{ quoteResult()!.base_premium | number:'1.2-2' }}</span>
+              </div>
+            </div>
+
+            <!-- Addons -->
+            @if (quoteResult()!.addons.length > 0) {
+              <div class="space-y-2 mb-5 pt-4 border-t border-gray-100">
+                <div class="flex items-center gap-2 mb-2">
+                  <span class="material-symbols-rounded text-violet-500" style="font-size: 16px">add_circle</span>
+                  <p class="text-xs font-medium text-gray-500 uppercase tracking-wider">Add-ons</p>
+                </div>
+                @for (addon of quoteResult()!.addons; track addon.name) {
+                  <div class="flex justify-between items-center p-2 rounded-lg bg-violet-50/50">
+                    <span class="text-sm text-gray-700 font-medium">{{ addon.name }}</span>
+                    <span class="text-sm font-semibold text-violet-700">+ZMW {{ addon.amount | number:'1.2-2' }}</span>
+                  </div>
+                }
+              </div>
+            }
+
+            <!-- Discounts -->
+            @if (quoteResult()!.total_discount > 0 || quoteResult()!.promo_discount > 0) {
+              <div class="space-y-2 mb-5 pt-4 border-t border-gray-100">
+                <div class="flex items-center gap-2 mb-2">
+                  <span class="material-symbols-rounded text-emerald-500" style="font-size: 16px">sell</span>
+                  <p class="text-xs font-medium text-gray-500 uppercase tracking-wider">Savings</p>
+                  <span class="text-xs font-medium text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">
+                    You save ZMW {{ (quoteResult()!.total_discount + quoteResult()!.promo_discount) | number:'1.2-2' }}!
+                  </span>
+                </div>
+                @for (d of quoteResult()!.discounts; track d.name) {
+                  <div class="flex justify-between items-center p-2 rounded-lg bg-emerald-50/50">
+                    <div class="flex items-center gap-2">
+                      <span class="material-symbols-rounded text-emerald-600" style="font-size: 16px">check_circle</span>
+                      <span class="text-sm text-gray-700 font-medium">{{ d.name }}</span>
+                    </div>
+                    <span class="text-sm font-semibold text-emerald-700">-ZMW {{ d.amount | number:'1.2-2' }}</span>
+                  </div>
+                }
+                @if (quoteResult()!.promo_discount > 0) {
+                  <div class="flex justify-between items-center p-2 rounded-lg bg-emerald-100 border border-emerald-200">
+                    <div class="flex items-center gap-2">
+                      <span class="material-symbols-rounded text-emerald-700" style="font-size: 16px">confirmation_number</span>
+                      <span class="text-sm text-emerald-900 font-semibold">Promo Code Applied</span>
+                    </div>
+                    <span class="text-sm font-bold text-emerald-800">-ZMW {{ quoteResult()!.promo_discount | number:'1.2-2' }}</span>
+                  </div>
+                }
+              </div>
+            }
+
+            <!-- Loadings -->
+            @if (quoteResult()!.total_loading > 0) {
+              <div class="space-y-2 mb-5 pt-4 border-t border-gray-100">
+                <div class="flex items-center gap-2 mb-2">
+                  <span class="material-symbols-rounded text-amber-500" style="font-size: 16px">info</span>
+                  <p class="text-xs font-medium text-gray-500 uppercase tracking-wider">Additional Loadings</p>
+                </div>
+                @for (l of quoteResult()!.loadings; track l.condition) {
+                  <div class="flex justify-between items-center p-2 rounded-lg bg-amber-50/50">
+                    <span class="text-sm text-gray-700 font-medium">{{ l.condition }}</span>
+                    <span class="text-sm font-semibold text-amber-700">+ZMW {{ l.amount | number:'1.2-2' }}</span>
+                  </div>
+                }
+              </div>
+            }
+
+            <!-- Total Premium -->
+            <div class="relative overflow-hidden bg-linear-to-br from-teal-500 via-teal-600 to-cyan-700 rounded-2xl p-6 mt-6 shadow-xl shadow-teal-200/50 fc-success-pulse">
+              <!-- Decorative gradient overlay -->
+              <div class="absolute top-0 right-0 w-48 h-48 bg-white/5 rounded-full -mr-20 -mt-20"></div>
+              <div class="absolute bottom-0 left-0 w-32 h-32 bg-white/5 rounded-full -ml-10 -mb-10"></div>
+
+              <div class="relative">
+                <div class="flex items-center gap-2 mb-2">
+                  <span class="material-symbols-rounded text-white/80" style="font-size: 20px">monetization_on</span>
+                  <p class="text-xs font-medium text-white/90 uppercase tracking-wider">Your Premium</p>
+                </div>
+                <div class="flex items-baseline justify-between">
+                  <div>
+                    <p class="text-4xl sm:text-5xl font-bold text-white tracking-tight mb-1">
+                      ZMW {{ quoteResult()!.final_premium | number:'1.2-2' }}
+                    </p>
+                    <p class="text-sm text-white/80 font-medium">
+                      {{ frequencyLabel(quoteResult()!.frequency) }} Payment
+                    </p>
+                  </div>
+                  <div class="text-right">
+                    @if (quoteResult()!.total_discount > 0 || quoteResult()!.promo_discount > 0) {
+                      <div class="inline-flex items-center gap-1 bg-white/20 backdrop-blur-sm px-3 py-1.5 rounded-full">
+                        <span class="material-symbols-rounded text-white" style="font-size: 16px">trending_down</span>
+                        <span class="text-xs font-semibold text-white">
+                          Save ZMW {{ (quoteResult()!.total_discount + quoteResult()!.promo_discount) | number:'1.2-2' }}
+                        </span>
+                      </div>
+                    }
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- CTA -->
+            <button
+              (click)="proceedToApply()"
+              class="group relative w-full mt-6 px-6 py-4 bg-linear-to-r from-violet-600 to-violet-700 text-white rounded-xl font-semibold text-base shadow-lg shadow-violet-200/50 hover:shadow-xl hover:shadow-violet-300/50 hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 overflow-hidden"
+            >
+              <div class="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+              <div class="relative flex items-center justify-center gap-2">
+                <span class="material-symbols-rounded" style="font-size: 22px">verified</span>
+                <span>Continue to Application</span>
+                <span class="material-symbols-rounded transition-transform group-hover:translate-x-1" style="font-size: 22px">arrow_forward</span>
+              </div>
+            </button>
+
+            <!-- Quote Validity -->
+            <div class="mt-4 p-3 bg-gray-50 rounded-lg">
+              <div class="flex items-center justify-center gap-2 text-xs">
+                <span class="material-symbols-rounded text-gray-400" style="font-size: 14px">schedule</span>
+                <span class="text-gray-600">
+                  Quote valid until <span class="font-medium text-gray-700">{{ quoteResult()!.valid_until | date:'MMM d, yyyy' }}</span>
+                </span>
+              </div>
+            </div>
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+  </div>
+}

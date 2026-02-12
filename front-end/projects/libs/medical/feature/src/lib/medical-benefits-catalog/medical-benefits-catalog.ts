@@ -3,7 +3,6 @@
 import {
   Component,
   OnInit,
-  AfterViewInit,
   ViewChild,
   inject,
   effect,
@@ -33,15 +32,12 @@ import { NestedTreeControl } from '@angular/cdk/tree';
 // Domain/Shared Imports
 import {
   Benefit,
-  BenefitCategory,
   BenefitStore,
   BENEFIT_TYPES,
   LIMIT_TYPES,
-  LIMIT_FREQUENCIES,
   getLabelByValue,
 } from 'medical-data';
 import { MedicalBenefitsCatalogDialog } from '../dialogs/medical-benefits-catalog-dialog/medical-benefits-catalog-dialog';
-import { MedicalBenefitsCategoryDialog } from '../dialogs/medical-benefits-category-dialog/medical-benefits-category-dialog';
 import { FeedbackService, PageHeaderComponent } from 'shared';
 
 interface BenefitNode {
@@ -51,9 +47,8 @@ interface BenefitNode {
   benefit_type: string;
   is_active: boolean;
   children?: BenefitNode[];
-  isCategory?: boolean;
+  isTypeGroup?: boolean;
   icon?: string;
-  color?: string;
 }
 
 @Component({
@@ -79,17 +74,22 @@ interface BenefitNode {
   ],
   templateUrl: './medical-benefits-catalog.html',
 })
-export class MedicalBenefitsCatalog implements OnInit, AfterViewInit {
+export class MedicalBenefitsCatalog implements OnInit {
   readonly store = inject(BenefitStore);
   private readonly dialog = inject(MatDialog);
   private readonly feedback = inject(FeedbackService);
 
   // Table view
-  displayedColumns = ['status', 'name', 'category', 'type', 'defaults', 'actions'];
+  displayedColumns = ['status', 'name', 'type', 'defaults', 'actions'];
   dataSource = new MatTableDataSource<Benefit>([]);
 
-  @ViewChild(MatPaginator) paginator!: MatPaginator;
-  @ViewChild(MatSort) sort!: MatSort;
+  // Setter pattern: safe for deferred rendering (@if blocks)
+  @ViewChild(MatPaginator) set paginator(p: MatPaginator) {
+    if (p) this.dataSource.paginator = p;
+  }
+  @ViewChild(MatSort) set matSort(s: MatSort) {
+    if (s) this.dataSource.sort = s;
+  }
   @ViewChild('detailDrawer') detailDrawer!: MatDrawer;
 
   // Tree view
@@ -98,7 +98,6 @@ export class MedicalBenefitsCatalog implements OnInit, AfterViewInit {
 
   // State
   selectedBenefit = signal<Benefit | null>(null);
-  selectedCategory = signal<string>('');
   selectedType = signal<string>('');
   searchQuery = signal<string>('');
   viewMode = signal<'table' | 'tree'>('table');
@@ -109,27 +108,30 @@ export class MedicalBenefitsCatalog implements OnInit, AfterViewInit {
 
   // Computed
   totalBenefits = computed(() => this.store.benefits().length);
-  totalCategories = computed(() => this.store.categories().length);
+  totalTypes = computed(() => {
+    const types = new Set(this.store.benefits().map((b) => b.benefit_type));
+    return types.size;
+  });
   activeBenefits = computed(() => this.store.benefits().filter((b) => b.is_active).length);
 
   hasChild = (_: number, node: BenefitNode) => !!node.children && node.children.length > 0;
 
   constructor() {
-    // Sync benefits to table
+    // Sync benefits to table (respecting type filter)
     effect(() => {
-      this.dataSource.data = this.store.benefits();
+      const all = this.store.benefits();
+      const type = this.selectedType();
+      this.dataSource.data = type ? all.filter((b) => b.benefit_type === type) : all;
     });
 
-    // Build tree data
+    // Build tree data grouped by benefit_type
     effect(() => {
-      const categories = this.store.categories();
       const benefits = this.store.benefits();
-      this.treeDataSource.data = this.buildTreeData(categories, benefits);
+      this.treeDataSource.data = this.buildTreeData(benefits);
     });
   }
 
   ngOnInit() {
-    this.store.loadCategories();
     this.store.loadBenefits();
 
     // Custom filter
@@ -142,24 +144,25 @@ export class MedicalBenefitsCatalog implements OnInit, AfterViewInit {
     };
   }
 
-  ngAfterViewInit() {
-    this.dataSource.paginator = this.paginator;
-    this.dataSource.sort = this.sort;
-  }
+  private buildTreeData(benefits: Benefit[]): BenefitNode[] {
+    const rootBenefits = benefits.filter((b) => !b.parent_id);
+    const grouped = new Map<string, Benefit[]>();
 
-  private buildTreeData(categories: BenefitCategory[], benefits: Benefit[]): BenefitNode[] {
-    return categories.map((cat) => ({
-      id: cat.id,
-      name: cat.name,
-      code: cat.code,
-      benefit_type: '',
-      is_active: cat.is_active,
-      isCategory: true,
-      icon: cat.icon || 'folder',
-      color: cat.color,
-      children: this.buildBenefitNodes(
-        benefits.filter((b) => b.category_id === cat.id && !b.parent_id)
-      ),
+    for (const b of rootBenefits) {
+      const type = b.benefit_type;
+      if (!grouped.has(type)) grouped.set(type, []);
+      grouped.get(type)!.push(b);
+    }
+
+    return Array.from(grouped.entries()).map(([type, typeBenefits]) => ({
+      id: type,
+      name: typeBenefits[0]?.benefit_type_label || type,
+      code: '',
+      benefit_type: type,
+      is_active: true,
+      isTypeGroup: true,
+      icon: this.getBenefitTypeIcon(type),
+      children: this.buildBenefitNodes(typeBenefits),
     }));
   }
 
@@ -185,22 +188,26 @@ export class MedicalBenefitsCatalog implements OnInit, AfterViewInit {
     }
   }
 
-  filterByCategory(categoryId: string) {
-    this.selectedCategory.set(categoryId);
-    this.store.loadBenefits({ category_id: categoryId || undefined });
-  }
-
   filterByType(type: string) {
     this.selectedType.set(type);
-    this.store.loadBenefits({ benefit_type: type || undefined });
+    this.applyLocalFilters();
   }
 
   clearFilters() {
-    this.selectedCategory.set('');
     this.selectedType.set('');
     this.searchQuery.set('');
     this.dataSource.filter = '';
-    this.store.loadBenefits();
+    this.applyLocalFilters();
+  }
+
+  private applyLocalFilters() {
+    const type = this.selectedType();
+    const all = this.store.benefits();
+    this.dataSource.data = type ? all.filter((b) => b.benefit_type === type) : all;
+
+    if (this.dataSource.paginator) {
+      this.dataSource.paginator.firstPage();
+    }
   }
 
   toggleViewMode() {
@@ -220,10 +227,6 @@ export class MedicalBenefitsCatalog implements OnInit, AfterViewInit {
     return getLabelByValue(LIMIT_TYPES, value);
   }
 
-  getCategoryName(categoryId: string): string {
-    return this.store.categories().find((c) => c.id === categoryId)?.name || '-';
-  }
-
   // Drawer
   viewDetails(benefit: Benefit) {
     this.store.loadOneBenefit(benefit.id).subscribe({
@@ -241,24 +244,6 @@ export class MedicalBenefitsCatalog implements OnInit, AfterViewInit {
   }
 
   // Dialogs
-  openCategoryDialog(category?: BenefitCategory) {
-    const dialogRef = this.dialog.open(MedicalBenefitsCategoryDialog, {
-      width: '500px',
-      data: category ? { ...category } : null,
-      panelClass: ['responsive-dialog', 'bg-white'],
-      autoFocus: false,
-    });
-
-    dialogRef.afterClosed().subscribe((result) => {
-      if (!result) return;
-
-      this.store.createCategory(result).subscribe({
-        next: () => this.feedback.success('Category created successfully'),
-        error: (err) => this.feedback.error(err?.error?.message ?? 'Failed to create category'),
-      });
-    });
-  }
-
   openBenefitDialog(benefit?: Benefit, parentId?: string) {
     const dialogRef = this.dialog.open(MedicalBenefitsCatalogDialog, {
       maxWidth: '70vw',
@@ -320,7 +305,7 @@ export class MedicalBenefitsCatalog implements OnInit, AfterViewInit {
 
   // Tree node click
   onTreeNodeClick(node: BenefitNode) {
-    if (node.isCategory) return;
+    if (node.isTypeGroup) return;
 
     const benefit = this.store.benefits().find((b) => b.id === node.id);
     if (benefit) {
@@ -339,11 +324,10 @@ export class MedicalBenefitsCatalog implements OnInit, AfterViewInit {
       return;
     }
 
-    const headers = ['Code', 'Name', 'Category', 'Type', 'Limit Type', 'Preauth', 'Status'];
+    const headers = ['Code', 'Name', 'Type', 'Limit Type', 'Preauth', 'Status'];
     const rows = dataToExport.map((b) => [
       b.code,
       `"${b.name}"`,
-      `"${this.getCategoryName(b.category_id)}"`,
       this.getBenefitTypeLabel(b.benefit_type),
       this.getLimitTypeLabel(b.default_limit_type || ''),
       b.requires_preauth ? 'Yes' : 'No',

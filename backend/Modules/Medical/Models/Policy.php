@@ -128,7 +128,7 @@ class Policy extends BaseModel
         $year = date('Y');
         
         $lastNumber = static::where('policy_number', 'like', "{$prefix}{$year}-%")
-            ->orderByRaw('CAST(SUBSTRING(policy_number, -6) AS UNSIGNED) DESC')
+            ->orderByRaw('CAST(RIGHT(policy_number, 6) AS INTEGER) DESC')
             ->value('policy_number');
 
         if ($lastNumber) {

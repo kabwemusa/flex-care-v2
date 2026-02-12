@@ -25,7 +25,7 @@ class CensusImportService
         'employee_number',
         'member_type',
         'relationship', // For dependents
-        'principal_employee_number', // Link dependent to principal
+        'principal_id_number', // Link dependent to principal by NRC/ID/Passport
     ];
 
     /**
@@ -194,8 +194,8 @@ class CensusImportService
                 'member_type' => 'required|in:' . implode(',', array_keys(MedicalConstants::MEMBER_TYPES)),
                 'email' => 'nullable|email',
                 'phone' => 'nullable|string',
-                'id_number' => 'nullable|string|max:50',
-                'employee_number' => 'required_if:member_type,principal|string|max:50',
+                'id_number' => 'required_if:member_type,principal|string|max:50',
+                'employee_number' => 'nullable|string|max:50',
             ]);
 
             if ($validator->fails()) {
@@ -221,14 +221,14 @@ class CensusImportService
             // Track principals and dependents for relationship validation
             $memberType = strtolower($row['member_type'] ?? '');
             if ($memberType === 'principal') {
-                $employeeNumber = $row['employee_number'] ?? null;
-                if ($employeeNumber) {
-                    $principals[$employeeNumber] = $rowNumber;
+                $idNumber = $row['id_number'] ?? null;
+                if ($idNumber) {
+                    $principals[$idNumber] = $rowNumber;
                 }
             } else {
                 $dependents[] = [
                     'row' => $rowNumber,
-                    'principal_employee_number' => $row['principal_employee_number'] ?? null,
+                    'principal_id_number' => $row['principal_id_number'] ?? null,
                 ];
             }
 
@@ -244,11 +244,11 @@ class CensusImportService
 
         // Validate dependent relationships
         foreach ($dependents as $dependent) {
-            $principalEmpNum = $dependent['principal_employee_number'];
-            if ($principalEmpNum && !isset($principals[$principalEmpNum])) {
+            $principalIdNum = $dependent['principal_id_number'];
+            if ($principalIdNum && !isset($principals[$principalIdNum])) {
                 $errors[] = [
                     'row' => $dependent['row'],
-                    'errors' => ["Principal with employee number '{$principalEmpNum}' not found in census"],
+                    'errors' => ["Principal with ID number '{$principalIdNum}' not found in census"],
                 ];
             }
         }
@@ -291,7 +291,7 @@ class CensusImportService
     public function transformToMemberData(array $censusData, string $groupId): array
     {
         $members = [];
-        $principalMap = []; // Map employee_number to member index
+        $principalMap = []; // Map id_number (NRC/ID/Passport) to member index
 
         // First pass: Create all principals
         foreach ($censusData as $row) {
@@ -299,8 +299,8 @@ class CensusImportService
                 $memberData = $this->mapRowToMember($row, $groupId);
                 $members[] = $memberData;
 
-                if (isset($row['employee_number'])) {
-                    $principalMap[$row['employee_number']] = count($members) - 1;
+                if (!empty($row['id_number'])) {
+                    $principalMap[$row['id_number']] = count($members) - 1;
                 }
             }
         }
@@ -310,9 +310,9 @@ class CensusImportService
             if (strtolower($row['member_type']) !== 'principal') {
                 $memberData = $this->mapRowToMember($row, $groupId);
 
-                // Link to principal if specified
-                if (isset($row['principal_employee_number']) && isset($principalMap[$row['principal_employee_number']])) {
-                    $memberData['principal_index'] = $principalMap[$row['principal_employee_number']];
+                // Link to principal by NRC/ID number
+                if (!empty($row['principal_id_number']) && isset($principalMap[$row['principal_id_number']])) {
+                    $memberData['principal_index'] = $principalMap[$row['principal_id_number']];
                 }
 
                 $members[] = $memberData;
@@ -337,13 +337,10 @@ class CensusImportService
             'gender' => $gender,
             'email' => $row['email'] ?? null,
             'phone' => $row['phone'] ?? null,
-            'id_number' => $row['id_number'] ?? null,
+            'national_id' => $row['id_number'] ?? null,
             'member_type' => $row['member_type'],
             'relationship' => $row['relationship'] ?? null,
             'employee_number' => $row['employee_number'] ?? null,
-            'salary_band' => $row['salary_band'] ?? null,
-            'department' => $row['department'] ?? null,
-            'job_title' => $row['job_title'] ?? null,
             'group_id' => $groupId,
         ];
     }

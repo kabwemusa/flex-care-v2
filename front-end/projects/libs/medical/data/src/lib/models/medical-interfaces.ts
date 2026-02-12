@@ -121,22 +121,8 @@ export interface CostSharingConfig {
 // ============================================================================
 // BENEFIT
 // ============================================================================
-export interface BenefitCategory {
-  id: string;
-  code: string;
-  name: string;
-  description?: string;
-  icon?: string;
-  color?: string;
-  sort_order: number;
-  is_active: boolean;
-  benefits_count?: number;
-  benefits?: Benefit[];
-}
-
 export interface Benefit {
   id: string;
-  category_id: string;
   parent_id?: string;
   code: string;
   name: string;
@@ -155,7 +141,6 @@ export interface Benefit {
   is_root?: boolean;
   has_children?: boolean;
   full_path?: string;
-  category?: BenefitCategory;
   parent?: Benefit;
   children?: Benefit[];
 }
@@ -515,6 +500,7 @@ export interface CorporateGroup {
     total_policies: number;
     active_policies: number;
     total_applications: number;
+    total_application_members: number;
     policies_by_plan: any;
     applications_by_plan: any;
   };

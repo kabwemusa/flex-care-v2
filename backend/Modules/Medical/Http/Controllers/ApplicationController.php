@@ -14,6 +14,7 @@ use Modules\Medical\Models\Application;
 use Modules\Medical\Models\ApplicationMember;
 use Modules\Medical\Models\ApplicationAddon;
 use Modules\Medical\Models\ApplicationDocument;
+use Modules\Medical\Models\PlanAddon;
 use Modules\Medical\Models\Policy;
 use Modules\Medical\Http\Requests\ApplicationRequest;
 use Modules\Medical\Http\Requests\ApplicationMemberRequest;
@@ -28,6 +29,7 @@ use App\Traits\ApiResponse;
 use Throwable;
 use Exception;
 use Illuminate\Http\Request as HttpRequest;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
 use Modules\Medical\Models\RateCard;
 use Symfony\Component\HttpFoundation\Request;
@@ -340,6 +342,9 @@ class ApplicationController extends Controller
         try {
             $application = Application::findOrFail($id);
 
+            // Auto-inject any missing mandatory addons before calculating
+            $this->ensureMandatoryAddons($application);
+
             $breakdown = $this->premiumService->calculateApplicationPremium($application);
 
             return $this->success($breakdown, 'Premium calculated');
@@ -385,8 +390,8 @@ class ApplicationController extends Controller
                 'plan',
                 'rateCard',
                 'group',
-                'members',
-                'addons.addon'
+                'activeMembers',
+                'activeAddons.addon'
             ])->findOrFail($id);
 
             // Allow download for quoted, underwriting, and approved statuses
@@ -401,39 +406,71 @@ class ApplicationController extends Controller
                 return $this->error('Quote can only be downloaded after it has been generated', 422);
             }
 
-            // In a production environment, you would use a PDF generation library like dompdf or snappy
-            // For now, we'll return JSON data that the frontend can use
+            $activeMembers = $application->activeMembers;
+
+            // Member type counts
+            $principalCount = $activeMembers->where('member_type', MedicalConstants::MEMBER_TYPE_PRINCIPAL)->count();
+            $spouseCount = $activeMembers->where('member_type', MedicalConstants::MEMBER_TYPE_SPOUSE)->count();
+            $childCount = $activeMembers->where('member_type', MedicalConstants::MEMBER_TYPE_CHILD)->count();
+            $parentCount = $activeMembers->where('member_type', MedicalConstants::MEMBER_TYPE_PARENT)->count();
+
             $quoteData = [
                 'application_number' => $application->application_number,
+                'application_type' => $application->application_type,
+                'policy_type' => $application->policy_type,
                 'quote_date' => $application->quoted_at,
                 'valid_until' => $application->quote_valid_until,
                 'applicant_name' => $application->applicant_name ?? $application->contact_name,
                 'contact_email' => $application->contact_email,
                 'contact_phone' => $application->contact_phone,
+                'group' => $application->group ? [
+                    'name' => $application->group->name,
+                    'code' => $application->group->code,
+                ] : null,
                 'plan' => [
                     'scheme' => $application->scheme->name ?? '',
                     'name' => $application->plan->name ?? '',
                     'tier' => $application->plan->tier_level ?? '',
                 ],
-                'members' => $application->members->map(fn($m) => [
-                    'name' => $m->full_name ?? ($m->first_name . ' ' . $m->last_name),
-                    'age' => $m->age,
-                    'gender' => $m->gender,
+                'member_summary' => [
+                    'total' => $activeMembers->count(),
+                    'principals' => $principalCount,
+                    'spouses' => $spouseCount,
+                    'children' => $childCount,
+                    'parents' => $parentCount,
+                ],
+                'members' => $activeMembers->map(fn($m) => [
+                    'name' => $m->full_name,
+                    'member_type' => $m->member_type,
+                    'member_type_label' => $m->member_type_label,
                     'relationship' => $m->relationship,
-                    'premium' => $m->total_premium,
-                ]),
-                'addons' => $application->addons->map(fn($a) => [
-                    'name' => $a->addon_name ?? $a->addon->name,
-                    'premium' => $a->premium,
-                ]),
+                    'age' => $m->age_at_inception ?? $m->age,
+                    'gender' => $m->gender,
+                    'base_premium' => (float) $m->base_premium,
+                    'loading_amount' => (float) $m->loading_amount,
+                    'total_premium' => (float) $m->total_premium,
+                    'has_loadings' => !empty($m->applied_loadings),
+                    'loadings' => collect($m->applied_loadings ?? [])->map(fn($l) => [
+                        'condition' => $l['condition_name'] ?? $l['name'] ?? 'Loading',
+                        'type' => $l['loading_type'] ?? 'fixed',
+                        'value' => $l['value'] ?? $l['loading_value'] ?? 0,
+                        'amount' => $l['loading_amount'] ?? 0,
+                    ])->values(),
+                ])->values(),
+                'addons' => $application->activeAddons->map(fn($a) => [
+                    'name' => $a->addon_name ?? ($a->addon->name ?? ''),
+                    'premium' => (float) $a->premium,
+                    'is_mandatory' => $a->is_mandatory ?? false,
+                ])->values(),
                 'premium_breakdown' => [
-                    'base_premium' => $application->base_premium,
-                    'addon_premium' => $application->addon_premium,
-                    'loading_amount' => $application->loading_amount,
-                    'discount_amount' => $application->discount_amount,
-                    'total_premium' => $application->total_premium,
-                    'tax_amount' => $application->tax_amount,
-                    'gross_premium' => $application->gross_premium,
+                    'base_premium' => (float) $application->base_premium,
+                    'addon_premium' => (float) $application->addon_premium,
+                    'loading_amount' => (float) $application->loading_amount,
+                    'discount_amount' => (float) $application->discount_amount,
+                    'total_premium' => (float) $application->total_premium,
+                    'tax_rate' => config('medical.tax_rate', 0.05),
+                    'tax_amount' => (float) $application->tax_amount,
+                    'gross_premium' => (float) $application->gross_premium,
                     'currency' => $application->currency,
                     'billing_frequency' => $application->billing_frequency,
                 ],
@@ -444,7 +481,6 @@ class ApplicationController extends Controller
                 ],
             ];
 
-            // Return JSON for now - frontend will handle PDF generation
             return response()->json($quoteData);
 
         } catch (ModelNotFoundException $e) {
@@ -798,8 +834,7 @@ class ApplicationController extends Controller
         try {
             $policy = DB::transaction(function () use ($id) {
                 $application = Application::findOrFail($id);
-                $issuedBy = request('issued_by')  ?? $application->underwriter_id;
-                
+                $issuedBy = Auth::user()->id ?? $application->underwriter_id;
                 return $this->applicationService->convertToPolicy($application, $issuedBy);
             });
 
@@ -1027,7 +1062,7 @@ class ApplicationController extends Controller
                     throw new Exception('Invalid decision. Must be: approve, decline, or terms', 422);
                 }
 
-                $underwriterId = request('underwriter_id') ?? auth()->id();
+                $underwriterId = request('underwriter_id') ?? Auth::user()->id;
                 $loadings = request('loadings', []);
                 $exclusions = request('exclusions', []);
                 $discounts = request('discounts', []);
@@ -1213,6 +1248,18 @@ class ApplicationController extends Controller
                 }
 
                 $appAddon = $application->addons()->findOrFail($addonId);
+
+                // Prevent removal of mandatory addons
+                $isMandatory = PlanAddon::where('plan_id', $application->plan_id)
+                    ->where('addon_id', $appAddon->addon_id)
+                    ->where('is_active', true)
+                    ->mandatory()
+                    ->exists();
+
+                if ($isMandatory) {
+                    throw new Exception('Mandatory addons cannot be removed', 422);
+                }
+
                 $appAddon->delete();
 
                 // Recalculate premium
@@ -1225,6 +1272,37 @@ class ApplicationController extends Controller
         } catch (Throwable $e) {
             $code = $e->getCode() === 422 ? 422 : 500;
             return $this->error($e->getMessage(), $code);
+        }
+    }
+
+    // =========================================================================
+    // MANDATORY ADDON ENFORCEMENT
+    // =========================================================================
+
+    /**
+     * Ensure all mandatory plan addons are present on the application.
+     * Creates any missing mandatory addon records.
+     */
+    private function ensureMandatoryAddons(Application $application): void
+    {
+        $mandatoryAddonIds = PlanAddon::where('plan_id', $application->plan_id)
+            ->where('is_active', true)
+            ->mandatory()
+            ->pluck('addon_id')
+            ->toArray();
+
+        if (empty($mandatoryAddonIds)) {
+            return;
+        }
+
+        $existingAddonIds = $application->addons()->pluck('addon_id')->toArray();
+        $missingAddonIds = array_diff($mandatoryAddonIds, $existingAddonIds);
+
+        foreach ($missingAddonIds as $addonId) {
+            ApplicationAddon::create([
+                'application_id' => $application->id,
+                'addon_id' => $addonId,
+            ]);
         }
     }
 
@@ -1562,7 +1640,7 @@ class ApplicationController extends Controller
                     'plan_id' => $validated['plan_id'],
                     'rate_card_id' => $validated['rate_card_id'],
                     'group_id' => $censusData['group_id'],
-                    'inception_date' => $validated['inception_date'],
+                    'proposed_start_date' => $validated['inception_date'],
                     'billing_frequency' => $validated['billing_frequency'],
                     'status' => MedicalConstants::APPLICATION_STATUS_DRAFT,
                 ];
@@ -1574,8 +1652,10 @@ class ApplicationController extends Controller
                     $this->applicationService->addMember($application->id, $memberData);
                 }
 
-                // Calculate premium
-                // $this->applicationService->calculatePremium($application->id);
+                // Ensure mandatory addons and calculate premium after all members are added
+                $this->ensureMandatoryAddons($application);
+                $this->premiumService->calculateApplicationPremium($application);
+                $application->updateMemberCounts();
 
                 // Clear cache
                 cache()->forget($validated['import_key']);
@@ -1649,7 +1729,7 @@ class ApplicationController extends Controller
                 [
                     'scheme_id' => $validated['scheme_id'],
                     'rate_card_id' => $validated['rate_card_id'],
-                    'inception_date' => $validated['inception_date'],
+                    'proposed_start_date' => $validated['inception_date'],
                     'billing_frequency' => $validated['billing_frequency'],
                 ]
             );

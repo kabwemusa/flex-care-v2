@@ -144,12 +144,7 @@ export class MedicalRateCardDetail implements OnInit {
 
   // Navigation
   goBack() {
-    const rc = this.rateCard();
-    if (rc?.plan_id) {
-      this.router.navigate(['/plans', rc.plan_id], { queryParams: { tab: 'rate-cards' } });
-    } else {
-      this.router.navigate(['/rate-cards']);
-    }
+    this.router.navigate(['/rate-cards']);
   }
 
   // Label helpers

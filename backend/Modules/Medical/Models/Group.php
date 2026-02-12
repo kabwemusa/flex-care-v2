@@ -3,6 +3,7 @@
 namespace Modules\Medical\Models;
 
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Modules\Medical\Constants\MedicalConstants;
 
@@ -94,6 +95,18 @@ class Group extends BaseModel
     {
         return $this->hasMany(Policy::class, 'group_id')
                     ->where('status', MedicalConstants::POLICY_STATUS_ACTIVE);
+    }
+
+    public function applicationMembers(): HasManyThrough
+    {
+        return $this->hasManyThrough(
+            ApplicationMember::class,
+            Application::class,
+            'group_id',       // FK on applications
+            'application_id', // FK on application_members
+            'id',             // LK on groups
+            'id'              // LK on applications
+        );
     }
 
     // =========================================================================

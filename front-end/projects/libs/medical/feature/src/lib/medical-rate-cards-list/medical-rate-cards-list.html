@@ -306,6 +306,12 @@
                     >
                     <span>View Details</span>
                   </button>
+                  <button mat-menu-item [routerLink]="['/rate-cards', rc.id]">
+                    <mat-icon fontSet="material-symbols-rounded" class="!text-slate-500"
+                      >table_chart</mat-icon
+                    >
+                    <span>Manage Entries</span>
+                  </button>
                   <button mat-menu-item (click)="openCreateDialog(rc)">
                     <mat-icon fontSet="material-symbols-rounded" class="!text-slate-500"
                       >edit</mat-icon
@@ -428,7 +434,7 @@
           <span
             class="inline-flex items-center gap-1 rounded-full border border-green-200 bg-green-50 px-3 py-1 text-sm font-medium text-green-700"
           >
-            <mat-icon fontSet="material-symbols-rounded" class="!text-[14px]">verified</mat-icon>
+            <mat-icon fontSet="material-symbols-rounded">verified</mat-icon>
             Approved
           </span>
           }
@@ -513,19 +519,15 @@
             <h3 class="text-sm font-medium text-slate-500">Rate Entries</h3>
             <span class="text-2xl font-bold text-blue-600">{{ rc.entries_count || 0 }}</span>
           </div>
-          @if ((rc.entries_count || 0) > 0) {
           <button
             [routerLink]="['/rate-cards', rc.id]"
             class="inline-flex items-center gap-1 text-sm text-primary hover:underline"
           >
-            View all entries
+            Manage entries
             <mat-icon fontSet="material-symbols-rounded" class="!text-[16px]"
               >arrow_forward</mat-icon
             >
           </button>
-          } @else {
-          <p class="text-sm text-slate-400">No entries configured yet.</p>
-          }
         </div>
 
         <!-- Notes -->

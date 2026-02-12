@@ -3,6 +3,7 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { computed, inject, Injectable, signal } from '@angular/core';
 import { tap } from 'rxjs';
+import { WebSocketService, ClaimStatusUpdate } from 'core-http';
 import {
   Claim,
   ClaimFilters,
@@ -32,11 +33,13 @@ interface ClaimState {
   pagination: ClaimPaginationMeta | null;
   filters: ClaimFilters;
   stats: ClaimStats | null;
+  realtimeUpdates: Map<string, ClaimStatusUpdate>;
 }
 
 @Injectable({ providedIn: 'root' })
 export class ClaimStore {
   private readonly http = inject(HttpClient);
+  private readonly wsService = inject(WebSocketService);
   private readonly apiUrl = '/api/v1/medical/claims';
 
   private readonly state = signal<ClaimState>({
@@ -47,6 +50,7 @@ export class ClaimStore {
     pagination: null,
     filters: {},
     stats: null,
+    realtimeUpdates: new Map(),
   });
 
   // Selectors
@@ -78,6 +82,115 @@ export class ClaimStore {
   readonly rejectedClaims = computed(() => this.claims().filter((c) => c.status === 'rejected'));
   readonly paidClaims = computed(() => this.claims().filter((c) => c.status === 'paid'));
   readonly flaggedClaims = computed(() => this.claims().filter((c) => c.is_flagged));
+
+  // Real-time computed selectors
+  readonly realtimeUpdates = computed(() => this.state().realtimeUpdates);
+  readonly isWebSocketConnected = computed(() => this.wsService.isConnected());
+
+  // =========================================================================
+  // REAL-TIME WEBSOCKET INTEGRATION
+  // =========================================================================
+
+  /**
+   * Subscribe to real-time updates for a specific claim
+   */
+  subscribeToClaimUpdates(claimId: string): void {
+    this.wsService.subscribeToClaimUpdates(claimId, (event: ClaimStatusUpdate) => {
+      console.log('📡 Real-time claim update received:', event);
+      this.handleRealtimeUpdate(event);
+    });
+  }
+
+  /**
+   * Unsubscribe from claim updates
+   */
+  unsubscribeFromClaim(claimId: string): void {
+    this.wsService.unsubscribeFromClaim(claimId);
+  }
+
+  /**
+   * Handle real-time WebSocket updates
+   */
+  private handleRealtimeUpdate(event: ClaimStatusUpdate): void {
+    const { claim_id, status, details } = event;
+
+    // Update the claim in the items array
+    this.state.update((s) => ({
+      ...s,
+      items: s.items.map((claim) =>
+        claim.id === claim_id
+          ? {
+              ...claim,
+              status: status as any,
+              approved_amount: details?.approved_amount ?? claim.approved_amount,
+              rejection_reason: details?.reason ?? claim.rejection_reason,
+              payable_amount: details?.payable_amount ?? claim.payable_amount,
+            }
+          : claim
+      ),
+      // Also update selected claim if it matches
+      selected:
+        s.selected?.id === claim_id
+          ? {
+              ...s.selected,
+              status: status as any,
+              approved_amount: details?.approved_amount ?? s.selected.approved_amount,
+              rejection_reason: details?.reason ?? s.selected.rejection_reason,
+              payable_amount: details?.payable_amount ?? s.selected.payable_amount,
+            }
+          : s.selected,
+      // Store the update for UI indicators
+      realtimeUpdates: new Map(s.realtimeUpdates).set(claim_id, event),
+    }));
+
+    // Show notification based on status
+    this.showNotification(status, details);
+  }
+
+  /**
+   * Check if a claim has received real-time updates
+   */
+  hasRealtimeUpdate(claimId: string): boolean {
+    return this.realtimeUpdates().has(claimId);
+  }
+
+  /**
+   * Get real-time update for a specific claim
+   */
+  getRealtimeUpdate(claimId: string): ClaimStatusUpdate | undefined {
+    return this.realtimeUpdates().get(claimId);
+  }
+
+  /**
+   * Clear real-time update indicator for a claim
+   */
+  clearRealtimeUpdate(claimId: string): void {
+    this.state.update((s) => {
+      const newUpdates = new Map(s.realtimeUpdates);
+      newUpdates.delete(claimId);
+      return { ...s, realtimeUpdates: newUpdates };
+    });
+  }
+
+  /**
+   * Show notification for status changes
+   */
+  private showNotification(status: string, details: any): void {
+    const messages: Record<string, string> = {
+      approved: `Claim approved - ${details?.approved_amount ? 'K ' + details.approved_amount : 'Amount pending'}`,
+      partially_approved: `Claim partially approved - ${details?.approved_amount ? 'K ' + details.approved_amount : ''}`,
+      rejected: `Claim rejected${details?.reason ? ' - ' + details.reason : ''}`,
+      pending: 'Claim under manual review',
+      paid: 'Payment processed',
+      processing: 'Claim processing started',
+    };
+
+    const message = messages[status] || `Claim status updated to ${status}`;
+    console.log('🔔 Notification:', message);
+
+    // TODO: Integrate with your FeedbackService for actual toast/snackbar
+    // this.feedbackService.success(message);
+  }
 
   // =========================================================================
   // LOAD OPERATIONS

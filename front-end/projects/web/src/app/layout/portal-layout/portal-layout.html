@@ -1,0 +1,287 @@
+<div class="min-h-screen bg-linear-to-br from-gray-50 via-white to-teal-50/30">
+  <!-- ═══════════════════════════════════════════════════════════════════════ -->
+  <!-- Top Navigation - Glass Blur Effect -->
+  <!-- ═══════════════════════════════════════════════════════════════════════ -->
+  <nav
+    class="sticky top-0 z-40 transition-all duration-300"
+    [class]="scrolled() ? 'bg-white/95 backdrop-blur-lg shadow-sm' : 'bg-white/80 backdrop-blur-md'"
+  >
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-16">
+        <!-- Logo & Brand -->
+        <div class="flex items-center gap-3">
+          <a routerLink="/" class="flex items-center gap-2.5 group">
+            <div
+              class="w-10 h-10 rounded-xl bg-linear-to-br from-teal-500 to-cyan-600 flex items-center justify-center shadow-md shadow-teal-500/20 group-hover:shadow-lg group-hover:shadow-teal-500/30 transition-all duration-300"
+            >
+              <span class="material-symbols-rounded text-white" style="font-size: 22px"
+                >health_and_safety</span
+              >
+            </div>
+            <div class="hidden sm:block">
+              <span class="font-semibold text-gray-900 text-lg tracking-tight">FlexCare</span>
+            </div>
+          </a>
+          <div class="hidden sm:flex items-center gap-2">
+            <div class="w-px h-6 bg-gray-200"></div>
+            <span
+              class="text-xs font-medium text-teal-700 bg-teal-50 px-2.5 py-1 rounded-full tracking-wide"
+              >Member Portal</span
+            >
+          </div>
+        </div>
+
+        <!-- Desktop Navigation -->
+        <div class="hidden md:flex items-center gap-1">
+          @for (item of navItems; track item.route) {
+          <a
+            [routerLink]="item.route"
+            class="flex items-center gap-2 px-3.5 py-2 rounded-xl text-[13px] font-medium transition-all duration-200"
+            [class]="
+              isActive(item.route)
+                ? 'bg-linear-to-r from-teal-500 to-cyan-500 text-white shadow-md shadow-teal-500/25'
+                : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+            "
+          >
+            <span
+              class="material-symbols-rounded transition-transform group-hover:scale-110"
+              style="font-size: 20px"
+              >{{ item.icon }}</span
+            >
+            <span class="tracking-wide">{{ item.label }}</span>
+          </a>
+          }
+        </div>
+
+        <!-- User Menu -->
+        <div class="flex items-center gap-4">
+          <!-- Member Info (Desktop) -->
+          @if (auth.member(); as member) {
+          <div class="hidden sm:flex items-center gap-3">
+            <div class="text-right">
+              <p class="text-sm font-medium text-gray-900">{{ member.first_name }}</p>
+              <p class="text-xs text-gray-500">{{ member.member_number }}</p>
+            </div>
+            <!-- Avatar with gradient ring -->
+            <div class="relative">
+              <div
+                class="absolute -inset-0.5 bg-linear-to-r from-teal-400 to-cyan-400 rounded-full opacity-75"
+              ></div>
+              <div
+                class="relative w-10 h-10 rounded-full bg-linear-to-br from-teal-100 to-cyan-100 flex items-center justify-center ring-2 ring-white"
+              >
+                <span class="text-teal-700 font-semibold text-sm">
+                  {{ member.first_name?.charAt(0) }}{{ member.last_name?.charAt(0) }}
+                </span>
+              </div>
+            </div>
+          </div>
+          }
+
+          <!-- Logout Button (Desktop) -->
+          <button
+            (click)="logout()"
+            class="hidden sm:flex items-center gap-1.5 text-sm text-gray-500 hover:text-red-600 px-3 py-2 rounded-lg hover:bg-red-50 transition-all duration-200"
+            title="Sign out"
+          >
+            <span class="material-symbols-rounded" style="font-size: 20px">logout</span>
+          </button>
+
+          <!-- Mobile Menu Toggle -->
+          <button
+            (click)="toggleMobileMenu()"
+            class="md:hidden p-2.5 rounded-xl text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-colors"
+            [class.bg-gray-100]="mobileMenuOpen()"
+          >
+            <span class="material-symbols-rounded" style="font-size: 24px">
+              {{ mobileMenuOpen() ? 'close' : 'menu' }}
+            </span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════ -->
+  <!-- Mobile Navigation - Full Height Slide-in Panel -->
+  <!-- ═══════════════════════════════════════════════════════════════════════ -->
+  @if (mobileMenuOpen()) {
+  <!-- Overlay -->
+  <div
+    class="fixed inset-0 bg-gray-900/50 backdrop-blur-sm z-40 md:hidden fc-fade-in"
+    (click)="closeMobileMenu()"
+  ></div>
+
+  <!-- Slide-in Panel -->
+  <div
+    class="fixed top-0 right-0 bottom-0 w-[280px] bg-white z-50 md:hidden shadow-2xl overflow-y-auto"
+    style="animation: slideInRight 0.3s ease-out"
+  >
+    <!-- Panel Header -->
+    <div class="sticky top-0 bg-white border-b border-gray-100 px-5 py-4">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <div
+            class="w-8 h-8 rounded-lg bg-linear-to-br from-teal-500 to-cyan-600 flex items-center justify-center"
+          >
+            <span class="material-symbols-rounded text-white" style="font-size: 18px"
+              >health_and_safety</span
+            >
+          </div>
+          <span class="font-semibold text-gray-900">FlexCare</span>
+        </div>
+        <button
+          (click)="closeMobileMenu()"
+          class="p-2 rounded-lg text-gray-500 hover:bg-gray-100 transition-colors"
+        >
+          <span class="material-symbols-rounded" style="font-size: 20px">close</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Member Info (Mobile) -->
+    @if (auth.member(); as member) {
+    <div class="px-5 py-4 bg-linear-to-r from-teal-50 to-cyan-50 border-b border-teal-100/50">
+      <div class="flex items-center gap-3">
+        <div class="relative">
+          <div
+            class="absolute -inset-0.5 bg-linear-to-r from-teal-400 to-cyan-400 rounded-full opacity-75"
+          ></div>
+          <div
+            class="relative w-12 h-12 rounded-full bg-white flex items-center justify-center ring-2 ring-white"
+          >
+            <span class="text-teal-700 font-semibold">
+              {{ member.first_name?.charAt(0) }}{{ member.last_name?.charAt(0) }}
+            </span>
+          </div>
+        </div>
+        <div>
+          <p class="font-medium text-gray-900">{{ member.first_name }} {{ member.last_name }}</p>
+          <p class="text-xs text-teal-600 font-medium">{{ member.member_number }}</p>
+        </div>
+      </div>
+    </div>
+    }
+
+    <!-- Navigation Links -->
+    <div class="px-4 py-4 space-y-1">
+      @for (item of navItems; track item.route; let i = $index) {
+      <a
+        [routerLink]="item.route"
+        (click)="closeMobileMenu()"
+        class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 fc-stagger"
+        [style.animation-delay]="(i * 50) + 'ms'"
+        [class]="
+          isActive(item.route)
+            ? 'bg-linear-to-r from-teal-500 to-cyan-500 text-white shadow-md shadow-teal-500/25'
+            : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+        "
+      >
+        <span class="material-symbols-rounded" style="font-size: 22px">{{ item.icon }}</span>
+        {{ item.label }}
+      </a>
+      }
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="px-4 py-3 border-t border-gray-100">
+      <p class="text-xs font-medium text-gray-400 uppercase tracking-wider px-4 mb-2">
+        Quick Actions
+      </p>
+      <a
+        routerLink="/portal/claims/submit"
+        (click)="closeMobileMenu()"
+        class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-teal-700 bg-teal-50 hover:bg-teal-100 transition-colors"
+      >
+        <span class="material-symbols-rounded" style="font-size: 22px">add_circle</span>
+        Submit New Claim
+      </a>
+    </div>
+
+    <!-- Footer Actions -->
+    <div class="px-4 py-4 border-t border-gray-100 mt-auto">
+      <button
+        (click)="logout()"
+        class="flex items-center justify-center gap-2 w-full px-4 py-3 rounded-xl text-sm font-medium text-red-600 bg-red-50 hover:bg-red-100 transition-colors"
+      >
+        <span class="material-symbols-rounded" style="font-size: 20px">logout</span>
+        Sign Out
+      </button>
+    </div>
+  </div>
+  }
+
+  <!-- ═══════════════════════════════════════════════════════════════════════ -->
+  <!-- Main Content -->
+  <!-- ═══════════════════════════════════════════════════════════════════════ -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-8">
+    <router-outlet />
+  </main>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════ -->
+  <!-- Footer -->
+  <!-- ═══════════════════════════════════════════════════════════════════════ -->
+  <footer class="border-t border-gray-200/80 bg-white/80 backdrop-blur-sm mt-auto">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
+        <!-- Support Info -->
+        <div class="flex items-center gap-2 text-sm text-gray-500">
+          <span class="material-symbols-rounded text-teal-500" style="font-size: 18px"
+            >support_agent</span
+          >
+          <span>Need help?</span>
+          <a
+            href="tel:+2609700000"
+            class="text-teal-600 hover:text-teal-700 font-medium hover:underline"
+            >+254 700 000 000</a
+          >
+          <span class="text-gray-300">|</span>
+          <a
+            href="mailto:support@flexcare.co.zm"
+            class="text-teal-600 hover:text-teal-700 font-medium hover:underline"
+            >support&#64;flexcare.co.zm</a
+          >
+        </div>
+
+        <!-- Quick Links -->
+        <div class="flex items-center gap-4 text-sm">
+          <a
+            routerLink="/provider/login"
+            class="text-gray-500 hover:text-teal-600 transition-colors flex items-center gap-1"
+          >
+            <span class="material-symbols-rounded" style="font-size: 16px">local_hospital</span>
+            Provider Portal
+          </a>
+          <span class="text-gray-200">|</span>
+          <a
+            routerLink="/"
+            class="text-gray-500 hover:text-teal-600 transition-colors flex items-center gap-1"
+          >
+            <span class="material-symbols-rounded" style="font-size: 16px">arrow_back</span>
+            Back to Website
+          </a>
+        </div>
+      </div>
+
+      <!-- Trust Badge -->
+      <div class="mt-4 pt-4 border-t border-gray-100 flex items-center justify-center gap-2">
+        <span class="material-symbols-rounded text-green-500" style="font-size: 16px">verified</span>
+        <span class="text-xs text-gray-400">256-bit SSL encrypted</span>
+        <span class="text-gray-200 mx-2">|</span>
+        <span class="text-xs text-gray-400">&copy; 2026 FlexCare Insurance. All rights reserved.</span>
+      </div>
+    </div>
+  </footer>
+</div>
+
+<!-- Slide-in animation keyframe -->
+<style>
+  @keyframes slideInRight {
+    from {
+      transform: translateX(100%);
+    }
+    to {
+      transform: translateX(0);
+    }
+  }
+</style>

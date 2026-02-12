@@ -14,7 +14,6 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatNativeDateModule, provideNativeDateAdapter } from '@angular/material/core';
-import { MatChipsModule } from '@angular/material/chips';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { STEPPER_GLOBAL_OPTIONS } from '@angular/cdk/stepper';
 
@@ -43,7 +42,6 @@ interface MarketSegment {
     MatTooltipModule,
     MatDatepickerModule,
     MatNativeDateModule,
-    MatChipsModule,
     MatCheckboxModule,
   ],
   providers: [
@@ -87,17 +85,10 @@ export class MedicalSchemeDialog implements OnInit {
   }
 
   private initForms() {
-    // Handle legacy single segment or new multi-segment
-    const existingSegments = this.data?.market_segment
-      ? this.data.market_segment
-      : this.data?.market_segment
-      ? [this.data.market_segment]
-      : [];
-
     // Step 1: Basic Information
     this.basicInfoForm = this.fb.group({
       name: [this.data?.name || '', [Validators.required, Validators.minLength(3)]],
-      market_segments: [existingSegments, [Validators.required, Validators.minLength(1)]],
+      market_segment: [this.data?.market_segment || '', Validators.required],
       description: [this.data?.description || ''],
       effective_from: [
         this.data?.effective_from ? new Date(this.data.effective_from) : new Date(),
@@ -134,16 +125,16 @@ export class MedicalSchemeDialog implements OnInit {
     this.currentStep.set(index);
   }
 
-  // Get selected segments with their full details for display
-  getSelectedSegments(): MarketSegment[] {
-    const selectedValues: string[] = this.basicInfoForm.get('market_segments')?.value || [];
-    return this.marketSegments.filter((s) => selectedValues.includes(s.value));
+  // Get the currently selected segment object for display
+  getSelectedSegment(): MarketSegment | null {
+    const value: string = this.basicInfoForm.get('market_segment')?.value || '';
+    return this.marketSegments.find((s) => s.value === value) || null;
   }
 
-  // Check if any group-based segment is selected (for showing group size fields)
+  // Check if a group-based segment is selected (for showing group size fields)
   hasGroupSegment(): boolean {
-    const selectedValues: string[] = this.basicInfoForm.get('market_segments')?.value || [];
-    return selectedValues.includes('corporate') || selectedValues.includes('sme');
+    const selected: string = this.basicInfoForm.get('market_segment')?.value || '';
+    return selected === 'corporate' || selected === 'sme';
   }
 
   getSegmentIcon(value: string): string {
@@ -218,9 +209,7 @@ export class MedicalSchemeDialog implements OnInit {
 
     const result: Partial<MedicalScheme> = {
       name: basicInfo.name,
-      // market_segment: basicInfo.market_segments,
-      // Keep backward compatibility - use first segment as primary
-      market_segment: basicInfo.market_segments[0],
+      market_segment: basicInfo.market_segment,
       description: basicInfo.description || null,
       effective_from: effectiveFrom,
       effective_to: effectiveTo || null,

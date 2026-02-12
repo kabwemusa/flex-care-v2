@@ -92,7 +92,7 @@ export class MedicalCensusUploadDialog {
   ];
 
   // Table columns for preview
-  previewColumns = ['name', 'dob', 'gender', 'member_type', 'employee_number'];
+  previewColumns = ['name', 'dob', 'gender', 'member_type', 'id_number'];
 
   constructor() {
     this.uploadForm = this.fb.group({
@@ -314,18 +314,18 @@ export class MedicalCensusUploadDialog {
   }
 
   downloadTemplate() {
-    const csvContent = `first_name,last_name,date_of_birth,gender,email,phone,id_number,employee_number,member_type,relationship,principal_employee_number,salary_band,department,job_title
-John,Doe,1985-06-15,M,john.doe@company.com,+1234567890,ID123456,EMP001,principal,,,Executive,Executive Office,CEO
-Jane,Doe,1987-03-20,F,jane.doe@company.com,+1234567891,ID123457,,spouse,spouse,EMP001,,,
-Jimmy,Doe,2010-05-10,M,,,ID123458,,child,child,EMP001,,,
-Sarah,Smith,1990-08-25,F,sarah.smith@company.com,+1234567892,ID123459,EMP002,principal,,,Senior,IT,Senior Developer
-Tom,Smith,2015-02-14,M,,,ID123460,,child,child,EMP002,,,
-Michael,Johnson,1978-11-30,M,michael.j@company.com,+1234567893,ID123461,EMP003,principal,,,Senior,Sales,Sales Manager
-Lisa,Johnson,1980-05-18,F,lisa.j@company.com,+1234567894,ID123462,,spouse,spouse,EMP003,,,
-Emma,Johnson,2012-09-22,F,,,ID123463,,child,child,EMP003,,,
-David,Brown,1992-03-08,M,david.brown@company.com,+1234567895,ID123464,EMP004,principal,,,Mid,Operations,Operations Officer
-Robert,Wilson,1988-07-14,M,robert.w@company.com,+1234567896,ID123465,EMP005,principal,,,Mid,IT,Software Engineer
-Mary,Wilson,1990-12-25,F,mary.w@company.com,+1234567897,ID123466,,spouse,spouse,EMP005,,,`;
+    const csvContent = `first_name,last_name,date_of_birth,gender,email,phone,id_number,employee_number,member_type,relationship,principal_id_number
+John,Doe,1985-06-15,M,john.doe@company.com,+260971234567,123456/78/1,EMP001,principal,,
+Jane,Doe,1987-03-20,F,jane.doe@company.com,,234567/89/1,,spouse,spouse,123456/78/1
+Jimmy,Doe,2010-05-10,M,,,345678/90/1,,child,child,123456/78/1
+Sarah,Smith,1990-08-25,F,sarah.smith@company.com,+260973456789,456789/01/1,EMP002,principal,,
+Tom,Smith,2015-02-14,M,,,567890/12/1,,child,child,456789/01/1
+Michael,Johnson,1978-11-30,M,michael.j@company.com,+260974567890,678901/23/1,EMP003,principal,,
+Lisa,Johnson,1980-05-18,F,lisa.j@company.com,,789012/34/1,,spouse,spouse,678901/23/1
+Emma,Johnson,2012-09-22,F,,,890123/45/1,,child,child,678901/23/1
+David,Brown,1992-03-08,M,david.brown@company.com,+260975678901,901234/56/1,EMP004,principal,,
+Robert,Wilson,1988-07-14,M,robert.w@company.com,+260976789012,012345/67/1,EMP005,principal,,
+Mary,Wilson,1990-12-25,F,mary.w@company.com,,123456/89/1,,spouse,spouse,012345/67/1`;
 
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');

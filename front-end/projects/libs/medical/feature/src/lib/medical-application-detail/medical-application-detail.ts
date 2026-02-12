@@ -3,6 +3,7 @@
 import { Component, computed, effect, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
+import { forkJoin } from 'rxjs';
 
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -41,7 +42,10 @@ import { MedicalApplicationMemberDialog } from '../dialogs/medical-application-m
 import { MedicalUnderwritingDialog } from '../dialogs/medical-underwriting-dialog/medical-underwriting-dialog';
 import { MedicalApplicationReferralDialog } from '../dialogs/medical-application-referral-dialog/medical-application-referral-dialog';
 import { MedicalQuoteActionsDialog } from '../dialogs/medical-quote-actions-dialog/medical-quote-actions-dialog';
-import { MedicalApprovalActionDialog, ApprovalAction } from '../dialogs/medical-approval-action-dialog/medical-approval-action-dialog';
+import {
+  MedicalApprovalActionDialog,
+  ApprovalAction,
+} from '../dialogs/medical-approval-action-dialog/medical-approval-action-dialog';
 import { ApplicationDocumentsComponent } from '../components/application-documents/application-documents';
 import { FeedbackService } from 'shared';
 
@@ -163,11 +167,41 @@ export class MedicalApplicationDetail implements OnInit {
 
         const app = this.application();
         if (app?.plan_id) {
-          this.store.loadPlanAddons(app.plan_id);
+          this.store.loadPlanAddons(app.plan_id).subscribe({
+            next: () => this.autoAddMandatoryAddons(),
+          });
         }
 
         // Load approval status if application is in a workflow stage
         this.loadApprovalStatus();
+      },
+    });
+  }
+
+  /**
+   * Auto-add mandatory plan addons that are missing from the application.
+   * Triggers premium recalculation via the backend for each added addon.
+   */
+  private autoAddMandatoryAddons() {
+    const app = this.application();
+    if (!app || !app.can_be_edited) return;
+
+    const mandatoryAddons = this.planAddons().filter((pa) => pa.is_mandatory);
+    const existingIds = this.selectedAddonIds();
+    const missing = mandatoryAddons.filter((pa) => !existingIds.has(pa.addon_id));
+
+    if (missing.length === 0) return;
+
+    // Add all missing mandatory addons in parallel, then reload
+    const requests = missing.map((pa) => this.store.addAddon(app.id, pa.addon_id));
+    forkJoin(requests).subscribe({
+      next: () => {
+        // Reload to get updated premiums and addon state
+        this.store.loadOne(this.applicationId()).subscribe({
+          next: () => {
+            this.addonDataSource.data = this.store.addons();
+          },
+        });
       },
     });
   }
@@ -431,6 +465,7 @@ export class MedicalApplicationDetail implements OnInit {
 
     if (!confirmed) return;
 
+    console.log('Converting application to policy:', app.id);
     this.store.convert(app.id).subscribe({
       next: (res) => {
         this.feedback.success('Policy created successfully!');

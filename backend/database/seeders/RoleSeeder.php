@@ -20,15 +20,15 @@ class RoleSeeder extends Seeder
         // =========================================================================
 
         // System Administrator - God mode, access to everything
-        $systemAdmin = Role::create(['name' => 'System Administrator', 'guard_name' => 'web']);
+        $systemAdmin = Role::findOrCreate( 'System Administrator',  'web');
         $systemAdmin->givePermissionTo(Permission::where('guard_name', 'web')->get());
 
         // Auditor - Read-only access to audit trails
-        $auditor = Role::create(['name' => 'Auditor', 'guard_name' => 'web']);
+        $auditor = Role::findOrCreate( 'Auditor','web');
         $auditor->givePermissionTo(['audit.view', 'audit.export']);
 
         // Data Protection Officer - Manage user data and compliance
-        $dpo = Role::create(['name' => 'Data Protection Officer', 'guard_name' => 'web']);
+        $dpo = Role::findOrCreate('Data Protection Officer','web');
         $dpo->givePermissionTo([
             'users.view',
             'audit.view',
@@ -36,7 +36,7 @@ class RoleSeeder extends Seeder
         ]);
 
         // User Manager - Manage users and their module access
-        $userManager = Role::create(['name' => 'User Manager', 'guard_name' => 'web']);
+        $userManager = Role::findOrCreate('User Manager', 'web');
         $userManager->givePermissionTo([
             'users.view',
             'users.create',
@@ -54,11 +54,11 @@ class RoleSeeder extends Seeder
         // =========================================================================
 
         // Medical Administrator - Full access to medical module
-        $medicalAdmin = Role::create(['name' => 'Medical Administrator', 'guard_name' => 'medical']);
+        $medicalAdmin = Role::findOrCreate( 'Medical Administrator', 'medical');
         $medicalAdmin->givePermissionTo(Permission::where('guard_name', 'medical')->get());
 
         // Medical Underwriter - Assess applications and manage underwriting
-        $underwriter = Role::create(['name' => 'Medical Underwriter', 'guard_name' => 'medical']);
+        $underwriter = Role::findOrCreate('Medical Underwriter','medical');
         $underwriter->givePermissionTo([
             'medical.applications.view',
             'medical.applications.update',
@@ -77,7 +77,7 @@ class RoleSeeder extends Seeder
         ]);
 
         // Medical Broker - Create quotes and applications
-        $broker = Role::create(['name' => 'Medical Broker', 'guard_name' => 'medical']);
+        $broker = Role::findOrCreate('Medical Broker',  'medical');
         $broker->givePermissionTo([
             'medical.schemes.view',
             'medical.plans.view',
@@ -94,7 +94,7 @@ class RoleSeeder extends Seeder
         ]);
 
         // Medical Claims Officer - Process claims (for future)
-        $claimsOfficer = Role::create(['name' => 'Medical Claims Officer', 'guard_name' => 'medical']);
+        $claimsOfficer = Role::findOrCreate( 'Medical Claims Officer', 'medical');
         $claimsOfficer->givePermissionTo([
             'medical.policies.view',
             'medical.members.view',
@@ -105,7 +105,7 @@ class RoleSeeder extends Seeder
         ]);
 
         // Corporate Group Administrator - Manage their own corporate group
-        $corporateAdmin = Role::create(['name' => 'Corporate Group Administrator', 'guard_name' => 'medical']);
+        $corporateAdmin = Role::findOrCreate( 'Corporate Group Administrator', 'medical');
         $corporateAdmin->givePermissionTo([
             'medical.policies.view',
             'medical.members.view',
@@ -117,7 +117,7 @@ class RoleSeeder extends Seeder
         ]);
 
         // Medical Product Manager - Configure schemes, plans, rates
-        $productManager = Role::create(['name' => 'Medical Product Manager', 'guard_name' => 'medical']);
+        $productManager = Role::findOrCreate('Medical Product Manager', 'medical');
         $productManager->givePermissionTo([
             'medical.schemes.view',
             'medical.schemes.create',
@@ -142,7 +142,7 @@ class RoleSeeder extends Seeder
         // LIFE MODULE ROLES (life guard) - For future
         // =========================================================================
 
-        $lifeAdmin = Role::create(['name' => 'Life Administrator', 'guard_name' => 'life']);
+        $lifeAdmin = Role::findOrCreate( 'Life Administrator','life');
         $lifeAdmin->givePermissionTo(Permission::where('guard_name', 'life')->get());
 
         // =========================================================================

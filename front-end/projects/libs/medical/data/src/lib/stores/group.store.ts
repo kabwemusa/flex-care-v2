@@ -116,15 +116,27 @@ export class GroupStore {
     return this.http.get<ApiResponse<CorporateGroup[]>>('/api/v1/medical/lookups/groups');
   }
 
-  loadMembers(applicationId: string, page = 1, perPage = 10) {
+  /**
+   * Load members for a group across all applications.
+   * Supports optional filtering by application_id, member_type, and search.
+   */
+  loadGroupMembers(
+    groupId: string,
+    page = 1,
+    perPage = 10,
+    filters?: { application_id?: string; member_type?: string; search?: string }
+  ) {
     this.state.update((s) => ({ ...s, loading: true }));
+
+    let params: Record<string, string | number> = { page, per_page: perPage };
+    if (filters?.application_id) params['application_id'] = filters.application_id;
+    if (filters?.member_type) params['member_type'] = filters.member_type;
+    if (filters?.search) params['search'] = filters.search;
 
     this.http
       .get<PaginatedResponse<ApplicationMember>>(
-        `/api/v1/medical/applications/${applicationId}/members`,
-        {
-          params: { page, per_page: perPage },
-        }
+        `${this.apiUrl}/${groupId}/members`,
+        { params }
       )
       .subscribe({
         next: (res) =>

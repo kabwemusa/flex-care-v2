@@ -11,7 +11,6 @@ class Benefit extends BaseModel
     protected $table = 'med_benefits';
 
     protected $fillable = [
-        'category_id',
         'parent_id',
         'code',
         'name',
@@ -65,11 +64,6 @@ class Benefit extends BaseModel
     // RELATIONSHIPS
     // =========================================================================
 
-    public function category(): BelongsTo
-    {
-        return $this->belongsTo(BenefitCategory::class, 'category_id');
-    }
-
     public function parent(): BelongsTo
     {
         return $this->belongsTo(Benefit::class, 'parent_id');
@@ -89,11 +83,6 @@ class Benefit extends BaseModel
     public function planBenefits(): HasMany
     {
         return $this->hasMany(PlanBenefit::class, 'benefit_id');
-    }
-
-    public function addonBenefits(): HasMany
-    {
-        return $this->hasMany(AddonBenefit::class, 'benefit_id');
     }
 
     public function exclusions(): HasMany
@@ -138,11 +127,6 @@ class Benefit extends BaseModel
     public function scopeOrdered($query)
     {
         return $query->orderBy('sort_order')->orderBy('name');
-    }
-
-    public function scopeByCategory($query, string $categoryId)
-    {
-        return $query->where('category_id', $categoryId);
     }
 
     // =========================================================================

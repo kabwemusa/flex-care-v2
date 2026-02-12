@@ -7,12 +7,10 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Modules\Medical\Models\Benefit;
-use Modules\Medical\Models\BenefitCategory;
 use Modules\Medical\Models\PlanBenefit;
 use Modules\Medical\Http\Requests\BenefitRequest;
 use Modules\Medical\Http\Requests\PlanBenefitRequest;
 use Modules\Medical\Http\Resources\BenefitResource;
-use Modules\Medical\Http\Resources\BenefitCategoryResource;
 use Modules\Medical\Http\Resources\PlanBenefitResource;
 use Modules\Medical\Services\BenefitService;
 use App\Traits\ApiResponse;
@@ -28,59 +26,6 @@ class BenefitController extends Controller
     ) {}
 
     // =========================================================================
-    // BENEFIT CATEGORIES
-    // =========================================================================
-
-    /**
-     * List benefit categories.
-     * GET /v1/medical/benefit-categories
-     */
-    public function categories(): JsonResponse
-    {
-        try {
-            $categories = BenefitCategory::withCount('benefits')
-                ->ordered()
-                ->get();
-
-            return $this->success(
-                BenefitCategoryResource::collection($categories),
-                'Categories retrieved'
-            );
-        } catch (Throwable $e) {
-            return $this->error('Failed to retrieve categories', 500);
-        }
-    }
-
-    /**
-     * Create benefit category.
-     * POST /v1/medical/benefit-categories
-     */
-    public function storeCategory(): JsonResponse
-    {
-        try {
-            $category = DB::transaction(function () {
-                $validated = request()->validate([
-                    'name' => 'required|string|max:255',
-                    'description' => 'nullable|string',
-                    'icon' => 'nullable|string|max:50',
-                    'color' => 'nullable|string|max:20',
-                    'sort_order' => 'nullable|integer',
-                ]);
-
-                return BenefitCategory::create($validated);
-            });
-
-            return $this->success(
-                new BenefitCategoryResource($category),
-                'Category created',
-                201
-            );
-        } catch (Throwable $e) {
-            return $this->error('Failed to create category: ' . $e->getMessage(), 500);
-        }
-    }
-
-    // =========================================================================
     // BENEFIT CATALOG
     // =========================================================================
 
@@ -91,17 +36,13 @@ class BenefitController extends Controller
     public function index(): JsonResponse
     {
         try {
-            $query = Benefit::with('category');
+            $query = Benefit::query();
 
             if ($search = request('search')) {
                 $query->where(function ($q) use ($search) {
                     $q->where('name', 'like', "%{$search}%")
                       ->orWhere('code', 'like', "%{$search}%");
                 });
-            }
-
-            if ($categoryId = request('category_id')) {
-                $query->where('category_id', $categoryId);
             }
 
             if ($benefitType = request('benefit_type')) {
@@ -112,13 +53,13 @@ class BenefitController extends Controller
                 $query->rootLevel();
             }
 
-            if (request('active_only', true)) {
+            if (request()->boolean('active_only', false)) {
                 $query->active();
             }
 
             $query->ordered();
 
-            $benefits = $query->paginate(request('per_page', 50));
+            $benefits = $query->get();
 
             return $this->success(
                 BenefitResource::collection($benefits),
@@ -137,10 +78,8 @@ class BenefitController extends Controller
     {
         try {
             $benefit = DB::transaction(function () use ($request) {
-                return Benefit::create($request->validated());
+                return Benefit::create($this->mapToModelFields($request->validated()));
             });
-
-            $benefit->load('category');
 
             return $this->success(
                 new BenefitResource($benefit),
@@ -148,7 +87,7 @@ class BenefitController extends Controller
                 201
             );
         } catch (Throwable $e) {
-            return $this->error('Failed to create benefit', 500);
+            return $this->error('Failed to create benefit: ' . $e->getMessage(), 500);
         }
     }
 
@@ -159,7 +98,7 @@ class BenefitController extends Controller
     public function show(string $id): JsonResponse
     {
         try {
-            $benefit = Benefit::with(['category', 'parent', 'children'])
+            $benefit = Benefit::with(['parent', 'children'])
                 ->findOrFail($id);
 
             return $this->success(
@@ -182,8 +121,8 @@ class BenefitController extends Controller
         try {
             $benefit = DB::transaction(function () use ($request, $id) {
                 $benefit = Benefit::findOrFail($id);
-                $benefit->update($request->validated());
-                return $benefit->fresh('category');
+                $benefit->update($this->mapToModelFields($request->validated()));
+                return $benefit->fresh();
             });
 
             return $this->success(
@@ -228,20 +167,28 @@ class BenefitController extends Controller
     }
 
     /**
-     * Get benefits tree by category.
+     * Get benefits tree grouped by benefit type.
      * GET /v1/medical/benefits/tree
      */
     public function tree(): JsonResponse
     {
         try {
-            $categories = BenefitCategory::with([
-                'benefits' => fn($q) => $q->rootLevel()->active()->ordered()->with('children')
-            ])->ordered()->get();
+            $benefits = Benefit::rootLevel()
+                ->active()
+                ->ordered()
+                ->with('children')
+                ->get();
 
-            return $this->success(
-                BenefitCategoryResource::collection($categories),
-                'Benefit tree retrieved'
-            );
+            // Group by benefit_type
+            $tree = $benefits->groupBy('benefit_type')->map(function ($group, $type) {
+                return [
+                    'benefit_type' => $type,
+                    'label' => $group->first()->benefit_type_label,
+                    'benefits' => BenefitResource::collection($group),
+                ];
+            })->values();
+
+            return $this->success($tree, 'Benefit tree retrieved');
         } catch (Throwable $e) {
             return $this->error('Failed to retrieve benefit tree', 500);
         }
@@ -259,7 +206,7 @@ class BenefitController extends Controller
     {
         try {
             $planBenefits = PlanBenefit::where('plan_id', $planId)
-                ->with(['benefit.category', 'memberLimits'])
+                ->with(['benefit', 'memberLimits'])
                 ->rootLevel()
                 ->ordered()
                 ->get();
@@ -302,7 +249,7 @@ class BenefitController extends Controller
                     }
                 }
 
-                return $planBenefit->load(['benefit.category', 'memberLimits']);
+                return $planBenefit->load(['benefit', 'memberLimits']);
             });
 
             return $this->success(
@@ -335,7 +282,7 @@ class BenefitController extends Controller
                     }
                 }
 
-                return $planBenefit->fresh(['benefit.category', 'memberLimits']);
+                return $planBenefit->fresh(['benefit', 'memberLimits']);
             });
 
             return $this->success(
@@ -471,5 +418,32 @@ class BenefitController extends Controller
         } catch (Throwable $e) {
             return $this->error('Eligibility check failed: ' . $e->getMessage(), 500);
         }
+    }
+
+    // =========================================================================
+    // HELPERS
+    // =========================================================================
+
+    /**
+     * Map API field names to database column names.
+     * The API uses default_limit_type/display_name but DB uses limit_type/short_name.
+     */
+    private function mapToModelFields(array $data): array
+    {
+        $mapping = [
+            'default_limit_type' => 'limit_type',
+            'default_limit_frequency' => 'limit_frequency',
+            'default_limit_basis' => 'limit_basis',
+            'display_name' => 'short_name',
+        ];
+
+        foreach ($mapping as $apiKey => $dbKey) {
+            if (array_key_exists($apiKey, $data)) {
+                $data[$dbKey] = $data[$apiKey];
+                unset($data[$apiKey]);
+            }
+        }
+
+        return $data;
     }
 }

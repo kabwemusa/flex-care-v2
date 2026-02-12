@@ -68,6 +68,12 @@ body {
   background-color: #f8fafc; /* slate-50 background for the huge table */
 }
 
+/* Responsive Dialog - rounded corners */
+.responsive-dialog .mat-mdc-dialog-container .mat-mdc-dialog-surface {
+  border-radius: 8px !important;
+  overflow: hidden;
+}
+
 /* Ensure skeleton loader matches rounded corners */
 lib-skeleton {
   display: block;
@@ -106,7 +112,21 @@ lib-skeleton {
   .mdc-line-ripple {
     &::before,
     &::after {
-      border-bottom-width: 1px !important; /* Make the default line thinner if desired */
+      border-bottom-width: 1px !important;
     }
+  }
+
+  /* 5. Gray, lightweight placeholders */
+  input::placeholder,
+  textarea::placeholder {
+    color: #94a3b8 !important; /* slate-400 */
+    font-weight: 400 !important;
+    opacity: 1 !important;
+  }
+
+  /* mat-select placeholder */
+  .mat-mdc-select-placeholder {
+    color: #94a3b8 !important; /* slate-400 */
+    font-weight: 400 !important;
   }
 }

@@ -1,4 +1,4 @@
-<div class="flex flex-col h-full w-[70vw] min-w-[70vw] max-h-[90vh]">
+<div class="flex flex-col h-full w-[70vw] min-w-[70vw] max-h-[90vh] rounded-lg">
   <div
     class="flex items-center justify-between gap-4 border-b border-slate-100 px-6 py-4 bg-slate-50 shrink-0"
   >
@@ -341,19 +341,12 @@
       <button mat-button (click)="dialogRef.close()" class="!text-slate-600">Cancel</button>
 
       @if (currentStep() > 0) {
-      <button mat-stroked-button (click)="previousStep()" class="!border-slate-200">
-        <mat-icon fontSet="material-symbols-rounded">arrow_back</mat-icon>
-        Back
+      <button mat-icon-button (click)="previousStep()" matTooltip="Previous step" class="!text-slate-600 hover:!bg-slate-200">
+        <mat-icon fontSet="material-symbols-rounded">chevron_left</mat-icon>
       </button>
       } @if (currentStep() < 2) {
-      <button
-        mat-flat-button
-        color="primary"
-        (click)="nextStep()"
-        [disabled]="!canProceedToNextStep()"
-      >
-        Next
-        <mat-icon fontSet="material-symbols-rounded">arrow_forward</mat-icon>
+      <button mat-icon-button (click)="nextStep()" [disabled]="!canProceedToNextStep()" matTooltip="Next step" class="!text-primary">
+        <mat-icon fontSet="material-symbols-rounded">chevron_right</mat-icon>
       </button>
       } @if (currentStep() === 2) {
       <button

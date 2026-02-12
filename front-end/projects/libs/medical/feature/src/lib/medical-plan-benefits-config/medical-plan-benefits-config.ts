@@ -26,7 +26,6 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 // Domain Imports
 import {
   PlanBenefit,
-  Benefit,
   BenefitStore,
   BENEFIT_TYPES,
   LIMIT_TYPES,
@@ -37,10 +36,9 @@ import { MedicalAddPlanBenefitsDialog } from '../dialogs/medical-add-plan-benefi
 import { FeedbackService } from 'shared';
 
 interface BenefitGroup {
-  category: string;
-  categoryId: string;
+  type: string;
+  typeValue: string;
   icon: string;
-  color: string;
   benefits: PlanBenefit[];
 }
 
@@ -69,38 +67,33 @@ export class MedicalPlanBenefitsConfig implements OnInit, OnChanges {
   private readonly feedback = inject(FeedbackService);
 
   // State
-  expandedCategories = signal<Set<string>>(new Set());
+  expandedGroups = signal<Set<string>>(new Set());
 
   // Computed
   benefitGroups = computed<BenefitGroup[]>(() => {
     const planBenefits = this.store.planBenefits();
-    const categories = this.store.categories();
 
-    // Group by category
+    // Group by benefit_type
     const grouped = new Map<string, PlanBenefit[]>();
 
     planBenefits.forEach((pb) => {
-      const categoryId = pb.benefit?.category_id || 'uncategorized';
-      if (!grouped.has(categoryId)) {
-        grouped.set(categoryId, []);
+      const benefitType = pb.benefit?.benefit_type || 'other';
+      if (!grouped.has(benefitType)) {
+        grouped.set(benefitType, []);
       }
       // Only include root benefits (non sub-benefits)
       if (!pb.parent_plan_benefit_id) {
-        grouped.get(categoryId)!.push(pb);
+        grouped.get(benefitType)!.push(pb);
       }
     });
 
-    // Convert to array with category info
-    return Array.from(grouped.entries()).map(([categoryId, benefits]) => {
-      const category = categories.find((c) => c.id === categoryId);
-      return {
-        category: category?.name || 'Uncategorized',
-        categoryId,
-        icon: category?.icon || 'folder',
-        color: category?.color || '#6b7280',
-        benefits: benefits.sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0)),
-      };
-    });
+    // Convert to array with type info
+    return Array.from(grouped.entries()).map(([typeValue, benefits]) => ({
+      type: getLabelByValue(BENEFIT_TYPES, typeValue) || typeValue,
+      typeValue,
+      icon: BENEFIT_TYPES.find((t) => t.value === typeValue)?.icon || 'medical_services',
+      benefits: benefits.sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0)),
+    }));
   });
 
   totalBenefits = computed(() => this.store.planBenefits().length);
@@ -118,34 +111,33 @@ export class MedicalPlanBenefitsConfig implements OnInit, OnChanges {
 
   private loadData() {
     if (this.planId) {
-      this.store.loadCategories();
       this.store.loadPlanBenefits(this.planId);
     }
   }
 
   // Expansion
-  toggleCategory(categoryId: string) {
-    const expanded = this.expandedCategories();
+  toggleGroup(typeValue: string) {
+    const expanded = this.expandedGroups();
     const newSet = new Set(expanded);
-    if (newSet.has(categoryId)) {
-      newSet.delete(categoryId);
+    if (newSet.has(typeValue)) {
+      newSet.delete(typeValue);
     } else {
-      newSet.add(categoryId);
+      newSet.add(typeValue);
     }
-    this.expandedCategories.set(newSet);
+    this.expandedGroups.set(newSet);
   }
 
-  isCategoryExpanded(categoryId: string): boolean {
-    return this.expandedCategories().has(categoryId);
+  isGroupExpanded(typeValue: string): boolean {
+    return this.expandedGroups().has(typeValue);
   }
 
   expandAll() {
-    const allIds = this.benefitGroups().map((g) => g.categoryId);
-    this.expandedCategories.set(new Set(allIds));
+    const allIds = this.benefitGroups().map((g) => g.typeValue);
+    this.expandedGroups.set(new Set(allIds));
   }
 
   collapseAll() {
-    this.expandedCategories.set(new Set());
+    this.expandedGroups.set(new Set());
   }
 
   // Labels
@@ -229,7 +221,6 @@ export class MedicalPlanBenefitsConfig implements OnInit, OnChanges {
         planId: this.planId,
         parentPlanBenefitId: parentPlanBenefit.id,
         parentBenefitId: parentPlanBenefit.benefit_id,
-        categoryId: parentPlanBenefit.benefit?.category_id,
         existingBenefitIds: this.store.planBenefits().map((pb) => pb.benefit_id),
       },
       panelClass: ['responsive-dialog', 'bg-white'],

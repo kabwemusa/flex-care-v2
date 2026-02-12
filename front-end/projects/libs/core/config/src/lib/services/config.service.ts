@@ -1,10 +1,19 @@
 import { Injectable } from '@angular/core';
 
+export interface WebSocketConfig {
+  enabled: boolean;
+  reverbKey: string;
+  wsHost: string;
+  wsPort: number;
+  forceTLS: boolean;
+}
+
 export interface AppConfig {
   apiUrl: string;
   production: boolean;
   appName: string;
   version: string;
+  websocket: WebSocketConfig;
 }
 
 @Injectable({
@@ -12,11 +21,20 @@ export interface AppConfig {
 })
 export class ConfigService {
   private config: AppConfig = {
-    // apiUrl: 'http://localhost:8000',
-    apiUrl: 'https://flex-care-v2-production-022b.up.railway.app',
+    // Empty for development (uses Angular proxy), set full URL for production
+    apiUrl: '',
+    // Production URL (set via environment or app initialization):
+    // apiUrl: 'https://flex-care-v2-production-022b.up.railway.app',
     production: false,
     appName: 'FlexCare',
     version: '1.0.0',
+    websocket: {
+      enabled: true,
+      reverbKey: 'your-reverb-app-key',
+      wsHost: 'localhost',
+      wsPort: 8080,
+      forceTLS: false,
+    },
   };
 
   /**
@@ -59,5 +77,19 @@ export class ConfigService {
    */
   getVersion(): string {
     return this.config.version;
+  }
+
+  /**
+   * Get WebSocket configuration
+   */
+  getWebSocketConfig(): WebSocketConfig {
+    return this.config.websocket;
+  }
+
+  /**
+   * Check if WebSocket is enabled
+   */
+  isWebSocketEnabled(): boolean {
+    return this.config.websocket.enabled;
   }
 }

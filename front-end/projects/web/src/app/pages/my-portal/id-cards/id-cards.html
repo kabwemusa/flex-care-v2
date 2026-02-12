@@ -1,0 +1,222 @@
+<div class="space-y-6 fc-fade-in">
+  <!-- Header -->
+  <div class="flex items-center gap-3">
+    <div
+      class="w-12 h-12 rounded-xl bg-linear-to-br from-emerald-100 to-green-100 flex items-center justify-center"
+    >
+      <span class="material-symbols-rounded text-emerald-600" style="font-size: 26px">badge</span>
+    </div>
+    <div>
+      <h1 class="text-xl font-semibold text-gray-900 tracking-tight">Member ID Cards</h1>
+      <p class="text-sm text-gray-500">View and download ID cards for all covered members</p>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  @if (loading()) {
+  <div class="flex items-center justify-center py-20">
+    <div class="flex flex-col items-center gap-4">
+      <div
+        class="w-12 h-12 border-3 border-teal-600 border-t-transparent rounded-full animate-spin"
+      ></div>
+      <p class="text-sm text-gray-500">Loading your ID cards...</p>
+    </div>
+  </div>
+  }
+
+  <!-- Error State -->
+  @if (error()) {
+  <div class="bg-red-50 border border-red-200 rounded-2xl p-8 text-center">
+    <div class="w-14 h-14 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-4">
+      <span class="material-symbols-rounded text-red-500 text-2xl">error</span>
+    </div>
+    <h3 class="font-medium text-red-800">Something went wrong</h3>
+    <p class="text-sm text-red-600 mt-1">{{ error() }}</p>
+    <button
+      (click)="loadCards()"
+      class="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-red-100 text-red-700 hover:bg-red-200 text-sm font-medium transition-colors"
+    >
+      <span class="material-symbols-rounded" style="font-size: 18px">refresh</span>
+      Try again
+    </button>
+  </div>
+  }
+
+  <!-- ID Cards Grid -->
+  @if (!loading() && !error()) { @if (cards().length) {
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    @for (card of cards(); track card.member_id; let i = $index) {
+    <div
+      class="bg-white rounded-2xl border border-gray-100 overflow-hidden fc-stagger hover:shadow-xl hover:shadow-teal-500/10 transition-all duration-300"
+      [style.animation-delay]="i * 100 + 'ms'"
+    >
+      <!-- Card Preview - Holographic Style -->
+      <div
+        class="relative bg-linear-to-br from-teal-600 via-cyan-600 to-teal-700 p-6 text-white overflow-hidden"
+      >
+        <!-- Holographic overlay effect -->
+        <div
+          class="absolute inset-0 bg-linear-to-br from-white/10 via-transparent to-white/5"
+        ></div>
+        <div
+          class="absolute inset-0 opacity-30"
+          style="
+            background: linear-gradient(
+              135deg,
+              transparent 20%,
+              rgba(255, 255, 255, 0.1) 25%,
+              transparent 30%,
+              rgba(255, 255, 255, 0.1) 45%,
+              transparent 50%
+            );
+          "
+        ></div>
+
+        <!-- Background decorative shapes -->
+        <div class="absolute inset-0 overflow-hidden">
+          <div
+            class="absolute top-0 right-0 w-48 h-48 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2 blur-xl"
+          ></div>
+          <div
+            class="absolute bottom-0 left-0 w-40 h-40 bg-white/5 rounded-full translate-y-1/2 -translate-x-1/2 blur-xl"
+          ></div>
+          <div class="absolute bottom-1/4 right-1/4 w-24 h-24 bg-white/5 rounded-full blur-lg"></div>
+        </div>
+
+        <!-- Card chip decoration -->
+        <div
+          class="absolute top-6 right-6 w-12 h-9 rounded-md bg-linear-to-br from-amber-400/80 to-amber-500/80 flex items-center justify-center"
+        >
+          <div class="w-8 h-5 border border-amber-600/30 rounded-sm"></div>
+        </div>
+
+        <div class="relative">
+          <!-- Brand Header -->
+          <div class="flex items-center gap-3">
+            <div
+              class="w-11 h-11 rounded-xl bg-white/15 backdrop-blur flex items-center justify-center"
+            >
+              <span class="material-symbols-rounded text-white" style="font-size: 24px"
+                >health_and_safety</span
+              >
+            </div>
+            <div>
+              <p class="font-bold text-lg tracking-tight">FlexCare</p>
+              <p class="text-teal-200 text-xs font-light">Health Insurance</p>
+            </div>
+          </div>
+
+          <!-- Member Info -->
+          <div class="mt-6">
+            <p class="text-teal-200 text-xs font-light">Member Name</p>
+            <p class="font-semibold text-xl tracking-tight">
+              {{ card.first_name }} {{ card.last_name }}
+            </p>
+          </div>
+
+          <div class="grid grid-cols-2 gap-4 mt-5">
+            <div>
+              <p class="text-teal-200 text-xs font-light">Member ID</p>
+              <p class="font-mono font-semibold tracking-wide">{{ card.member_number }}</p>
+            </div>
+            <div>
+              <p class="text-teal-200 text-xs font-light">Date of Birth</p>
+              <p class="font-semibold">{{ card.date_of_birth | date : 'MMM d, y' }}</p>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-4 mt-4">
+            <div>
+              <p class="text-teal-200 text-xs font-light">Plan</p>
+              <p class="font-medium text-sm">{{ card.plan_name }}</p>
+            </div>
+            <div>
+              <p class="text-teal-200 text-xs font-light">Valid Until</p>
+              <p class="font-semibold">{{ card.valid_until | date : 'MMM d, y' }}</p>
+            </div>
+          </div>
+
+          <!-- Member type badge -->
+          <div class="absolute top-0 right-14">
+            <span
+              class="px-2.5 py-1 rounded-lg text-xs font-medium backdrop-blur"
+              [class]="
+                card.is_primary
+                  ? 'bg-emerald-500/20 text-emerald-100'
+                  : 'bg-white/15 text-white'
+              "
+            >
+              {{ card.is_primary ? 'Primary' : 'Dependent' }}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card Actions -->
+      <div class="p-4 flex gap-3 bg-gray-50/50">
+        <button
+          (click)="downloadCard(card.member_id)"
+          [disabled]="downloading() === card.member_id"
+          class="flex-1 inline-flex items-center justify-center gap-2 bg-linear-to-r from-teal-500 to-cyan-500 text-white font-medium text-sm px-4 py-3 rounded-xl hover:shadow-lg hover:shadow-teal-500/25 transition-all disabled:from-gray-200 disabled:to-gray-200 disabled:text-gray-400 disabled:shadow-none"
+        >
+          @if (downloading() === card.member_id) {
+          <span
+            class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"
+          ></span>
+          <span>Downloading...</span>
+          } @else {
+          <span class="material-symbols-rounded" style="font-size: 20px">download</span>
+          <span>Download PDF</span>
+          }
+        </button>
+        <button
+          class="inline-flex items-center justify-center gap-2 border border-gray-200 text-gray-700 font-medium text-sm px-4 py-3 rounded-xl hover:bg-white hover:border-teal-200 hover:text-teal-700 transition-all"
+        >
+          <span class="material-symbols-rounded" style="font-size: 20px">share</span>
+        </button>
+      </div>
+    </div>
+    }
+  </div>
+
+  <!-- Info Card -->
+  <div
+    class="bg-linear-to-r from-teal-50 to-cyan-50 border border-teal-100 rounded-2xl p-5 fc-stagger"
+  >
+    <div class="flex items-start gap-4">
+      <div
+        class="w-10 h-10 rounded-xl bg-teal-100 flex items-center justify-center shrink-0"
+      >
+        <span class="material-symbols-rounded text-teal-600" style="font-size: 22px">info</span>
+      </div>
+      <div>
+        <p class="font-medium text-teal-900">Using Your ID Card</p>
+        <p class="text-sm text-teal-700 mt-1 leading-relaxed">
+          Present your member ID card when visiting healthcare providers. You can show the digital
+          version on your phone or download and print a physical copy. Keep your ID card handy for
+          quick access to your coverage information.
+        </p>
+      </div>
+    </div>
+  </div>
+  } @else {
+  <div class="bg-white rounded-2xl border border-gray-100 p-12 text-center">
+    <div
+      class="w-16 h-16 rounded-2xl bg-linear-to-br from-gray-100 to-gray-50 flex items-center justify-center mx-auto mb-4"
+    >
+      <span class="material-symbols-rounded text-gray-400" style="font-size: 32px">badge</span>
+    </div>
+    <h3 class="font-medium text-gray-900">No ID Cards Available</h3>
+    <p class="text-sm text-gray-500 mt-1 max-w-xs mx-auto">
+      ID cards will appear here once your policy is active and processed
+    </p>
+    <a
+      routerLink="/portal/policy"
+      class="inline-flex items-center gap-2 mt-5 text-sm text-teal-600 hover:text-teal-700 font-medium"
+    >
+      <span class="material-symbols-rounded" style="font-size: 18px">shield</span>
+      View Policy Status
+    </a>
+  </div>
+  } }
+</div>

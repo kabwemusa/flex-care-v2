@@ -29,16 +29,6 @@
             Export
           </button>
 
-          <button
-            mat-stroked-button
-            color="primary"
-            (click)="openCategoryDialog()"
-            class="hidden sm:flex"
-          >
-            <mat-icon fontSet="material-symbols-rounded">create_new_folder</mat-icon>
-            New Category
-          </button>
-
           <button mat-flat-button color="primary" class="!rounded-lg" (click)="openBenefitDialog()">
             <mat-icon fontSet="material-symbols-rounded">add</mat-icon>
             New Benefit
@@ -67,14 +57,14 @@
         <div class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
           <div class="flex items-center justify-between">
             <div>
-              <div class="text-sm font-medium text-slate-500">Categories</div>
+              <div class="text-sm font-medium text-slate-500">Benefit Types</div>
               <div class="mt-2 text-2xl font-bold tracking-tight text-purple-600">
-                {{ totalCategories() }}
+                {{ totalTypes() }}
               </div>
             </div>
             <div class="flex h-10 w-10 items-center justify-center rounded-full bg-purple-100">
               <mat-icon fontSet="material-symbols-rounded" class="!text-purple-600"
-                >folder</mat-icon
+                >category</mat-icon
               >
             </div>
           </div>
@@ -109,7 +99,7 @@
           <div class="relative w-full sm:w-72">
             <mat-icon
               fontSet="material-symbols-rounded"
-              class="absolute left-3 top-1/2 -translate-y-1/2 !text-[20px] text-slate-400"
+              class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
               >search</mat-icon
             >
             <input
@@ -123,39 +113,30 @@
 
           <!-- Filter Dropdowns -->
           <div class="flex items-center gap-2 flex-wrap">
-            <mat-form-field appearance="outline" subscriptSizing="dynamic" class="!w-40">
+            <mat-form-field
+              appearance="fill"
+              subscriptSizing="dynamic"
+              class="!w-100 minimal-input"
+            >
               <mat-select
-                placeholder="All Categories"
-                [value]="selectedCategory()"
-                (selectionChange)="filterByCategory($event.value)"
-              >
-                <mat-option value="">All Categories</mat-option>
-                @for (category of store.categories(); track category.id) {
-                <mat-option [value]="category.id">
-                  <div class="flex items-center gap-2">
-                    <mat-icon fontSet="material-symbols-rounded" class="!text-[18px]">
-                      {{ category.icon || 'folder' }}
-                    </mat-icon>
-                    <span>{{ category.name }}</span>
-                  </div>
-                </mat-option>
-                }
-              </mat-select>
-            </mat-form-field>
-
-            <mat-form-field appearance="outline" subscriptSizing="dynamic" class="!w-40">
-              <mat-select
-                placeholder="All Types"
                 [value]="selectedType()"
                 (selectionChange)="filterByType($event.value)"
               >
+                <mat-select-trigger>
+                  @if (selectedType(); as typeVal) {
+                    <div class="flex items-center gap-2">
+                      <mat-icon fontSet="material-symbols-rounded" class="text-[18px]!">{{ getBenefitTypeIcon(typeVal) }}</mat-icon>
+                      <span>{{ getBenefitTypeLabel(typeVal) }}</span>
+                    </div>
+                  } @else {
+                    <span class="text-slate-400">All Types</span>
+                  }
+                </mat-select-trigger>
                 <mat-option value="">All Types</mat-option>
                 @for (type of benefitTypes; track type.value) {
                 <mat-option [value]="type.value">
                   <div class="flex items-center gap-2">
-                    <mat-icon fontSet="material-symbols-rounded" class="!text-[18px]">{{
-                      type.icon
-                    }}</mat-icon>
+                    <mat-icon fontSet="material-symbols-rounded" class="text-[18px]!">{{ type.icon }}</mat-icon>
                     <span>{{ type.label }}</span>
                   </div>
                 </mat-option>
@@ -163,7 +144,7 @@
               </mat-select>
             </mat-form-field>
 
-            @if (selectedCategory() || selectedType() || searchQuery()) {
+            @if (selectedType() || searchQuery()) {
             <button
               mat-stroked-button
               class="!border-slate-200 !text-slate-600"
@@ -261,23 +242,6 @@
               </td>
             </ng-container>
 
-            <!-- Category Column -->
-            <ng-container matColumnDef="category">
-              <th
-                mat-header-cell
-                *matHeaderCellDef
-                mat-sort-header
-                class="!bg-slate-50 !px-6 !py-3 text-xs font-semibold uppercase tracking-wider text-slate-500"
-              >
-                Category
-              </th>
-              <td mat-cell *matCellDef="let benefit" class="!px-6 !py-4">
-                <span class="text-sm text-slate-700">{{
-                  getCategoryName(benefit.category_id)
-                }}</span>
-              </td>
-            </ng-container>
-
             <!-- Type Column -->
             <ng-container matColumnDef="type">
               <th
@@ -358,7 +322,7 @@
                     <span>Edit Benefit</span>
                   </button>
                   <button mat-menu-item (click)="addSubBenefit(benefit)">
-                    <mat-icon fontSet="material-symbols-rounded" class="!text-slate-500"
+                    <mat-icon fontSet="material-symbols-rounded" class="text-slate-500!"
                       >add_circle</mat-icon
                     >
                     <span>Add Sub-Benefit</span>
@@ -397,12 +361,9 @@
             </div>
             <h3 class="text-sm font-medium text-slate-900">No benefits found</h3>
             <p class="mt-1 text-sm text-slate-500 max-w-xs">
-              Start by creating benefit categories, then add benefits to your catalog.
+              Add benefits to your catalog to start configuring medical plans.
             </p>
             <div class="flex gap-2 mt-4">
-              <button mat-stroked-button color="primary" (click)="openCategoryDialog()">
-                Create Category
-              </button>
               <button mat-flat-button color="primary" (click)="openBenefitDialog()">
                 Create Benefit
               </button>
@@ -427,9 +388,9 @@
                 >account_tree</mat-icon
               >
             </div>
-            <h3 class="text-sm font-medium text-slate-900">No categories found</h3>
+            <h3 class="text-sm font-medium text-slate-900">No benefits found</h3>
             <p class="mt-1 text-sm text-slate-500 max-w-xs">
-              Create categories to organize your benefits hierarchically.
+              Add benefits to view them organized by type.
             </p>
           </div>
           } @else {
@@ -441,9 +402,9 @@
                 class="flex items-center gap-2 py-2 px-3 rounded-lg hover:bg-slate-50 cursor-pointer flex-1"
                 (click)="onTreeNodeClick(node)"
               >
-                @if (node.isCategory) {
-                <mat-icon fontSet="material-symbols-rounded" class="!text-purple-500">{{
-                  node.icon
+                @if (node.isTypeGroup) {
+                <mat-icon fontSet="material-symbols-rounded" class="!text-blue-500">{{
+                  node.icon || getBenefitTypeIcon(node.benefit_type)
                 }}</mat-icon>
                 <span class="font-medium text-slate-700">{{ node.name }}</span>
                 } @else {
@@ -472,12 +433,10 @@
                   class="flex items-center gap-2 py-2 px-3 rounded-lg hover:bg-slate-50 cursor-pointer flex-1"
                   (click)="onTreeNodeClick(node)"
                 >
-                  @if (node.isCategory) {
-                  <mat-icon
-                    fontSet="material-symbols-rounded"
-                    [style.color]="node.color || '#8b5cf6'"
-                    >{{ node.icon }}</mat-icon
-                  >
+                  @if (node.isTypeGroup) {
+                  <mat-icon fontSet="material-symbols-rounded" class="!text-blue-500">{{
+                    node.icon || getBenefitTypeIcon(node.benefit_type)
+                  }}</mat-icon>
                   <span class="font-medium text-slate-700">{{ node.name }}</span>
                   <span class="text-xs text-slate-400"
                     >({{ node.children?.length || 0 }} benefits)</span
@@ -508,20 +467,36 @@
   </mat-drawer-content>
 
   <!-- Detail Drawer -->
-  <mat-drawer #detailDrawer mode="over" position="end" class="!w-full sm:!w-[500px] !bg-white">
+  <mat-drawer #detailDrawer mode="over" position="end" class="w-full! sm:w-[600px]! bg-white!">
     @if (selectedBenefit(); as benefit) {
     <div class="flex flex-col h-full">
       <!-- Drawer Header -->
       <div class="flex items-center justify-between border-b border-slate-100 px-6 py-4">
         <div class="flex items-center gap-3">
           <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-50">
-            <mat-icon fontSet="material-symbols-rounded" class="!text-blue-600">
+            <mat-icon fontSet="material-symbols-rounded">
               {{ getBenefitTypeIcon(benefit.benefit_type) }}
             </mat-icon>
           </div>
           <div>
             <h2 class="text-lg font-semibold text-slate-900">{{ benefit.name }}</h2>
             <p class="text-xs text-slate-500">{{ benefit.code }}</p>
+          </div>
+          <div>
+            <span
+              [class]="
+                benefit.is_active
+                  ? 'bg-green-50 text-green-700 border-green-200'
+                  : 'bg-gray-100 text-gray-600 border-gray-200'
+              "
+              class="inline-flex items-center rounded-full border px-3 py-1 text-sm font-medium"
+            >
+              <span
+                [class]="benefit.is_active ? 'bg-green-500' : 'bg-gray-400'"
+                class="mr-2 h-2 w-2 rounded-full"
+              ></span>
+              {{ benefit.is_active ? 'Active' : 'Inactive' }}
+            </span>
           </div>
         </div>
 
@@ -538,30 +513,6 @@
       <div class="flex-1 overflow-y-auto p-6 space-y-6">
         <!-- Status & Type Badges -->
         <div class="flex flex-wrap items-center gap-2">
-          <span
-            [class]="
-              benefit.is_active
-                ? 'bg-green-50 text-green-700 border-green-200'
-                : 'bg-gray-100 text-gray-600 border-gray-200'
-            "
-            class="inline-flex items-center rounded-full border px-3 py-1 text-sm font-medium"
-          >
-            <span
-              [class]="benefit.is_active ? 'bg-green-500' : 'bg-gray-400'"
-              class="mr-2 h-2 w-2 rounded-full"
-            ></span>
-            {{ benefit.is_active ? 'Active' : 'Inactive' }}
-          </span>
-
-          <span
-            class="inline-flex items-center gap-1 rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-sm font-medium text-blue-700"
-          >
-            <mat-icon fontSet="material-symbols-rounded" class="!text-[16px]">
-              {{ getBenefitTypeIcon(benefit.benefit_type) }}
-            </mat-icon>
-            {{ getBenefitTypeLabel(benefit.benefit_type) }}
-          </span>
-
           @if (benefit.parent_id) {
           <span
             class="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-sm font-medium text-slate-600"
@@ -571,12 +522,17 @@
           }
         </div>
 
-        <!-- Category -->
+        <!-- Benefit Type -->
         <div class="rounded-lg border border-slate-200 p-4">
-          <h3 class="text-sm font-medium text-slate-500 mb-2">Category</h3>
-          <p class="text-sm font-medium text-slate-900">
-            {{ getCategoryName(benefit.category_id) }}
-          </p>
+          <h3 class="text-sm font-medium text-slate-500 mb-2">Benefit Type</h3>
+          <div class="flex items-center gap-2">
+            <mat-icon fontSet="material-symbols-rounded" class="!text-blue-500">
+              {{ getBenefitTypeIcon(benefit.benefit_type) }}
+            </mat-icon>
+            <p class="text-sm font-medium text-slate-900">
+              {{ getBenefitTypeLabel(benefit.benefit_type) }}
+            </p>
+          </div>
         </div>
 
         <!-- Description -->

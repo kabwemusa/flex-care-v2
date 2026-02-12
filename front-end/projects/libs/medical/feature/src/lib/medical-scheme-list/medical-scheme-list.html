@@ -1,8 +1,8 @@
 <!-- libs/medical/ui/src/lib/schemes/medical-schemes.component.html -->
 
-<mat-drawer-container class="h-screen">
+<mat-drawer-container class="h-full">
   <!-- Main Content -->
-  <mat-drawer-content class="overflow-auto">
+  <mat-drawer-content>
     <div class="bg-white p-6 md:p-10 min-h-[80vh] shadow-sm">
       <lib-page-header
         title="Medical Schemes"
@@ -138,10 +138,7 @@
                 @for (segment of marketSegments; track segment.value) {
                 <mat-option [value]="segment.value">
                   <div class="flex items-center gap-2 group">
-                    <mat-icon
-                      fontSet="material-symbols-rounded"
-                      class="!text-[18px] text-gray-400 group-hover:text-primary transition-colors"
-                    >
+                    <mat-icon fontSet="material-symbols-rounded">
                       {{ segment.icon }}
                     </mat-icon>
                     <span class="text-sm text-gray-700 group-hover:text-gray-900">
@@ -252,7 +249,7 @@
                   [class]="getSegmentClass(scheme.market_segment)"
                   class="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium"
                 >
-                  <mat-icon fontSet="material-symbols-rounded" class="!text-[14px]">
+                  <mat-icon fontSet="material-symbols-rounded">
                     {{ getSegmentIcon(scheme.market_segment) }}
                   </mat-icon>
                   {{ getSegmentLabel(scheme.market_segment) }}
@@ -400,26 +397,22 @@
           }
         </div>
 
+        }
+
         <!-- Paginator -->
         <mat-paginator
           [pageSizeOptions]="[10, 20, 50]"
           showFirstLastButtons
           class="!border-t !border-slate-100 !bg-white"
         ></mat-paginator>
-        }
       </div>
     </div>
   </mat-drawer-content>
 
   <!-- Detail Drawer -->
-  <mat-drawer
-    #detailDrawer
-    mode="over"
-    position="end"
-    class="!w-full sm:!w-[600px] !bg-white !h-screen"
-  >
+  <mat-drawer #detailDrawer mode="over" position="end" class="!w-full sm:!w-[600px] !bg-white">
     @if (selectedScheme(); as scheme) {
-    <div class="flex flex-col h-screen">
+    <div class="flex flex-col h-full">
       <!-- Drawer Header -->
       <div class="flex items-center justify-between border-b border-slate-100 px-6 py-4">
         <div class="flex items-center gap-3">
@@ -541,28 +534,38 @@
         @if (scheme.eligibility_rules) {
         <div class="rounded-lg border border-slate-200 p-4">
           <h3 class="text-sm font-medium text-slate-500 mb-3">Eligibility Rules</h3>
-          <div class="space-y-2">
-            @if (scheme.eligibility_rules.min_age || scheme.eligibility_rules.max_age) {
-            <div class="flex items-center justify-between text-sm">
+          <div class="divide-y divide-slate-100">
+            @if (scheme.eligibility_rules.min_age != null || scheme.eligibility_rules.max_age != null) {
+            <div class="flex items-center justify-between py-2 text-sm">
               <span class="text-slate-500">Age Range</span>
-              <span class="text-slate-900">
-                {{ scheme.eligibility_rules.min_age || 0 }} -
-                {{ scheme.eligibility_rules.max_age || 99 }} years
+              <span class="font-medium text-slate-900">
+                {{ scheme.eligibility_rules.min_age ?? 0 }} &ndash;
+                {{ scheme.eligibility_rules.max_age ?? 99 }} years
               </span>
             </div>
-            } @if (scheme.eligibility_rules.min_group_size) {
-            <div class="flex items-center justify-between text-sm">
+            }
+            @if (scheme.eligibility_rules.min_group_size) {
+            <div class="flex items-center justify-between py-2 text-sm">
               <span class="text-slate-500">Min. Group Size</span>
-              <span class="text-slate-900"
-                >{{ scheme.eligibility_rules.min_group_size }} members</span
-              >
+              <span class="font-medium text-slate-900">{{ scheme.eligibility_rules.min_group_size }} members</span>
             </div>
-            } @if (scheme.eligibility_rules.max_group_size) {
-            <div class="flex items-center justify-between text-sm">
+            }
+            @if (scheme.eligibility_rules.max_group_size) {
+            <div class="flex items-center justify-between py-2 text-sm">
               <span class="text-slate-500">Max. Group Size</span>
-              <span class="text-slate-900"
-                >{{ scheme.eligibility_rules.max_group_size }} members</span
-              >
+              <span class="font-medium text-slate-900">{{ scheme.eligibility_rules.max_group_size }} members</span>
+            </div>
+            }
+            @if (scheme.eligibility_rules.required_documents?.length) {
+            <div class="flex items-start justify-between py-2 text-sm">
+              <span class="text-slate-500">Required Documents</span>
+              <div class="flex flex-wrap gap-1 justify-end max-w-[60%]">
+                @for (doc of scheme.eligibility_rules.required_documents; track doc) {
+                <span class="inline-block rounded bg-slate-100 px-2 py-0.5 text-xs text-slate-700">
+                  {{ doc | titlecase }}
+                </span>
+                }
+              </div>
             </div>
             }
           </div>
@@ -573,27 +576,31 @@
         @if (scheme.underwriting_rules) {
         <div class="rounded-lg border border-slate-200 p-4">
           <h3 class="text-sm font-medium text-slate-500 mb-3">Underwriting Rules</h3>
-          <div class="space-y-2">
-            <div class="flex items-center justify-between text-sm">
-              <span class="text-slate-500">Medical Exam Required</span>
-              <span class="text-slate-900">
-                {{ scheme.underwriting_rules.require_medical_exam ? 'Yes' : 'No' }}
+          <div class="divide-y divide-slate-100">
+            <div class="flex items-center justify-between py-2 text-sm">
+              <span class="text-slate-500">Medical Declaration</span>
+              <span class="font-medium text-slate-900">
+                {{ scheme.underwriting_rules.require_declaration ? 'Required' : 'Not required' }}
               </span>
             </div>
-            @if (scheme.underwriting_rules.medical_exam_age_threshold) {
-            <div class="flex items-center justify-between text-sm">
+            <div class="flex items-center justify-between py-2 text-sm">
+              <span class="text-slate-500">Medical Exam</span>
+              <span class="font-medium text-slate-900">
+                {{ scheme.underwriting_rules.require_medical_exam ? 'Required' : 'Not required' }}
+              </span>
+            </div>
+            @if (scheme.underwriting_rules.require_medical_exam && scheme.underwriting_rules.medical_exam_age_threshold) {
+            <div class="flex items-center justify-between py-2 text-sm">
               <span class="text-slate-500">Exam Age Threshold</span>
-              <span class="text-slate-900"
-                >{{ scheme.underwriting_rules.medical_exam_age_threshold }}+ years</span
-              >
+              <span class="font-medium text-slate-900">{{ scheme.underwriting_rules.medical_exam_age_threshold }}+ years</span>
             </div>
             }
-            <div class="flex items-center justify-between text-sm">
-              <span class="text-slate-500">Declaration Required</span>
-              <span class="text-slate-900">
-                {{ scheme.underwriting_rules.require_declaration ? 'Yes' : 'No' }}
-              </span>
+            @if (scheme.underwriting_rules.auto_accept_age_limit) {
+            <div class="flex items-center justify-between py-2 text-sm">
+              <span class="text-slate-500">Auto-Accept Age Limit</span>
+              <span class="font-medium text-slate-900">Under {{ scheme.underwriting_rules.auto_accept_age_limit }} years</span>
             </div>
+            }
           </div>
         </div>
         }

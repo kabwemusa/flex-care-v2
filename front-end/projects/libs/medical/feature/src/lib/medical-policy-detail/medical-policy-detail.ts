@@ -348,7 +348,7 @@ export class MedicalPolicyDetail implements OnInit {
     if (!policy) return;
 
     const dialogRef = this.dialog.open(MedicalEndorsementDialog, {
-      minWidth: '70vw',
+      maxWidth: '70vw',
       maxHeight: '90vh',
       data: {
         policy,

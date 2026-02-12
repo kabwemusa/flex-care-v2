@@ -97,9 +97,8 @@
             }
 
             <div class="flex justify-end pt-4">
-              <button mat-flat-button color="primary" matStepperNext>
-                Next
-                <mat-icon fontSet="material-symbols-rounded">arrow_forward</mat-icon>
+              <button mat-icon-button matStepperNext matTooltip="Next step" class="!text-primary">
+                <mat-icon fontSet="material-symbols-rounded">chevron_right</mat-icon>
               </button>
             </div>
           </div>
@@ -127,13 +126,16 @@
             </div>
 
             <div class="flex justify-between pt-4">
-              <button mat-stroked-button matStepperPrevious>
-                <mat-icon fontSet="material-symbols-rounded">arrow_back</mat-icon>
-                Back
+              <button
+                mat-icon-button
+                matStepperPrevious
+                matTooltip="Previous step"
+                class="!text-slate-600 hover:!bg-slate-200"
+              >
+                <mat-icon fontSet="material-symbols-rounded">chevron_left</mat-icon>
               </button>
-              <button mat-flat-button color="primary" matStepperNext>
-                Next
-                <mat-icon fontSet="material-symbols-rounded">arrow_forward</mat-icon>
+              <button mat-icon-button matStepperNext matTooltip="Next step" class="!text-primary">
+                <mat-icon fontSet="material-symbols-rounded">chevron_right</mat-icon>
               </button>
             </div>
           </div>
@@ -187,13 +189,16 @@
             </mat-form-field>
 
             <div class="flex justify-between pt-4">
-              <button mat-stroked-button matStepperPrevious>
-                <mat-icon fontSet="material-symbols-rounded">arrow_back</mat-icon>
-                Back
+              <button
+                mat-icon-button
+                matStepperPrevious
+                matTooltip="Previous step"
+                class="!text-slate-600 hover:!bg-slate-200"
+              >
+                <mat-icon fontSet="material-symbols-rounded">chevron_left</mat-icon>
               </button>
-              <button mat-flat-button color="primary" matStepperNext>
-                Next
-                <mat-icon fontSet="material-symbols-rounded">arrow_forward</mat-icon>
+              <button mat-icon-button matStepperNext matTooltip="Next step" class="!text-primary">
+                <mat-icon fontSet="material-symbols-rounded">chevron_right</mat-icon>
               </button>
             </div>
           </div>
@@ -217,7 +222,7 @@
 
             <div class="space-y-4 max-h-[400px] overflow-y-auto">
               @for (member of membersArray.controls; track $index; let i = $index) {
-              <div class="rounded-lg border border-slate-200 p-4" [formGroup]="$any(member)">
+              <div class="rounded-sm border border-slate-200 p-4" [formGroup]="$any(member)">
                 <div class="flex items-center justify-between mb-3">
                   <div class="flex items-center gap-2">
                     <span
@@ -241,9 +246,7 @@
                     (click)="removeMember(i)"
                     class="!text-slate-400 hover:!text-red-600 !w-8 !h-8"
                   >
-                    <mat-icon fontSet="material-symbols-rounded" class="!text-[20px]"
-                      >close</mat-icon
-                    >
+                    <mat-icon fontSet="material-symbols-rounded">close</mat-icon>
                   </button>
                   }
                 </div>
@@ -308,8 +311,8 @@
                 </mat-checkbox>
               </div>
               } @if (membersArray.length === 0) {
-              <div class="text-center py-8 border-2 border-dashed border-slate-200 rounded-lg">
-                <mat-icon fontSet="material-symbols-rounded" class="!text-[40px] text-slate-300"
+              <div class="text-center py-8 border-2 border-dashed border-slate-200 rounded-sm">
+                <mat-icon fontSet="material-symbols-rounded" class="text-slate-300"
                   >group_add</mat-icon
                 >
                 <p class="text-sm text-slate-500 mt-2">No members added yet</p>
@@ -321,9 +324,13 @@
             </div>
 
             <div class="flex justify-between pt-4">
-              <button mat-stroked-button matStepperPrevious>
-                <mat-icon fontSet="material-symbols-rounded">arrow_back</mat-icon>
-                Back
+              <button
+                mat-icon-button
+                matStepperPrevious
+                matTooltip="Previous step"
+                class="!text-slate-600 hover:!bg-slate-200"
+              >
+                <mat-icon fontSet="material-symbols-rounded">chevron_left</mat-icon>
               </button>
               <button mat-flat-button color="primary" (click)="save()" [disabled]="isSaving()">
                 @if (isSaving()) {

@@ -1,0 +1,253 @@
+<!-- ─── Top Navigation Bar ─────────────────────────────────────────────── -->
+<nav
+  class="fixed top-0 left-0 right-0 z-50 transition-all duration-300"
+  [class]="scrolled()
+    ? 'bg-white/90 backdrop-blur-lg border-b border-gray-100 shadow-sm'
+    : 'bg-transparent'"
+>
+  <div class="max-w-6xl mx-auto px-4 sm:px-6">
+    <div class="flex h-16 items-center justify-between">
+
+      <!-- Logo -->
+      <a routerLink="/" class="flex items-center gap-2 flex-shrink-0">
+        <span
+          class="material-symbols-rounded transition-colors duration-300"
+          [class]="scrolled() ? 'text-teal-600' : 'text-white'"
+          style="font-size: 26px"
+        >health_and_safety</span>
+        <span
+          class="text-lg font-medium tracking-tight transition-colors duration-300"
+          [class]="scrolled() ? 'text-teal-700' : 'text-white'"
+        >FlexCare</span>
+      </a>
+
+      <!-- Main Navigation Links (Desktop) -->
+      <div class="hidden md:flex items-center gap-8">
+        <a
+          routerLink="/plans"
+          routerLinkActive="!text-teal-700"
+          class="text-[13px] font-normal tracking-wide transition-colors duration-300"
+          [class]="scrolled() ? 'text-gray-500 hover:text-teal-700' : 'text-white/80 hover:text-white'"
+        >Plans</a>
+        <a
+          routerLink="/quote"
+          routerLinkActive="!text-teal-700"
+          class="text-[13px] font-normal tracking-wide transition-colors duration-300"
+          [class]="scrolled() ? 'text-gray-500 hover:text-teal-700' : 'text-white/80 hover:text-white'"
+        >Get a Quote</a>
+        <a
+          routerLink="/provider/register"
+          class="text-[13px] font-normal tracking-wide transition-colors duration-300"
+          [class]="scrolled() ? 'text-gray-500 hover:text-teal-700' : 'text-white/80 hover:text-white'"
+        >For Providers</a>
+      </div>
+
+      <!-- Auth / CTA -->
+      <div class="flex items-center gap-3">
+        <a
+          routerLink="/login"
+          class="hidden md:inline text-[13px] font-normal tracking-wide transition-colors duration-300"
+          [class]="scrolled() ? 'text-gray-500 hover:text-teal-700' : 'text-white/80 hover:text-white'"
+        >Sign In</a>
+        <a
+          routerLink="/quote"
+          class="fc-btn-primary text-[13px] !py-2 !px-5 shadow-sm"
+        >Get Started</a>
+
+        <!-- Mobile Menu Toggle -->
+        <button
+          class="md:hidden w-9 h-9 flex items-center justify-center rounded-lg transition-colors"
+          [class]="scrolled() ? 'text-gray-600 hover:bg-gray-100' : 'text-white hover:bg-white/10'"
+          (click)="toggleMobileMenu()"
+          aria-label="Toggle menu"
+        >
+          <span class="material-symbols-rounded" style="font-size: 22px">
+            {{ mobileMenuOpen() ? 'close' : 'menu' }}
+          </span>
+        </button>
+      </div>
+
+    </div>
+  </div>
+</nav>
+
+<!-- ─── Mobile Menu Overlay ───────────────────────────────────────────── -->
+@if (mobileMenuOpen()) {
+  <div
+    class="fixed inset-0 bg-black/30 backdrop-blur-sm z-40 md:hidden fc-fade-in"
+    (click)="closeMobileMenu()"
+  ></div>
+
+  <!-- Slide-in Panel -->
+  <div class="fixed right-0 top-0 h-full w-72 bg-white z-50 shadow-2xl md:hidden flex flex-col fc-fade-in">
+    <!-- Panel Header -->
+    <div class="flex items-center justify-between px-5 h-16 border-b border-gray-100">
+      <div class="flex items-center gap-2">
+        <span class="material-symbols-rounded text-teal-600" style="font-size: 22px">health_and_safety</span>
+        <span class="text-base font-medium text-teal-700">FlexCare</span>
+      </div>
+      <button
+        class="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
+        (click)="closeMobileMenu()"
+      >
+        <span class="material-symbols-rounded" style="font-size: 20px">close</span>
+      </button>
+    </div>
+
+    <!-- Nav Links -->
+    <div class="flex-1 py-4 px-3">
+      <a
+        routerLink="/plans"
+        class="flex items-center gap-3 px-3 py-3 rounded-xl text-sm text-gray-600 hover:bg-teal-50 hover:text-teal-700 transition-colors"
+        (click)="closeMobileMenu()"
+      >
+        <span class="material-symbols-rounded text-gray-400" style="font-size: 20px">local_hospital</span>
+        Plans
+      </a>
+      <a
+        routerLink="/quote"
+        class="flex items-center gap-3 px-3 py-3 rounded-xl text-sm text-gray-600 hover:bg-teal-50 hover:text-teal-700 transition-colors"
+        (click)="closeMobileMenu()"
+      >
+        <span class="material-symbols-rounded text-gray-400" style="font-size: 20px">calculate</span>
+        Get a Quote
+      </a>
+      <a
+        routerLink="/provider/register"
+        class="flex items-center gap-3 px-3 py-3 rounded-xl text-sm text-gray-600 hover:bg-teal-50 hover:text-teal-700 transition-colors"
+        (click)="closeMobileMenu()"
+      >
+        <span class="material-symbols-rounded text-gray-400" style="font-size: 20px">apartment</span>
+        For Providers
+      </a>
+      <a
+        routerLink="/login"
+        class="flex items-center gap-3 px-3 py-3 rounded-xl text-sm text-gray-600 hover:bg-teal-50 hover:text-teal-700 transition-colors"
+        (click)="closeMobileMenu()"
+      >
+        <span class="material-symbols-rounded text-gray-400" style="font-size: 20px">login</span>
+        Member Sign In
+      </a>
+    </div>
+
+    <!-- Panel Footer CTA -->
+    <div class="p-4 border-t border-gray-100">
+      <a
+        routerLink="/quote"
+        class="fc-btn-primary w-full text-center"
+        (click)="closeMobileMenu()"
+      >Get Started</a>
+    </div>
+  </div>
+}
+
+<!-- ─── Page Content ───────────────────────────────────────────────────── -->
+<main>
+  <router-outlet></router-outlet>
+</main>
+
+<!-- ─── Footer ─────────────────────────────────────────────────────────── -->
+<footer class="bg-gray-900 mt-auto">
+  <div class="max-w-6xl mx-auto px-4 sm:px-6">
+
+    <!-- Main Footer Grid -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-8 py-14">
+
+      <!-- Brand Column -->
+      <div class="col-span-2 md:col-span-1">
+        <div class="flex items-center gap-2 mb-4">
+          <span class="material-symbols-rounded text-teal-400" style="font-size: 22px">health_and_safety</span>
+          <span class="text-white font-medium">FlexCare</span>
+        </div>
+        <p class="text-gray-400 text-sm font-light leading-relaxed mb-6">
+          Quality healthcare coverage for everyone. Simple, transparent, and accessible insurance for individuals and families.
+        </p>
+        <!-- Social Icons -->
+        <div class="flex items-center gap-3">
+          <a href="#" class="w-8 h-8 rounded-full bg-gray-800 flex items-center justify-center text-gray-400 hover:bg-teal-600 hover:text-white transition-colors" aria-label="Facebook">
+            <span class="material-symbols-rounded" style="font-size: 16px">facebook</span>
+          </a>
+          <a href="#" class="w-8 h-8 rounded-full bg-gray-800 flex items-center justify-center text-gray-400 hover:bg-teal-600 hover:text-white transition-colors" aria-label="Twitter">
+            <span class="material-symbols-rounded" style="font-size: 16px">close</span>
+          </a>
+          <a href="#" class="w-8 h-8 rounded-full bg-gray-800 flex items-center justify-center text-gray-400 hover:bg-teal-600 hover:text-white transition-colors" aria-label="Email">
+            <span class="material-symbols-rounded" style="font-size: 16px">mail</span>
+          </a>
+        </div>
+      </div>
+
+      <!-- Quick Links -->
+      <div>
+        <h4 class="text-xs uppercase tracking-wider text-gray-400 font-medium mb-4">Quick Links</h4>
+        <ul class="space-y-2.5">
+          <li><a routerLink="/plans" class="text-sm text-gray-400 font-light hover:text-white transition-colors">Browse Plans</a></li>
+          <li><a routerLink="/quote" class="text-sm text-gray-400 font-light hover:text-white transition-colors">Get a Quote</a></li>
+          <li><a routerLink="/login" class="text-sm text-gray-400 font-light hover:text-white transition-colors">Member Portal</a></li>
+          <li><a routerLink="/provider/register" class="text-sm text-gray-400 font-light hover:text-white transition-colors">Provider Portal</a></li>
+        </ul>
+      </div>
+
+      <!-- Company -->
+      <div>
+        <h4 class="text-xs uppercase tracking-wider text-gray-400 font-medium mb-4">Company</h4>
+        <ul class="space-y-2.5">
+          <li><a href="#" class="text-sm text-gray-400 font-light hover:text-white transition-colors">About Us</a></li>
+          <li><a href="#" class="text-sm text-gray-400 font-light hover:text-white transition-colors">Careers</a></li>
+          <li><a href="#" class="text-sm text-gray-400 font-light hover:text-white transition-colors">Blog</a></li>
+          <li><a href="#" class="text-sm text-gray-400 font-light hover:text-white transition-colors">Press</a></li>
+        </ul>
+      </div>
+
+      <!-- Contact -->
+      <div>
+        <h4 class="text-xs uppercase tracking-wider text-gray-400 font-medium mb-4">Contact</h4>
+        <ul class="space-y-2.5">
+          <li class="flex items-start gap-2">
+            <span class="material-symbols-rounded text-gray-500 mt-0.5" style="font-size: 16px">call</span>
+            <span class="text-sm text-gray-400 font-light">+260 211 123 456</span>
+          </li>
+          <li class="flex items-start gap-2">
+            <span class="material-symbols-rounded text-gray-500 mt-0.5" style="font-size: 16px">mail</span>
+            <span class="text-sm text-gray-400 font-light">support&#64;flexcare.co.zm</span>
+          </li>
+          <li class="flex items-start gap-2">
+            <span class="material-symbols-rounded text-gray-500 mt-0.5" style="font-size: 16px">schedule</span>
+            <span class="text-sm text-gray-400 font-light">Mon – Fri, 08:00 – 17:00</span>
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Trust Badges -->
+    <div class="border-t border-gray-800 py-6">
+      <div class="flex flex-wrap items-center justify-center gap-6 mb-6">
+        <div class="flex items-center gap-2 text-gray-500">
+          <span class="material-symbols-rounded" style="font-size: 18px">lock</span>
+          <span class="text-xs font-light">256-bit SSL Secured</span>
+        </div>
+        <div class="flex items-center gap-2 text-gray-500">
+          <span class="material-symbols-rounded" style="font-size: 18px">verified</span>
+          <span class="text-xs font-light">Licensed & Regulated</span>
+        </div>
+        <div class="flex items-center gap-2 text-gray-500">
+          <span class="material-symbols-rounded" style="font-size: 18px">support_agent</span>
+          <span class="text-xs font-light">24/7 Member Support</span>
+        </div>
+        <div class="flex items-center gap-2 text-gray-500">
+          <span class="material-symbols-rounded" style="font-size: 18px">shield</span>
+          <span class="text-xs font-light">Data Protected</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottom Bar -->
+    <div class="border-t border-gray-800 py-5 flex flex-col sm:flex-row justify-between items-center gap-3">
+      <span class="text-xs text-gray-500 font-light">&copy; 2026 FlexCare. All rights reserved.</span>
+      <div class="flex items-center gap-5">
+        <a href="#" class="text-xs text-gray-500 font-light hover:text-gray-300 transition-colors">Privacy Policy</a>
+        <a href="#" class="text-xs text-gray-500 font-light hover:text-gray-300 transition-colors">Terms of Service</a>
+        <a href="#" class="text-xs text-gray-500 font-light hover:text-gray-300 transition-colors">Cookie Policy</a>
+      </div>
+    </div>
+  </div>
+</footer>

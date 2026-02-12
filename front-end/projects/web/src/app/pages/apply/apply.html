@@ -1,0 +1,616 @@
+<!-- ─── No Quote Data ────────────────────────────────────────────────────── -->
+@if (noQuoteData()) {
+  <section class="bg-gradient-to-b from-gray-50 to-white pt-16">
+    <div class="max-w-2xl mx-auto px-4 sm:px-6 py-24 text-center fc-fade-in">
+      <div class="w-16 h-16 rounded-2xl bg-gray-100 flex items-center justify-center mx-auto mb-5">
+        <span class="material-symbols-rounded text-gray-400" style="font-size: 32px">info</span>
+      </div>
+      <h2 class="text-xl font-medium text-gray-800 mt-4">No quote to apply with</h2>
+      <p class="text-gray-500 mt-2 text-sm font-light">Please get a quote first before submitting an application.</p>
+      <a routerLink="/quote" class="fc-btn-primary mt-6 inline-flex">Get a Quote</a>
+    </div>
+  </section>
+}
+
+<!-- ─── Main Apply Flow ──────────────────────────────────────────────────── -->
+@if (!noQuoteData() && savedQuote()) {
+
+  <!-- Page Header -->
+  <section class="bg-linear-to-b from-violet-50/40 via-white to-white border-b border-gray-100 pt-16">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 py-12 text-center">
+      @if (step() < 4) {
+        <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-violet-50 border border-violet-100 mb-4 fc-fade-in">
+          <span class="material-symbols-rounded text-violet-600" style="font-size: 16px">description</span>
+          <span class="text-xs font-medium text-violet-700">Application Form</span>
+        </div>
+        <h1 class="text-2xl sm:text-4xl font-semibold text-gray-900 mb-3 tracking-tight fc-slide-up">Complete Your Application</h1>
+        <p class="text-gray-500 font-light text-base max-w-xl mx-auto fc-slide-up fc-slide-up-delay-1">
+          We're almost there! Just a few details and you'll be on your way to coverage.
+        </p>
+      }
+    </div>
+  </section>
+
+  <!-- Progress Bar -->
+  @if (step() < 4) {
+    <div class="max-w-2xl mx-auto px-4 sm:px-6 pt-10 pb-2">
+      <!-- Mobile: Compact Step Indicator -->
+      <div class="sm:hidden flex items-center justify-center gap-2 mb-6">
+        <div class="flex items-center gap-1.5">
+          @for (s of [1, 2, 3]; track s) {
+            <div class="flex items-center gap-1.5">
+              <div class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-medium transition-all duration-300"
+                [class]="step() > s
+                  ? 'bg-violet-600 text-white'
+                  : step() === s
+                    ? 'bg-violet-600 text-white shadow-sm shadow-violet-200'
+                    : 'bg-gray-200 text-gray-400'">
+                @if (step() > s) {
+                  <span class="material-symbols-rounded fc-success-pulse" style="font-size: 14px">check</span>
+                } @else {
+                  {{ s }}
+                }
+              </div>
+              @if (s < 3) {
+                <div class="w-6 h-0.5 transition-all duration-500"
+                  [class]="step() > s ? 'bg-violet-500' : 'bg-gray-200'"></div>
+              }
+            </div>
+          }
+        </div>
+        <span class="text-xs font-medium ml-2 text-violet-700">
+          {{ ['', 'Review Quote', 'Member Details', 'Submit & Pay'][step()] }}
+        </span>
+      </div>
+
+      <!-- Desktop: Full Step Progress -->
+      <div class="hidden sm:flex items-center justify-between relative">
+        <div class="absolute top-5 left-12 right-12 h-1 bg-gray-100 rounded-full"></div>
+        <div class="absolute top-5 left-12 h-1 bg-linear-to-r from-violet-500 to-violet-600 rounded-full transition-all duration-700 ease-out"
+          [style.width]="step() === 1 ? '0%' : step() === 2 ? 'calc(50% - 24px)' : 'calc(100% - 96px)'"></div>
+
+        @for (s of [1, 2, 3]; track s) {
+          <button
+            (click)="canNavigateToStep(s) ? goToStep(s) : null"
+            [disabled]="!canNavigateToStep(s)"
+            class="relative z-10 flex flex-col items-center group transition-all duration-300"
+            [class.cursor-pointer]="canNavigateToStep(s)"
+            [class.cursor-not-allowed]="!canNavigateToStep(s)">
+            <div class="w-10 h-10 rounded-full flex items-center justify-center text-sm font-medium transition-all duration-300 shadow-sm"
+              [class]="step() > s
+                ? 'bg-violet-600 text-white shadow-violet-200'
+                : step() === s
+                  ? 'bg-violet-600 text-white ring-4 ring-violet-50 shadow-violet-300 scale-110'
+                  : 'bg-white border-2 border-gray-200 text-gray-400 group-hover:border-gray-300'">
+              @if (step() > s) {
+                <span class="material-symbols-rounded fc-success-pulse" style="font-size: 18px">check</span>
+              } @else {
+                {{ s }}
+              }
+            </div>
+            <div class="mt-3 text-center">
+              <span class="text-sm font-medium block transition-colors duration-200"
+                [class]="step() >= s ? 'text-violet-700' : 'text-gray-400 group-hover:text-gray-500'">
+                {{ ['', 'Review Quote', 'Member Details', 'Submit & Pay'][s] }}
+              </span>
+              <span class="text-xs text-gray-400 font-light mt-0.5 block">
+                {{ ['', 'Confirm your plan', 'Personal information', 'Finalize application'][s] }}
+              </span>
+            </div>
+          </button>
+        }
+      </div>
+    </div>
+  }
+
+  <div class="max-w-3xl mx-auto px-4 sm:px-6 py-8">
+
+    <!-- ═══ STEP 1 — REVIEW QUOTE ═══ -->
+    @if (step() === 1) {
+      <div class="fc-card p-6 fc-fade-in">
+        <div class="flex items-center gap-2 mb-5">
+          <span class="material-symbols-rounded text-violet-600" style="font-size: 22px">fact_check</span>
+          <h2 class="text-lg font-medium text-gray-900">Review Your Quote</h2>
+        </div>
+
+        <!-- Plan -->
+        <div class="bg-linear-to-r from-violet-50 to-purple-50 rounded-xl p-5 mb-5">
+          <div class="flex items-start gap-4">
+            <div class="w-14 h-14 rounded-xl bg-white shadow-sm flex items-center justify-center shrink-0">
+              <span class="material-symbols-rounded text-violet-600" style="font-size: 28px">verified</span>
+            </div>
+            <div class="flex-1">
+              <p class="text-base font-semibold text-gray-900">{{ savedQuote()!.quote.plan.name }}</p>
+              <p class="text-xs text-gray-500 font-light mt-0.5">
+                Plan Code: <span class="font-medium text-gray-600">{{ savedQuote()!.quote.plan.code }}</span>
+              </p>
+              <div class="flex items-center gap-2 mt-2">
+                <span class="material-symbols-rounded text-violet-600" style="font-size: 14px">schedule</span>
+                <span class="text-xs text-gray-600">{{ frequencyLabel(savedQuote()!.quote.frequency) }} billing</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Members -->
+        <div class="mb-5">
+          <div class="flex items-center gap-2 mb-3">
+            <span class="material-symbols-rounded text-gray-400" style="font-size: 16px">group</span>
+            <p class="text-xs font-medium text-gray-500 uppercase tracking-wider">Covered Members</p>
+          </div>
+          <div class="space-y-2">
+            @for (m of savedQuote()!.members; track $index) {
+              <div class="flex items-center gap-2.5 p-2.5 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
+                <div class="w-8 h-8 rounded-lg flex items-center justify-center"
+                  [class]="m.member_type === 'principal' ? 'bg-teal-50' : m.member_type === 'spouse' ? 'bg-violet-50' : m.member_type === 'child' ? 'bg-amber-50' : 'bg-emerald-50'">
+                  <span class="material-symbols-rounded" style="font-size: 16px"
+                    [class]="m.member_type === 'principal' ? 'text-teal-600' : m.member_type === 'spouse' ? 'text-violet-600' : m.member_type === 'child' ? 'text-amber-600' : 'text-emerald-600'">
+                    {{ m.member_type === 'principal' ? 'person' : m.member_type === 'spouse' ? 'favorite' : m.member_type === 'child' ? 'child_care' : 'elderly' }}
+                  </span>
+                </div>
+                <div class="flex-1">
+                  <span class="text-sm font-medium text-gray-700">{{ memberTypeLabel(m.member_type) }}</span>
+                  <span class="text-xs text-gray-400 ml-2">Age {{ m.age }} · {{ m.gender === 'M' ? 'Male' : 'Female' }}</span>
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+
+        <!-- Add-ons -->
+        @if (savedQuote()!.quote.addons.length > 0) {
+          <div class="mb-5">
+            <div class="flex items-center gap-2 mb-3">
+              <span class="material-symbols-rounded text-violet-500" style="font-size: 16px">add_circle</span>
+              <p class="text-xs font-medium text-gray-500 uppercase tracking-wider">Selected Add-ons</p>
+            </div>
+            <div class="space-y-2">
+              @for (addon of savedQuote()!.quote.addons; track addon.name) {
+                <div class="flex justify-between items-center p-2 rounded-lg bg-violet-50/50">
+                  <span class="text-sm text-gray-700 font-medium">{{ addon.name }}</span>
+                  <span class="text-sm font-semibold text-violet-700">+ZMW {{ addon.amount | number:'1.2-2' }}</span>
+                </div>
+              }
+            </div>
+          </div>
+        }
+
+        <!-- Premium Breakdown -->
+        <div class="border-t border-gray-200 pt-5 mt-5 space-y-3">
+          <div class="flex items-center gap-2 mb-2">
+            <span class="material-symbols-rounded text-gray-400" style="font-size: 16px">payments</span>
+            <p class="text-xs font-medium text-gray-500 uppercase tracking-wider">Premium Summary</p>
+          </div>
+
+          <div class="flex justify-between text-sm p-2.5 rounded-lg hover:bg-gray-50 transition-colors">
+            <span class="text-gray-600">Base Premium</span>
+            <span class="text-gray-800 font-semibold">ZMW {{ savedQuote()!.quote.base_premium | number:'1.2-2' }}</span>
+          </div>
+          @if (savedQuote()!.quote.addon_premium > 0) {
+            <div class="flex justify-between text-sm p-2.5 rounded-lg bg-violet-50/50">
+              <span class="text-gray-600">Add-ons</span>
+              <span class="text-violet-700 font-semibold">+ZMW {{ savedQuote()!.quote.addon_premium | number:'1.2-2' }}</span>
+            </div>
+          }
+          @if (savedQuote()!.quote.total_discount > 0) {
+            <div class="flex justify-between text-sm p-2.5 rounded-lg bg-emerald-50/50">
+              <span class="text-emerald-700">Savings</span>
+              <span class="text-emerald-700 font-semibold">-ZMW {{ savedQuote()!.quote.total_discount | number:'1.2-2' }}</span>
+            </div>
+          }
+          @if (savedQuote()!.quote.total_loading > 0) {
+            <div class="flex justify-between text-sm p-2.5 rounded-lg bg-amber-50/50">
+              <span class="text-amber-700">Loadings</span>
+              <span class="text-amber-700 font-semibold">+ZMW {{ savedQuote()!.quote.total_loading | number:'1.2-2' }}</span>
+            </div>
+          }
+        </div>
+
+        <!-- Total Premium -->
+        <div class="relative overflow-hidden bg-linear-to-br from-violet-500 via-violet-600 to-purple-700 rounded-2xl p-5 mt-5 shadow-xl shadow-violet-200/50">
+          <div class="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -mr-10 -mt-10"></div>
+          <div class="absolute bottom-0 left-0 w-24 h-24 bg-white/5 rounded-full -ml-8 -mb-8"></div>
+
+          <div class="relative flex items-center justify-between">
+            <div>
+              <p class="text-xs font-medium text-white/80 uppercase tracking-wider mb-1">Total Premium</p>
+              <p class="text-sm text-white/90">{{ frequencyLabel(savedQuote()!.quote.frequency) }} Payment</p>
+            </div>
+            <p class="text-3xl font-bold text-white tracking-tight">
+              ZMW {{ savedQuote()!.quote.final_premium | number:'1.2-2' }}
+            </p>
+          </div>
+        </div>
+
+        <button
+          (click)="goToStep(2)"
+          class="group w-full mt-6 px-6 py-4 bg-linear-to-r from-teal-600 to-teal-700 text-white rounded-xl font-semibold text-base shadow-lg shadow-teal-200/50 hover:shadow-xl hover:shadow-teal-300/50 hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 overflow-hidden"
+        >
+          <div class="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+          <div class="relative flex items-center justify-center gap-2">
+            <span>Continue to Member Details</span>
+            <span class="material-symbols-rounded transition-transform group-hover:translate-x-1" style="font-size: 20px">arrow_forward</span>
+          </div>
+        </button>
+      </div>
+    }
+
+    <!-- ═══ STEP 2 — MEMBER DETAILS ═══ -->
+    @if (step() === 2) {
+      <div class="fc-fade-in">
+        <div class="flex items-center gap-2 mb-2">
+          <span class="material-symbols-rounded text-violet-600" style="font-size: 22px">badge</span>
+          <h2 class="text-lg font-medium text-gray-900">Member Details</h2>
+        </div>
+        <p class="text-gray-500 text-sm font-light mb-6">Fill in the personal details for each member on the policy.</p>
+
+        @for (member of applyMembers(); track $index) {
+          <div class="group fc-card p-6 mb-5 border-l-4 transition-all duration-300 hover:shadow-md fc-slide-up"
+            [style.border-left-color]="member.member_type === 'principal' ? '#14b8a6' : member.member_type === 'spouse' ? '#8b5cf6' : member.member_type === 'child' ? '#f59e0b' : '#10b981'"
+            [style.animation-delay]="($index * 0.05) + 's'">
+            <div class="flex items-center gap-3 mb-5">
+              <div class="w-10 h-10 rounded-full flex items-center justify-center shadow-sm"
+                [class]="member.member_type === 'principal' ? 'bg-linear-to-br from-teal-50 to-teal-100' : member.member_type === 'spouse' ? 'bg-linear-to-br from-violet-50 to-violet-100' : member.member_type === 'child' ? 'bg-linear-to-br from-amber-50 to-amber-100' : 'bg-linear-to-br from-emerald-50 to-emerald-100'">
+                <span class="material-symbols-rounded" style="font-size: 20px"
+                  [class]="member.member_type === 'principal' ? 'text-teal-600' : member.member_type === 'spouse' ? 'text-violet-600' : member.member_type === 'child' ? 'text-amber-600' : 'text-emerald-600'">
+                  {{ member.member_type === 'principal' ? 'person' : member.member_type === 'spouse' ? 'favorite' : member.member_type === 'child' ? 'child_care' : 'elderly' }}
+                </span>
+              </div>
+              <div>
+                <span class="text-base font-semibold block"
+                  [class]="member.member_type === 'principal' ? 'text-teal-700' : member.member_type === 'spouse' ? 'text-violet-700' : member.member_type === 'child' ? 'text-amber-700' : 'text-emerald-700'">
+                  {{ memberTypeLabel(member.member_type) }}
+                </span>
+                @if (member.member_type === 'principal') {
+                  <span class="text-xs text-gray-400 font-light">Primary policy holder</span>
+                }
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label class="fc-label flex items-center gap-1">
+                  <span class="material-symbols-rounded" style="font-size: 14px">person</span>
+                  First Name <span class="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  [value]="member.first_name"
+                  (input)="updateApplyMember($index, 'first_name', $event.target!.value)"
+                  placeholder="Enter first name"
+                  class="fc-input"
+                  [class.fc-input-error]="!member.first_name.trim()" />
+              </div>
+              <div>
+                <label class="fc-label flex items-center gap-1">
+                  <span class="material-symbols-rounded" style="font-size: 14px">person</span>
+                  Last Name <span class="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  [value]="member.last_name"
+                  (input)="updateApplyMember($index, 'last_name', $event.target!.value)"
+                  placeholder="Enter last name"
+                  class="fc-input"
+                  [class.fc-input-error]="!member.last_name.trim()" />
+              </div>
+              <div>
+                <label class="fc-label flex items-center gap-1">
+                  <span class="material-symbols-rounded" style="font-size: 14px">cake</span>
+                  Date of Birth <span class="text-red-500">*</span>
+                </label>
+                <mat-form-field appearance="outline" class="w-full fc-mat-field">
+                  <input
+                    matInput
+                    [matDatepicker]="dobPicker"
+                    [value]="member.date_of_birth ? toDate(member.date_of_birth) : null"
+                    (dateChange)="updateApplyMember($index, 'date_of_birth', formatDate($event.value))"
+                    placeholder="Select date" />
+                  <mat-datepicker-toggle matIconSuffix [for]="dobPicker"></mat-datepicker-toggle>
+                  <mat-datepicker #dobPicker></mat-datepicker>
+                </mat-form-field>
+              </div>
+              <div>
+                <label class="fc-label flex items-center gap-1">
+                  <span class="material-symbols-rounded" style="font-size: 14px">wc</span>
+                  Gender
+                </label>
+                <mat-form-field appearance="outline" class="w-full fc-mat-field">
+                  <mat-select [value]="member.gender" (selectionChange)="updateApplyMember($index, 'gender', $event.value)">
+                    <mat-option value="M">Male</mat-option>
+                    <mat-option value="F">Female</mat-option>
+                  </mat-select>
+                </mat-form-field>
+              </div>
+              <div>
+                <label class="fc-label flex items-center gap-1">
+                  <span class="material-symbols-rounded" style="font-size: 14px">badge</span>
+                  National ID <span class="text-gray-400 font-light">(optional)</span>
+                </label>
+                <input type="text" [value]="member.national_id" (input)="updateApplyMember($index, 'national_id', $event.target!.value)" placeholder="e.g. 123456/78/9" class="fc-input" />
+              </div>
+              <div>
+                <label class="fc-label flex items-center gap-1">
+                  <span class="material-symbols-rounded" style="font-size: 14px">email</span>
+                  Email <span class="text-gray-400 font-light">(optional)</span>
+                </label>
+                <input type="email" [value]="member.email" (input)="updateApplyMember($index, 'email', $event.target!.value)" placeholder="member@email.com" class="fc-input" />
+              </div>
+            </div>
+          </div>
+        }
+
+        <div class="flex flex-col sm:flex-row gap-3 mt-6">
+          <button (click)="goToStep(1)" class="fc-btn-ghost order-2 sm:order-1">
+            <span class="material-symbols-rounded" style="font-size: 18px">arrow_back</span>
+            Back to Review
+          </button>
+          <button
+            (click)="goToStep(3)"
+            [disabled]="!membersValid()"
+            class="fc-btn-primary-lg shadow-lg shadow-violet-200/50 flex-1 order-1 sm:order-2"
+            [class.opacity-50]="!membersValid()"
+            [class.cursor-not-allowed]="!membersValid()"
+          >
+            <span class="material-symbols-rounded" style="font-size: 20px">arrow_forward</span>
+            Continue to Payment
+          </button>
+        </div>
+        @if (!membersValid()) {
+          <p class="text-center text-sm text-amber-600 mt-4 flex items-center justify-center gap-2">
+            <span class="material-symbols-rounded" style="font-size: 16px">info</span>
+            <span>Please fill in all required fields (First Name, Last Name, Date of Birth)</span>
+          </p>
+        }
+      </div>
+    }
+
+    <!-- ═══ STEP 3 — CONTACT & TERMS ═══ -->
+    @if (step() === 3) {
+      <div class="fc-fade-in">
+        <!-- Contact -->
+        <div class="fc-card p-6 mb-5">
+          <div class="flex items-center gap-2 mb-5">
+            <span class="material-symbols-rounded text-violet-600" style="font-size: 20px">contact_mail</span>
+            <h2 class="text-base font-semibold text-gray-800">Contact Information</h2>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label class="fc-label flex items-center gap-1">
+                <span class="material-symbols-rounded" style="font-size: 14px">person</span>
+                Contact Name
+              </label>
+              <input type="text" [value]="contactName()" (input)="contactName.set($event.target!.value)" placeholder="Your full name" class="fc-input" />
+            </div>
+            <div>
+              <label class="fc-label flex items-center gap-1">
+                <span class="material-symbols-rounded" style="font-size: 14px">email</span>
+                Email <span class="text-red-500">*</span>
+              </label>
+              <input
+                type="email"
+                [value]="contactEmail()"
+                (input)="contactEmail.set($event.target!.value)"
+                placeholder="you@email.com"
+                class="fc-input"
+                [class.fc-input-error]="!contactEmail().includes('@')" />
+              @if (!contactEmail().includes('@') && contactEmail()) {
+                <p class="fc-error-text">Please enter a valid email address</p>
+              }
+            </div>
+            <div class="sm:col-span-2">
+              <label class="fc-label flex items-center gap-1">
+                <span class="material-symbols-rounded" style="font-size: 14px">phone</span>
+                Phone
+              </label>
+              <input type="tel" [value]="contactPhone()" (input)="contactPhone.set($event.target!.value)" placeholder="+260 123 456 789" class="fc-input" />
+            </div>
+          </div>
+        </div>
+
+        <!-- Coverage Details -->
+        <div class="fc-card p-6 mb-5">
+          <div class="flex items-center gap-2 mb-5">
+            <span class="material-symbols-rounded text-violet-600" style="font-size: 20px">calendar_month</span>
+            <h2 class="text-base font-semibold text-gray-800">Coverage Details</h2>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label class="fc-label flex items-center gap-1">
+                <span class="material-symbols-rounded" style="font-size: 14px">event</span>
+                Coverage Start Date
+              </label>
+              <mat-form-field appearance="outline" class="w-full fc-mat-field">
+                <input
+                  matInput
+                  [matDatepicker]="startPicker"
+                  [value]="startDate() ? toDate(startDate()) : null"
+                  (dateChange)="startDate.set(formatDate($event.value))"
+                  placeholder="Select start date" />
+                <mat-datepicker-toggle matIconSuffix [for]="startPicker"></mat-datepicker-toggle>
+                <mat-datepicker #startPicker></mat-datepicker>
+              </mat-form-field>
+              <p class="text-xs text-gray-400 -mt-3 font-light">Coverage begins at 00:00 on this date</p>
+            </div>
+            <div>
+              <label class="fc-label flex items-center gap-1">
+                <span class="material-symbols-rounded" style="font-size: 14px">payments</span>
+                Billing Frequency
+              </label>
+              <mat-form-field appearance="outline" class="w-full fc-mat-field">
+                <mat-select [value]="billingFrequency()" (selectionChange)="billingFrequency.set($event.value)">
+                  <mat-option value="monthly">Monthly</mat-option>
+                  <mat-option value="quarterly">Quarterly</mat-option>
+                  <mat-option value="semi_annual">Semi-Annual</mat-option>
+                  <mat-option value="annual">Annual</mat-option>
+                </mat-select>
+              </mat-form-field>
+            </div>
+          </div>
+        </div>
+
+        <!-- Terms -->
+        <div class="bg-linear-to-br from-gray-50 to-gray-100/50 rounded-xl border border-gray-200 p-6 mb-5">
+          <div class="flex items-start gap-3 mb-4">
+            <span class="material-symbols-rounded text-gray-400 mt-0.5" style="font-size: 20px">policy</span>
+            <div>
+              <p class="text-xs text-gray-600 font-light leading-relaxed">
+                By submitting this application, you confirm that all information provided is accurate and complete.
+                You agree to FlexCare's <a href="#" class="text-violet-600 hover:underline font-medium">Terms &amp; Conditions</a> and
+                <a href="#" class="text-violet-600 hover:underline font-medium">Privacy Policy</a>. Your application will be
+                reviewed by our underwriting team and you will be notified of the outcome via email.
+              </p>
+            </div>
+          </div>
+          <label class="flex items-start gap-3 p-3 rounded-lg hover:bg-white/50 cursor-pointer transition-colors">
+            <input
+              type="checkbox"
+              [checked]="acceptedTerms()"
+              (change)="acceptedTerms.set(!acceptedTerms())"
+              class="mt-0.5 w-4 h-4 accent-violet-600 rounded"
+            />
+            <span class="text-sm text-gray-700 font-medium">
+              I accept the Terms &amp; Conditions and Privacy Policy <span class="text-red-500">*</span>
+            </span>
+          </label>
+        </div>
+
+        <!-- Error -->
+        @if (submitError()) {
+          <div class="bg-red-50 border border-red-100 rounded-xl px-4 py-3 mb-5 flex items-start gap-3">
+            <span class="material-symbols-rounded text-red-600" style="font-size: 20px">error</span>
+            <p class="text-sm text-red-600 font-light flex-1">{{ submitError() }}</p>
+          </div>
+        }
+
+        <!-- Actions -->
+        <div class="flex flex-col sm:flex-row gap-3">
+          <button (click)="goToStep(2)" class="fc-btn-ghost order-2 sm:order-1">
+            <span class="material-symbols-rounded" style="font-size: 18px">arrow_back</span>
+            Back to Details
+          </button>
+          <button
+            (click)="submitApplication()"
+            [disabled]="!contactValid() || submitLoading()"
+            class="group relative flex-1 px-6 py-4 rounded-xl font-semibold text-base shadow-lg overflow-hidden transition-all duration-300 order-1 sm:order-2"
+            [class]="contactValid() && !submitLoading()
+              ? 'bg-linear-to-r from-emerald-600 to-emerald-700 text-white shadow-emerald-200/50 hover:shadow-xl hover:shadow-emerald-300/50 hover:scale-[1.02] active:scale-[0.98]'
+              : 'bg-gray-200 text-gray-400 cursor-not-allowed opacity-50'"
+          >
+            <div class="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+            <div class="relative flex items-center justify-center gap-2">
+              @if (submitLoading()) {
+                <span class="w-5 h-5 border-3 border-white border-t-transparent rounded-full animate-spin"></span>
+                <span>Submitting...</span>
+              } @else {
+                <span class="material-symbols-rounded" style="font-size: 22px">send</span>
+                <span>Submit Application</span>
+              }
+            </div>
+          </button>
+        </div>
+        @if (!contactValid() && contactEmail()) {
+          <p class="text-center text-sm text-amber-600 mt-4 flex items-center justify-center gap-2">
+            <span class="material-symbols-rounded" style="font-size: 16px">info</span>
+            <span>Please enter a valid email and accept the terms to continue</span>
+          </p>
+        }
+      </div>
+    }
+
+    <!-- ═══ STEP 4 — CONFIRMATION ═══ -->
+    @if (step() === 4 && applicationResult()) {
+      <div class="text-center fc-fade-in max-w-2xl mx-auto">
+        <!-- Success Icon with Animation -->
+        <div class="relative inline-block mb-6">
+          <div class="w-24 h-24 rounded-full bg-linear-to-br from-emerald-50 to-emerald-100 flex items-center justify-center mx-auto fc-success-pulse shadow-lg shadow-emerald-200/50">
+            <span class="material-symbols-rounded text-emerald-600" style="font-size: 48px; font-variation-settings: 'FILL' 1">check_circle</span>
+          </div>
+          <!-- Decorative rings -->
+          <div class="absolute inset-0 rounded-full border-2 border-emerald-200 animate-ping opacity-20"></div>
+        </div>
+
+        <h1 class="text-3xl sm:text-4xl font-bold text-gray-900 mb-3 tracking-tight">Application Submitted!</h1>
+        <p class="text-gray-500 text-base font-light mb-8 max-w-md mx-auto">
+          Your application has been received and will be reviewed by our underwriting team.
+        </p>
+
+        <!-- Reference Card -->
+        <div class="relative overflow-hidden bg-linear-to-br from-violet-500 via-violet-600 to-purple-700 rounded-2xl p-6 mb-6 max-w-lg mx-auto shadow-xl shadow-violet-200/50">
+          <div class="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -mr-10 -mt-10"></div>
+          <div class="absolute bottom-0 left-0 w-24 h-24 bg-white/5 rounded-full -ml-8 -mb-8"></div>
+
+          <div class="relative">
+            <div class="flex items-center gap-2 mb-3">
+              <span class="material-symbols-rounded text-white/80" style="font-size: 20px">confirmation_number</span>
+              <p class="text-xs font-medium text-white/90 uppercase tracking-wider">Application Reference</p>
+            </div>
+            <p class="text-2xl sm:text-3xl font-bold text-white tracking-tight mb-2">
+              {{ applicationResult()!.application_number }}
+            </p>
+            <div class="flex items-center gap-2 text-white/80 text-sm">
+              <span class="material-symbols-rounded" style="font-size: 16px">verified</span>
+              <span>{{ applicationResult()!.plan.name }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Email Confirmation -->
+        <div class="fc-card p-5 mb-6 max-w-lg mx-auto text-left">
+          <div class="flex items-start gap-3">
+            <div class="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center shrink-0">
+              <span class="material-symbols-rounded text-blue-600" style="font-size: 20px">mark_email_read</span>
+            </div>
+            <div class="flex-1">
+              <p class="text-sm font-semibold text-gray-800 mb-1">Confirmation Email Sent</p>
+              <p class="text-xs text-gray-500 font-light">
+                A detailed confirmation has been sent to <span class="font-medium text-gray-700">{{ applicationResult()!.contact_email }}</span>
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- What Happens Next -->
+        <div class="fc-card p-6 mb-8 max-w-lg mx-auto text-left">
+          <div class="flex items-center gap-2 mb-5">
+            <span class="material-symbols-rounded text-violet-600" style="font-size: 22px">timeline</span>
+            <h3 class="text-base font-semibold text-gray-800">What Happens Next?</h3>
+          </div>
+          <div class="relative pl-10">
+            <!-- Vertical line -->
+            <div class="absolute left-4 top-2 bottom-2 w-0.5 bg-linear-to-b from-violet-200 via-violet-100 to-transparent"></div>
+            <div class="space-y-6">
+              <div class="relative fc-slide-up" style="animation-delay: 0.1s">
+                <div class="absolute -left-7 w-3 h-3 rounded-full bg-violet-500 ring-4 ring-violet-50"></div>
+                <div>
+                  <p class="text-sm font-medium text-gray-700 mb-0.5">Application Review</p>
+                  <p class="text-xs text-gray-500 font-light">Our underwriting team reviews your application details</p>
+                </div>
+              </div>
+              <div class="relative fc-slide-up" style="animation-delay: 0.2s">
+                <div class="absolute -left-7 w-3 h-3 rounded-full bg-violet-400 ring-4 ring-violet-50"></div>
+                <div>
+                  <p class="text-sm font-medium text-gray-700 mb-0.5">Verification (if needed)</p>
+                  <p class="text-xs text-gray-500 font-light">We may contact you for additional information or documents</p>
+                </div>
+              </div>
+              <div class="relative fc-slide-up" style="animation-delay: 0.3s">
+                <div class="absolute -left-7 w-3 h-3 rounded-full bg-violet-300 ring-4 ring-violet-50"></div>
+                <div>
+                  <p class="text-sm font-medium text-gray-700 mb-0.5">Decision & Activation</p>
+                  <p class="text-xs text-gray-500 font-light">You'll receive the outcome and policy activation details via email</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <a routerLink="/" class="group inline-flex items-center gap-2 px-8 py-4 bg-linear-to-r from-teal-600 to-teal-700 text-white rounded-xl font-semibold text-base shadow-lg shadow-teal-200/50 hover:shadow-xl hover:shadow-teal-300/50 hover:scale-[1.02] active:scale-[0.98] transition-all duration-300">
+          <span class="material-symbols-rounded" style="font-size: 22px">home</span>
+          <span>Return to Home</span>
+        </a>
+      </div>
+    }
+
+  </div>
+}

@@ -14,7 +14,7 @@
             *libPermission="permissions.APPLICATIONS_CREATE"
             mat-flat-button
             color="primary"
-            class="!rounded-lg"
+            class="!rounded-sm"
             (click)="openCreateDialog()"
           >
             <mat-icon fontSet="material-symbols-rounded">add</mat-icon>
@@ -481,7 +481,7 @@
   </mat-drawer-content>
 
   <!-- Detail Drawer -->
-  <mat-drawer #detailDrawer mode="over" position="end" class="!w-full sm:!w-[500px]">
+  <mat-drawer #detailDrawer mode="over" position="end" class="!w-full sm:!w-[600px]">
     @if (selectedApplication(); as app) {
     <div class="flex h-full flex-col bg-white">
       <!-- Drawer Header -->

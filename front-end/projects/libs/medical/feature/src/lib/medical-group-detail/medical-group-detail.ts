@@ -25,10 +25,9 @@ import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 // Domain Imports
 import {
   GroupStore,
-  CorporateGroup,
+  ApplicationStore,
   Application,
   ApplicationMember,
-  getStatusConfig,
   getLabelByValue,
   MEMBER_TYPES,
   GENDERS,
@@ -66,6 +65,7 @@ export class MedicalGroupDetail implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   readonly store = inject(GroupStore);
+  private readonly applicationStore = inject(ApplicationStore);
   private readonly dialog = inject(MatDialog);
   private readonly feedback = inject(FeedbackService);
 
@@ -80,7 +80,7 @@ export class MedicalGroupDetail implements OnInit {
   readonly memberTypeFilter = signal('');
   readonly applicationFilter = signal('');
 
-  // Computed: Members from selected application (with display info)
+  // Members from current page (with display info)
   readonly allMembers = computed(() => {
     const grp = this.group();
     const members = this.members();
@@ -95,11 +95,10 @@ export class MedicalGroupDetail implements OnInit {
     });
   });
 
-  // Computed: Filtered members
+  // Client-side filtered members (search + member type on current page)
   readonly filteredMembers = computed(() => {
     let members = this.allMembers();
 
-    // Filter by search term
     const search = this.memberSearchTerm().toLowerCase();
     if (search) {
       members = members.filter(
@@ -111,7 +110,6 @@ export class MedicalGroupDetail implements OnInit {
       );
     }
 
-    // Filter by member type
     const memberType = this.memberTypeFilter();
     if (memberType) {
       members = members.filter((m) => m.member_type === memberType);
@@ -124,6 +122,12 @@ export class MedicalGroupDetail implements OnInit {
   readonly memberPageSize = signal(10);
   readonly memberPageSizeOptions = [10, 25, 50];
 
+  // Total members from backend stats (across ALL applications)
+  readonly totalGroupMembers = computed(() => {
+    return this.group()?.stats?.total_application_members ?? 0;
+  });
+
+  // Effect: load members when group or filter changes
   readonly loadMembersEffect = effect(() => {
     const grp = this.group();
     const selectedAppId = this.applicationFilter();
@@ -131,23 +135,17 @@ export class MedicalGroupDetail implements OnInit {
 
     if (!grp) return;
 
-    const defaultAppId = grp.applications?.[0]?.id;
-    const appId = selectedAppId || defaultAppId;
-
-    if (!appId) {
-      this.store.clearMembers();
+    // Default to 'all' (no application filter)
+    if (!selectedAppId) {
+      this.applicationFilter.set('all');
       return;
     }
 
-    if (!selectedAppId && defaultAppId) {
-      this.applicationFilter.set(defaultAppId);
-      return;
-    }
-
-    this.store.loadMembers(appId, 1, perPage);
+    const appFilter = selectedAppId === 'all' ? undefined : selectedAppId;
+    this.store.loadGroupMembers(grp.id, 1, perPage, { application_id: appFilter });
   });
 
-  // Member summary stats
+  // Member summary stats (from current page)
   readonly memberStats = computed(() => {
     const members = this.allMembers();
     return {
@@ -162,6 +160,17 @@ export class MedicalGroupDetail implements OnInit {
 
   // Applications list for dropdown
   readonly applications = computed(() => this.group()?.applications || []);
+
+  // Application cards — totals across all plans
+  readonly calculatingPremium = signal(false);
+
+  readonly totalApplicationMembers = computed(() =>
+    this.applications().reduce((sum, app) => sum + (app.member_count || 0), 0)
+  );
+
+  readonly totalApplicationPremium = computed(() =>
+    this.applications().reduce((sum, app) => sum + (app.gross_premium || 0), 0)
+  );
 
   // Constants
   readonly MEMBER_TYPES = MEMBER_TYPES;
@@ -181,7 +190,7 @@ export class MedicalGroupDetail implements OnInit {
 
   loadGroup(id: string) {
     this.store.clearMembers();
-    this.applicationFilter.set('');
+    this.applicationFilter.set('all');
     this.store.loadOne(id).subscribe({
       error: (err) => {
         this.feedback.error('Failed to load group details');
@@ -198,8 +207,28 @@ export class MedicalGroupDetail implements OnInit {
     return getLabelByValue(GENDERS, value);
   }
 
-  getStatusConfig(status: string) {
-    return getStatusConfig(APPLICATION_STATUSES as any, status);
+  private readonly statusColorMap: Record<string, string> = {
+    slate: 'bg-slate-100 text-slate-700',
+    blue: 'bg-blue-100 text-blue-700',
+    indigo: 'bg-indigo-100 text-indigo-700',
+    amber: 'bg-amber-100 text-amber-700',
+    green: 'bg-green-100 text-green-700',
+    red: 'bg-red-100 text-red-700',
+    orange: 'bg-orange-100 text-orange-700',
+    emerald: 'bg-emerald-100 text-emerald-700',
+    teal: 'bg-teal-100 text-teal-700',
+    gray: 'bg-gray-100 text-gray-700',
+    yellow: 'bg-yellow-100 text-yellow-700',
+  };
+
+  getStatusConfig(status: string): { label: string; classes: string; icon: string } {
+    const config = APPLICATION_STATUSES.find((s) => s.value === status);
+    if (!config) return { label: status, classes: 'bg-slate-100 text-slate-700', icon: 'help' };
+    return {
+      label: config.label,
+      classes: this.statusColorMap[config.color] || 'bg-slate-100 text-slate-700',
+      icon: config.icon,
+    };
   }
 
   getMemberTypeBadgeClass(type: string): string {
@@ -259,10 +288,12 @@ export class MedicalGroupDetail implements OnInit {
   }
 
   onMemberPage(event: PageEvent) {
-    const appId = this.applicationFilter();
-    if (!appId) return;
+    const grp = this.group();
+    if (!grp) return;
     this.memberPageSize.set(event.pageSize);
-    this.store.loadMembers(appId, event.pageIndex + 1, event.pageSize);
+    const appFilter = this.applicationFilter();
+    const applicationId = appFilter === 'all' ? undefined : appFilter;
+    this.store.loadGroupMembers(grp.id, event.pageIndex + 1, event.pageSize, { application_id: applicationId });
   }
 
   exportMembers() {
@@ -328,6 +359,34 @@ export class MedicalGroupDetail implements OnInit {
     URL.revokeObjectURL(url);
 
     this.feedback.success(`Exported ${members.length} members to CSV`);
+  }
+
+  formatCurrency(amount: number): string {
+    return new Intl.NumberFormat('en-ZM', {
+      style: 'currency',
+      currency: 'ZMW',
+      minimumFractionDigits: 2,
+    }).format(amount);
+  }
+
+  calculateAppPremium(app: Application) {
+    this.calculatingPremium.set(true);
+    this.applicationStore.calculatePremium(app.id).subscribe({
+      next: () => {
+        this.calculatingPremium.set(false);
+        this.feedback.success('Premium calculated');
+        const grp = this.group();
+        if (grp) this.loadGroup(grp.id);
+      },
+      error: (err: any) => {
+        this.calculatingPremium.set(false);
+        this.feedback.error(err?.error?.message || 'Failed to calculate premium');
+      },
+    });
+  }
+
+  viewApplication(app: Application) {
+    this.router.navigate(['/applications', app.id]);
   }
 
   backToGroups() {

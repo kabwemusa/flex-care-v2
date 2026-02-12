@@ -3,8 +3,12 @@
   "version": "0.0.0",
   "scripts": {
     "ng": "ng",
-    "start": "ng serve",
+    "start": "ng serve admin",
+    "start:admin": "ng serve admin",
+    "start:web": "ng serve web",
     "build": "ng build",
+    "build:admin": "ng build admin",
+    "build:web": "ng build web",
     "watch": "ng build --watch --configuration development",
     "test": "ng test"
   },
@@ -35,7 +39,9 @@
     "apexcharts": "^5.3.6",
     "jspdf": "^4.0.0",
     "jspdf-autotable": "^5.0.7",
+    "laravel-echo": "^2.3.0",
     "ng-apexcharts": "^2.0.4",
+    "pusher-js": "^8.4.0",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0"
   },

@@ -77,6 +77,7 @@ class GroupResource extends JsonResource
                 'total_policies' => $this->policies_count ?? 0,
                 'active_policies' => $this->active_policies_count ?? 0,
                 'total_applications' => $this->applications_count ?? 0,
+                'total_application_members' => $this->application_members_count ?? 0,
                 'policies_by_plan' => $this->getPoliciesByPlanStats(),
                 'applications_by_plan' => $this->getApplicationsByPlanStats(),
             ],

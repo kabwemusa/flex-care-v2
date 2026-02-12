@@ -4,3 +4,4 @@
 
 export * from './lib/interceptors/auth.interceptor';
 export * from './lib/interceptors/api-url.interceptor';
+export * from './lib/services/websocket.service';

@@ -149,7 +149,6 @@ export class MedicalQuoteActionsDialog {
 
     // --- 1. HEADER SECTION ---
 
-    // Brand (Left)
     doc.setTextColor(...hexToRgb(COLORS.primary));
     doc.setFontSize(22);
     doc.setFont('helvetica', 'bold');
@@ -160,12 +159,10 @@ export class MedicalQuoteActionsDialog {
     doc.setTextColor(...hexToRgb(COLORS.textLight));
     doc.text('Medical Insurance Solutions', margin, y + 11);
 
-    // Contact Info (Small, below brand)
     doc.setFontSize(8);
     doc.text('Plot 123, Cairo Road, Lusaka', margin, y + 16);
     doc.text('+260 211 123 456 | info@flexcare.co.zm', margin, y + 20);
 
-    // Meta Data (Right)
     const rightX = pageWidth - margin;
     doc.setFontSize(9);
     doc.setTextColor(...hexToRgb(COLORS.textMuted));
@@ -181,7 +178,6 @@ export class MedicalQuoteActionsDialog {
     doc.setTextColor(...hexToRgb(COLORS.textLight));
     doc.text(`Issued: ${this.formatDate(data.quote_date)}`, rightX, y + 17, { align: 'right' });
 
-    // Valid Until (Red for urgency)
     doc.setTextColor(...hexToRgb(COLORS.red));
     doc.text(`Valid Until: ${this.formatDate(data.valid_until)}`, rightX, y + 22, {
       align: 'right',
@@ -189,7 +185,6 @@ export class MedicalQuoteActionsDialog {
 
     y += 30;
 
-    // Divider Line
     doc.setDrawColor(...hexToRgb(COLORS.border));
     doc.setLineWidth(0.5);
     doc.line(margin, y, pageWidth - margin, y);
@@ -197,7 +192,6 @@ export class MedicalQuoteActionsDialog {
 
     // --- 2. CLIENT & PLAN SUMMARY ---
 
-    // Left: Client Name
     doc.setFontSize(8);
     doc.setTextColor(...hexToRgb(COLORS.textMuted));
     doc.text('PREPARED FOR', margin, y);
@@ -207,7 +201,13 @@ export class MedicalQuoteActionsDialog {
     doc.setFont('helvetica', 'bold');
     doc.text(data.applicant_name || 'Valued Client', margin, y + 6);
 
-    // Right: Plan Name
+    if (data.group) {
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(...hexToRgb(COLORS.textLight));
+      doc.text(`Group: ${data.group.name} (${data.group.code})`, margin, y + 11);
+    }
+
     doc.setFontSize(8);
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(...hexToRgb(COLORS.textMuted));
@@ -220,7 +220,6 @@ export class MedicalQuoteActionsDialog {
       align: 'right',
     });
 
-    // Subtext: Dates
     doc.setFontSize(9);
     doc.setTextColor(...hexToRgb(COLORS.textLight));
     doc.setFont('helvetica', 'normal');
@@ -231,7 +230,7 @@ export class MedicalQuoteActionsDialog {
 
     y += 20;
 
-    // --- 3. CENSUS CARDS (Modern Dashboard Look) ---
+    // --- 3. CENSUS CARDS (from backend member_summary) ---
 
     doc.setFontSize(10);
     doc.setTextColor(...hexToRgb(COLORS.primary));
@@ -239,17 +238,14 @@ export class MedicalQuoteActionsDialog {
     doc.text('COVERED LIVES BREAKDOWN', margin, y);
     y += 5;
 
-    // Data Calculation
-    const members = data.members || [];
-    const census = this.calculateCensus(members);
-    const totalLives = census.principals + census.spouses + census.children + census.others;
+    const summary = data.member_summary || this.calculateCensus(data.members || []);
 
-    const cardData = [
-      { label: 'Principals', value: census.principals },
-      { label: 'Spouses', value: census.spouses },
-      { label: 'Children', value: census.children },
-      { label: 'Others', value: census.others },
-      { label: 'Total', value: totalLives, isTotal: true },
+    const cardData: { label: string; value: number; isTotal?: boolean }[] = [
+      { label: 'Principals', value: summary.principals || 0 },
+      { label: 'Spouses', value: summary.spouses || 0 },
+      { label: 'Children', value: summary.children || 0 },
+      { label: 'Parents', value: summary.parents || 0 },
+      { label: 'Total', value: summary.total || 0, isTotal: true },
     ];
 
     const gap = 4;
@@ -259,7 +255,6 @@ export class MedicalQuoteActionsDialog {
     cardData.forEach((card, i) => {
       const xPos = margin + i * (cardWidth + gap);
 
-      // Draw Card Background
       if (card.isTotal) {
         doc.setFillColor(...hexToRgb(COLORS.primary));
         doc.setTextColor(255, 255, 255);
@@ -269,39 +264,108 @@ export class MedicalQuoteActionsDialog {
       }
       doc.roundedRect(xPos, y, cardWidth, cardHeight, 2, 2, 'F');
 
-      // Label
       doc.setFontSize(7);
       doc.setFont('helvetica', 'normal');
       doc.text(card.label.toUpperCase(), xPos + cardWidth / 2, y + 7, { align: 'center' });
 
-      // Value
       doc.setFontSize(12);
       doc.setFont('helvetica', 'bold');
       if (!card.isTotal) doc.setTextColor(...hexToRgb(COLORS.text));
       doc.text(card.value.toString(), xPos + cardWidth / 2, y + 16, { align: 'center' });
     });
 
-    y += cardHeight + 15;
+    y += cardHeight + 12;
 
-    // --- 4. PREMIUM BREAKDOWN (AutoTable) ---
+    // --- 4. MEMBERS TABLE ---
+
+    // const members = data.members || [];
+    // if (members.length > 0) {
+    //   doc.setFontSize(10);
+    //   doc.setTextColor(...hexToRgb(COLORS.primary));
+    //   doc.setFont('helvetica', 'bold');
+    //   doc.text('MEMBER DETAILS', margin, y);
+    //   y += 4;
+
+    //   const memberRows = members.map((m: any) => [
+    //     m.name || '-',
+    //     m.member_type_label || m.member_type || '-',
+    //     m.age?.toString() || '-',
+    //     m.gender === 'M' ? 'Male' : m.gender === 'F' ? 'Female' : m.gender || '-',
+    //     this.formatCurrency(m.base_premium, currency),
+    //     m.loading_amount > 0
+    //       ? { content: `+ ${this.formatCurrency(m.loading_amount, currency)}`, styles: { textColor: hexToRgb(COLORS.red) } }
+    //       : '-',
+    //     this.formatCurrency(m.total_premium, currency),
+    //   ]);
+
+    //   autoTable(doc, {
+    //     startY: y,
+    //     head: [['Name', 'Type', 'Age', 'Gender', 'Base', 'Loading', 'Total']],
+    //     body: memberRows,
+    //     theme: 'striped',
+    //     styles: {
+    //       fontSize: 7.5,
+    //       cellPadding: 3,
+    //       textColor: hexToRgb(COLORS.text),
+    //     },
+    //     headStyles: {
+    //       fillColor: hexToRgb(COLORS.bgLight),
+    //       textColor: hexToRgb(COLORS.textLight),
+    //       fontStyle: 'bold',
+    //       fontSize: 7,
+    //     },
+    //     columnStyles: {
+    //       0: { cellWidth: 'auto' },
+    //       4: { halign: 'right', cellWidth: 28 },
+    //       5: { halign: 'right', cellWidth: 28 },
+    //       6: { halign: 'right', fontStyle: 'bold', cellWidth: 28 },
+    //     },
+    //     margin: { left: margin, right: margin },
+    //   });
+
+    //   y = (doc as any).lastAutoTable.finalY + 10;
+    // }
+
+    // // Check if we need a new page for the premium breakdown
+    // if (y > pageHeight - 100) {
+    //   doc.addPage();
+    //   y = margin;
+    // }
+
+    // --- 5. PREMIUM BREAKDOWN ---
 
     doc.setFontSize(10);
     doc.setTextColor(...hexToRgb(COLORS.primary));
+    doc.setFont('helvetica', 'bold');
     doc.text('PREMIUM BREAKDOWN', margin, y);
     y += 5;
 
     const pb = data.premium_breakdown || {};
-    const tableBody = [];
+    const tableBody: any[] = [];
 
-    // Base
     tableBody.push(['Base Premium', this.formatCurrency(pb.base_premium, currency)]);
 
-    // Addons
     if (pb.addon_premium > 0) {
       tableBody.push(['Add-On Benefits', this.formatCurrency(pb.addon_premium, currency)]);
+
+      // Itemize addons
+      const addons = data.addons || [];
+      addons.forEach((a: any) => {
+        if (a.premium > 0) {
+          tableBody.push([
+            {
+              content: `   ${a.name}${a.is_mandatory ? ' (Mandatory)' : ''}`,
+              styles: { textColor: hexToRgb(COLORS.textLight), fontSize: 8 },
+            },
+            {
+              content: this.formatCurrency(a.premium, currency),
+              styles: { textColor: hexToRgb(COLORS.textLight), fontSize: 8 },
+            },
+          ]);
+        }
+      });
     }
 
-    // Loadings (Red Text)
     if (pb.loading_amount > 0) {
       tableBody.push([
         'Risk Adjustments (Loadings)',
@@ -312,7 +376,6 @@ export class MedicalQuoteActionsDialog {
       ]);
     }
 
-    // Discounts (Green Text)
     if (pb.discount_amount > 0) {
       tableBody.push([
         'Discounts Applied',
@@ -323,18 +386,18 @@ export class MedicalQuoteActionsDialog {
       ]);
     }
 
-    // Tax
     if (pb.tax_amount > 0) {
-      tableBody.push(['Tax / Levies', this.formatCurrency(pb.tax_amount, currency)]);
+      const taxPct = pb.tax_rate ? ` (${(pb.tax_rate * 100).toFixed(0)}%)` : '';
+      tableBody.push([`Tax / Levies${taxPct}`, this.formatCurrency(pb.tax_amount, currency)]);
     }
 
     autoTable(doc, {
       startY: y,
       body: tableBody,
-      theme: 'plain', // Minimalist
+      theme: 'plain',
       styles: {
         fontSize: 10,
-        cellPadding: 6,
+        cellPadding: 5,
         textColor: hexToRgb(COLORS.text),
         lineWidth: { bottom: 0.1 },
         lineColor: hexToRgb(COLORS.border),
@@ -346,30 +409,26 @@ export class MedicalQuoteActionsDialog {
       margin: { left: margin, right: margin },
     });
 
-    // --- 5. TOTAL BOX ---
+    // --- 6. TOTAL BOX ---
 
-    y = (doc as any).lastAutoTable.finalY + 10;
+    y = (doc as any).lastAutoTable.finalY + 8;
 
-    // Draw Blue Box
     doc.setFillColor(...hexToRgb(COLORS.primary));
     doc.roundedRect(margin, y, pageWidth - margin * 2, 24, 2, 2, 'F');
 
-    // Label
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(12);
     doc.setFont('helvetica', 'bold');
     doc.text('TOTAL PAYABLE', margin + 10, y + 15);
 
-    // Amount
     doc.setFontSize(16);
     doc.text(this.formatCurrency(pb.gross_premium, currency), pageWidth - margin - 10, y + 15, {
       align: 'right',
     });
 
-    // Frequency Note
     doc.setFontSize(8);
     doc.setFont('helvetica', 'normal');
-    doc.setTextColor(200, 200, 200); // Light gray text inside blue box
+    doc.setTextColor(200, 200, 200);
     doc.text(
       this.formatBillingFrequency(pb.billing_frequency) + ' Payment',
       pageWidth - margin - 10,
@@ -377,29 +436,33 @@ export class MedicalQuoteActionsDialog {
       { align: 'right' }
     );
 
-    // --- 6. FOOTER ---
+    // --- 7. FOOTER ---
 
-    const footerY = pageHeight - 15;
+    const totalPages = doc.getNumberOfPages();
+    for (let page = 1; page <= totalPages; page++) {
+      doc.setPage(page);
+      const footerY = pageHeight - 15;
 
-    // Line
-    doc.setDrawColor(...hexToRgb(COLORS.border));
-    doc.setLineWidth(0.3);
-    doc.line(margin, footerY - 5, pageWidth - margin, footerY - 5);
+      doc.setDrawColor(...hexToRgb(COLORS.border));
+      doc.setLineWidth(0.3);
+      doc.line(margin, footerY - 5, pageWidth - margin, footerY - 5);
 
-    doc.setFontSize(7);
-    doc.setTextColor(...hexToRgb(COLORS.textMuted));
-    doc.text(
-      'Terms & Conditions Apply. Valid for 30 days. Underwriting required.',
-      margin,
-      footerY
-    );
-
-    doc.text(
-      `Generated on ${new Date().toLocaleDateString('en-GB')} • Page 1 of 1`,
-      pageWidth - margin,
-      footerY,
-      { align: 'right' }
-    );
+      doc.setFontSize(7);
+      doc.setTextColor(...hexToRgb(COLORS.textMuted));
+      doc.text(
+        'Terms & Conditions Apply. Valid for 30 days. Underwriting required.',
+        margin,
+        footerY
+      );
+      doc.text(
+        `Generated on ${new Date().toLocaleDateString(
+          'en-GB'
+        )} \u2022 Page ${page} of ${totalPages}`,
+        pageWidth - margin,
+        footerY,
+        { align: 'right' }
+      );
+    }
 
     // Save/Open
     const pdfBlob = doc.output('blob');
@@ -411,21 +474,22 @@ export class MedicalQuoteActionsDialog {
   // HELPERS
   // ==========================================
 
+  /** Fallback census calculation using member_type field (used when member_summary is absent). */
   private calculateCensus(members: any[]) {
-    const census = { principals: 0, spouses: 0, children: 0, others: 0 };
+    const census = { principals: 0, spouses: 0, children: 0, parents: 0, total: 0 };
     members.forEach((m) => {
-      const rel = (m.relationship || '').toLowerCase();
-      if (rel.includes('principal') || rel.includes('self')) census.principals++;
-      else if (rel.includes('spouse') || rel.includes('partner')) census.spouses++;
-      else if (rel.includes('child') || rel.includes('son') || rel.includes('daughter'))
-        census.children++;
-      else census.others++;
+      const type = (m.member_type || '').toLowerCase();
+      if (type === 'principal') census.principals++;
+      else if (type === 'spouse') census.spouses++;
+      else if (type === 'child') census.children++;
+      else if (type === 'parent') census.parents++;
     });
+    census.total = members.length;
     return census;
   }
 
   private formatCurrency(amount: any, currency = 'ZMW'): string {
-    const value = Number(amount) || 0; // Convert string '1000' to number 1000
+    const value = Number(amount) || 0;
     return `${currency} ${value.toLocaleString('en-US', {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,

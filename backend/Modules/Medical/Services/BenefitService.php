@@ -200,7 +200,7 @@ class BenefitService
     {
         $planBenefits = PlanBenefit::where('plan_id', $planId)
             ->where('is_visible', true)
-            ->with(['benefit.category', 'memberLimits'])
+            ->with(['benefit', 'memberLimits'])
             ->whereHas('benefit', fn($q) => $q->whereNull('parent_id'))
             ->orderBy('sort_order')
             ->get();
@@ -208,17 +208,17 @@ class BenefitService
         $schedule = [];
 
         foreach ($planBenefits as $pb) {
-            $category = $pb->benefit->category->name ?? 'Other';
+            $group = $pb->benefit->benefit_type_label ?? 'Other';
 
-            if (!isset($schedule[$category])) {
-                $schedule[$category] = [];
+            if (!isset($schedule[$group])) {
+                $schedule[$group] = [];
             }
 
             $limit = $memberType
                 ? $pb->getEffectiveLimitAmount($memberType, 0)
                 : $pb->limit_amount;
 
-            $schedule[$category][] = [
+            $schedule[$group][] = [
                 'benefit_id' => $pb->benefit_id,
                 'name' => $pb->benefit->name,
                 'is_covered' => $pb->is_covered,

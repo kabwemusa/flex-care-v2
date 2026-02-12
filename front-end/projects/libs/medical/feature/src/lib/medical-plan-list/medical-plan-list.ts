@@ -264,7 +264,7 @@ export class MedicalPlanList implements OnInit, AfterViewInit {
 
     if (!confirmed) return;
 
-    this.planStore.update(plan.id, { is_active: !plan.is_active }).subscribe({
+    this.planStore.activate(plan.id).subscribe({
       next: () => {
         this.feedback.success(`Plan ${action.toLowerCase()}d successfully`);
         // Update drawer if open

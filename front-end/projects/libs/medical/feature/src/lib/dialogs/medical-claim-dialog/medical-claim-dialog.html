@@ -1,4 +1,4 @@
-<div class="flex h-[85vh] w-[70vw] flex-col bg-white">
+<div class="flex h-[85vh] w-[70vw] flex-col rounded-lg bg-white">
   <div class="flex flex-none items-center justify-between border-b border-slate-200 px-8 py-5">
     <div>
       <h2 class="text-xl font-bold tracking-tight text-slate-900">Submit New Claim</h2>
@@ -498,14 +498,12 @@
 
     <div class="flex gap-3">
       @if (currentStep() > 0) {
-      <button mat-stroked-button (click)="prevStep()" class="border-slate-300 text-slate-700">
-        <mat-icon fontSet="material-symbols-rounded">arrow_back</mat-icon>
-        Back
+      <button mat-icon-button (click)="prevStep()" matTooltip="Previous step" class="!text-slate-600 hover:!bg-slate-200">
+        <mat-icon fontSet="material-symbols-rounded">chevron_left</mat-icon>
       </button>
       } @if (currentStep() < 2) {
-      <button mat-flat-button color="primary" (click)="nextStep()" class="px-6">
-        Next Step
-        <mat-icon fontSet="material-symbols-rounded" iconPositionEnd>arrow_forward</mat-icon>
+      <button mat-icon-button (click)="nextStep()" matTooltip="Next step" class="!text-primary">
+        <mat-icon fontSet="material-symbols-rounded">chevron_right</mat-icon>
       </button>
       } @else {
       <button

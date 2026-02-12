@@ -1,6 +1,12 @@
 {
   "/api": {
-    "target": "https://flex-care-v2-production-022b.up.railway.app",
+    "target": "http://localhost:8000",
+    "secure": false,
+    "changeOrigin": true,
+    "logLevel": "debug"
+  },
+  "/v1": {
+    "target": "http://localhost:8000",
     "secure": false,
     "changeOrigin": true,
     "logLevel": "debug"

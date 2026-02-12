@@ -1,16 +1,16 @@
 <!-- libs/medical/feature/src/lib/medical-policy-detail/medical-policy-detail.html -->
 
-<div class="bg-slate-50 min-h-screen">
+<div class="bg-slate-50 min-h-full">
   @if (isLoading()) {
   <div class="p-6 md:p-10 animate-pulse">
     <div class="h-8 w-48 rounded bg-slate-200 mb-4"></div>
     <div class="h-4 w-96 rounded bg-slate-100 mb-8"></div>
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
       <div class="lg:col-span-2 space-y-6">
-        <div class="h-48 rounded-xl bg-white"></div>
-        <div class="h-64 rounded-xl bg-white"></div>
+        <div class="h-48 rounded-sm bg-white"></div>
+        <div class="h-64 rounded-sm bg-white"></div>
       </div>
-      <div class="h-96 rounded-xl bg-white"></div>
+      <div class="h-96 rounded-sm bg-white"></div>
     </div>
   </div>
   } @else if (policy(); as policy) {
@@ -72,14 +72,22 @@
           </button>
           <mat-menu #menu="matMenu">
             @if (policy.status === 'active') {
-            <button *libPermission="permissions.POLICIES_SUSPEND" mat-menu-item (click)="suspendPolicy()">
+            <button
+              *libPermission="permissions.POLICIES_SUSPEND"
+              mat-menu-item
+              (click)="suspendPolicy()"
+            >
               <mat-icon fontSet="material-symbols-rounded">pause_circle</mat-icon>
               <span>Suspend</span>
             </button>
-            }
-            @if (policy.status !== 'cancelled') {
+            } @if (policy.status !== 'cancelled') {
             <mat-divider></mat-divider>
-            <button *libPermission="permissions.POLICIES_CANCEL" mat-menu-item (click)="cancelPolicy()" class="!text-red-600">
+            <button
+              *libPermission="permissions.POLICIES_CANCEL"
+              mat-menu-item
+              (click)="cancelPolicy()"
+              class="!text-red-600"
+            >
               <mat-icon fontSet="material-symbols-rounded" class="!text-red-600">cancel</mat-icon>
               <span>Cancel Policy</span>
             </button>
@@ -91,918 +99,978 @@
   </div>
 
   <div class="p-6 md:p-10">
+    <!-- Tabs -->
+    <mat-tab-group
+      [selectedIndex]="activeTabIndex()"
+      (selectedIndexChange)="onTabChange($event)"
+      class="custom-tabs"
+    >
+      <!-- Overview Tab -->
+      <mat-tab>
+        <ng-template mat-tab-label>
+          <mat-icon fontSet="material-symbols-rounded" class="mr-2">{{ tabs[0].icon }}</mat-icon>
+          {{ tabs[0].label }}
+        </ng-template>
 
-  <!-- Tabs -->
-  <mat-tab-group
-    [selectedIndex]="activeTabIndex()"
-    (selectedIndexChange)="onTabChange($event)"
-    class="custom-tabs"
-  >
-    <!-- Overview Tab -->
-    <mat-tab>
-      <ng-template mat-tab-label>
-        <mat-icon fontSet="material-symbols-rounded" class="mr-2">{{ tabs[0].icon }}</mat-icon>
-        {{ tabs[0].label }}
-      </ng-template>
-
-      <div class="p-6 space-y-6">
-        <!-- Quick Stats -->
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-            <div class="flex items-center justify-between">
-              <div>
-                <div class="text-xs font-medium text-slate-500">Total Members</div>
-                <div class="mt-1 text-xl font-bold tracking-tight text-slate-900">{{ policy.member_count }}</div>
-              </div>
-              <div class="flex h-9 w-9 items-center justify-center rounded-full bg-slate-100">
-                <mat-icon fontSet="material-symbols-rounded" class="!text-[18px] text-slate-500">group</mat-icon>
+        <div class="p-6 space-y-6">
+          <!-- Quick Stats -->
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div class="rounded-sm border border-slate-200 bg-white p-4 shadow-sm">
+              <div class="flex items-center justify-between">
+                <div>
+                  <div class="text-xs font-medium text-slate-500">Total Members</div>
+                  <div class="mt-1 text-xl font-bold tracking-tight text-slate-900">
+                    {{ policy.member_count }}
+                  </div>
+                </div>
+                <div class="flex h-9 w-9 items-center justify-center rounded-full bg-slate-100">
+                  <mat-icon fontSet="material-symbols-rounded" class="text-slate-500"
+                    >group</mat-icon
+                  >
+                </div>
               </div>
             </div>
-          </div>
 
-          <div class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-            <div class="flex items-center justify-between">
-              <div>
-                <div class="text-xs font-medium text-slate-500">Base Premium</div>
-                <div class="mt-1 text-xl font-bold tracking-tight text-slate-900">{{ formatCurrency(policy.base_premium) }}</div>
-              </div>
-              <div class="flex h-9 w-9 items-center justify-center rounded-full bg-slate-100">
-                <mat-icon fontSet="material-symbols-rounded" class="!text-[18px] text-slate-500">payments</mat-icon>
+            <div class="rounded-sm border border-slate-200 bg-white p-4 shadow-sm">
+              <div class="flex items-center justify-between">
+                <div>
+                  <div class="text-xs font-medium text-slate-500">Base Premium</div>
+                  <div class="mt-1 text-xl font-bold tracking-tight text-slate-900">
+                    {{ formatCurrency(policy.base_premium) }}
+                  </div>
+                </div>
+                <div class="flex h-9 w-9 items-center justify-center rounded-full bg-slate-100">
+                  <mat-icon fontSet="material-symbols-rounded" class="text-slate-500"
+                    >payments</mat-icon
+                  >
+                </div>
               </div>
             </div>
-          </div>
 
-          <div class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-            <div class="flex items-center justify-between">
-              <div>
-                <div class="text-xs font-medium text-slate-500">Gross Premium</div>
-                <div class="mt-1 text-xl font-bold tracking-tight text-blue-600">{{ formatCurrency(policy.gross_premium) }}</div>
-              </div>
-              <div class="flex h-9 w-9 items-center justify-center rounded-full bg-blue-100">
-                <mat-icon fontSet="material-symbols-rounded" class="!text-[18px] text-blue-600">account_balance</mat-icon>
+            <div class="rounded-sm border border-slate-200 bg-white p-4 shadow-sm">
+              <div class="flex items-center justify-between">
+                <div>
+                  <div class="text-xs font-medium text-slate-500">Gross Premium</div>
+                  <div class="mt-1 text-xl font-bold tracking-tight text-blue-600">
+                    {{ formatCurrency(policy.gross_premium) }}
+                  </div>
+                </div>
+                <div class="flex h-9 w-9 items-center justify-center rounded-full bg-blue-100">
+                  <mat-icon fontSet="material-symbols-rounded" class="text-blue-600"
+                    >account_balance</mat-icon
+                  >
+                </div>
               </div>
             </div>
-          </div>
 
-          <div class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-            <div class="flex items-center justify-between">
-              <div>
-                <div class="text-xs font-medium text-slate-500">Active Add-ons</div>
-                <div class="mt-1 text-xl font-bold tracking-tight text-slate-900">{{ policy.policy_addons?.length || 0 }}</div>
-              </div>
-              <div class="flex h-9 w-9 items-center justify-center rounded-full bg-purple-100">
-                <mat-icon fontSet="material-symbols-rounded" class="!text-[18px] text-purple-600">add_circle</mat-icon>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Policy Details -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <!-- Coverage Information -->
-          <div class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-            <h3 class="text-sm font-semibold text-slate-900 flex items-center gap-2 mb-3">
-              <mat-icon fontSet="material-symbols-rounded" class="!text-[18px] text-blue-600">verified_user</mat-icon>
-              Coverage Information
-            </h3>
-            <div class="space-y-2">
-              <div class="flex justify-between text-sm">
-                <span class="text-slate-500">Scheme</span>
-                <span class="font-medium text-slate-900">{{ policy.scheme?.name }}</span>
-              </div>
-              <div class="flex justify-between text-sm">
-                <span class="text-slate-500">Plan</span>
-                <span class="font-medium text-slate-900">{{ policy.plan?.name }}</span>
-              </div>
-              <div class="flex justify-between text-sm">
-                <span class="text-slate-500">Inception Date</span>
-                <span class="text-slate-900">{{ policy.inception_date | date : 'mediumDate' }}</span>
-              </div>
-              <div class="flex justify-between text-sm">
-                <span class="text-slate-500">Expiry Date</span>
-                <span class="text-slate-900">{{ policy.expiry_date | date : 'mediumDate' }}</span>
-              </div>
-              <div class="flex justify-between text-sm">
-                <span class="text-slate-500">Billing Frequency</span>
-                <span class="text-slate-900 capitalize">{{ policy.billing_frequency }}</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- Financial Breakdown -->
-          <div class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-            <h3 class="text-sm font-semibold text-slate-900 flex items-center gap-2 mb-3">
-              <mat-icon fontSet="material-symbols-rounded" class="!text-[18px] text-slate-600">payments</mat-icon>
-              Financial Breakdown
-            </h3>
-            <div class="space-y-2">
-              <div class="flex justify-between text-sm">
-                <span class="text-slate-500">Base Premium</span>
-                <span class="text-slate-900">{{ formatCurrency(policy.base_premium) }}</span>
-              </div>
-              @if (policy.addon_premium > 0) {
-              <div class="flex justify-between text-sm">
-                <span class="text-slate-500">Add-ons</span>
-                <span class="text-slate-900">+{{ formatCurrency(policy.addon_premium) }}</span>
-              </div>
-              }
-              @if (policy.loading_amount > 0) {
-              <div class="flex justify-between text-sm">
-                <span class="text-slate-500">Loadings</span>
-                <span class="text-amber-600">+{{ formatCurrency(policy.loading_amount) }}</span>
-              </div>
-              }
-              @if (policy.discount_amount > 0) {
-              <div class="flex justify-between text-sm">
-                <span class="text-slate-500">Discounts</span>
-                <span class="text-green-600">-{{ formatCurrency(policy.discount_amount) }}</span>
-              </div>
-              }
-              <div class="border-t border-slate-200 pt-2 mt-2">
-                <div class="flex justify-between items-center">
-                  <span class="font-medium text-slate-900">Total Premium</span>
-                  <span class="text-lg font-bold text-primary">{{ formatCurrency(policy.gross_premium) }}</span>
+            <div class="rounded-sm border border-slate-200 bg-white p-4 shadow-sm">
+              <div class="flex items-center justify-between">
+                <div>
+                  <div class="text-xs font-medium text-slate-500">Active Add-ons</div>
+                  <div class="mt-1 text-xl font-bold tracking-tight text-slate-900">
+                    {{ policy.policy_addons?.length || 0 }}
+                  </div>
+                </div>
+                <div class="flex h-9 w-9 items-center justify-center rounded-full bg-purple-100">
+                  <mat-icon fontSet="material-symbols-rounded" class="text-purple-600"
+                    >add_circle</mat-icon
+                  >
                 </div>
               </div>
             </div>
           </div>
-        </div>
 
-        <!-- Corporate Group (if applicable) -->
-        @if (policy.group) {
-        <div class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-          <h3 class="text-sm font-semibold text-slate-900 flex items-center gap-2 mb-3">
-            <mat-icon fontSet="material-symbols-rounded" class="!text-[18px] text-amber-600">business</mat-icon>
-            Corporate Group
-          </h3>
-          <div class="grid grid-cols-2 gap-4">
-            <div>
-              <span class="text-xs text-slate-500 block">Name</span>
-              <span class="text-sm font-medium text-slate-900">{{ policy.group.name }}</span>
+          <!-- Policy Details -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <!-- Coverage Information -->
+            <div class="rounded-sm border border-slate-200 bg-white p-4 shadow-sm">
+              <h3 class="text-sm font-semibold text-slate-900 flex items-center gap-2 mb-3">
+                <mat-icon fontSet="material-symbols-rounded" class="text-blue-600"
+                  >verified_user</mat-icon
+                >
+                Coverage Information
+              </h3>
+              <div class="space-y-2">
+                <div class="flex justify-between text-sm">
+                  <span class="text-slate-500">Scheme</span>
+                  <span class="font-medium text-slate-900">{{ policy.scheme?.name }}</span>
+                </div>
+                <div class="flex justify-between text-sm">
+                  <span class="text-slate-500">Plan</span>
+                  <span class="font-medium text-slate-900">{{ policy.plan?.name }}</span>
+                </div>
+                <div class="flex justify-between text-sm">
+                  <span class="text-slate-500">Inception Date</span>
+                  <span class="text-slate-900">{{
+                    policy.inception_date | date : 'mediumDate'
+                  }}</span>
+                </div>
+                <div class="flex justify-between text-sm">
+                  <span class="text-slate-500">Expiry Date</span>
+                  <span class="text-slate-900">{{ policy.expiry_date | date : 'mediumDate' }}</span>
+                </div>
+                <div class="flex justify-between text-sm">
+                  <span class="text-slate-500">Billing Frequency</span>
+                  <span class="text-slate-900 capitalize">{{ policy.billing_frequency }}</span>
+                </div>
+              </div>
             </div>
-            <div>
-              <span class="text-xs text-slate-500 block">Code</span>
-              <span class="text-sm font-medium text-slate-900">{{ policy.group.code }}</span>
+
+            <!-- Financial Breakdown -->
+            <div class="rounded-sm border border-slate-200 bg-white p-4 shadow-sm">
+              <h3 class="text-sm font-semibold text-slate-900 flex items-center gap-2 mb-3">
+                <mat-icon fontSet="material-symbols-rounded" class="text-slate-600"
+                  >payments</mat-icon
+                >
+                Financial Breakdown
+              </h3>
+              <div class="space-y-2">
+                <div class="flex justify-between text-sm">
+                  <span class="text-slate-500">Base Premium</span>
+                  <span class="text-slate-900">{{ formatCurrency(policy.base_premium) }}</span>
+                </div>
+                @if (policy.addon_premium > 0) {
+                <div class="flex justify-between text-sm">
+                  <span class="text-slate-500">Add-ons</span>
+                  <span class="text-slate-900">+{{ formatCurrency(policy.addon_premium) }}</span>
+                </div>
+                } @if (policy.loading_amount > 0) {
+                <div class="flex justify-between text-sm">
+                  <span class="text-slate-500">Loadings</span>
+                  <span class="text-amber-600">+{{ formatCurrency(policy.loading_amount) }}</span>
+                </div>
+                } @if (policy.discount_amount > 0) {
+                <div class="flex justify-between text-sm">
+                  <span class="text-slate-500">Discounts</span>
+                  <span class="text-green-600">-{{ formatCurrency(policy.discount_amount) }}</span>
+                </div>
+                }
+                <div class="border-t border-slate-200 pt-2 mt-2">
+                  <div class="flex justify-between items-center">
+                    <span class="font-medium text-slate-900">Total Premium</span>
+                    <span class="text-lg font-bold text-primary">{{
+                      formatCurrency(policy.gross_premium)
+                    }}</span>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
-        </div>
-        }
 
-        <!-- Active Add-ons (if any) -->
-        @if (policy.policy_addons && policy.policy_addons.length > 0) {
-        <div class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-          <h3 class="text-sm font-semibold text-slate-900 flex items-center gap-2 mb-3">
-            <mat-icon fontSet="material-symbols-rounded" class="!text-[18px] text-purple-600">add_circle</mat-icon>
-            Active Add-ons
-          </h3>
-          <div class="flex flex-wrap gap-2">
-            @for (policyAddon of policy.policy_addons; track policyAddon.id) {
-            <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-purple-50 border border-purple-200 text-sm">
-              <span class="font-medium text-purple-900">{{ policyAddon.addon?.name }}</span>
-              <span class="text-purple-600">{{ formatCurrency(policyAddon.premium) }}</span>
-            </span>
-            }
+          <!-- Corporate Group (if applicable) -->
+          @if (policy.group) {
+          <div class="rounded-sm border border-slate-200 bg-white p-4 shadow-sm">
+            <h3 class="text-sm font-semibold text-slate-900 flex items-center gap-2 mb-3">
+              <mat-icon fontSet="material-symbols-rounded" class="text-amber-600"
+                >business</mat-icon
+              >
+              Corporate Group
+            </h3>
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <span class="text-xs text-slate-500 block">Name</span>
+                <span class="text-sm font-medium text-slate-900">{{ policy.group.name }}</span>
+              </div>
+              <div>
+                <span class="text-xs text-slate-500 block">Code</span>
+                <span class="text-sm font-medium text-slate-900">{{ policy.group.code }}</span>
+              </div>
+            </div>
           </div>
-        </div>
-        }
-      </div>
-    </mat-tab>
+          }
 
-    <!-- Members Tab -->
-    <mat-tab>
-      <ng-template mat-tab-label>
-        <mat-icon fontSet="material-symbols-rounded" class="mr-2">{{ tabs[1].icon }}</mat-icon>
-        {{ tabs[1].label }}
-        @if (memberStats().total > 0) {
-        <span class="ml-2 px-2 py-0.5 rounded-full text-xs bg-slate-200 text-slate-700">
-          {{ memberStats().total }}
-        </span>
-        }
-      </ng-template>
-
-      <div class="p-6 space-y-4">
-        <!-- Member Stats Cards -->
-        <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
-          <div class="rounded-lg border border-slate-200 bg-white p-3 text-center">
-            <p class="text-2xl font-semibold text-slate-900">{{ memberStore.totalItems() }}</p>
-            <p class="text-xs text-slate-500">Total Members</p>
+          <!-- Active Add-ons (if any) -->
+          @if (policy.policy_addons && policy.policy_addons.length > 0) {
+          <div class="rounded-sm border border-slate-200 bg-white p-4 shadow-sm">
+            <h3 class="text-sm font-semibold text-slate-900 flex items-center gap-2 mb-3">
+              <mat-icon fontSet="material-symbols-rounded" class="text-purple-600"
+                >add_circle</mat-icon
+              >
+              Active Add-ons
+            </h3>
+            <div class="flex flex-wrap gap-2">
+              @for (policyAddon of policy.policy_addons; track policyAddon.id) {
+              <span
+                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-purple-50 border border-purple-200 text-sm"
+              >
+                <span class="font-medium text-purple-900">{{ policyAddon.addon?.name }}</span>
+                <span class="text-purple-600">{{ formatCurrency(policyAddon.premium) }}</span>
+              </span>
+              }
+            </div>
           </div>
-          <!-- <div class="rounded-lg border border-green-200 bg-green-50 p-3 text-center">
+          }
+        </div>
+      </mat-tab>
+
+      <!-- Members Tab -->
+      <mat-tab>
+        <ng-template mat-tab-label>
+          <mat-icon fontSet="material-symbols-rounded" class="mr-2">{{ tabs[1].icon }}</mat-icon>
+          {{ tabs[1].label }}
+          @if (memberStats().total > 0) {
+          <span class="ml-2 px-2 py-0.5 rounded-full text-xs bg-slate-200 text-slate-700">
+            {{ memberStats().total }}
+          </span>
+          }
+        </ng-template>
+
+        <div class="p-6 space-y-4">
+          <!-- Member Stats Cards -->
+          <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-4 gap-3">
+            <div class="rounded-lg border border-slate-200 bg-white p-3 text-center">
+              <p class="text-2xl font-semibold text-slate-900">{{ memberStore.totalItems() }}</p>
+              <p class="text-xs text-slate-500">Total Members</p>
+            </div>
+            <!-- <div class="rounded-lg border border-green-200 bg-green-50 p-3 text-center">
             <p class="text-2xl font-semibold text-green-700">{{ memberStore.members().length }}</p>
             <p class="text-xs text-green-600">On This Page</p>
           </div> -->
-          <div class="rounded-lg border border-blue-200 bg-blue-50 p-3 text-center">
-            <p class="text-2xl font-semibold text-blue-700">{{ memberStats().principals }}</p>
-            <p class="text-xs text-blue-600">Principals</p>
-          </div>
-          <div class="rounded-lg border border-purple-200 bg-purple-50 p-3 text-center">
-            <p class="text-2xl font-semibold text-purple-700">{{ memberStats().dependents }}</p>
-            <p class="text-xs text-purple-600">Dependents</p>
-          </div>
-          <div class="rounded-lg border border-amber-200 bg-amber-50 p-3 text-center">
-            <p class="text-2xl font-semibold text-amber-700">{{ memberStats().withLoadings }}</p>
-            <p class="text-xs text-amber-600">With Loadings</p>
-          </div>
-          <!-- <div class="rounded-lg border border-slate-200 bg-slate-50 p-3 text-center">
+            <div class="rounded-lg border border-blue-200 bg-blue-50 p-3 text-center">
+              <p class="text-2xl font-semibold text-blue-700">{{ memberStats().principals }}</p>
+              <p class="text-xs text-blue-600">Principals</p>
+            </div>
+            <div class="rounded-lg border border-purple-200 bg-purple-50 p-3 text-center">
+              <p class="text-2xl font-semibold text-purple-700">{{ memberStats().dependents }}</p>
+              <p class="text-xs text-purple-600">Dependents</p>
+            </div>
+            <div class="rounded-lg border border-amber-200 bg-amber-50 p-3 text-center">
+              <p class="text-2xl font-semibold text-amber-700">{{ memberStats().withLoadings }}</p>
+              <p class="text-xs text-amber-600">With Loadings</p>
+            </div>
+            <!-- <div class="rounded-lg border border-slate-200 bg-slate-50 p-3 text-center">
             <p class="text-2xl font-semibold text-slate-700">{{ memberStore.currentPage() }} / {{ memberStore.totalPages() }}</p>
             <p class="text-xs text-slate-600">Current Page</p>
           </div> -->
-        </div>
+          </div>
 
-        <!-- Filters -->
-        <div class="rounded-xl border border-slate-200 bg-white p-4">
-          <div class="flex flex-wrap gap-3 items-end">
-            <mat-form-field
-              appearance="outline"
-              subscriptSizing="dynamic"
-              class="flex-1 min-w-[200px] minimal-input"
-            >
-              <mat-icon fontSet="material-symbols-rounded" matPrefix class="!text-slate-400"
-                >search</mat-icon
+          <!-- Filters -->
+          <div class="rounded-sm border border-slate-200 bg-white p-4">
+            <div class="flex flex-wrap gap-3 items-end">
+              <mat-form-field
+                appearance="fill"
+                subscriptSizing="dynamic"
+                class="flex-1 minimal-input"
               >
-              <input
-                matInput
-                [ngModel]="memberSearchTerm()"
-                (ngModelChange)="onMemberSearchChange($event)"
-                placeholder="Search members..."
-              />
-              @if (memberSearchTerm()) {
-              <button matSuffix mat-icon-button (click)="onMemberSearchChange('')">
-                <mat-icon fontSet="material-symbols-rounded">close</mat-icon>
+                <mat-icon fontSet="material-symbols-rounded" matPrefix class="!text-slate-400"
+                  >search</mat-icon
+                >
+                <input
+                  matInput
+                  [ngModel]="memberSearchTerm()"
+                  (ngModelChange)="onMemberSearchChange($event)"
+                  placeholder="Search members..."
+                />
+                @if (memberSearchTerm()) {
+                <button matSuffix mat-icon-button (click)="onMemberSearchChange('')">
+                  <mat-icon fontSet="material-symbols-rounded">close</mat-icon>
+                </button>
+                }
+              </mat-form-field>
+
+              <mat-form-field
+                appearance="fill"
+                subscriptSizing="dynamic"
+                class="flex-1 minimal-input"
+              >
+                <mat-select
+                  [ngModel]="memberTypeFilter()"
+                  (ngModelChange)="onMemberTypeFilterChange($event)"
+                >
+                  @for (option of MEMBER_FILTER_OPTIONS.types; track option.value) {
+                  <mat-option [value]="option.value">{{ option.label }}</mat-option>
+                  }
+                </mat-select>
+              </mat-form-field>
+
+              <mat-form-field
+                appearance="fill"
+                subscriptSizing="dynamic"
+                class="flex-1 minimal-input"
+              >
+                <mat-select
+                  [ngModel]="memberStatusFilter()"
+                  (ngModelChange)="onMemberStatusFilterChange($event)"
+                >
+                  @for (option of MEMBER_FILTER_OPTIONS.statuses; track option.value) {
+                  <mat-option [value]="option.value">{{ option.label }}</mat-option>
+                  }
+                </mat-select>
+              </mat-form-field>
+
+              @if (hasActiveMemberFilters()) {
+              <button mat-stroked-button (click)="clearMemberFilters()" class="!border-slate-200">
+                <mat-icon fontSet="material-symbols-rounded">filter_alt_off</mat-icon>
+                Clear
               </button>
               }
-            </mat-form-field>
+            </div>
+          </div>
 
-            <mat-form-field
-              appearance="outline"
-              subscriptSizing="dynamic"
-              class="w-36 minimal-input"
-            >
-              <mat-select
-                [ngModel]="memberTypeFilter()"
-                (ngModelChange)="onMemberTypeFilterChange($event)"
-              >
-                @for (option of MEMBER_FILTER_OPTIONS.types; track option.value) {
-                <mat-option [value]="option.value">{{ option.label }}</mat-option>
-                }
-              </mat-select>
-            </mat-form-field>
+          <!-- Members Table -->
+          @if (filteredMembers().length > 0 || memberStore.isLoading()) {
+          <div class="rounded-sm border border-slate-200 bg-white overflow-hidden">
+            @if (memberStore.isLoading()) {
+            <div class="flex items-center justify-center h-32">
+              <mat-spinner diameter="32"></mat-spinner>
+            </div>
+            } @else {
+            <table mat-table [dataSource]="filteredMembers()" class="w-full">
+              <!-- Name Column -->
+              <ng-container matColumnDef="name">
+                <th
+                  mat-header-cell
+                  *matHeaderCellDef
+                  class="!font-semibold !text-slate-700 !bg-slate-50 !pl-6"
+                >
+                  Name
+                </th>
+                <td mat-cell *matCellDef="let member" class="!pl-6">
+                  <div class="flex items-center gap-3">
+                    <div
+                      class="flex h-9 w-9 items-center justify-center rounded-full text-xs font-semibold"
+                      [class]="getMemberTypeBadgeClass(member.member_type)"
+                    >
+                      {{ memberUtil.getInitials(member) }}
+                    </div>
+                    <div>
+                      <div class="font-medium text-slate-900">
+                        {{ member.full_name }}
+                      </div>
+                      <div class="text-xs text-slate-500 font-mono">{{ member.member_number }}</div>
+                    </div>
+                  </div>
+                </td>
+              </ng-container>
 
-            <mat-form-field
-              appearance="outline"
-              subscriptSizing="dynamic"
-              class="w-36 minimal-input"
-            >
-              <mat-select
-                [ngModel]="memberStatusFilter()"
-                (ngModelChange)="onMemberStatusFilterChange($event)"
-              >
-                @for (option of MEMBER_FILTER_OPTIONS.statuses; track option.value) {
-                <mat-option [value]="option.value">{{ option.label }}</mat-option>
-                }
-              </mat-select>
-            </mat-form-field>
+              <!-- Type Column -->
+              <ng-container matColumnDef="type">
+                <th
+                  mat-header-cell
+                  *matHeaderCellDef
+                  class="!font-semibold !text-slate-700 !bg-slate-50"
+                >
+                  Type
+                </th>
+                <td mat-cell *matCellDef="let member">
+                  <span
+                    class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium"
+                    [class]="getMemberTypeBadgeClass(member.member_type)"
+                  >
+                    {{ memberUtil.formatMemberType(member.member_type) }}
+                  </span>
+                </td>
+              </ng-container>
 
-            @if (hasActiveMemberFilters()) {
-            <button mat-stroked-button (click)="clearMemberFilters()" class="!border-slate-200">
+              <!-- Age Column -->
+              <ng-container matColumnDef="age">
+                <th
+                  mat-header-cell
+                  *matHeaderCellDef
+                  class="!font-semibold !text-slate-700 !bg-slate-50"
+                >
+                  Age
+                </th>
+                <td mat-cell *matCellDef="let member">
+                  <div>
+                    <div class="text-slate-900">
+                      {{ memberUtil.calculateAge(member.date_of_birth) }} yrs
+                    </div>
+                    <div class="text-xs text-slate-500">
+                      {{ member.date_of_birth | date : 'shortDate' }}
+                    </div>
+                  </div>
+                </td>
+              </ng-container>
+
+              <!-- Gender Column -->
+              <ng-container matColumnDef="gender">
+                <th
+                  mat-header-cell
+                  *matHeaderCellDef
+                  class="!font-semibold !text-slate-700 !bg-slate-50"
+                >
+                  Gender
+                </th>
+                <td mat-cell *matCellDef="let member">
+                  <span class="text-slate-700">
+                    {{ member.gender === 'M' ? 'Male' : member.gender === 'F' ? 'Female' : '-' }}
+                  </span>
+                </td>
+              </ng-container>
+
+              <!-- Status Column -->
+              <ng-container matColumnDef="status">
+                <th
+                  mat-header-cell
+                  *matHeaderCellDef
+                  class="!font-semibold !text-slate-700 !bg-slate-50"
+                >
+                  Status
+                </th>
+                <td mat-cell *matCellDef="let member">
+                  <span
+                    class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium"
+                    [class]="getMemberStatusBadgeClass(member.status)"
+                  >
+                    <span
+                      class="h-1.5 w-1.5 rounded-full"
+                      [class]="getMemberStatusDotClass(member.status)"
+                    ></span>
+                    {{ member.status | titlecase }}
+                  </span>
+                </td>
+              </ng-container>
+
+              <!-- Premium Column -->
+              <ng-container matColumnDef="premium">
+                <th
+                  mat-header-cell
+                  *matHeaderCellDef
+                  class="!font-semibold !text-slate-700 !bg-slate-50"
+                >
+                  Premium
+                </th>
+                <td mat-cell *matCellDef="let member">
+                  <div class="flex items-center gap-2">
+                    <span class="font-medium text-slate-900">
+                      {{ formatCurrency(memberUtil.getTotalPremium(member)) }}
+                    </span>
+                    @if (memberUtil.isProratedPremium(member)) {
+                    <mat-icon
+                      fontSet="material-symbols-rounded"
+                      [matTooltip]="PREMIUM_INDICATORS.prorated.tooltip"
+                      [class]="PREMIUM_INDICATORS.prorated.color"
+                    >
+                      {{ PREMIUM_INDICATORS.prorated.icon }}
+                    </mat-icon>
+                    } @if (memberUtil.hasLoadings(member)) {
+                    <mat-icon
+                      fontSet="material-symbols-rounded"
+                      [matTooltip]="PREMIUM_INDICATORS.loaded.tooltip"
+                      [class]="PREMIUM_INDICATORS.loaded.color"
+                    >
+                      {{ PREMIUM_INDICATORS.loaded.icon }}
+                    </mat-icon>
+                    }
+                  </div>
+                </td>
+              </ng-container>
+
+              <!-- Actions Column -->
+              <ng-container matColumnDef="actions">
+                <th mat-header-cell *matHeaderCellDef class="!bg-slate-50 !w-32 !pr-4"></th>
+                <td mat-cell *matCellDef="let member" class="!pr-4">
+                  <div class="flex items-center gap-1">
+                    @if (memberHasTerms(member)) {
+                    <span
+                      class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs bg-amber-100 text-amber-700"
+                      [matTooltip]="getMemberTermsSummary(member)"
+                    >
+                      <mat-icon fontSet="material-symbols-rounded">warning</mat-icon>
+                      Terms
+                    </span>
+                    }
+                    <button
+                      mat-icon-button
+                      matTooltip="View Details"
+                      (click)="viewMemberDetails(member); $event.stopPropagation()"
+                    >
+                      <mat-icon fontSet="material-symbols-rounded">visibility</mat-icon>
+                    </button>
+                    <button
+                      mat-icon-button
+                      matTooltip="View Benefits"
+                      (click)="viewMemberBenefits(member); $event.stopPropagation()"
+                    >
+                      <mat-icon fontSet="material-symbols-rounded">account_balance_wallet</mat-icon>
+                    </button>
+                    @if (policy.status === 'active' && member.status === 'active') {
+                    <button
+                      mat-icon-button
+                      [matMenuTriggerFor]="memberActionMenu"
+                      (click)="$event.stopPropagation()"
+                    >
+                      <mat-icon fontSet="material-symbols-rounded">more_vert</mat-icon>
+                    </button>
+                    <mat-menu #memberActionMenu="matMenu">
+                      <button mat-menu-item (click)="openRemoveMemberEndorsement(member)">
+                        <mat-icon fontSet="material-symbols-rounded" class="!text-red-600"
+                          >person_remove</mat-icon
+                        >
+                        <span>Remove Member</span>
+                      </button>
+                    </mat-menu>
+                    }
+                  </div>
+                </td>
+              </ng-container>
+
+              <tr mat-header-row *matHeaderRowDef="memberColumns"></tr>
+              <tr
+                mat-row
+                *matRowDef="let row; columns: memberColumns"
+                class="hover:bg-slate-50 cursor-pointer"
+                (click)="viewMemberDetails(row)"
+              ></tr>
+            </table>
+
+            <mat-paginator
+              [length]="memberStore.totalItems()"
+              [pageIndex]="memberStore.currentPage() - 1"
+              [pageSize]="memberStore.pageSize()"
+              [pageSizeOptions]="memberPageSizeOptions"
+              (page)="onMemberPageChange($event)"
+              showFirstLastButtons
+              class="!border-t !border-slate-100"
+            ></mat-paginator>
+            }
+          </div>
+          } @else if (hasActiveMemberFilters() && memberStore.members().length > 0) {
+          <!-- Has members but none match filters -->
+          <div
+            class="rounded-sm border-2 border-dashed border-slate-200 bg-slate-50 p-12 text-center"
+          >
+            <mat-icon fontSet="material-symbols-rounded" class="text-slate-300 mb-2">
+              search_off
+            </mat-icon>
+            <p class="text-slate-500 text-lg mb-4">No members match your filters</p>
+            <button mat-stroked-button (click)="clearMemberFilters()" class="!border-slate-300">
               <mat-icon fontSet="material-symbols-rounded">filter_alt_off</mat-icon>
-              Clear
+            </button>
+          </div>
+          } @else if (!memberStore.isLoading()) {
+          <!-- No members at all -->
+          <div
+            class="rounded-sm border-2 border-dashed border-slate-200 bg-slate-50 p-12 text-center"
+          >
+            <mat-icon fontSet="material-symbols-rounded" class="text-slate-300 mb-2">
+              group_off
+            </mat-icon>
+            <p class="text-slate-500 text-lg mb-4">No members found</p>
+            @if (policy.status === 'active') {
+            <p class="text-sm text-slate-400 mb-4">
+              To add members, create an endorsement in the Endorsements tab
+            </p>
+            <button mat-stroked-button (click)="onTabChange(2)" class="!border-slate-300">
+              <mat-icon fontSet="material-symbols-rounded">assignment</mat-icon>
+              Go to Endorsements
             </button>
             }
           </div>
+          }
         </div>
+      </mat-tab>
 
-        <!-- Members Table -->
-        @if (filteredMembers().length > 0 || memberStore.isLoading()) {
-        <div class="rounded-xl border border-slate-200 bg-white overflow-hidden">
-          @if (memberStore.isLoading()) {
-          <div class="flex items-center justify-center h-32">
-            <mat-spinner diameter="32"></mat-spinner>
+      <!-- Endorsements Tab -->
+      <mat-tab>
+        <ng-template mat-tab-label>
+          <mat-icon fontSet="material-symbols-rounded" class="mr-2">{{ tabs[2].icon }}</mat-icon>
+          {{ tabs[2].label }}
+          @if (endorsementStore.totalItems() > 0) {
+          <span class="ml-2 px-2 py-0.5 rounded-full text-xs bg-slate-200 text-slate-700">
+            {{ endorsementStore.totalItems() }}
+          </span>
+          }
+        </ng-template>
+
+        <div class="p-6 space-y-4">
+          <!-- Header with Actions -->
+          <div class="flex items-center justify-between">
+            <div>
+              <h3 class="text-lg font-semibold text-slate-900">Policy Endorsements</h3>
+              <p class="text-sm text-slate-500">
+                All changes to this policy are tracked as endorsements
+              </p>
+            </div>
+            @if (policy.status === 'active') {
+            <div class="flex items-center gap-2">
+              <button
+                *libPermission="permissions.MEMBERS_ADD"
+                mat-flat-button
+                color="primary"
+                (click)="openAddMemberEndorsement()"
+                class="!rounded-lg"
+              >
+                <mat-icon fontSet="material-symbols-rounded">person_add</mat-icon>
+                Add Member
+              </button>
+              <button
+                mat-stroked-button
+                [matMenuTriggerFor]="moreEndorsementsMenu"
+                class="!rounded-lg"
+              >
+                <mat-icon fontSet="material-symbols-rounded">more_horiz</mat-icon>
+              </button>
+              <mat-menu #moreEndorsementsMenu="matMenu">
+                <button
+                  *libPermission="permissions.POLICIES_UPDATE"
+                  mat-menu-item
+                  (click)="openUpgradePlanEndorsement()"
+                >
+                  <mat-icon fontSet="material-symbols-rounded" class="!text-blue-600"
+                    >upgrade</mat-icon
+                  >
+                  <span>Upgrade Plan</span>
+                </button>
+                <button
+                  *libPermission="permissions.POLICIES_UPDATE"
+                  mat-menu-item
+                  (click)="openDowngradePlanEndorsement()"
+                >
+                  <mat-icon fontSet="material-symbols-rounded" class="!text-orange-600"
+                    >download</mat-icon
+                  >
+                  <span>Downgrade Plan</span>
+                </button>
+                <mat-divider></mat-divider>
+                <button
+                  *libPermission="permissions.POLICIES_UPDATE"
+                  mat-menu-item
+                  (click)="openAddAddonEndorsement()"
+                >
+                  <mat-icon fontSet="material-symbols-rounded" class="!text-purple-600"
+                    >add_circle</mat-icon
+                  >
+                  <span>Add Add-on</span>
+                </button>
+                <button
+                  *libPermission="permissions.POLICIES_UPDATE"
+                  mat-menu-item
+                  (click)="openRemoveAddonEndorsement()"
+                >
+                  <mat-icon fontSet="material-symbols-rounded" class="!text-amber-600"
+                    >remove_circle</mat-icon
+                  >
+                  <span>Remove Add-on</span>
+                </button>
+              </mat-menu>
+            </div>
+            }
           </div>
-          } @else {
-          <table mat-table [dataSource]="filteredMembers()" class="w-full">
-            <!-- Name Column -->
-            <ng-container matColumnDef="name">
-              <th
-                mat-header-cell
-                *matHeaderCellDef
-                class="!font-semibold !text-slate-700 !bg-slate-50 !pl-6"
-              >
-                Name
-              </th>
-              <td mat-cell *matCellDef="let member" class="!pl-6">
-                <div class="flex items-center gap-3">
-                  <div
-                    class="flex h-9 w-9 items-center justify-center rounded-full text-xs font-semibold"
-                    [class]="getMemberTypeBadgeClass(member.member_type)"
-                  >
-                    {{ memberUtil.getInitials(member) }}
-                  </div>
-                  <div>
-                    <div class="font-medium text-slate-900">
-                      {{ member.full_name }}
-                    </div>
-                    <div class="text-xs text-slate-500 font-mono">{{ member.member_number }}</div>
-                  </div>
-                </div>
-              </td>
-            </ng-container>
 
-            <!-- Type Column -->
-            <ng-container matColumnDef="type">
-              <th
-                mat-header-cell
-                *matHeaderCellDef
-                class="!font-semibold !text-slate-700 !bg-slate-50"
+          <!-- Endorsement Stats Cards -->
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <div class="rounded-lg border border-slate-200 bg-white p-3 text-center">
+              <p class="text-2xl font-semibold text-slate-900">
+                {{ endorsementStore.totalItems() }}
+              </p>
+              <p class="text-xs text-slate-500">Total Endorsements</p>
+            </div>
+            <div class="rounded-lg border border-yellow-200 bg-yellow-50 p-3 text-center">
+              <p class="text-2xl font-semibold text-yellow-700">{{ endorsementStats().pending }}</p>
+              <p class="text-xs text-yellow-600">Pending</p>
+            </div>
+            <div class="rounded-lg border border-blue-200 bg-blue-50 p-3 text-center">
+              <p class="text-2xl font-semibold text-blue-700">{{ endorsementStats().approved }}</p>
+              <p class="text-xs text-blue-600">Approved</p>
+            </div>
+            <div class="rounded-lg border border-green-200 bg-green-50 p-3 text-center">
+              <p class="text-2xl font-semibold text-green-700">
+                {{ endorsementStats().processed }}
+              </p>
+              <p class="text-xs text-green-600">Processed</p>
+            </div>
+          </div>
+
+          <!-- Filters -->
+          <div class="rounded-sm border border-slate-200 bg-white p-4">
+            <div class="flex flex-wrap gap-3 items-end">
+              <mat-form-field
+                appearance="fill"
+                subscriptSizing="dynamic"
+                class="flex-1 minimal-input"
               >
-                Type
-              </th>
-              <td mat-cell *matCellDef="let member">
-                <span
-                  class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium"
-                  [class]="getMemberTypeBadgeClass(member.member_type)"
+                <mat-select
+                  [ngModel]="endorsementTypeFilter()"
+                  (ngModelChange)="onEndorsementTypeFilterChange($event)"
                 >
-                  {{ memberUtil.formatMemberType(member.member_type) }}
-                </span>
-              </td>
-            </ng-container>
-
-            <!-- Age Column -->
-            <ng-container matColumnDef="age">
-              <th
-                mat-header-cell
-                *matHeaderCellDef
-                class="!font-semibold !text-slate-700 !bg-slate-50"
-              >
-                Age
-              </th>
-              <td mat-cell *matCellDef="let member">
-                <div>
-                  <div class="text-slate-900">
-                    {{ memberUtil.calculateAge(member.date_of_birth) }} yrs
-                  </div>
-                  <div class="text-xs text-slate-500">
-                    {{ member.date_of_birth | date : 'shortDate' }}
-                  </div>
-                </div>
-              </td>
-            </ng-container>
-
-            <!-- Gender Column -->
-            <ng-container matColumnDef="gender">
-              <th
-                mat-header-cell
-                *matHeaderCellDef
-                class="!font-semibold !text-slate-700 !bg-slate-50"
-              >
-                Gender
-              </th>
-              <td mat-cell *matCellDef="let member">
-                <span class="text-slate-700">
-                  {{ member.gender === 'M' ? 'Male' : member.gender === 'F' ? 'Female' : '-' }}
-                </span>
-              </td>
-            </ng-container>
-
-            <!-- Status Column -->
-            <ng-container matColumnDef="status">
-              <th
-                mat-header-cell
-                *matHeaderCellDef
-                class="!font-semibold !text-slate-700 !bg-slate-50"
-              >
-                Status
-              </th>
-              <td mat-cell *matCellDef="let member">
-                <span
-                  class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium"
-                  [class]="getMemberStatusBadgeClass(member.status)"
-                >
-                  <span
-                    class="h-1.5 w-1.5 rounded-full"
-                    [class]="getMemberStatusDotClass(member.status)"
-                  ></span>
-                  {{ member.status | titlecase }}
-                </span>
-              </td>
-            </ng-container>
-
-            <!-- Premium Column -->
-            <ng-container matColumnDef="premium">
-              <th
-                mat-header-cell
-                *matHeaderCellDef
-                class="!font-semibold !text-slate-700 !bg-slate-50"
-              >
-                Premium
-              </th>
-              <td mat-cell *matCellDef="let member">
-                <div class="flex items-center gap-2">
-                  <span class="font-medium text-slate-900">
-                    {{ formatCurrency(memberUtil.getTotalPremium(member)) }}
-                  </span>
-                  @if (memberUtil.isProratedPremium(member)) {
-                  <mat-icon
-                    fontSet="material-symbols-rounded"
-                    [matTooltip]="PREMIUM_INDICATORS.prorated.tooltip"
-                    [class]="PREMIUM_INDICATORS.prorated.color"
-                    class="!text-[16px]"
-                  >
-                    {{ PREMIUM_INDICATORS.prorated.icon }}
-                  </mat-icon>
-                  } @if (memberUtil.hasLoadings(member)) {
-                  <mat-icon
-                    fontSet="material-symbols-rounded"
-                    [matTooltip]="PREMIUM_INDICATORS.loaded.tooltip"
-                    [class]="PREMIUM_INDICATORS.loaded.color"
-                    class="!text-[16px]"
-                  >
-                    {{ PREMIUM_INDICATORS.loaded.icon }}
-                  </mat-icon>
+                  @for (option of ENDORSEMENT_FILTER_OPTIONS.types; track option.value) {
+                  <mat-option [value]="option.value">{{ option.label }}</mat-option>
                   }
-                </div>
-              </td>
-            </ng-container>
+                </mat-select>
+              </mat-form-field>
 
-            <!-- Actions Column -->
-            <ng-container matColumnDef="actions">
-              <th mat-header-cell *matHeaderCellDef class="!bg-slate-50 !w-32 !pr-4"></th>
-              <td mat-cell *matCellDef="let member" class="!pr-4">
-                <div class="flex items-center gap-1">
-                  @if (memberHasTerms(member)) {
-                  <span
-                    class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs bg-amber-100 text-amber-700"
-                    [matTooltip]="getMemberTermsSummary(member)"
-                  >
-                    <mat-icon fontSet="material-symbols-rounded" class="!text-[14px]"
-                      >warning</mat-icon
+              <mat-form-field
+                appearance="fill"
+                subscriptSizing="dynamic"
+                class="flex-1 minimal-input"
+              >
+                <mat-select
+                  [ngModel]="endorsementStatusFilter()"
+                  (ngModelChange)="onEndorsementStatusFilterChange($event)"
+                >
+                  @for (option of ENDORSEMENT_FILTER_OPTIONS.statuses; track option.value) {
+                  <mat-option [value]="option.value">{{ option.label }}</mat-option>
+                  }
+                </mat-select>
+              </mat-form-field>
+
+              @if (hasActiveEndorsementFilters()) {
+              <button
+                mat-stroked-button
+                (click)="clearEndorsementFilters()"
+                class="!border-slate-200"
+              >
+                <mat-icon fontSet="material-symbols-rounded">filter_alt_off</mat-icon>
+                Clear
+              </button>
+              }
+            </div>
+          </div>
+
+          <!-- Endorsements Table -->
+          @if (endorsementStore.endorsements().length > 0 || endorsementStore.isLoading()) {
+          <div class="rounded-sm border border-slate-200 bg-white overflow-hidden">
+            @if (endorsementStore.isLoading()) {
+            <div class="flex items-center justify-center h-32">
+              <mat-spinner diameter="32"></mat-spinner>
+            </div>
+            } @else {
+            <table mat-table [dataSource]="endorsementStore.endorsements()" class="w-full">
+              <!-- Number Column -->
+              <ng-container matColumnDef="number">
+                <th
+                  mat-header-cell
+                  *matHeaderCellDef
+                  class="!font-semibold !text-slate-700 !bg-slate-50 !pl-6"
+                >
+                  Endorsement
+                </th>
+                <td mat-cell *matCellDef="let endorsement" class="!pl-6">
+                  <div class="font-medium text-slate-900 font-mono text-sm">
+                    {{ endorsement.endorsement_number }}
+                  </div>
+                  <div class="text-xs text-slate-500 mt-0.5">
+                    {{ endorsement.request_date | date : 'mediumDate' }}
+                  </div>
+                </td>
+              </ng-container>
+
+              <!-- Type Column -->
+              <ng-container matColumnDef="type">
+                <th
+                  mat-header-cell
+                  *matHeaderCellDef
+                  class="!font-semibold !text-slate-700 !bg-slate-50"
+                >
+                  Type
+                </th>
+                <td mat-cell *matCellDef="let endorsement">
+                  <div class="flex items-center gap-2">
+                    <span
+                      class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium"
+                      [class]="getEndorsementTypeBadgeClass(endorsement.endorsement_type)"
                     >
-                    Terms
+                      <mat-icon fontSet="material-symbols-rounded">
+                        {{ getEndorsementTypeIcon(endorsement.endorsement_type) }}
+                      </mat-icon>
+                      {{ getEndorsementTypeLabel(endorsement.endorsement_type) }}
+                    </span>
+                  </div>
+                  @if (endorsement.description) {
+                  <div
+                    class="text-xs text-slate-500 mt-1 max-w-[200px] truncate"
+                    [matTooltip]="endorsement.description"
+                  >
+                    {{ endorsement.description }}
+                  </div>
+                  }
+                </td>
+              </ng-container>
+
+              <!-- Effective Date Column -->
+              <ng-container matColumnDef="effective_date">
+                <th
+                  mat-header-cell
+                  *matHeaderCellDef
+                  class="!font-semibold !text-slate-700 !bg-slate-50"
+                >
+                  Effective Date
+                </th>
+                <td mat-cell *matCellDef="let endorsement">
+                  <span class="text-slate-900">
+                    {{ endorsement.effective_date | date : 'mediumDate' }}
                   </span>
+                </td>
+              </ng-container>
+
+              <!-- Premium Adjustment Column -->
+              <ng-container matColumnDef="premium_adjustment">
+                <th
+                  mat-header-cell
+                  *matHeaderCellDef
+                  class="!font-semibold !text-slate-700 !bg-slate-50"
+                >
+                  Premium Impact
+                </th>
+                <td mat-cell *matCellDef="let endorsement">
+                  @if (endorsement.has_financial_impact) {
+                  <span
+                    class="font-medium"
+                    [class]="
+                      endorsement.premium_adjustment > 0
+                        ? 'text-red-600'
+                        : endorsement.premium_adjustment < 0
+                        ? 'text-green-600'
+                        : 'text-slate-600'
+                    "
+                  >
+                    {{ endorsement.premium_adjustment > 0 ? '+' : ''
+                    }}{{ formatCurrency(endorsement.premium_adjustment) }}
+                  </span>
+                  @if (endorsement.prorated_amount !== 0) {
+                  <div class="text-xs text-slate-500">
+                    Pro-rated: {{ formatCurrency(endorsement.prorated_amount) }}
+                  </div>
+                  } } @else {
+                  <span class="text-slate-400">-</span>
                   }
-                  <button
-                    mat-icon-button
-                    matTooltip="View Details"
-                    (click)="viewMemberDetails(member); $event.stopPropagation()"
+                </td>
+              </ng-container>
+
+              <!-- Status Column -->
+              <ng-container matColumnDef="status">
+                <th
+                  mat-header-cell
+                  *matHeaderCellDef
+                  class="!font-semibold !text-slate-700 !bg-slate-50"
+                >
+                  Status
+                </th>
+                <td mat-cell *matCellDef="let endorsement">
+                  <span
+                    class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium"
+                    [class]="getEndorsementStatusBadgeClass(endorsement.status)"
                   >
-                    <mat-icon fontSet="material-symbols-rounded">visibility</mat-icon>
-                  </button>
-                  <button
-                    mat-icon-button
-                    matTooltip="View Benefits"
-                    (click)="viewMemberBenefits(member); $event.stopPropagation()"
-                  >
-                    <mat-icon fontSet="material-symbols-rounded">account_balance_wallet</mat-icon>
-                  </button>
-                  @if (policy.status === 'active' && member.status === 'active') {
-                  <button
-                    mat-icon-button
-                    [matMenuTriggerFor]="memberActionMenu"
-                    (click)="$event.stopPropagation()"
-                  >
-                    <mat-icon fontSet="material-symbols-rounded">more_vert</mat-icon>
-                  </button>
-                  <mat-menu #memberActionMenu="matMenu">
-                    <button mat-menu-item (click)="openRemoveMemberEndorsement(member)">
-                      <mat-icon fontSet="material-symbols-rounded" class="!text-red-600"
-                        >person_remove</mat-icon
-                      >
-                      <span>Remove Member</span>
+                    <span
+                      class="h-1.5 w-1.5 rounded-full"
+                      [class]="getEndorsementStatusDotClass(endorsement.status)"
+                    ></span>
+                    {{ getEndorsementStatusLabel(endorsement.status) }}
+                  </span>
+                </td>
+              </ng-container>
+
+              <!-- Actions Column -->
+              <ng-container matColumnDef="actions">
+                <th mat-header-cell *matHeaderCellDef class="!bg-slate-50 !w-28 !pr-4"></th>
+                <td mat-cell *matCellDef="let endorsement" class="!pr-4">
+                  <div class="flex items-center gap-1">
+                    @if (endorsement.can_be_approved) {
+                    <button
+                      mat-icon-button
+                      matTooltip="Approve"
+                      (click)="approveEndorsement(endorsement); $event.stopPropagation()"
+                      class="!text-blue-600"
+                    >
+                      <mat-icon fontSet="material-symbols-rounded">check_circle</mat-icon>
                     </button>
-                  </mat-menu>
-                  }
-                </div>
-              </td>
-            </ng-container>
+                    } @if (endorsement.can_be_processed) {
+                    <button
+                      mat-icon-button
+                      matTooltip="Process"
+                      (click)="processEndorsement(endorsement); $event.stopPropagation()"
+                      class="!text-green-600"
+                    >
+                      <mat-icon fontSet="material-symbols-rounded">play_circle</mat-icon>
+                    </button>
+                    } @if (endorsement.can_be_rejected) {
+                    <button
+                      mat-icon-button
+                      matTooltip="Reject"
+                      (click)="rejectEndorsement(endorsement); $event.stopPropagation()"
+                      class="!text-red-600"
+                    >
+                      <mat-icon fontSet="material-symbols-rounded">cancel</mat-icon>
+                    </button>
+                    } @if (endorsement.can_be_cancelled) {
+                    <button
+                      mat-icon-button
+                      [matMenuTriggerFor]="endorsementMenu"
+                      (click)="$event.stopPropagation()"
+                    >
+                      <mat-icon fontSet="material-symbols-rounded">more_vert</mat-icon>
+                    </button>
+                    <mat-menu #endorsementMenu="matMenu">
+                      <button mat-menu-item (click)="cancelEndorsement(endorsement)">
+                        <mat-icon fontSet="material-symbols-rounded">block</mat-icon>
+                        <span>Cancel</span>
+                      </button>
+                    </mat-menu>
+                    }
+                  </div>
+                </td>
+              </ng-container>
 
-            <tr mat-header-row *matHeaderRowDef="memberColumns"></tr>
-            <tr
-              mat-row
-              *matRowDef="let row; columns: memberColumns"
-              class="hover:bg-slate-50 cursor-pointer"
-              (click)="viewMemberDetails(row)"
-            ></tr>
-          </table>
+              <tr mat-header-row *matHeaderRowDef="endorsementColumns"></tr>
+              <tr
+                mat-row
+                *matRowDef="let row; columns: endorsementColumns"
+                class="hover:bg-slate-50"
+              ></tr>
+            </table>
 
-          <mat-paginator
-            [length]="memberStore.totalItems()"
-            [pageIndex]="memberStore.currentPage() - 1"
-            [pageSize]="memberStore.pageSize()"
-            [pageSizeOptions]="memberPageSizeOptions"
-            (page)="onMemberPageChange($event)"
-            showFirstLastButtons
-            class="!border-t !border-slate-100"
-          ></mat-paginator>
-          }
-        </div>
-        } @else if (hasActiveMemberFilters() && memberStore.members().length > 0) {
-        <!-- Has members but none match filters -->
-        <div
-          class="rounded-xl border-2 border-dashed border-slate-200 bg-slate-50 p-12 text-center"
-        >
-          <mat-icon fontSet="material-symbols-rounded" class="!text-[48px] text-slate-300 mb-2">
-            search_off
-          </mat-icon>
-          <p class="text-slate-500 text-lg mb-4">No members match your filters</p>
-          <button mat-stroked-button (click)="clearMemberFilters()" class="!border-slate-300">
-            <mat-icon fontSet="material-symbols-rounded">filter_alt_off</mat-icon>
-            Clear Filters
-          </button>
-        </div>
-        } @else if (!memberStore.isLoading()) {
-        <!-- No members at all -->
-        <div
-          class="rounded-xl border-2 border-dashed border-slate-200 bg-slate-50 p-12 text-center"
-        >
-          <mat-icon fontSet="material-symbols-rounded" class="!text-[48px] text-slate-300 mb-2">
-            group_off
-          </mat-icon>
-          <p class="text-slate-500 text-lg mb-4">No members found</p>
-          @if (policy.status === 'active') {
-          <p class="text-sm text-slate-400 mb-4">
-            To add members, create an endorsement in the Endorsements tab
-          </p>
-          <button mat-stroked-button (click)="onTabChange(2)" class="!border-slate-300">
-            <mat-icon fontSet="material-symbols-rounded">assignment</mat-icon>
-            Go to Endorsements
-          </button>
-          }
-        </div>
-        }
-      </div>
-    </mat-tab>
-
-    <!-- Endorsements Tab -->
-    <mat-tab>
-      <ng-template mat-tab-label>
-        <mat-icon fontSet="material-symbols-rounded" class="mr-2">{{ tabs[2].icon }}</mat-icon>
-        {{ tabs[2].label }}
-        @if (endorsementStore.totalItems() > 0) {
-        <span class="ml-2 px-2 py-0.5 rounded-full text-xs bg-slate-200 text-slate-700">
-          {{ endorsementStore.totalItems() }}
-        </span>
-        }
-      </ng-template>
-
-      <div class="p-6 space-y-4">
-        <!-- Header with Actions -->
-        <div class="flex items-center justify-between">
-          <div>
-            <h3 class="text-lg font-semibold text-slate-900">Policy Endorsements</h3>
-            <p class="text-sm text-slate-500">
-              All changes to this policy are tracked as endorsements
-            </p>
+            <mat-paginator
+              [length]="endorsementStore.totalItems()"
+              [pageIndex]="endorsementStore.currentPage() - 1"
+              [pageSize]="endorsementStore.pageSize()"
+              [pageSizeOptions]="endorsementPageSizeOptions"
+              (page)="onEndorsementPageChange($event)"
+              showFirstLastButtons
+              class="!border-t !border-slate-100"
+            ></mat-paginator>
+            }
           </div>
-          @if (policy.status === 'active') {
-          <div class="flex items-center gap-2">
-            <button
-              *libPermission="permissions.MEMBERS_ADD"
-              mat-flat-button
-              color="primary"
-              (click)="openAddMemberEndorsement()"
-              class="!rounded-lg"
-            >
-              <mat-icon fontSet="material-symbols-rounded">person_add</mat-icon>
-              Add Member
-            </button>
-            <button
-              mat-stroked-button
-              [matMenuTriggerFor]="moreEndorsementsMenu"
-              class="!rounded-lg"
-            >
-              <mat-icon fontSet="material-symbols-rounded">more_horiz</mat-icon>
-            </button>
-            <mat-menu #moreEndorsementsMenu="matMenu">
-              <button *libPermission="permissions.POLICIES_UPDATE" mat-menu-item (click)="openUpgradePlanEndorsement()">
-                <mat-icon fontSet="material-symbols-rounded" class="!text-blue-600">upgrade</mat-icon>
-                <span>Upgrade Plan</span>
-              </button>
-              <button *libPermission="permissions.POLICIES_UPDATE" mat-menu-item (click)="openDowngradePlanEndorsement()">
-                <mat-icon fontSet="material-symbols-rounded" class="!text-orange-600">download</mat-icon>
-                <span>Downgrade Plan</span>
-              </button>
-              <mat-divider></mat-divider>
-              <button *libPermission="permissions.POLICIES_UPDATE" mat-menu-item (click)="openAddAddonEndorsement()">
-                <mat-icon fontSet="material-symbols-rounded" class="!text-purple-600">add_circle</mat-icon>
-                <span>Add Add-on</span>
-              </button>
-              <button *libPermission="permissions.POLICIES_UPDATE" mat-menu-item (click)="openRemoveAddonEndorsement()">
-                <mat-icon fontSet="material-symbols-rounded" class="!text-amber-600">remove_circle</mat-icon>
-                <span>Remove Add-on</span>
-              </button>
-            </mat-menu>
-          </div>
-          }
-        </div>
-
-        <!-- Endorsement Stats Cards -->
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <div class="rounded-lg border border-slate-200 bg-white p-3 text-center">
-            <p class="text-2xl font-semibold text-slate-900">{{ endorsementStore.totalItems() }}</p>
-            <p class="text-xs text-slate-500">Total Endorsements</p>
-          </div>
-          <div class="rounded-lg border border-yellow-200 bg-yellow-50 p-3 text-center">
-            <p class="text-2xl font-semibold text-yellow-700">{{ endorsementStats().pending }}</p>
-            <p class="text-xs text-yellow-600">Pending</p>
-          </div>
-          <div class="rounded-lg border border-blue-200 bg-blue-50 p-3 text-center">
-            <p class="text-2xl font-semibold text-blue-700">{{ endorsementStats().approved }}</p>
-            <p class="text-xs text-blue-600">Approved</p>
-          </div>
-          <div class="rounded-lg border border-green-200 bg-green-50 p-3 text-center">
-            <p class="text-2xl font-semibold text-green-700">{{ endorsementStats().processed }}</p>
-            <p class="text-xs text-green-600">Processed</p>
-          </div>
-        </div>
-
-        <!-- Filters -->
-        <div class="rounded-xl border border-slate-200 bg-white p-4">
-          <div class="flex flex-wrap gap-3 items-end">
-            <mat-form-field appearance="fill" subscriptSizing="dynamic" class="w-44 minimal-input">
-              <mat-select
-                [ngModel]="endorsementTypeFilter()"
-                (ngModelChange)="onEndorsementTypeFilterChange($event)"
-              >
-                @for (option of ENDORSEMENT_FILTER_OPTIONS.types; track option.value) {
-                <mat-option [value]="option.value">{{ option.label }}</mat-option>
-                }
-              </mat-select>
-            </mat-form-field>
-
-            <mat-form-field appearance="fill" subscriptSizing="dynamic" class="w-36 minimal-input">
-              <mat-select
-                [ngModel]="endorsementStatusFilter()"
-                (ngModelChange)="onEndorsementStatusFilterChange($event)"
-              >
-                @for (option of ENDORSEMENT_FILTER_OPTIONS.statuses; track option.value) {
-                <mat-option [value]="option.value">{{ option.label }}</mat-option>
-                }
-              </mat-select>
-            </mat-form-field>
-
-            @if (hasActiveEndorsementFilters()) {
+          } @else if (hasActiveEndorsementFilters()) {
+          <div
+            class="rounded-sm border-2 border-dashed border-slate-200 bg-slate-50 p-12 text-center"
+          >
+            <mat-icon fontSet="material-symbols-rounded" class="text-slate-300 mb-2">
+              search_off
+            </mat-icon>
+            <p class="text-slate-500 text-lg mb-4">No endorsements match your filters</p>
             <button
               mat-stroked-button
               (click)="clearEndorsementFilters()"
-              class="!border-slate-200"
+              class="!border-slate-300"
             >
               <mat-icon fontSet="material-symbols-rounded">filter_alt_off</mat-icon>
-              Clear
+              Clear Filters
             </button>
-            }
           </div>
-        </div>
-
-        <!-- Endorsements Table -->
-        @if (endorsementStore.endorsements().length > 0 || endorsementStore.isLoading()) {
-        <div class="rounded-xl border border-slate-200 bg-white overflow-hidden">
-          @if (endorsementStore.isLoading()) {
-          <div class="flex items-center justify-center h-32">
-            <mat-spinner diameter="32"></mat-spinner>
+          } @else if (!endorsementStore.isLoading()) {
+          <div
+            class="rounded-sm border-2 border-dashed border-slate-200 bg-slate-50 p-12 text-center"
+          >
+            <mat-icon fontSet="material-symbols-rounded" class="text-slate-300 mb-2">
+              assignment
+            </mat-icon>
+            <p class="text-slate-500 text-lg">No endorsements found</p>
+            <p class="text-sm text-slate-400 mt-2">
+              Endorsements are created when policy changes occur (e.g., adding members, plan
+              upgrades)
+            </p>
           </div>
-          } @else {
-          <table mat-table [dataSource]="endorsementStore.endorsements()" class="w-full">
-            <!-- Number Column -->
-            <ng-container matColumnDef="number">
-              <th
-                mat-header-cell
-                *matHeaderCellDef
-                class="!font-semibold !text-slate-700 !bg-slate-50 !pl-6"
-              >
-                Endorsement
-              </th>
-              <td mat-cell *matCellDef="let endorsement" class="!pl-6">
-                <div class="font-medium text-slate-900 font-mono text-sm">
-                  {{ endorsement.endorsement_number }}
-                </div>
-                <div class="text-xs text-slate-500 mt-0.5">
-                  {{ endorsement.request_date | date : 'mediumDate' }}
-                </div>
-              </td>
-            </ng-container>
-
-            <!-- Type Column -->
-            <ng-container matColumnDef="type">
-              <th
-                mat-header-cell
-                *matHeaderCellDef
-                class="!font-semibold !text-slate-700 !bg-slate-50"
-              >
-                Type
-              </th>
-              <td mat-cell *matCellDef="let endorsement">
-                <div class="flex items-center gap-2">
-                  <span
-                    class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium"
-                    [class]="getEndorsementTypeBadgeClass(endorsement.endorsement_type)"
-                  >
-                    <mat-icon
-                      fontSet="material-symbols-rounded"
-                      class="!text-[14px] !h-[14px] !w-[14px]"
-                    >
-                      {{ getEndorsementTypeIcon(endorsement.endorsement_type) }}
-                    </mat-icon>
-                    {{ getEndorsementTypeLabel(endorsement.endorsement_type) }}
-                  </span>
-                </div>
-                @if (endorsement.description) {
-                <div
-                  class="text-xs text-slate-500 mt-1 max-w-[200px] truncate"
-                  [matTooltip]="endorsement.description"
-                >
-                  {{ endorsement.description }}
-                </div>
-                }
-              </td>
-            </ng-container>
-
-            <!-- Effective Date Column -->
-            <ng-container matColumnDef="effective_date">
-              <th
-                mat-header-cell
-                *matHeaderCellDef
-                class="!font-semibold !text-slate-700 !bg-slate-50"
-              >
-                Effective Date
-              </th>
-              <td mat-cell *matCellDef="let endorsement">
-                <span class="text-slate-900">
-                  {{ endorsement.effective_date | date : 'mediumDate' }}
-                </span>
-              </td>
-            </ng-container>
-
-            <!-- Premium Adjustment Column -->
-            <ng-container matColumnDef="premium_adjustment">
-              <th
-                mat-header-cell
-                *matHeaderCellDef
-                class="!font-semibold !text-slate-700 !bg-slate-50"
-              >
-                Premium Impact
-              </th>
-              <td mat-cell *matCellDef="let endorsement">
-                @if (endorsement.has_financial_impact) {
-                <span
-                  class="font-medium"
-                  [class]="
-                    endorsement.premium_adjustment > 0
-                      ? 'text-red-600'
-                      : endorsement.premium_adjustment < 0
-                      ? 'text-green-600'
-                      : 'text-slate-600'
-                  "
-                >
-                  {{ endorsement.premium_adjustment > 0 ? '+' : ''
-                  }}{{ formatCurrency(endorsement.premium_adjustment) }}
-                </span>
-                @if (endorsement.prorated_amount !== 0) {
-                <div class="text-xs text-slate-500">
-                  Pro-rated: {{ formatCurrency(endorsement.prorated_amount) }}
-                </div>
-                } } @else {
-                <span class="text-slate-400">-</span>
-                }
-              </td>
-            </ng-container>
-
-            <!-- Status Column -->
-            <ng-container matColumnDef="status">
-              <th
-                mat-header-cell
-                *matHeaderCellDef
-                class="!font-semibold !text-slate-700 !bg-slate-50"
-              >
-                Status
-              </th>
-              <td mat-cell *matCellDef="let endorsement">
-                <span
-                  class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium"
-                  [class]="getEndorsementStatusBadgeClass(endorsement.status)"
-                >
-                  <span
-                    class="h-1.5 w-1.5 rounded-full"
-                    [class]="getEndorsementStatusDotClass(endorsement.status)"
-                  ></span>
-                  {{ getEndorsementStatusLabel(endorsement.status) }}
-                </span>
-              </td>
-            </ng-container>
-
-            <!-- Actions Column -->
-            <ng-container matColumnDef="actions">
-              <th mat-header-cell *matHeaderCellDef class="!bg-slate-50 !w-28 !pr-4"></th>
-              <td mat-cell *matCellDef="let endorsement" class="!pr-4">
-                <div class="flex items-center gap-1">
-                  @if (endorsement.can_be_approved) {
-                  <button
-                    mat-icon-button
-                    matTooltip="Approve"
-                    (click)="approveEndorsement(endorsement); $event.stopPropagation()"
-                    class="!text-blue-600"
-                  >
-                    <mat-icon fontSet="material-symbols-rounded">check_circle</mat-icon>
-                  </button>
-                  } @if (endorsement.can_be_processed) {
-                  <button
-                    mat-icon-button
-                    matTooltip="Process"
-                    (click)="processEndorsement(endorsement); $event.stopPropagation()"
-                    class="!text-green-600"
-                  >
-                    <mat-icon fontSet="material-symbols-rounded">play_circle</mat-icon>
-                  </button>
-                  } @if (endorsement.can_be_rejected) {
-                  <button
-                    mat-icon-button
-                    matTooltip="Reject"
-                    (click)="rejectEndorsement(endorsement); $event.stopPropagation()"
-                    class="!text-red-600"
-                  >
-                    <mat-icon fontSet="material-symbols-rounded">cancel</mat-icon>
-                  </button>
-                  } @if (endorsement.can_be_cancelled) {
-                  <button
-                    mat-icon-button
-                    [matMenuTriggerFor]="endorsementMenu"
-                    (click)="$event.stopPropagation()"
-                  >
-                    <mat-icon fontSet="material-symbols-rounded">more_vert</mat-icon>
-                  </button>
-                  <mat-menu #endorsementMenu="matMenu">
-                    <button mat-menu-item (click)="cancelEndorsement(endorsement)">
-                      <mat-icon fontSet="material-symbols-rounded">block</mat-icon>
-                      <span>Cancel</span>
-                    </button>
-                  </mat-menu>
-                  }
-                </div>
-              </td>
-            </ng-container>
-
-            <tr mat-header-row *matHeaderRowDef="endorsementColumns"></tr>
-            <tr
-              mat-row
-              *matRowDef="let row; columns: endorsementColumns"
-              class="hover:bg-slate-50"
-            ></tr>
-          </table>
-
-          <mat-paginator
-            [length]="endorsementStore.totalItems()"
-            [pageIndex]="endorsementStore.currentPage() - 1"
-            [pageSize]="endorsementStore.pageSize()"
-            [pageSizeOptions]="endorsementPageSizeOptions"
-            (page)="onEndorsementPageChange($event)"
-            showFirstLastButtons
-            class="!border-t !border-slate-100"
-          ></mat-paginator>
           }
         </div>
-        } @else if (hasActiveEndorsementFilters()) {
-        <div
-          class="rounded-xl border-2 border-dashed border-slate-200 bg-slate-50 p-12 text-center"
-        >
-          <mat-icon fontSet="material-symbols-rounded" class="!text-[48px] text-slate-300 mb-2">
-            search_off
-          </mat-icon>
-          <p class="text-slate-500 text-lg mb-4">No endorsements match your filters</p>
-          <button mat-stroked-button (click)="clearEndorsementFilters()" class="!border-slate-300">
-            <mat-icon fontSet="material-symbols-rounded">filter_alt_off</mat-icon>
-            Clear Filters
-          </button>
-        </div>
-        } @else if (!endorsementStore.isLoading()) {
-        <div
-          class="rounded-xl border-2 border-dashed border-slate-200 bg-slate-50 p-12 text-center"
-        >
-          <mat-icon fontSet="material-symbols-rounded" class="!text-[48px] text-slate-300 mb-2">
-            assignment
-          </mat-icon>
-          <p class="text-slate-500 text-lg">No endorsements found</p>
-          <p class="text-sm text-slate-400 mt-2">
-            Endorsements are created when policy changes occur (e.g., adding members, plan upgrades)
-          </p>
-        </div>
-        }
-      </div>
-    </mat-tab>
+      </mat-tab>
 
-    <!-- Documents Tab -->
-    <mat-tab>
-      <ng-template mat-tab-label>
-        <mat-icon fontSet="material-symbols-rounded" class="mr-2">{{ tabs[3].icon }}</mat-icon>
-        {{ tabs[3].label }}
-      </ng-template>
+      <!-- Documents Tab -->
+      <mat-tab>
+        <ng-template mat-tab-label>
+          <mat-icon fontSet="material-symbols-rounded" class="mr-2">{{ tabs[3].icon }}</mat-icon>
+          {{ tabs[3].label }}
+        </ng-template>
 
-      <div class="p-6">
-        <lib-policy-documents
-          [policyId]="policyId()"
-          [canEdit]="policy.status === 'active'"
-        ></lib-policy-documents>
-      </div>
-    </mat-tab>
-  </mat-tab-group>
+        <div class="p-6">
+          <lib-policy-documents
+            [policyId]="policyId()"
+            [canEdit]="policy.status === 'active'"
+          ></lib-policy-documents>
+        </div>
+      </mat-tab>
+    </mat-tab-group>
   </div>
   } @else {
   <div class="flex flex-col items-center justify-center h-96">

@@ -1,0 +1,129 @@
+<!-- ─── Page Header with Background ────────────────────────────────────── -->
+<section class="relative pt-16 overflow-hidden">
+  <div class="absolute inset-0">
+    <img
+      src="https://images.unsplash.com/photo-1631815588090-d4bfec5b1b98?w=1920&q=60"
+      alt=""
+      class="w-full h-full object-cover"
+      loading="eager"
+    />
+    <div class="absolute inset-0 bg-gradient-to-b from-teal-900/85 to-teal-800/90"></div>
+  </div>
+  <div class="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 py-16 text-center">
+    <h1 class="text-3xl sm:text-4xl font-semibold text-white mb-3 tracking-tight">Compare Plans</h1>
+    <p class="text-teal-200 text-base font-light max-w-md mx-auto">
+      Choose the plan that fits your needs and budget. All plans include digital ID cards and online claims.
+    </p>
+  </div>
+</section>
+
+<!-- ─── Filter Tabs + Plan Grid ────────────────────────────────────────── -->
+<div class="max-w-5xl mx-auto px-4 sm:px-6 py-10">
+
+  <!-- Underline Filter Tabs -->
+  <div class="flex gap-6 justify-center border-b border-gray-200 mb-10">
+    @for (tab of [['all','All Plans'],['individual','Individual'],['family','Family'],['corporate','Corporate']]; track tab[0]) {
+      <button
+        (click)="setFilter(tab[0])"
+        class="pb-3 text-sm transition-all duration-200"
+        [class]="activeFilter() === tab[0]
+          ? 'text-teal-700 font-medium border-b-2 border-teal-600'
+          : 'text-gray-400 hover:text-gray-600'"
+      >{{ tab[1] }}</button>
+    }
+  </div>
+
+  <!-- Loading State -->
+  @if (loading()) {
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      @for (i of [1,2,3]; track i) {
+        <div class="fc-card p-6 animate-pulse">
+          <div class="flex items-center gap-3 mb-4">
+            <div class="w-11 h-11 bg-gray-100 rounded-xl"></div>
+            <div>
+              <div class="h-4 bg-gray-100 rounded w-28 mb-1.5"></div>
+              <div class="h-3 bg-gray-50 rounded w-20"></div>
+            </div>
+          </div>
+          <div class="h-3 bg-gray-50 rounded w-full mb-2"></div>
+          <div class="h-3 bg-gray-50 rounded w-4/5 mb-6"></div>
+          <div class="flex gap-3">
+            <div class="h-9 bg-gray-100 rounded-lg flex-1"></div>
+            <div class="h-9 bg-gray-100 rounded-lg flex-1"></div>
+          </div>
+        </div>
+      }
+    </div>
+  }
+
+  <!-- Plans Grid -->
+  @if (!loading()) {
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 fc-stagger">
+      @for (plan of filteredPlans(); track plan.id) {
+        <div class="fc-card-interactive p-6 flex flex-col border-t-4"
+          [style.border-top-color]="plan.tier_level === 1 ? '#cbd5e1' : plan.tier_level === 2 ? '#14b8a6' : plan.tier_level === 3 ? '#8b5cf6' : '#f59e0b'">
+          <!-- Plan Header -->
+          <div class="flex items-start justify-between mb-4">
+            <div class="flex items-center gap-3">
+              <div class="w-11 h-11 rounded-xl bg-gradient-to-br from-teal-50 to-teal-100 flex items-center justify-center">
+                <span class="material-symbols-rounded text-teal-600" style="font-size: 22px">{{ planTypeIcon(plan.plan_type) }}</span>
+              </div>
+              <div>
+                <h3 class="text-base font-medium text-gray-900">{{ plan.name }}</h3>
+                <span class="text-xs text-gray-400 font-light">{{ plan.scheme.name }}</span>
+              </div>
+            </div>
+            <span class="text-xs font-medium px-2.5 py-0.5 rounded-full"
+              [class]="plan.tier_level === 1 ? 'bg-gray-100 text-gray-600' : plan.tier_level === 2 ? 'bg-teal-50 text-teal-700' : plan.tier_level === 3 ? 'bg-violet-50 text-violet-700' : 'bg-amber-50 text-amber-700'">
+              {{ tierLabel(plan.tier_level) }}
+            </span>
+          </div>
+
+          <!-- Plan Type -->
+          <span class="inline-block text-xs font-medium bg-gray-50 text-gray-500 px-2.5 py-0.5 rounded-full mb-3 w-fit capitalize">
+            {{ plan.plan_type }}
+          </span>
+
+          <!-- Description -->
+          @if (plan.description) {
+            <p class="text-gray-500 text-sm font-light leading-relaxed mb-4 flex-1 line-clamp-2">{{ plan.description }}</p>
+          }
+
+          <!-- Stats -->
+          <div class="flex gap-4 mb-5 pt-4 border-t border-gray-50">
+            <div class="flex items-center gap-1.5 text-xs text-gray-400">
+              <span class="material-symbols-rounded text-teal-500" style="font-size: 16px">check_circle</span>
+              {{ plan.plan_benefits_count }} Benefits
+            </div>
+            <div class="flex items-center gap-1.5 text-xs text-gray-400">
+              <span class="material-symbols-rounded text-violet-400" style="font-size: 16px">add_circle</span>
+              {{ plan.plan_addons_count }} Add-ons
+            </div>
+          </div>
+
+          <!-- Actions -->
+          <div class="flex gap-3">
+            <a
+              [routerLink]="['/plans', plan.id]"
+              class="fc-btn-outline flex-1 text-center text-xs"
+            >Details</a>
+            <a
+              [routerLink]="['/quote']"
+              [queryParams]="{ plan: plan.id }"
+              class="fc-btn-primary flex-1 text-center text-xs"
+            >Get a Quote</a>
+          </div>
+        </div>
+      }
+    </div>
+
+    <!-- Empty State -->
+    @if (filteredPlans().length === 0) {
+      <div class="text-center py-20 fc-fade-in">
+        <span class="material-symbols-rounded text-gray-300" style="font-size: 48px">search_off</span>
+        <p class="text-gray-500 mt-3 font-light">No plans match this filter.</p>
+        <button (click)="setFilter('all')" class="fc-btn-ghost text-sm mt-4">Show All Plans</button>
+      </div>
+    }
+  }
+</div>

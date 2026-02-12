@@ -96,4 +96,87 @@ return [
         // Days before expiry to send final renewal reminder
         'final_reminder_days' => env('MEDICAL_RENEWAL_FINAL_REMINDER', 7),
     ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Claims Processing Configuration
+    |--------------------------------------------------------------------------
+    |
+    | Settings for real-time claims processing and auto-adjudication.
+    |
+    */
+    'claims' => [
+        // Maximum claim amount for auto-adjudication
+        'auto_adjudication_max_amount' => env('MEDICAL_AUTO_ADJUDICATION_MAX', 10000),
+
+        // Maximum fraud score for auto-approval
+        'auto_adjudication_max_fraud_score' => env('MEDICAL_AUTO_MAX_FRAUD_SCORE', 40),
+
+        // Pre-authorization validity in hours
+        'preauth_validity_hours' => env('MEDICAL_PREAUTH_VALIDITY_HOURS', 72),
+
+        // Eligibility cache TTL in seconds
+        'eligibility_cache_ttl' => env('MEDICAL_ELIGIBILITY_CACHE_TTL', 300),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Fraud Detection Configuration
+    |--------------------------------------------------------------------------
+    |
+    | Settings for fraud detection thresholds and scoring.
+    |
+    */
+    'fraud' => [
+        // Score threshold to block claim (requires investigation)
+        'block_threshold' => env('MEDICAL_FRAUD_BLOCK_THRESHOLD', 90),
+
+        // Score threshold to flag for review
+        'review_threshold' => env('MEDICAL_FRAUD_REVIEW_THRESHOLD', 50),
+
+        // Enable ML-based fraud detection (future feature)
+        'ml_enabled' => env('MEDICAL_FRAUD_ML_ENABLED', false),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Notification Configuration
+    |--------------------------------------------------------------------------
+    |
+    | Settings for member and provider notifications.
+    |
+    */
+    'notifications' => [
+        'email' => [
+            'enabled' => env('MEDICAL_EMAIL_NOTIFICATIONS', true),
+        ],
+        'sms' => [
+            'enabled' => env('MEDICAL_SMS_NOTIFICATIONS', false),
+        ],
+        'websocket' => [
+            'enabled' => env('MEDICAL_WEBSOCKET_ENABLED', true),
+        ],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Provider API Configuration
+    |--------------------------------------------------------------------------
+    |
+    | Settings for hospital/provider API integration.
+    |
+    */
+    'provider_api' => [
+        // Default rate limit per minute
+        'rate_limit_per_minute' => env('MEDICAL_API_RATE_LIMIT_MINUTE', 60),
+
+        // Default rate limit per hour
+        'rate_limit_per_hour' => env('MEDICAL_API_RATE_LIMIT_HOUR', 1000),
+
+        // API request logging enabled
+        'logging_enabled' => env('MEDICAL_API_LOGGING', true),
+
+        // Eligibility check SLA in milliseconds
+        'eligibility_sla_ms' => env('MEDICAL_ELIGIBILITY_SLA_MS', 500),
+    ],
 ];

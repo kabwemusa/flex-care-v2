@@ -186,6 +186,26 @@ export class MedicalPlanListDialog implements OnInit {
     );
   }
 
+  getSelectedSchemeLabel(): string {
+    const id = this.basicInfoForm.get('scheme_id')?.value;
+    return this.schemeStore.schemes().find((s: any) => s.id === id)?.name || '';
+  }
+
+  getSelectedPlanTypeLabel(): string {
+    const val = this.basicInfoForm.get('plan_type')?.value;
+    return this.planTypes.find((t: any) => t.value === val)?.label || '';
+  }
+
+  getSelectedNetworkTypeLabel(): string {
+    const val = this.basicInfoForm.get('network_type')?.value;
+    return this.networkTypes.find((n: any) => n.value === val)?.label || '';
+  }
+
+  getSelectedTierLabel(): string {
+    const val = this.basicInfoForm.get('tier_level')?.value;
+    return this.tierLevels.find((t) => t.value === val)?.label || '';
+  }
+
   save() {
     if (!this.isFormValid) return;
 

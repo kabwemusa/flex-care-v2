@@ -1,5 +1,5 @@
 <!-- Group Quote Dialog -->
-<div class="group-quote-dialog">
+<div class="group-quote-dialog rounded-lg">
   <!-- Header -->
   <div class="dialog-header px-6 py-4 border-b border-slate-200">
     <div class="flex items-center justify-between">
@@ -288,9 +288,8 @@
   <div class="dialog-footer px-6 py-4 border-t border-slate-200 flex items-center justify-between">
     <div>
       @if (currentStep() === 'results') {
-      <button mat-stroked-button (click)="backToConfigure()">
-        <mat-icon fontSet="material-symbols-rounded">arrow_back</mat-icon>
-        Back
+      <button mat-icon-button (click)="backToConfigure()" matTooltip="Back to Configure" class="!text-slate-600 hover:!bg-slate-200">
+        <mat-icon fontSet="material-symbols-rounded">chevron_left</mat-icon>
       </button>
       }
     </div>

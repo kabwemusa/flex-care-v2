@@ -113,7 +113,7 @@ class Invoice extends BaseModel
         $year = date('Y');
 
         $lastNumber = static::where('invoice_number', 'like', "{$prefix}{$year}-%")
-            ->orderByRaw('CAST(SUBSTRING(invoice_number, -6) AS UNSIGNED) DESC')
+            ->orderByRaw('CAST(RIGHT(invoice_number, 6) AS INTEGER) DESC')
             ->value('invoice_number');
 
         if ($lastNumber) {

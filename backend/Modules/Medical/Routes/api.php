@@ -17,6 +17,13 @@ use Modules\Medical\Http\Controllers\PlanExclusionController;
 use Modules\Medical\Http\Controllers\EndorsementController;
 use Modules\Medical\Http\Controllers\ClaimController;
 use Modules\Medical\Http\Controllers\BillingController;
+use Modules\Medical\Http\Controllers\PublicApplicationController;
+use Modules\Medical\Http\Controllers\PublicProviderController;
+use Modules\Medical\Http\Controllers\PublicPlanController;
+use Modules\Medical\Http\Controllers\PublicAddonController;
+use Modules\Medical\Http\Controllers\PublicQuoteController;
+use Modules\Medical\Http\Controllers\MemberAuthController;
+use Modules\Medical\Http\Controllers\MemberPortalController;
 use Modules\Medical\Constants\MedicalConstants;
 
 /*
@@ -31,6 +38,85 @@ use Modules\Medical\Constants\MedicalConstants;
 |
 */
 
+// =========================================================================
+// PUBLIC ROUTES — Website browsing & quoting (no auth required)
+// =========================================================================
+// Rate limiting: 60 requests/minute for browsing, 20/minute for quotes
+Route::prefix('v1/medical/public')->group(function () {
+    // Browsing endpoints - higher rate limit
+    Route::middleware(['throttle:60,1'])->group(function () {
+        Route::get('plans', [PublicPlanController::class, 'index']);
+        Route::get('plans/{plan}', [PublicPlanController::class, 'show']);
+        Route::post('plans/compare', [PublicPlanController::class, 'compare']);
+        Route::get('addons', [PublicAddonController::class, 'index']);
+        Route::get('addons/{addon}', [PublicAddonController::class, 'show']);
+        Route::get('plans/{planId}/addons', [PublicAddonController::class, 'forPlan']);
+    });
+
+    // Quote endpoints - lower rate limit (CPU intensive)
+    Route::middleware(['throttle:20,1'])->group(function () {
+        Route::post('quotes', [PublicQuoteController::class, 'generate']);
+        Route::post('quotes/compare', [PublicQuoteController::class, 'compare']);
+    });
+
+    // Application submission - strict rate limit
+    Route::middleware(['throttle:10,1'])->group(function () {
+        Route::post('applications', [PublicApplicationController::class, 'store']);
+    });
+
+    // Provider registration - very strict rate limit
+    Route::middleware(['throttle:5,1'])->group(function () {
+        Route::post('providers/register', [PublicProviderController::class, 'register']);
+    });
+});
+
+// =========================================================================
+// MEMBER PORTAL ROUTES — Customer self-service portal
+// =========================================================================
+Route::prefix('v1/medical/member')->group(function () {
+    // ─── Auth endpoints (public, rate limited) ───────────────────────────────
+    Route::prefix('auth')->middleware(['throttle:10,1'])->group(function () {
+        Route::post('request-otp', [MemberAuthController::class, 'requestOtp']);
+        Route::post('verify-otp', [MemberAuthController::class, 'verifyOtp']);
+        Route::post('login', [MemberAuthController::class, 'login']);
+        Route::post('forgot-password', [MemberAuthController::class, 'forgotPassword']);
+        Route::post('reset-password', [MemberAuthController::class, 'resetPassword']);
+    });
+
+    // ─── Authenticated member endpoints ──────────────────────────────────────
+    Route::middleware(['member.auth'])->group(function () {
+        // Auth management
+        Route::get('auth/me', [MemberAuthController::class, 'me']);
+        Route::post('auth/set-password', [MemberAuthController::class, 'setPassword']);
+        Route::post('auth/logout', [MemberAuthController::class, 'logout']);
+        Route::post('auth/logout-all', [MemberAuthController::class, 'logoutAll']);
+
+        // Portal
+        Route::prefix('portal')->group(function () {
+            // Dashboard
+            Route::get('dashboard', [MemberPortalController::class, 'dashboard']);
+
+            // Policy & ID Cards
+            Route::get('policy', [MemberPortalController::class, 'policy']);
+            Route::get('id-card/{memberId?}', [MemberPortalController::class, 'idCard']);
+
+            // Claims
+            Route::get('claims', [MemberPortalController::class, 'claims']);
+            Route::get('claims/{id}', [MemberPortalController::class, 'claimDetail']);
+
+            // Applications
+            Route::get('applications', [MemberPortalController::class, 'applications']);
+
+            // Profile
+            Route::get('profile', [MemberPortalController::class, 'profile']);
+            Route::put('profile', [MemberPortalController::class, 'updateProfile']);
+        });
+    });
+});
+
+// =========================================================================
+// AUTHENTICATED ROUTES (Admin/Staff)
+// =========================================================================
 Route::prefix('v1/medical')
     ->middleware(['auth:sanctum', 'session.check', 'module:medical'])
     ->group(function () {
@@ -44,7 +130,7 @@ Route::prefix('v1/medical')
         Route::get('schemes/{scheme}', [SchemeController::class, 'show']);
     });
     Route::post('schemes', [SchemeController::class, 'store'])->middleware('permission:medical.schemes.create');
-    Route::put('schemes/{scheme}', [SchemeController::class, 'update'])->middleware('permission:medical.schemes.update');
+    Route::patch('schemes/{scheme}', [SchemeController::class, 'update'])->middleware('permission:medical.schemes.update');
     Route::delete('schemes/{scheme}', [SchemeController::class, 'destroy'])->middleware('permission:medical.schemes.delete');
     Route::post('schemes/{id}/activate', [SchemeController::class, 'activate'])->middleware('permission:medical.schemes.activate');
 
@@ -69,7 +155,6 @@ Route::prefix('v1/medical')
     // BENEFITS
     // =========================================================================
     Route::middleware(['permission:medical.plans.view'])->group(function () {
-        Route::get('benefit-categories', [BenefitController::class, 'categories']);
         Route::get('benefits/tree', [BenefitController::class, 'tree']);
         Route::get('benefits', [BenefitController::class, 'index']);
         Route::get('benefits/{benefit}', [BenefitController::class, 'show']);
@@ -78,7 +163,6 @@ Route::prefix('v1/medical')
         Route::post('benefits/check-eligibility', [BenefitController::class, 'checkEligibility']);
     });
     Route::middleware(['permission:medical.plans.configure'])->group(function () {
-        Route::post('benefit-categories', [BenefitController::class, 'storeCategory']);
         Route::post('benefits', [BenefitController::class, 'store']);
         Route::put('benefits/{benefit}', [BenefitController::class, 'update']);
         Route::delete('benefits/{benefit}', [BenefitController::class, 'destroy']);
@@ -220,6 +304,7 @@ Route::prefix('v1/medical')
             Route::get('/', [GroupController::class, 'index']);
             Route::get('/dropdown', [GroupController::class, 'dropdown']);
             Route::get('/{id}', [GroupController::class, 'show']);
+            Route::get('/{id}/members', [GroupController::class, 'members']);
             Route::get('/{groupId}/contacts', [GroupController::class, 'contacts']);
             Route::get('/{id}/plan-distribution', [GroupController::class, 'planDistribution']);
         });

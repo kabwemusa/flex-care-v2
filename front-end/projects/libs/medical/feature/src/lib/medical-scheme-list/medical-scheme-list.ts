@@ -67,8 +67,12 @@ export class MedicalSchemesList implements OnInit, AfterViewInit {
   displayedColumns = ['status', 'name', 'segment', 'plans', 'effective', 'actions'];
   dataSource = new MatTableDataSource<MedicalScheme>([]);
 
-  @ViewChild(MatPaginator) paginator!: MatPaginator;
-  @ViewChild(MatSort) sort!: MatSort;
+  @ViewChild(MatPaginator) set paginator(p: MatPaginator) {
+    if (p) this.dataSource.paginator = p;
+  }
+  @ViewChild(MatSort) set sort(s: MatSort) {
+    if (s) this.dataSource.sort = s;
+  }
   @ViewChild('detailDrawer') detailDrawer!: MatDrawer;
 
   // Filters
@@ -115,8 +119,8 @@ export class MedicalSchemesList implements OnInit, AfterViewInit {
   }
 
   ngAfterViewInit() {
-    this.dataSource.paginator = this.paginator;
-    this.dataSource.sort = this.sort;
+    // Paginator and Sort are connected via @ViewChild setters
+    // to handle deferred rendering from @if blocks
   }
 
   applyFilter(event: Event) {

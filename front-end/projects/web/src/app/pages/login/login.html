@@ -1,0 +1,361 @@
+<section class="min-h-screen flex">
+  <!-- ═══════════════════════════════════════════════════════════════════════
+       LEFT: Brand Panel (hidden on mobile)
+       ═══════════════════════════════════════════════════════════════════════ -->
+  <div class="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-linear-to-br from-teal-600 via-teal-700 to-cyan-800">
+    <!-- Decorative shapes -->
+    <div class="absolute top-0 left-0 w-96 h-96 bg-white/5 rounded-full -ml-48 -mt-48"></div>
+    <div class="absolute bottom-0 right-0 w-80 h-80 bg-white/5 rounded-full -mr-40 -mb-40"></div>
+    <div class="absolute top-1/2 left-1/4 w-64 h-64 bg-white/5 rounded-full"></div>
+
+    <!-- Content -->
+    <div class="relative z-10 flex flex-col justify-center px-12 xl:px-20 w-full">
+      <!-- Logo -->
+      <div class="mb-12">
+        <div class="w-16 h-16 rounded-2xl bg-white/10 backdrop-blur-sm flex items-center justify-center mb-4 shadow-lg">
+          <span class="material-symbols-rounded text-white" style="font-size: 32px">health_and_safety</span>
+        </div>
+        <h1 class="text-3xl font-bold text-white mb-2">FlexCare</h1>
+        <p class="text-teal-100 text-lg font-light">Member Portal</p>
+      </div>
+
+      <!-- Features -->
+      <div class="space-y-6">
+        <div class="flex items-start gap-4">
+          <div class="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center shrink-0">
+            <span class="material-symbols-rounded text-white" style="font-size: 20px">verified</span>
+          </div>
+          <div>
+            <h3 class="text-white font-semibold mb-1">View Your Benefits</h3>
+            <p class="text-teal-100 text-sm font-light">Check your coverage limits and remaining balances anytime</p>
+          </div>
+        </div>
+
+        <div class="flex items-start gap-4">
+          <div class="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center shrink-0">
+            <span class="material-symbols-rounded text-white" style="font-size: 20px">receipt_long</span>
+          </div>
+          <div>
+            <h3 class="text-white font-semibold mb-1">Track Claims</h3>
+            <p class="text-teal-100 text-sm font-light">Real-time updates on your submitted claims</p>
+          </div>
+        </div>
+
+        <div class="flex items-start gap-4">
+          <div class="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center shrink-0">
+            <span class="material-symbols-rounded text-white" style="font-size: 20px">badge</span>
+          </div>
+          <div>
+            <h3 class="text-white font-semibold mb-1">Digital ID Card</h3>
+            <p class="text-teal-100 text-sm font-light">Access your member ID card on any device</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Testimonial -->
+      <div class="mt-12 p-6 bg-white/10 backdrop-blur-sm rounded-2xl">
+        <p class="text-white text-sm italic leading-relaxed mb-4">
+          "FlexCare made managing my family's health coverage so much easier. Everything I need is just a click away."
+        </p>
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-full bg-teal-500 flex items-center justify-center">
+            <span class="text-white font-semibold text-sm">JM</span>
+          </div>
+          <div>
+            <p class="text-white font-medium text-sm">John Mwale</p>
+            <p class="text-teal-200 text-xs">Premium Member</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════
+       RIGHT: Login Form
+       ═══════════════════════════════════════════════════════════════════════ -->
+  <div class="flex-1 flex items-center justify-center px-4 sm:px-6 lg:px-12 py-12 bg-gray-50">
+    <div class="w-full max-w-md">
+
+      <!-- Mobile: Brand Header -->
+      <div class="lg:hidden text-center mb-8">
+        <div class="w-14 h-14 rounded-2xl bg-linear-to-br from-teal-500 to-teal-700 flex items-center justify-center mx-auto mb-3 shadow-lg">
+          <span class="material-symbols-rounded text-white" style="font-size: 28px">health_and_safety</span>
+        </div>
+        <h1 class="text-2xl font-bold text-gray-900">FlexCare</h1>
+        <p class="text-gray-500 text-sm mt-1">Member Portal</p>
+      </div>
+
+      <!-- Login Card -->
+      <div class="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
+
+        <!-- ═══════════════════════════════════════════════════════════════════ -->
+        <!-- STEP 1: Email Input -->
+        <!-- ═══════════════════════════════════════════════════════════════════ -->
+        @if (step() === 'email') {
+          <div class="p-8 fc-fade-in">
+            <div class="text-center mb-8">
+              <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-teal-50 border border-teal-100 mb-4">
+                <span class="material-symbols-rounded text-teal-600" style="font-size: 16px">login</span>
+                <span class="text-xs font-medium text-teal-700">Secure Login</span>
+              </div>
+              <h2 class="text-xl font-semibold text-gray-900 mb-1">Welcome back</h2>
+              <p class="text-gray-500 text-sm font-light">Sign in to access your health benefits</p>
+            </div>
+
+            <!-- Error -->
+            @if (error()) {
+              <div class="bg-red-50 border border-red-100 rounded-xl px-4 py-3 mb-5 flex items-start gap-2">
+                <span class="material-symbols-rounded text-red-600 mt-0.5" style="font-size: 18px">error</span>
+                <p class="text-sm text-red-600">{{ error() }}</p>
+              </div>
+            }
+
+            <!-- Email Form -->
+            <div class="space-y-5">
+              <div>
+                <label class="fc-label flex items-center gap-1">
+                  <span class="material-symbols-rounded" style="font-size: 14px">email</span>
+                  Email address
+                </label>
+                <input
+                  type="email"
+                  [value]="email()"
+                  (input)="email.set($any($event.target).value)"
+                  (keyup.enter)="requestOtp()"
+                  placeholder="you@example.com"
+                  autofocus
+                  class="fc-input"
+                />
+              </div>
+
+              <button
+                (click)="requestOtp()"
+                [disabled]="loading()"
+                class="group w-full px-6 py-3.5 rounded-xl font-semibold text-base transition-all duration-300 flex items-center justify-center gap-2"
+                [class]="loading()
+                  ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                  : 'bg-linear-to-r from-teal-600 to-teal-700 text-white shadow-lg shadow-teal-200/50 hover:shadow-xl hover:shadow-teal-300/50 hover:scale-[1.02] active:scale-[0.98]'"
+              >
+                @if (loading()) {
+                  <span class="w-5 h-5 border-3 border-gray-400 border-t-transparent rounded-full animate-spin"></span>
+                } @else {
+                  <span>Continue with Email</span>
+                  <span class="material-symbols-rounded transition-transform group-hover:translate-x-1" style="font-size: 20px">arrow_forward</span>
+                }
+              </button>
+            </div>
+
+            <!-- Divider -->
+            <div class="relative my-6">
+              <div class="absolute inset-0 flex items-center">
+                <div class="w-full border-t border-gray-200"></div>
+              </div>
+              <div class="relative flex justify-center text-xs">
+                <span class="bg-white px-3 text-gray-400 font-light">or</span>
+              </div>
+            </div>
+
+            <!-- Alternative: Password Login -->
+            <button
+              (click)="showPasswordLogin()"
+              class="w-full px-4 py-3 rounded-xl border border-gray-200 text-gray-700 font-medium text-sm hover:bg-gray-50 hover:border-gray-300 transition-all duration-200 flex items-center justify-center gap-2"
+            >
+              <span class="material-symbols-rounded" style="font-size: 18px">key</span>
+              Sign in with password
+            </button>
+          </div>
+        }
+
+        <!-- ═══════════════════════════════════════════════════════════════════ -->
+        <!-- STEP 2: OTP Verification -->
+        <!-- ═══════════════════════════════════════════════════════════════════ -->
+        @if (step() === 'otp') {
+          <div class="p-8 fc-fade-in">
+            <!-- Back button -->
+            <button
+              (click)="goBack()"
+              class="flex items-center gap-1 text-sm text-gray-500 hover:text-teal-600 mb-5 -ml-1 transition-colors"
+            >
+              <span class="material-symbols-rounded" style="font-size: 18px">arrow_back</span>
+              Back
+            </button>
+
+            <div class="text-center mb-8">
+              <div class="w-16 h-16 rounded-full bg-linear-to-br from-teal-50 to-teal-100 flex items-center justify-center mx-auto mb-4 shadow-sm">
+                <span class="material-symbols-rounded text-teal-600" style="font-size: 28px">mark_email_read</span>
+              </div>
+              <h2 class="text-xl font-semibold text-gray-900 mb-1">Check your email</h2>
+              <p class="text-gray-500 text-sm font-light">
+                We sent a verification code to
+              </p>
+              <p class="text-teal-700 font-medium text-sm mt-1">{{ email() }}</p>
+            </div>
+
+            <!-- Error -->
+            @if (error()) {
+              <div class="bg-red-50 border border-red-100 rounded-xl px-4 py-3 mb-5 flex items-start gap-2">
+                <span class="material-symbols-rounded text-red-600 mt-0.5" style="font-size: 18px">error</span>
+                <p class="text-sm text-red-600">{{ error() }}</p>
+              </div>
+            }
+
+            <!-- OTP Input -->
+            <div class="space-y-5">
+              <div>
+                <label class="fc-label flex items-center gap-1">
+                  <span class="material-symbols-rounded" style="font-size: 14px">pin</span>
+                  6-digit verification code
+                </label>
+                <input
+                  type="text"
+                  inputmode="numeric"
+                  [value]="otp()"
+                  (input)="onOtpInput($event)"
+                  placeholder="000000"
+                  maxlength="6"
+                  autofocus
+                  class="fc-input text-center text-2xl font-mono tracking-[0.5em] py-4"
+                />
+              </div>
+
+              <button
+                (click)="verifyOtp()"
+                [disabled]="loading() || otp().length !== 6"
+                class="group w-full px-6 py-3.5 rounded-xl font-semibold text-base transition-all duration-300 flex items-center justify-center gap-2"
+                [class]="loading() || otp().length !== 6
+                  ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                  : 'bg-linear-to-r from-teal-600 to-teal-700 text-white shadow-lg shadow-teal-200/50 hover:shadow-xl hover:shadow-teal-300/50 hover:scale-[1.02] active:scale-[0.98]'"
+              >
+                @if (loading()) {
+                  <span class="w-5 h-5 border-3 border-gray-400 border-t-transparent rounded-full animate-spin"></span>
+                } @else {
+                  <span class="material-symbols-rounded" style="font-size: 20px">verified</span>
+                  <span>Verify & Sign In</span>
+                }
+              </button>
+            </div>
+
+            <!-- Resend / Countdown -->
+            <div class="mt-6 text-center">
+              @if (canResend()) {
+                <button
+                  (click)="resendOtp()"
+                  class="text-sm text-teal-600 hover:text-teal-700 font-medium flex items-center gap-1 mx-auto"
+                >
+                  <span class="material-symbols-rounded" style="font-size: 16px">refresh</span>
+                  Resend code
+                </button>
+              } @else {
+                <div class="flex items-center justify-center gap-2 text-sm text-gray-400">
+                  <span class="material-symbols-rounded" style="font-size: 16px">schedule</span>
+                  <span>Resend code in <span class="font-medium text-gray-600">{{ formatCountdown() }}</span></span>
+                </div>
+              }
+            </div>
+          </div>
+        }
+
+        <!-- ═══════════════════════════════════════════════════════════════════ -->
+        <!-- STEP 3: Password Login (Alternative) -->
+        <!-- ═══════════════════════════════════════════════════════════════════ -->
+        @if (step() === 'password') {
+          <div class="p-8 fc-fade-in">
+            <!-- Back button -->
+            <button
+              (click)="goBack()"
+              class="flex items-center gap-1 text-sm text-gray-500 hover:text-teal-600 mb-5 -ml-1 transition-colors"
+            >
+              <span class="material-symbols-rounded" style="font-size: 18px">arrow_back</span>
+              Back
+            </button>
+
+            <div class="text-center mb-8">
+              <div class="w-16 h-16 rounded-full bg-linear-to-br from-violet-50 to-violet-100 flex items-center justify-center mx-auto mb-4 shadow-sm">
+                <span class="material-symbols-rounded text-violet-600" style="font-size: 28px">key</span>
+              </div>
+              <h2 class="text-xl font-semibold text-gray-900 mb-1">Password sign in</h2>
+              <p class="text-gray-500 text-sm font-light">Enter your credentials to continue</p>
+            </div>
+
+            <!-- Error -->
+            @if (error()) {
+              <div class="bg-red-50 border border-red-100 rounded-xl px-4 py-3 mb-5 flex items-start gap-2">
+                <span class="material-symbols-rounded text-red-600 mt-0.5" style="font-size: 18px">error</span>
+                <p class="text-sm text-red-600">{{ error() }}</p>
+              </div>
+            }
+
+            <!-- Password Form -->
+            <div class="space-y-4">
+              <div>
+                <label class="fc-label flex items-center gap-1">
+                  <span class="material-symbols-rounded" style="font-size: 14px">email</span>
+                  Email address
+                </label>
+                <input
+                  type="email"
+                  [value]="email()"
+                  (input)="email.set($any($event.target).value)"
+                  placeholder="you@example.com"
+                  class="fc-input"
+                />
+              </div>
+              <div>
+                <label class="fc-label flex items-center gap-1">
+                  <span class="material-symbols-rounded" style="font-size: 14px">lock</span>
+                  Password
+                </label>
+                <input
+                  type="password"
+                  [value]="password()"
+                  (input)="password.set($any($event.target).value)"
+                  (keyup.enter)="loginWithPassword()"
+                  placeholder="Enter your password"
+                  class="fc-input"
+                />
+              </div>
+
+              <button
+                (click)="loginWithPassword()"
+                [disabled]="loading()"
+                class="group w-full px-6 py-3.5 rounded-xl font-semibold text-base transition-all duration-300 flex items-center justify-center gap-2 mt-2"
+                [class]="loading()
+                  ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                  : 'bg-linear-to-r from-violet-600 to-violet-700 text-white shadow-lg shadow-violet-200/50 hover:shadow-xl hover:shadow-violet-300/50 hover:scale-[1.02] active:scale-[0.98]'"
+              >
+                @if (loading()) {
+                  <span class="w-5 h-5 border-3 border-gray-400 border-t-transparent rounded-full animate-spin"></span>
+                } @else {
+                  <span class="material-symbols-rounded" style="font-size: 20px">login</span>
+                  <span>Sign In</span>
+                }
+              </button>
+            </div>
+
+            <!-- Forgot Password -->
+            <div class="mt-5 text-center">
+              <a routerLink="/forgot-password" class="text-sm text-gray-500 hover:text-teal-600 transition-colors flex items-center justify-center gap-1">
+                <span class="material-symbols-rounded" style="font-size: 16px">help</span>
+                Forgot your password?
+              </a>
+            </div>
+          </div>
+        }
+
+      </div>
+
+      <!-- Footer -->
+      <p class="text-center text-sm text-gray-500 mt-8">
+        Don't have an account?
+        <a routerLink="/quote" class="text-teal-600 hover:text-teal-700 font-medium ml-1">Get a quote</a>
+        and apply online.
+      </p>
+
+      <!-- Security Note -->
+      <div class="flex items-center justify-center gap-2 mt-4 text-xs text-gray-400">
+        <span class="material-symbols-rounded" style="font-size: 14px">lock</span>
+        <span>Protected with 256-bit SSL encryption</span>
+      </div>
+    </div>
+  </div>
+</section>

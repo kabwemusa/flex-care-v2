@@ -1,12 +1,10 @@
 <!-- libs/medical/ui/src/lib/dialogs/medical-scheme-dialog/medical-scheme-dialog.html -->
 
-<div class="flex max-h-[90vh] w-[70vw] min-w-[70vw] flex-col overflow-hidden bg-white">
+<div class="flex max-h-[90vh] w-[70vw] min-w-[70vw] flex-col overflow-hidden bg-white rounded-lg">
   <!-- Header -->
   <div class="flex items-center justify-between border-b border-slate-100 px-6 py-4">
     <div class="flex items-center gap-3">
-      <div
-        class="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary"
-      >
+      <div class="flex h-10 w-10 items-center justify-center rounded-sm bg-primary/10 text-primary">
         <mat-icon fontSet="material-symbols-rounded">
           {{ isEditMode ? 'edit_document' : 'add_circle' }}
         </mat-icon>
@@ -53,13 +51,15 @@
       <!-- Step 1: Basic Information -->
       <mat-step [stepControl]="basicInfoForm" label="Basic Info">
         <form [formGroup]="basicInfoForm" class="p-6 space-y-5">
-          <p class="text-sm text-slate-500 mb-4">
-            Define the core attributes of your medical scheme including its market segment and
-            validity period.
-          </p>
-
+          @if (!isEditMode) {
+          <ul class="text-xs text-slate-400 space-y-1 list-disc list-inside my-2.5 pb-2">
+            <li>Each scheme targets a single market segment</li>
+            <li>Keep inactive until plans, benefits and pricing are configured</li>
+            <li>Leave <em>Effective To</em> empty for open-ended schemes</li>
+          </ul>
+          }
           <!-- Scheme Name -->
-          <div class="flex flex-col gap-1.5">
+          <div class="flex flex-col gap-1.5 mt-3">
             <label class="text-sm font-medium text-slate-700">
               Scheme Name <span class="text-red-500">*</span>
             </label>
@@ -80,7 +80,7 @@
             </mat-form-field>
           </div>
 
-          <!-- Market Segment (Multi-select with custom trigger) -->
+          <!-- Market Segment -->
           <div class="flex flex-col gap-1.5">
             <label class="text-sm font-medium text-slate-700">
               Market Segment <span class="text-red-500">*</span>
@@ -90,26 +90,19 @@
               class="w-full minimal-input"
               subscriptSizing="dynamic"
             >
-              <mat-select
-                formControlName="market_segments"
-                placeholder="Select target markets"
-                multiple
-              >
+              <mat-select formControlName="market_segment" placeholder="Select target market">
                 <mat-select-trigger>
-                  <div class="flex items-center gap-2 flex-wrap">
-                    @for (segment of getSelectedSegments(); track segment.value) {
-                    <span
-                      class="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-700"
+                  @if (getSelectedSegment(); as seg) {
+                  <div class="flex items-center gap-2">
+                    <mat-icon
+                      fontSet="material-symbols-rounded"
+                      class="!text-[18px] !text-slate-500"
                     >
-                      <mat-icon
-                        fontSet="material-symbols-rounded"
-                        class="!text-[14px] !w-[14px] !h-[14px]"
-                        >{{ segment.icon }}</mat-icon
-                      >
-                      {{ segment.label }}
-                    </span>
-                    }
+                      {{ seg.icon }}
+                    </mat-icon>
+                    <span>{{ seg.label }}</span>
                   </div>
+                  }
                 </mat-select-trigger>
                 @for (segment of marketSegments; track segment.value) {
                 <mat-option [value]="segment.value">
@@ -125,11 +118,10 @@
                 </mat-option>
                 }
               </mat-select>
-              @if (basicInfoForm.get('market_segments')?.hasError('required')) {
-              <mat-error>Please select at least one market segment</mat-error>
+              @if (basicInfoForm.get('market_segment')?.hasError('required')) {
+              <mat-error>Please select a market segment</mat-error>
               }
             </mat-form-field>
-            <p class="text-xs text-slate-400">Determines the target audience(s) for this scheme</p>
           </div>
 
           <!-- Description -->
@@ -148,7 +140,6 @@
                 class="!resize-none"
               ></textarea>
             </mat-form-field>
-            <p class="text-xs text-slate-400">Displayed on scheme cards and reports</p>
           </div>
 
           <!-- Effective Period -->
@@ -189,7 +180,6 @@
                 <mat-datepicker-toggle matIconSuffix [for]="toPicker"></mat-datepicker-toggle>
                 <mat-datepicker #toPicker></mat-datepicker>
               </mat-form-field>
-              <p class="text-xs text-slate-400">Leave empty for no expiry</p>
             </div>
           </div>
 
@@ -203,31 +193,12 @@
             </div>
             <mat-slide-toggle formControlName="is_active" color="primary"></mat-slide-toggle>
           </div>
-
-          @if (!isEditMode) {
-          <div class="rounded-lg bg-amber-50 border border-amber-100 p-4">
-            <div class="flex gap-3">
-              <mat-icon fontSet="material-symbols-rounded" class="!text-amber-500">info</mat-icon>
-              <div>
-                <p class="text-sm font-medium text-amber-900">Tip</p>
-                <p class="text-xs text-amber-700 mt-1">
-                  Keep the scheme inactive until you've configured all plans, benefits, and pricing.
-                  Activate when ready for enrollments.
-                </p>
-              </div>
-            </div>
-          </div>
-          }
         </form>
       </mat-step>
 
       <!-- Step 2: Eligibility Rules -->
       <mat-step [stepControl]="eligibilityForm" label="Eligibility" [optional]="true">
         <form [formGroup]="eligibilityForm" class="p-6 space-y-5">
-          <p class="text-sm text-slate-500 mb-4">
-            Define who can enroll in this scheme. These rules apply to all plans under this scheme.
-          </p>
-
           <!-- Age Range -->
           <div class="rounded-lg border border-slate-200 p-4">
             <h4 class="text-sm font-medium text-slate-700 mb-3">Age Requirements</h4>
@@ -297,7 +268,6 @@
                 </mat-form-field>
               </div>
             </div>
-            <p class="text-xs text-slate-400 mt-2">Leave empty for no limit</p>
           </div>
           }
 
@@ -319,18 +289,18 @@
                 }
               </mat-select>
             </mat-form-field>
-            <p class="text-xs text-slate-400">Documents required for enrollment</p>
           </div>
+
+          <ul class="text-xs text-slate-400 space-y-1 list-disc list-inside mt-1">
+            <li>Age and group rules apply to all plans under this scheme</li>
+            <li>Leave group size fields empty for no limit</li>
+          </ul>
         </form>
       </mat-step>
 
       <!-- Step 3: Underwriting Rules -->
       <mat-step [stepControl]="underwritingForm" label="Underwriting" [optional]="true">
         <form [formGroup]="underwritingForm" class="p-6 space-y-5">
-          <p class="text-sm text-slate-500 mb-4">
-            Configure medical underwriting rules that apply to all plans under this scheme.
-          </p>
-
           <!-- Medical Declaration -->
           <div
             class="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50/50 p-4"
@@ -380,7 +350,6 @@
                 />
                 <span matTextSuffix class="text-slate-400 text-sm">years+</span>
               </mat-form-field>
-              <p class="text-xs text-slate-400">Members above this age require a medical exam</p>
             </div>
             }
           </div>
@@ -396,24 +365,15 @@
               <input matInput type="number" formControlName="auto_accept_age_limit" min="0" />
               <span matTextSuffix class="text-slate-400 text-sm">years</span>
             </mat-form-field>
-            <p class="text-xs text-slate-400">
-              Members below this age with clean declarations are automatically accepted without
-              underwriter review
-            </p>
           </div>
 
-          <div class="rounded-lg bg-blue-50 border border-blue-100 p-4">
-            <div class="flex gap-3">
-              <mat-icon fontSet="material-symbols-rounded" class="!text-blue-500">info</mat-icon>
-              <div>
-                <p class="text-sm font-medium text-blue-900">About Underwriting</p>
-                <p class="text-xs text-blue-700 mt-1">
-                  These are scheme-level defaults. Individual plans can have stricter requirements,
-                  but cannot relax these rules.
-                </p>
-              </div>
-            </div>
-          </div>
+          <ul class="text-xs text-slate-400 space-y-1 list-disc list-inside mt-1">
+            <li>
+              These are scheme-level defaults &mdash; plans can be stricter but not more lenient
+            </li>
+            <li>Auto-accept applies to members below the age limit with clean declarations</li>
+            <li>Medical exam threshold only applies when the exam toggle is on</li>
+          </ul>
         </form>
       </mat-step>
     </mat-stepper>
@@ -438,35 +398,31 @@
       </div>
     </div>
 
-    <div class="flex items-center gap-3">
+    <div class="flex items-center gap-2">
       <button mat-button (click)="dialogRef.close()" class="!text-slate-600 hover:!bg-slate-200">
         Cancel
       </button>
 
-      <!-- Previous Button -->
       @if (currentStep() > 0) {
-      <button mat-stroked-button (click)="previousStep()" class="!border-slate-300 !text-slate-700">
-        <mat-icon fontSet="material-symbols-rounded">chevron_left</mat-icon>
-        Previous
-      </button>
-      }
-
-      <!-- Next Button (show when not on last step) -->
-      @if (currentStep() < 2) {
       <button
-        mat-flat-button
-        color="primary"
+        mat-icon-button
+        (click)="previousStep()"
+        matTooltip="Previous step"
+        class="!text-slate-600 hover:!bg-slate-200"
+      >
+        <mat-icon fontSet="material-symbols-rounded">chevron_left</mat-icon>
+      </button>
+      } @if (currentStep() < 2) {
+      <button
+        mat-icon-button
         [disabled]="!canProceedToNextStep()"
         (click)="nextStep()"
-        class="!px-6 !rounded-lg"
+        matTooltip="Next step"
+        class="!text-primary"
       >
-        Next
         <mat-icon fontSet="material-symbols-rounded">chevron_right</mat-icon>
       </button>
-      }
-
-      <!-- Save Button (show on last step or in edit mode) -->
-      @if (currentStep() === 2 || isEditMode) {
+      } @if (currentStep() === 2 || isEditMode) {
       <button
         mat-flat-button
         color="primary"

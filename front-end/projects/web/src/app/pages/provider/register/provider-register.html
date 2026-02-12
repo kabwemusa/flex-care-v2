@@ -1,0 +1,397 @@
+<!-- Page Header -->
+<section class="bg-gradient-to-br from-violet-600 to-violet-800 text-white">
+  <div class="max-w-3xl mx-auto px-4 sm:px-6 py-14 text-center">
+    @if (step() < 4) {
+      <h1 class="text-2xl font-bold mb-2">Register Your Facility</h1>
+      <p class="text-violet-200">Join the FlexCare provider network and start serving insured members.</p>
+    }
+  </div>
+</section>
+
+<!-- Progress Steps -->
+@if (step() < 4) {
+  <div class="max-w-3xl mx-auto px-4 sm:px-6 pt-8">
+    <div class="flex items-center justify-center gap-0">
+      @for (s of [1, 2, 3]; track s) {
+        <div class="flex items-center">
+          <div class="flex flex-col items-center">
+            <div [class]="step() >= s
+              ? 'w-8 h-8 rounded-full bg-violet-600 text-white flex items-center justify-center text-sm font-bold'
+              : 'w-8 h-8 rounded-full bg-gray-200 text-gray-500 flex items-center justify-center text-sm font-medium'
+            ">{{ s }}</div>
+            <span class="text-xs text-gray-500 mt-1 whitespace-nowrap">
+              @switch (s) {
+                @case (1) { Facility }
+                @case (2) { Location }
+                @case (3) { Contact }
+              }
+            </span>
+          </div>
+          @if (s < 3) {
+            <div [class]="step() > s ? 'w-16 h-0.5 bg-violet-600 -mt-5' : 'w-16 h-0.5 bg-gray-200 -mt-5'"></div>
+          }
+        </div>
+      }
+    </div>
+  </div>
+}
+
+<div class="max-w-3xl mx-auto px-4 sm:px-6 py-8">
+
+  <!-- ═══ STEP 1: FACILITY INFO ═══ -->
+  @if (step() === 1) {
+    <div class="bg-white rounded-2xl border border-gray-200 p-6">
+      <h2 class="text-lg font-semibold text-gray-900 mb-5">Facility Information</h2>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <!-- Facility Name -->
+        <div class="sm:col-span-2">
+          <label class="block text-xs font-medium text-gray-500 mb-1">Facility Name *</label>
+          <input
+            type="text"
+            [value]="facilityName()"
+            (input)="facilityName.set(inputValue($event))"
+            placeholder="e.g. Lusaka General Hospital"
+            class="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+          />
+        </div>
+
+        <!-- Trading Name -->
+        <div class="sm:col-span-2">
+          <label class="block text-xs font-medium text-gray-500 mb-1">Trading Name (if different)</label>
+          <input
+            type="text"
+            [value]="tradingName()"
+            (input)="tradingName.set(inputValue($event))"
+            placeholder="Optional"
+            class="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+          />
+        </div>
+
+        <!-- Provider Type -->
+        <div>
+          <label class="block text-xs font-medium text-gray-500 mb-1">Facility Type *</label>
+          <select
+            [value]="providerType()"
+            (change)="providerType.set(selectValue($event))"
+            class="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+          >
+            <option value="hospital">Hospital</option>
+            <option value="clinic">Clinic</option>
+            <option value="pharmacy">Pharmacy</option>
+            <option value="lab">Laboratory</option>
+            <option value="optical">Optical Center</option>
+            <option value="dental">Dental Clinic</option>
+            <option value="specialist">Specialist Practice</option>
+          </select>
+        </div>
+
+        <!-- License Number -->
+        <div>
+          <label class="block text-xs font-medium text-gray-500 mb-1">License Number</label>
+          <input
+            type="text"
+            [value]="licenseNumber()"
+            (input)="licenseNumber.set(inputValue($event))"
+            placeholder="Health practice license"
+            class="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+          />
+        </div>
+
+        <!-- Registration Number -->
+        <div>
+          <label class="block text-xs font-medium text-gray-500 mb-1">Business Registration Number</label>
+          <input
+            type="text"
+            [value]="registrationNumber()"
+            (input)="registrationNumber.set(inputValue($event))"
+            placeholder="PACRA registration"
+            class="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+          />
+        </div>
+      </div>
+
+      <button
+        (click)="goToStep(2)"
+        [disabled]="!step1Valid()"
+        [class]="step1Valid()
+          ? 'w-full mt-6 bg-violet-600 text-white font-medium text-sm py-3 rounded-lg hover:bg-violet-700 transition-colors'
+          : 'w-full mt-6 bg-gray-200 text-gray-400 font-medium text-sm py-3 rounded-lg cursor-not-allowed'"
+      >Continue</button>
+    </div>
+  }
+
+  <!-- ═══ STEP 2: LOCATION & CONTACT ═══ -->
+  @if (step() === 2) {
+    <div class="bg-white rounded-2xl border border-gray-200 p-6">
+      <h2 class="text-lg font-semibold text-gray-900 mb-5">Location & Contact</h2>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <!-- Address -->
+        <div class="sm:col-span-2">
+          <label class="block text-xs font-medium text-gray-500 mb-1">Street Address *</label>
+          <input
+            type="text"
+            [value]="address()"
+            (input)="address.set(inputValue($event))"
+            placeholder="Full street address"
+            class="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+          />
+        </div>
+
+        <!-- City -->
+        <div>
+          <label class="block text-xs font-medium text-gray-500 mb-1">City *</label>
+          <input
+            type="text"
+            [value]="city()"
+            (input)="city.set(inputValue($event))"
+            placeholder="e.g. Lusaka"
+            class="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+          />
+        </div>
+
+        <!-- Region -->
+        <div>
+          <label class="block text-xs font-medium text-gray-500 mb-1">Province / Region</label>
+          <input
+            type="text"
+            [value]="region()"
+            (input)="region.set(inputValue($event))"
+            placeholder="e.g. Lusaka Province"
+            class="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+          />
+        </div>
+
+        <!-- Country -->
+        <div>
+          <label class="block text-xs font-medium text-gray-500 mb-1">Country</label>
+          <input
+            type="text"
+            [value]="country()"
+            (input)="country.set(inputValue($event))"
+            class="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+          />
+        </div>
+
+        <!-- Postal Code -->
+        <div>
+          <label class="block text-xs font-medium text-gray-500 mb-1">Postal Code</label>
+          <input
+            type="text"
+            [value]="postalCode()"
+            (input)="postalCode.set(inputValue($event))"
+            placeholder="Optional"
+            class="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+          />
+        </div>
+
+        <!-- Phone -->
+        <div>
+          <label class="block text-xs font-medium text-gray-500 mb-1">Phone *</label>
+          <input
+            type="tel"
+            [value]="phone()"
+            (input)="phone.set(inputValue($event))"
+            placeholder="+260 123 456 789"
+            class="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+          />
+        </div>
+
+        <!-- Email -->
+        <div>
+          <label class="block text-xs font-medium text-gray-500 mb-1">Email *</label>
+          <input
+            type="email"
+            [value]="email()"
+            (input)="email.set(inputValue($event))"
+            placeholder="facility@example.com"
+            class="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+          />
+        </div>
+
+        <!-- Website -->
+        <div class="sm:col-span-2">
+          <label class="block text-xs font-medium text-gray-500 mb-1">Website</label>
+          <input
+            type="url"
+            [value]="website()"
+            (input)="website.set(inputValue($event))"
+            placeholder="https://www.yourfacility.com"
+            class="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+          />
+        </div>
+      </div>
+
+      <div class="flex gap-3 mt-6">
+        <button (click)="goToStep(1)" class="flex-1 border border-gray-200 text-gray-600 font-medium text-sm py-2.5 rounded-lg hover:bg-gray-50 transition-colors">Back</button>
+        <button
+          (click)="goToStep(3)"
+          [disabled]="!step2Valid()"
+          [class]="step2Valid()
+            ? 'flex-1 bg-violet-600 text-white font-medium text-sm py-2.5 rounded-lg hover:bg-violet-700 transition-colors'
+            : 'flex-1 bg-gray-200 text-gray-400 font-medium text-sm py-2.5 rounded-lg cursor-not-allowed'"
+        >Continue</button>
+      </div>
+    </div>
+  }
+
+  <!-- ═══ STEP 3: PRIMARY CONTACT & SERVICES ═══ -->
+  @if (step() === 3) {
+    <div class="bg-white rounded-2xl border border-gray-200 p-6 mb-4">
+      <h2 class="text-lg font-semibold text-gray-900 mb-5">Primary Contact Person</h2>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div class="sm:col-span-2">
+          <label class="block text-xs font-medium text-gray-500 mb-1">Contact Name *</label>
+          <input
+            type="text"
+            [value]="contactName()"
+            (input)="contactName.set(inputValue($event))"
+            placeholder="Full name"
+            class="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+          />
+        </div>
+
+        <div>
+          <label class="block text-xs font-medium text-gray-500 mb-1">Contact Phone</label>
+          <input
+            type="tel"
+            [value]="contactPhone()"
+            (input)="contactPhone.set(inputValue($event))"
+            placeholder="+260 123 456 789"
+            class="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+          />
+        </div>
+
+        <div>
+          <label class="block text-xs font-medium text-gray-500 mb-1">Contact Email *</label>
+          <input
+            type="email"
+            [value]="contactEmail()"
+            (input)="contactEmail.set(inputValue($event))"
+            placeholder="contact@facility.com"
+            class="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+          />
+        </div>
+      </div>
+    </div>
+
+    <!-- Services -->
+    <div class="bg-white rounded-2xl border border-gray-200 p-6 mb-4">
+      <h2 class="text-sm font-semibold text-gray-800 mb-3">Services Offered (select all that apply)</h2>
+      <div class="flex flex-wrap gap-2">
+        @for (svc of ['Outpatient', 'Inpatient', 'Maternity', 'Emergency', 'Surgery', 'Lab Tests', 'Imaging', 'Pharmacy', 'Dental', 'Optical', 'Physiotherapy']; track svc) {
+          <button
+            (click)="toggleService(svc)"
+            [class]="services().includes(svc)
+              ? 'px-3 py-1.5 text-xs font-medium rounded-full bg-violet-100 text-violet-700 border border-violet-200'
+              : 'px-3 py-1.5 text-xs font-medium rounded-full bg-gray-100 text-gray-600 border border-gray-200 hover:bg-gray-200'"
+          >{{ svc }}</button>
+        }
+      </div>
+    </div>
+
+    <!-- Notes -->
+    <div class="bg-white rounded-2xl border border-gray-200 p-6 mb-4">
+      <label class="block text-sm font-semibold text-gray-800 mb-2">Additional Notes</label>
+      <textarea
+        [value]="notes()"
+        (input)="notes.set(inputValue($event))"
+        rows="3"
+        placeholder="Any additional information about your facility..."
+        class="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent resize-none"
+      ></textarea>
+    </div>
+
+    <!-- Terms -->
+    <div class="bg-gray-50 rounded-xl border border-gray-200 p-4 mb-4">
+      <p class="text-xs text-gray-600 leading-relaxed">
+        By submitting this registration, you confirm that your facility is properly licensed to operate
+        and that the information provided is accurate. Your application will be reviewed by our network
+        team. Once approved, you will receive API credentials to access the FlexCare provider portal.
+      </p>
+      <label class="flex items-start gap-2 mt-3 cursor-pointer">
+        <input
+          type="checkbox"
+          [checked]="acceptedTerms()"
+          (change)="acceptedTerms.set(!acceptedTerms())"
+          class="mt-0.5 accent-violet-600"
+        />
+        <span class="text-xs text-gray-700 font-medium">I confirm the information is accurate and accept the Terms & Conditions *</span>
+      </label>
+    </div>
+
+    <!-- Error -->
+    @if (error()) {
+      <div class="bg-red-50 border border-red-200 rounded-lg px-4 py-3 mb-4">
+        <p class="text-sm text-red-600">{{ error() }}</p>
+      </div>
+    }
+
+    <!-- Actions -->
+    <div class="flex gap-3">
+      <button (click)="goToStep(2)" class="flex-1 border border-gray-200 text-gray-600 font-medium text-sm py-2.5 rounded-lg hover:bg-gray-50 transition-colors">Back</button>
+      <button
+        (click)="submit()"
+        [disabled]="!step3Valid() || loading()"
+        [class]="step3Valid() && !loading()
+          ? 'flex-1 bg-violet-600 text-white font-medium text-sm py-2.5 rounded-lg hover:bg-violet-700 transition-colors'
+          : 'flex-1 bg-gray-200 text-gray-400 font-medium text-sm py-2.5 rounded-lg cursor-not-allowed'"
+      >
+        @if (loading()) {
+          <span class="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></span>
+        }
+        Submit Registration
+      </button>
+    </div>
+  }
+
+  <!-- ═══ STEP 4: CONFIRMATION ═══ -->
+  @if (step() === 4 && result()) {
+    <div class="text-center">
+      <div class="w-20 h-20 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-5">
+        <span class="material-symbols-rounded text-green-600" style="font-size: 40px">check_circle</span>
+      </div>
+
+      <h1 class="text-2xl font-bold text-gray-900 mb-2">Registration Submitted!</h1>
+      <p class="text-gray-500 mb-6">Your application is now under review by our network team.</p>
+
+      <!-- Provider Code -->
+      <div class="bg-violet-50 border border-violet-200 rounded-xl p-5 mb-5 max-w-md mx-auto">
+        <p class="text-xs text-violet-600 font-medium uppercase tracking-wide mb-1">Provider Reference</p>
+        <p class="text-xl font-bold text-violet-800">{{ result()!.provider_code }}</p>
+        <p class="text-xs text-violet-600 mt-1">{{ result()!.name }}</p>
+      </div>
+
+      <!-- Status -->
+      <div class="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-5 max-w-md mx-auto">
+        <div class="flex items-center justify-center gap-2">
+          <span class="material-symbols-rounded text-amber-600" style="font-size: 20px">schedule</span>
+          <p class="text-sm font-medium text-amber-700">Status: Pending Review</p>
+        </div>
+      </div>
+
+      <!-- What's Next -->
+      <div class="bg-white border border-gray-200 rounded-xl p-5 mb-6 max-w-md mx-auto text-left">
+        <h3 class="text-sm font-semibold text-gray-800 mb-3">What happens next?</h3>
+        <div class="flex flex-col gap-3">
+          <div class="flex items-start gap-3">
+            <div class="w-6 h-6 rounded-full bg-violet-100 text-violet-700 flex items-center justify-center text-xs font-bold flex-shrink-0">1</div>
+            <p class="text-xs text-gray-600">Our network team will review your registration</p>
+          </div>
+          <div class="flex items-start gap-3">
+            <div class="w-6 h-6 rounded-full bg-violet-100 text-violet-700 flex items-center justify-center text-xs font-bold flex-shrink-0">2</div>
+            <p class="text-xs text-gray-600">We may contact you for additional information or documentation</p>
+          </div>
+          <div class="flex items-start gap-3">
+            <div class="w-6 h-6 rounded-full bg-violet-100 text-violet-700 flex items-center justify-center text-xs font-bold flex-shrink-0">3</div>
+            <p class="text-xs text-gray-600">Once approved, you'll receive API credentials via email to access the provider portal</p>
+          </div>
+        </div>
+      </div>
+
+      <a routerLink="/" class="inline-block bg-violet-600 text-white font-medium text-sm px-8 py-2.5 rounded-lg hover:bg-violet-700 transition-colors">Done</a>
+    </div>
+  }
+</div>

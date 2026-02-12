@@ -2,11 +2,12 @@
 
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { computed, inject, Injectable, signal } from '@angular/core';
-import { tap } from 'rxjs';
+import { Observable, tap } from 'rxjs';
 import {
   Application,
   ApplicationMember,
   ApplicationAddon,
+  PlanAddon,
   Policy,
   ApplicationStats,
 } from '../models/medical-interfaces';
@@ -48,7 +49,7 @@ interface ApplicationState {
   stats: ApplicationStats | null;
   loading: boolean;
   saving: boolean;
-  planAddons: any[];
+  planAddons: PlanAddon[];
   loadingPlanAddons: boolean;
   pagination: PaginationMeta | null;
   members: ApplicationMember[];
@@ -566,26 +567,31 @@ export class ApplicationStore {
   /**
    * Load available plan addons for a given plan.
    * Updates state with configured addons (mandatory/optional/included).
+   * Returns Observable so callers can chain logic (e.g. auto-add mandatory addons).
    */
-  loadPlanAddons(planId: string) {
+  loadPlanAddons(planId: string): Observable<ApiResponse<PlanAddon[]>> {
     this.state.update((s) => ({ ...s, loadingPlanAddons: true }));
 
-    this.http.get<ApiResponse<any[]>>(`/api/v1/medical/plans/${planId}/addons`).subscribe({
-      next: (res) => {
-        this.state.update((s) => ({
-          ...s,
-          planAddons: res.data || [],
-          loadingPlanAddons: false,
-        }));
-      },
-      error: () => {
-        this.state.update((s) => ({
-          ...s,
-          planAddons: [],
-          loadingPlanAddons: false,
-        }));
-      },
-    });
+    const obs = this.http.get<ApiResponse<PlanAddon[]>>(`/api/v1/medical/plans/${planId}/addons`).pipe(
+      tap({
+        next: (res) => {
+          this.state.update((s) => ({
+            ...s,
+            planAddons: res.data || [],
+            loadingPlanAddons: false,
+          }));
+        },
+        error: () => {
+          this.state.update((s) => ({
+            ...s,
+            planAddons: [],
+            loadingPlanAddons: false,
+          }));
+        },
+      })
+    );
+
+    return obs;
   }
 
   /**

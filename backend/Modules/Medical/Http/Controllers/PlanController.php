@@ -94,7 +94,7 @@ class PlanController extends Controller
         try {
             $plan = Plan::with([
                 'scheme',
-                'planBenefits.benefit.category',
+                // 'planBenefits.benefit.category',
                 'planAddons.addon',
                 'rateCards' => fn($q) => $q->latest('effective_from'),
             ])
@@ -108,7 +108,7 @@ class PlanController extends Controller
         } catch (ModelNotFoundException $e) {
             return $this->error('Plan not found', 404);
         } catch (Throwable $e) {
-            return $this->error('Failed to retrieve plan details', 500);
+            return $this->error('Failed to retrieve plan details'.$e->getMessage(), 500);
         }
     }
 

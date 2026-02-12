@@ -16,9 +16,9 @@ class BenefitRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'category_id' => 'required|exists:med_benefit_categories,id',
             'parent_id' => 'nullable|exists:med_benefits,id',
             'name' => 'required|string|max:255',
+            'display_name' => 'nullable|string|max:255',
             'description' => 'nullable|string|max:1000',
             'benefit_type' => [
                 'required',

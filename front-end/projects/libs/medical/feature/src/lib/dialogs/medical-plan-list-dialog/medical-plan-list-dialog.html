@@ -1,11 +1,11 @@
 <!-- libs/medical/ui/src/lib/dialogs/medical-plan-dialog/medical-plan-dialog.html -->
 
-<div class="flex max-h-[90vh] w-[70vw] min-w-[70vw] flex-col overflow-hidden bg-white">
+<div class="flex max-h-[90vh] w-[70vw] min-w-[70vw] flex-col overflow-hidden rounded-lg bg-white">
   <!-- Header -->
   <div class="flex items-center justify-between border-b border-slate-100 px-6 py-4">
     <div class="flex items-center gap-3">
       <div
-        class="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary"
+        class="flex h-10 w-10 items-center justify-center rounded-sm bg-primary/10 text-primary"
       >
         <mat-icon fontSet="material-symbols-rounded">
           {{ isEditMode ? 'edit_document' : 'add_circle' }}
@@ -43,6 +43,14 @@
       (selectionChange)="onStepChange($event.selectedIndex)"
       class="!bg-transparent"
     >
+      <ng-template matStepperIcon="edit">
+        <mat-icon fontSet="material-symbols-rounded" class="!text-green-600">check</mat-icon>
+      </ng-template>
+
+      <ng-template matStepperIcon="done">
+        <mat-icon fontSet="material-symbols-rounded" class="!text-green-600">check</mat-icon>
+      </ng-template>
+
       <!-- Step 1: Basic Information -->
       <mat-step [stepControl]="basicInfoForm" label="Basic Info">
         <form [formGroup]="basicInfoForm" class="p-6 space-y-5">
@@ -56,15 +64,15 @@
             <label class="text-sm font-medium text-slate-700">
               Scheme <span class="text-red-500">*</span>
             </label>
-            <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+            <mat-form-field appearance="fill" class="w-full minimal-input" subscriptSizing="dynamic">
               <mat-select formControlName="scheme_id" placeholder="Select a scheme">
+                <mat-select-trigger>
+                  {{ getSelectedSchemeLabel() }}
+                </mat-select-trigger>
                 @for (scheme of schemeStore.schemes(); track scheme.id) {
                 <mat-option [value]="scheme.id">{{ scheme.name }}</mat-option>
                 }
               </mat-select>
-              <mat-icon matSuffix fontSet="material-symbols-rounded" class="!text-slate-400"
-                >category</mat-icon
-              >
               @if (basicInfoForm.get('scheme_id')?.hasError('required')) {
               <mat-error>Please select a scheme</mat-error>
               }
@@ -77,7 +85,7 @@
             <label class="text-sm font-medium text-slate-700">
               Plan Name <span class="text-red-500">*</span>
             </label>
-            <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+            <mat-form-field appearance="fill" class="w-full minimal-input" subscriptSizing="dynamic">
               <input matInput formControlName="name" placeholder="e.g. Gold Plus Family" />
               <mat-icon matSuffix fontSet="material-symbols-rounded" class="!text-slate-400"
                 >badge</mat-icon
@@ -96,8 +104,11 @@
               <label class="text-sm font-medium text-slate-700">
                 Plan Type <span class="text-red-500">*</span>
               </label>
-              <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+              <mat-form-field appearance="fill" class="w-full minimal-input" subscriptSizing="dynamic">
                 <mat-select formControlName="plan_type" placeholder="Select type">
+                  <mat-select-trigger>
+                    {{ getSelectedPlanTypeLabel() }}
+                  </mat-select-trigger>
                   @for (type of planTypes; track type.value) {
                   <mat-option [value]="type.value">
                     <div class="flex flex-col">
@@ -112,8 +123,11 @@
 
             <div class="flex flex-col gap-1.5">
               <label class="text-sm font-medium text-slate-700">Network Type</label>
-              <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+              <mat-form-field appearance="fill" class="w-full minimal-input" subscriptSizing="dynamic">
                 <mat-select formControlName="network_type" placeholder="Select network">
+                  <mat-select-trigger>
+                    {{ getSelectedNetworkTypeLabel() }}
+                  </mat-select-trigger>
                   @for (network of networkTypes; track network.value) {
                   <mat-option [value]="network.value">
                     <div class="flex flex-col">
@@ -130,8 +144,11 @@
           <!-- Tier Level -->
           <div class="flex flex-col gap-1.5">
             <label class="text-sm font-medium text-slate-700">Tier Level</label>
-            <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+            <mat-form-field appearance="fill" class="w-full minimal-input" subscriptSizing="dynamic">
               <mat-select formControlName="tier_level" placeholder="Select tier">
+                <mat-select-trigger>
+                  {{ getSelectedTierLabel() }}
+                </mat-select-trigger>
                 @for (tier of tierLevels; track tier.value) {
                 <mat-option [value]="tier.value">
                   <div class="flex items-center gap-2">
@@ -157,7 +174,7 @@
           <!-- Description -->
           <div class="flex flex-col gap-1.5">
             <label class="text-sm font-medium text-slate-700">Description</label>
-            <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+            <mat-form-field appearance="fill" class="w-full minimal-input" subscriptSizing="dynamic">
               <textarea
                 matInput
                 formControlName="description"
@@ -203,7 +220,7 @@
           <!-- Allowed Member Types -->
           <div class="flex flex-col gap-1.5">
             <label class="text-sm font-medium text-slate-700">Allowed Member Types</label>
-            <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+            <mat-form-field appearance="fill" class="w-full minimal-input" subscriptSizing="dynamic">
               <mat-select
                 formControlName="allowed_member_types"
                 multiple
@@ -220,7 +237,7 @@
           <!-- Max Dependents -->
           <div class="flex flex-col gap-1.5">
             <label class="text-sm font-medium text-slate-700">Maximum Dependents</label>
-            <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+            <mat-form-field appearance="fill" class="w-full minimal-input" subscriptSizing="dynamic">
               <input matInput type="number" formControlName="max_dependents" min="0" max="20" />
               <mat-icon matSuffix fontSet="material-symbols-rounded" class="!text-slate-400"
                 >group</mat-icon
@@ -233,7 +250,7 @@
           <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div class="flex flex-col gap-1.5">
               <label class="text-sm font-medium text-slate-700">Child Age Limit</label>
-              <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+              <mat-form-field appearance="fill" class="w-full minimal-input" subscriptSizing="dynamic">
                 <input matInput type="number" formControlName="child_age_limit" min="0" max="30" />
                 <span matTextSuffix class="text-slate-400 text-sm">years</span>
               </mat-form-field>
@@ -241,7 +258,7 @@
 
             <div class="flex flex-col gap-1.5">
               <label class="text-sm font-medium text-slate-700">Student Age Limit</label>
-              <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+              <mat-form-field appearance="fill" class="w-full minimal-input" subscriptSizing="dynamic">
                 <input
                   matInput
                   type="number"
@@ -255,7 +272,7 @@
 
             <div class="flex flex-col gap-1.5">
               <label class="text-sm font-medium text-slate-700">Parent Age Limit</label>
-              <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+              <mat-form-field appearance="fill" class="w-full minimal-input" subscriptSizing="dynamic">
                 <input
                   matInput
                   type="number"
@@ -282,7 +299,7 @@
             @for (period of waitingPeriodTypes; track period.value) {
             <div class="flex flex-col gap-1.5">
               <label class="text-sm font-medium text-slate-700">{{ period.label }}</label>
-              <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+              <mat-form-field appearance="fill" class="w-full minimal-input" subscriptSizing="dynamic">
                 <input matInput type="number" [formControlName]="period.value" min="0" />
                 <span matTextSuffix class="text-slate-400 text-sm">days</span>
               </mat-form-field>
@@ -316,7 +333,7 @@
           <!-- Copay Type -->
           <div class="flex flex-col gap-1.5">
             <label class="text-sm font-medium text-slate-700">Copay Type</label>
-            <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+            <mat-form-field appearance="fill" class="w-full minimal-input" subscriptSizing="dynamic">
               <mat-select formControlName="copay_type">
                 <mat-option value="fixed">Fixed Amount</mat-option>
                 <mat-option value="percentage">Percentage</mat-option>
@@ -329,7 +346,7 @@
             @if (costSharingForm.get('copay_type')?.value === 'fixed') {
             <div class="flex flex-col gap-1.5">
               <label class="text-sm font-medium text-slate-700">Copay Amount</label>
-              <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+              <mat-form-field appearance="fill" class="w-full minimal-input" subscriptSizing="dynamic">
                 <span matTextPrefix class="text-slate-400 mr-1">ZMW</span>
                 <input matInput type="number" formControlName="copay_amount" min="0" />
               </mat-form-field>
@@ -337,7 +354,7 @@
             } @else {
             <div class="flex flex-col gap-1.5">
               <label class="text-sm font-medium text-slate-700">Copay Percentage</label>
-              <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+              <mat-form-field appearance="fill" class="w-full minimal-input" subscriptSizing="dynamic">
                 <input
                   matInput
                   type="number"
@@ -352,7 +369,7 @@
 
             <div class="flex flex-col gap-1.5">
               <label class="text-sm font-medium text-slate-700">Deductible</label>
-              <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+              <mat-form-field appearance="fill" class="w-full minimal-input" subscriptSizing="dynamic">
                 <span matTextPrefix class="text-slate-400 mr-1">ZMW</span>
                 <input matInput type="number" formControlName="deductible" min="0" />
               </mat-form-field>
@@ -363,7 +380,7 @@
           <!-- Out of Pocket Max -->
           <div class="flex flex-col gap-1.5">
             <label class="text-sm font-medium text-slate-700">Out-of-Pocket Maximum</label>
-            <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+            <mat-form-field appearance="fill" class="w-full minimal-input" subscriptSizing="dynamic">
               <span matTextPrefix class="text-slate-400 mr-1">ZMW</span>
               <input matInput type="number" formControlName="out_of_pocket_max" min="0" />
             </mat-form-field>
@@ -393,35 +410,31 @@
       </div>
     </div>
 
-    <div class="flex items-center gap-3">
+    <div class="flex items-center gap-2">
       <button mat-button (click)="dialogRef.close()" class="!text-slate-600 hover:!bg-slate-200">
         Cancel
       </button>
 
-      <!-- Previous Button -->
       @if (currentStep() > 0) {
-      <button mat-stroked-button (click)="previousStep()" class="!border-slate-300 !text-slate-700">
-        <mat-icon fontSet="material-symbols-rounded">chevron_left</mat-icon>
-        Previous
-      </button>
-      }
-
-      <!-- Next Button (show when not on last step) -->
-      @if (currentStep() < 3) {
       <button
-        mat-flat-button
-        color="primary"
+        mat-icon-button
+        (click)="previousStep()"
+        matTooltip="Previous step"
+        class="!text-slate-600 hover:!bg-slate-200"
+      >
+        <mat-icon fontSet="material-symbols-rounded">chevron_left</mat-icon>
+      </button>
+      } @if (currentStep() < 3) {
+      <button
+        mat-icon-button
         [disabled]="!canProceedToNextStep()"
         (click)="nextStep()"
-        class="!px-6 !rounded-lg"
+        matTooltip="Next step"
+        class="!text-primary"
       >
-        Next
         <mat-icon fontSet="material-symbols-rounded">chevron_right</mat-icon>
       </button>
-      }
-
-      <!-- Save Button (show on last step or in edit mode) -->
-      @if (currentStep() === 3 || isEditMode) {
+      } @if (currentStep() === 3 || isEditMode) {
       <button
         mat-flat-button
         color="primary"

@@ -21,7 +21,6 @@ interface DialogData {
   existingBenefitIds: string[];
   parentPlanBenefitId?: string;
   parentBenefitId?: string;
-  categoryId?: string;
 }
 
 @Component({
@@ -48,9 +47,12 @@ export class MedicalAddPlanBenefitsDialog implements OnInit {
   readonly store = inject(BenefitStore);
   private readonly feedback = inject(FeedbackService);
 
+  // Constants
+  benefitTypes = BENEFIT_TYPES;
+
   // State
   searchQuery = signal('');
-  selectedCategory = signal<string>(this.data.categoryId || '');
+  selectedType = signal<string>('');
   isSaving = signal(false);
 
   // Selection - using signal for proper reactivity
@@ -71,10 +73,10 @@ export class MedicalAddPlanBenefitsDialog implements OnInit {
       benefits = benefits.filter((b) => !b.parent_id);
     }
 
-    // Filter by category
-    const categoryId = this.selectedCategory();
-    if (categoryId) {
-      benefits = benefits.filter((b) => b.category_id === categoryId);
+    // Filter by benefit type
+    const typeFilter = this.selectedType();
+    if (typeFilter) {
+      benefits = benefits.filter((b) => b.benefit_type === typeFilter);
     }
 
     // Filter by search
@@ -93,7 +95,6 @@ export class MedicalAddPlanBenefitsDialog implements OnInit {
   isAddingSubBenefits = computed(() => !!this.data.parentPlanBenefitId);
 
   ngOnInit() {
-    this.store.loadCategories();
     this.store.loadBenefits();
   }
 
@@ -102,16 +103,16 @@ export class MedicalAddPlanBenefitsDialog implements OnInit {
     this.searchQuery.set(value);
   }
 
-  onCategoryChange(categoryId: string) {
-    this.selectedCategory.set(categoryId);
+  onTypeChange(type: string) {
+    this.selectedType.set(type);
   }
 
   getBenefitTypeIcon(value: string): string {
     return BENEFIT_TYPES.find((t) => t.value === value)?.icon || 'medical_services';
   }
 
-  getCategoryName(categoryId: string): string {
-    return this.store.categories().find((c) => c.id === categoryId)?.name || '';
+  getBenefitTypeLabel(value: string): string {
+    return getLabelByValue(BENEFIT_TYPES, value);
   }
 
   toggleSelection(benefitId: string, event?: MatCheckboxChange) {

@@ -1,0 +1,35 @@
+<!-- Slider Container -->
+<div
+  class="overflow-hidden relative"
+  (touchstart)="onTouchStart($event)"
+  (touchend)="onTouchEnd($event)"
+>
+  <!-- Track -->
+  <div class="slider-track" [style.transform]="getTransform()">
+    <ng-content></ng-content>
+  </div>
+
+  <!-- Arrows -->
+  @if (showArrows && totalSlides() > 1) {
+    <button class="slider-arrow prev" (click)="prev()" aria-label="Previous slide">
+      <span class="material-symbols-rounded" style="font-size: 20px">chevron_left</span>
+    </button>
+    <button class="slider-arrow next" (click)="next()" aria-label="Next slide">
+      <span class="material-symbols-rounded" style="font-size: 20px">chevron_right</span>
+    </button>
+  }
+</div>
+
+<!-- Dots -->
+@if (showDots && totalSlides() > 1) {
+  <div class="flex items-center justify-center gap-2 mt-6">
+    @for (dot of [].constructor(totalSlides()); track $index) {
+      <button
+        class="slider-dot"
+        [class.active]="$index === activeIndex()"
+        (click)="goTo($index)"
+        [attr.aria-label]="'Go to slide ' + ($index + 1)"
+      ></button>
+    }
+  </div>
+}

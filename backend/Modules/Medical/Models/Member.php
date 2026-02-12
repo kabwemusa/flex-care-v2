@@ -125,7 +125,7 @@ class Member extends BaseModel
         $year = date('Y');
         
         $lastNumber = static::where('member_number', 'like', "{$prefix}{$year}-%")
-            ->orderByRaw('CAST(SUBSTRING(member_number, -6) AS UNSIGNED) DESC')
+            ->orderByRaw('CAST(RIGHT(member_number, 6) AS INTEGER) DESC')
             ->value('member_number');
 
         if ($lastNumber) {

@@ -4,10 +4,15 @@ import { HttpClient } from '@angular/common/http';
 import { computed, inject, Injectable, signal } from '@angular/core';
 import { tap } from 'rxjs';
 import { ApiResponse } from '../models/api-reponse';
-import { Benefit, BenefitCategory, PlanBenefit } from '../models/medical-interfaces';
+import { Benefit, PlanBenefit } from '../models/medical-interfaces';
+
+interface BenefitTypeGroup {
+  benefit_type: string;
+  label: string;
+  benefits: Benefit[];
+}
 
 interface BenefitState {
-  categories: BenefitCategory[];
   benefits: Benefit[];
   planBenefits: PlanBenefit[];
   selected: Benefit | null;
@@ -21,7 +26,6 @@ export class BenefitStore {
   private readonly apiUrl = '/api/v1/medical';
 
   private readonly state = signal<BenefitState>({
-    categories: [],
     benefits: [],
     planBenefits: [],
     selected: null,
@@ -30,66 +34,38 @@ export class BenefitStore {
   });
 
   // Selectors
-  readonly categories = computed(() => this.state().categories);
   readonly benefits = computed(() => this.state().benefits);
   readonly planBenefits = computed(() => this.state().planBenefits);
   readonly selectedBenefit = computed(() => this.state().selected);
   readonly isLoading = computed(() => this.state().loading);
   readonly isSaving = computed(() => this.state().saving);
 
-  // Computed
+  // Computed - group benefits by benefit_type
   readonly benefitTree = computed(() => {
-    const cats = this.categories();
     const bens = this.benefits();
-    return cats.map((cat) => ({
-      ...cat,
-      benefits: bens.filter((b) => b.category_id === cat.id && !b.parent_id),
+    const rootBenefits = bens.filter((b) => !b.parent_id);
+    const grouped = new Map<string, Benefit[]>();
+
+    for (const b of rootBenefits) {
+      const type = b.benefit_type;
+      if (!grouped.has(type)) grouped.set(type, []);
+      grouped.get(type)!.push(b);
+    }
+
+    return Array.from(grouped.entries()).map(([type, benefits]) => ({
+      benefit_type: type,
+      label: benefits[0]?.benefit_type_label || type,
+      benefits,
     }));
   });
 
   // =========================================================================
-  // CATEGORIES
-  // =========================================================================
-  loadCategories() {
-    this.state.update((s) => ({ ...s, loading: true }));
-
-    this.http.get<ApiResponse<BenefitCategory[]>>(`${this.apiUrl}/benefit-categories`).subscribe({
-      next: (res) =>
-        this.state.update((s) => ({
-          ...s,
-          categories: res.data,
-          loading: false,
-        })),
-      error: () => this.state.update((s) => ({ ...s, loading: false })),
-    });
-  }
-
-  createCategory(category: Partial<BenefitCategory>) {
-    this.state.update((s) => ({ ...s, saving: true }));
-
-    return this.http
-      .post<ApiResponse<BenefitCategory>>(`${this.apiUrl}/benefit-categories`, category)
-      .pipe(
-        tap({
-          next: (res) =>
-            this.state.update((s) => ({
-              ...s,
-              categories: [...s.categories, res.data],
-              saving: false,
-            })),
-          error: () => this.state.update((s) => ({ ...s, saving: false })),
-        })
-      );
-  }
-
-  // =========================================================================
   // BENEFITS CATALOG
   // =========================================================================
-  loadBenefits(params?: { category_id?: string; benefit_type?: string }) {
+  loadBenefits(params?: { benefit_type?: string }) {
     this.state.update((s) => ({ ...s, loading: true }));
 
     const queryParams = new URLSearchParams();
-    if (params?.category_id) queryParams.set('category_id', params.category_id);
     if (params?.benefit_type) queryParams.set('benefit_type', params.benefit_type);
 
     const url = queryParams.toString()
@@ -110,13 +86,16 @@ export class BenefitStore {
   loadBenefitTree() {
     this.state.update((s) => ({ ...s, loading: true }));
 
-    this.http.get<ApiResponse<BenefitCategory[]>>(`${this.apiUrl}/benefits/tree`).subscribe({
-      next: (res) =>
+    this.http.get<ApiResponse<BenefitTypeGroup[]>>(`${this.apiUrl}/benefits/tree`).subscribe({
+      next: (res) => {
+        // Flatten the tree groups into a flat benefits list
+        const allBenefits = res.data.flatMap((group) => group.benefits as Benefit[]);
         this.state.update((s) => ({
           ...s,
-          categories: res.data,
+          benefits: allBenefits,
           loading: false,
-        })),
+        }));
+      },
       error: () => this.state.update((s) => ({ ...s, loading: false })),
     });
   }

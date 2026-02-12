@@ -1,6 +1,6 @@
 <!-- libs/medical/ui/src/lib/dialogs/add-benefits-to-plan-dialog/add-benefits-to-plan-dialog.component.html -->
 
-<div class="flex max-h-[90vh] w-full flex-col overflow-hidden bg-white sm:w-[70vw]">
+<div class="flex max-h-[90vh] w-full flex-col overflow-hidden rounded-lg bg-white sm:w-[70vw]">
     <!-- Header -->
     <div class="flex items-center justify-between border-b border-slate-100 px-6 py-4">
       <div class="flex items-center gap-3">
@@ -39,24 +39,23 @@
         />
       </div>
   
-      <!-- Category Filter -->
+      <!-- Type Filter -->
       @if (!isAddingSubBenefits()) {
         <mat-form-field appearance="outline" subscriptSizing="dynamic" class="!w-48">
           <mat-select
-            placeholder="All Categories"
-            [value]="selectedCategory()"
-            (selectionChange)="onCategoryChange($event.value)"
+            placeholder="All Types"
+            [value]="selectedType()"
+            (selectionChange)="onTypeChange($event.value)"
           >
-            <mat-option value="">All Categories</mat-option>
-            @for (category of store.categories(); track category.id) {
-              <mat-option [value]="category.id">
+            <mat-option value="">All Types</mat-option>
+            @for (type of benefitTypes; track type.value) {
+              <mat-option [value]="type.value">
                 <div class="flex items-center gap-2">
                   <mat-icon
                     fontSet="material-symbols-rounded"
-                    [style.color]="category.color"
                     class="!text-[18px]"
-                  >{{ category.icon || 'folder' }}</mat-icon>
-                  <span>{{ category.name }}</span>
+                  >{{ type.icon }}</mat-icon>
+                  <span>{{ type.label }}</span>
                 </div>
               </mat-option>
             }
@@ -90,7 +89,7 @@
           </div>
           <h4 class="text-sm font-medium text-slate-900">No benefits available</h4>
           <p class="mt-1 text-sm text-slate-500 max-w-sm">
-            @if (searchQuery() || selectedCategory()) {
+            @if (searchQuery() || selectedType()) {
               No benefits match your filters. Try adjusting your search criteria.
             } @else if (data.existingBenefitIds.length > 0) {
               All available benefits have already been added to this plan.
@@ -146,7 +145,7 @@
                 <div class="flex items-center gap-2 mt-0.5">
                   <span class="text-xs text-slate-500">{{ benefit.code }}</span>
                   @if (!isAddingSubBenefits()) {
-                    <span class="text-xs text-slate-400">• {{ getCategoryName(benefit.category_id) }}</span>
+                    <span class="text-xs text-slate-400">• {{ getBenefitTypeLabel(benefit.benefit_type) }}</span>
                   }
                 </div>
               </div>
