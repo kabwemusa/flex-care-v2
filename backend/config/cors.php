@@ -1,7 +1,7 @@
 <?php
 // backend/config/cors.php
  return [
-        'paths' => ['api/*', 'sanctum/csrf-cookie'],
+        'paths' => ['api/*', 'sanctum/csrf-cookie', 'v1/*'],
         'allowed_methods' => ['*'],
         
         // 1. Allow all origins temporarily
