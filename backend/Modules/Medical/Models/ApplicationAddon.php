@@ -15,7 +15,6 @@ class ApplicationAddon extends Model
     protected $fillable = [
         'application_id',
         'addon_id',
-        'addon_rate_id',
         'premium',
         'is_active',
     ];

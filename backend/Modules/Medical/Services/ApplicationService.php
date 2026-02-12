@@ -230,7 +230,7 @@ class ApplicationService
             ApplicationAddon::create([
                 'application_id' => $application->id,
                 'addon_id' => $addonData['addon_id'],
-                'addon_rate_id' => $addonData['addon_rate_id'] ?? null,
+                // 'addon_rate_id' => $addonData['addon_rate_id'] ?? null,
                 'premium' => $addonData['premium'] ?? 0,
             ]);
         }
@@ -679,7 +679,7 @@ class ApplicationService
                 PolicyAddon::create([
                     'policy_id' => $policy->id,
                     'addon_id' => $appAddon->addon_id,
-                    'addon_rate_id' => $appAddon->addon_rate_id,
+                    // 'addon_rate_id' => $appAddon->addon_rate_id,
                     'premium' => $appAddon->premium,
                     'is_active' => true,
                 ]);
@@ -957,7 +957,7 @@ class ApplicationService
                 ApplicationAddon::create([
                     'application_id' => $application->id,
                     'addon_id' => $policyAddon->addon_id,
-                    'addon_rate_id' => $policyAddon->addon_rate_id,
+                    // 'addon_rate_id' => $policyAddon->addon_rate_id,
                 ]);
             }
 
