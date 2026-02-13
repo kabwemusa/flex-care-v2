@@ -88,7 +88,7 @@ class Endorsement extends BaseModel
         $year = date('Y');
 
         $lastNumber = static::where('endorsement_number', 'like', "{$prefix}{$year}-%")
-            ->orderByRaw('CAST(SUBSTRING(endorsement_number, -6) AS UNSIGNED) DESC')
+            ->orderByRaw('CAST(RIGHT(endorsement_number, 6) AS INTEGER) DESC')
             ->value('endorsement_number');
 
         if ($lastNumber) {
