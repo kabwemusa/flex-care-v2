@@ -391,13 +391,13 @@ class BenefitUtilizationService
         return MemberBenefitUtilization::where('member_id', $member->id)
             ->where('period_start', '<=', $asOfDate)
             ->where('period_end', '>=', $asOfDate)
-            ->with(['benefit.category', 'planBenefit'])
+            ->with(['planBenefit'])
             ->orderBy('benefit_id')
             ->get();
     }
 
     /**
-     * Get benefit balance summary for a member (grouped by category).
+     * Get benefit balance summary for a member (grouped by benefit type).
      */
     public function getMemberBenefitSummary(Member $member): array
     {
@@ -414,20 +414,20 @@ class BenefitUtilizationService
             ],
             'total_benefits' => $utilizations->count(),
             'exhausted_benefits' => $utilizations->where('is_exhausted', true)->count(),
-            'benefits_by_category' => [],
+            'benefits_by_type' => [],
             'benefits' => [],
         ];
 
-        // Group by category
-        $grouped = $utilizations->groupBy(fn($u) => $u->benefit?->category?->name ?? 'Uncategorized');
+        // Group by benefit type
+        $grouped = $utilizations->groupBy(fn($u) => $u->benefit?->benefit_type_label ?? 'Other');
 
-        foreach ($grouped as $categoryName => $categoryUtilizations) {
-            $categoryData = [
-                'category' => $categoryName,
+        foreach ($grouped as $typeName => $typeUtilizations) {
+            $typeData = [
+                'benefit_type' => $typeName,
                 'benefits' => [],
             ];
 
-            foreach ($categoryUtilizations as $utilization) {
+            foreach ($typeUtilizations as $utilization) {
                 $benefitData = [
                     'id' => $utilization->id,
                     'benefit_id' => $utilization->benefit_id,
@@ -444,11 +444,11 @@ class BenefitUtilizationService
                     'last_claim_at' => $utilization->last_claim_at?->format('Y-m-d H:i:s'),
                 ];
 
-                $categoryData['benefits'][] = $benefitData;
+                $typeData['benefits'][] = $benefitData;
                 $summary['benefits'][] = $benefitData;
             }
 
-            $summary['benefits_by_category'][$categoryName] = $categoryData;
+            $summary['benefits_by_type'][$typeName] = $typeData;
         }
 
         return $summary;

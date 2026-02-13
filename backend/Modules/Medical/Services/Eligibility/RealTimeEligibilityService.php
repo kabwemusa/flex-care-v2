@@ -141,25 +141,25 @@ class RealTimeEligibilityService
 
             $benefits = $this->getBenefitBalances($member, $member->policy, []);
 
-            // Group by category
+            // Group by benefit type
             $grouped = [];
             foreach ($benefits as $benefit) {
-                $category = $benefit->category;
-                if (!isset($grouped[$category])) {
-                    $grouped[$category] = [
-                        'category' => $category,
-                        'category_name' => $benefit->categoryName,
+                $benefitType = $benefit->benefitType;
+                if (!isset($grouped[$benefitType])) {
+                    $grouped[$benefitType] = [
+                        'benefit_type' => $benefitType,
+                        'benefit_type_name' => $benefit->benefitTypeName,
                         'benefits' => [],
                         'total_limit' => 0,
                         'total_used' => 0,
                         'exhausted_count' => 0,
                     ];
                 }
-                $grouped[$category]['benefits'][] = $benefit->toArray();
-                $grouped[$category]['total_limit'] += $benefit->limit ?? 0;
-                $grouped[$category]['total_used'] += $benefit->used;
+                $grouped[$benefitType]['benefits'][] = $benefit->toArray();
+                $grouped[$benefitType]['total_limit'] += $benefit->limit ?? 0;
+                $grouped[$benefitType]['total_used'] += $benefit->used;
                 if ($benefit->isExhausted) {
-                    $grouped[$category]['exhausted_count']++;
+                    $grouped[$benefitType]['exhausted_count']++;
                 }
             }
 
@@ -388,7 +388,6 @@ class RealTimeEligibilityService
         // Get plan benefits with utilization
         $query = DB::table('med_plan_benefits as pb')
             ->join('med_benefits as b', 'pb.benefit_id', '=', 'b.id')
-            ->join('med_benefit_categories as bc', 'b.category_id', '=', 'bc.id')
             ->leftJoin('med_member_benefit_utilization as u', function ($join) use ($member) {
                 $join->on('u.benefit_id', '=', 'b.id')
                     ->where('u.member_id', '=', $member->id)
@@ -402,8 +401,7 @@ class RealTimeEligibilityService
                 'b.code as benefit_code',
                 'b.name as benefit_name',
                 'b.requires_preauth',
-                'bc.code as category_code',
-                'bc.name as category_name',
+                'b.benefit_type',
                 'pb.id as plan_benefit_id',
                 'pb.limit_type',
                 'pb.limit_amount',
@@ -479,12 +477,15 @@ class RealTimeEligibilityService
             // Get copay config
             $copayConfig = $this->getBenefitCopayConfig($plan, $row->benefit_code);
 
+            // Get benefit type label
+            $benefitTypeLabel = MedicalConstants::BENEFIT_TYPES[$row->benefit_type] ?? $row->benefit_type;
+
             $benefits[] = new BenefitBalance(
                 benefitId: $row->benefit_id,
                 benefitCode: $row->benefit_code,
                 benefitName: $row->benefit_name,
-                category: $row->category_code,
-                categoryName: $row->category_name,
+                benefitType: $row->benefit_type,
+                benefitTypeName: $benefitTypeLabel,
                 limitType: $row->limit_type ?? 'monetary',
                 limit: $limit,
                 used: $used,

@@ -164,7 +164,7 @@ class MemberPortalController extends Controller
     {
         $member = $request->attributes->get('member');
         $member->loadMissing([
-            'policy.plan.planBenefits.benefit.category',
+            'policy.plan.planBenefits.benefit',
             'policy.plan.planAddons.addon',
             'policy.scheme',
             'dependents',
@@ -201,7 +201,7 @@ class MemberPortalController extends Controller
             ] : null,
             'benefits' => $policy->plan?->planBenefits->map(fn($pb) => [
                 'name' => $pb->benefit?->name,
-                'category' => $pb->benefit?->category?->name,
+                'benefit_type' => $pb->benefit?->benefit_type_label,
                 'is_covered' => $pb->is_covered,
                 'limit' => $pb->formatted_display_value,
                 'copay' => $pb->copay_display,

@@ -49,7 +49,7 @@ class PublicPlanResource extends JsonResource
                 $this->relationLoaded('planBenefits'),
                 fn() => $this->planBenefits->map(fn($pb) => [
                     'name' => $pb->benefit?->name,
-                    'category' => $pb->benefit?->category?->name,
+                    'benefit_type' => $pb->benefit?->benefit_type_label,
                     'is_covered' => $pb->is_covered,
                     'limit_display' => $pb->formatted_display_value,
                 ])

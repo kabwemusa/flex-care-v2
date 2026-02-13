@@ -89,7 +89,7 @@ class PublicPlanController extends Controller
                 ->effective()
                 ->with([
                     'scheme',
-                    'planBenefits.benefit.category',
+                    'planBenefits.benefit',
                     'planAddons.addon',
                 ])
                 ->withCount(['planBenefits', 'planAddons'])
@@ -126,7 +126,7 @@ class PublicPlanController extends Controller
                 ->where('is_active', true)
                 ->where('is_visible', true)
                 ->effective()
-                ->with(['planBenefits.benefit.category', 'planAddons.addon'])
+                ->with(['planBenefits.benefit', 'planAddons.addon'])
                 ->get();
 
             if ($plans->count() < 2) {

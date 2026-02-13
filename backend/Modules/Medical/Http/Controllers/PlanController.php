@@ -312,7 +312,7 @@ class PlanController extends Controller
         try {
             $plan = Plan::with([
                 'scheme',
-                'planBenefits.benefit.category',
+                'planBenefits.benefit',
                 'planBenefits.memberLimits',
                 'planAddons.addon.addonBenefits.benefit',
                 'rateCards' => fn($q) => $q->where('is_active', true)->latest('effective_from'),
@@ -369,7 +369,7 @@ class PlanController extends Controller
             }
 
             $plans = Plan::whereIn('id', $planIds)
-                ->with(['planBenefits.benefit.category', 'planAddons.addon'])
+                ->with(['planBenefits.benefit', 'planAddons.addon'])
                 ->get();
 
             // Build comparison matrix

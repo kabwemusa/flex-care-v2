@@ -99,18 +99,18 @@ class ProviderEligibilityController extends Controller
             $request->attributes->set('member_id', $result->member->id);
         }
 
-        // Group benefits by category
+        // Group benefits by benefit type
         $grouped = [];
         foreach ($result->benefits as $benefit) {
-            $category = $benefit->category;
-            if (!isset($grouped[$category])) {
-                $grouped[$category] = [
-                    'category' => $category,
-                    'category_name' => $benefit->categoryName,
+            $benefitType = $benefit->benefitType;
+            if (!isset($grouped[$benefitType])) {
+                $grouped[$benefitType] = [
+                    'benefit_type' => $benefitType,
+                    'benefit_type_name' => $benefit->benefitTypeName,
                     'benefits' => [],
                 ];
             }
-            $grouped[$category]['benefits'][] = $benefit->toArray();
+            $grouped[$benefitType]['benefits'][] = $benefit->toArray();
         }
 
         return response()->json([
@@ -219,8 +219,7 @@ class ProviderEligibilityController extends Controller
      */
     public function lookupBenefit(Request $request, string $benefitCode): JsonResponse
     {
-        $benefit = \Modules\Medical\Models\Benefit::with('category')
-            ->where('code', $benefitCode)
+        $benefit = \Modules\Medical\Models\Benefit::where('code', $benefitCode)
             ->where('is_active', true)
             ->first();
 
@@ -242,8 +241,8 @@ class ProviderEligibilityController extends Controller
                 'code' => $benefit->code,
                 'name' => $benefit->name,
                 'short_name' => $benefit->short_name,
-                'category' => $benefit->category?->code,
-                'category_name' => $benefit->category?->name,
+                'benefit_type' => $benefit->benefit_type,
+                'benefit_type_name' => $benefit->benefit_type_label,
                 'requires_preauth' => $benefit->requires_preauth,
                 'requires_referral' => $benefit->requires_referral,
                 'description' => $benefit->description,
