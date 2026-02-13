@@ -1817,8 +1817,8 @@ export interface MemberBenefitUtilization {
   last_claim_at?: string;
 }
 
-export interface UtilizationCategory {
-  category: string;
+export interface UtilizationType {
+  benefit_type: string;
   benefits: MemberBenefitUtilization[];
 }
 
@@ -1833,7 +1833,7 @@ export interface MemberBenefitSummary {
   };
   total_benefits: number;
   exhausted_benefits: number;
-  benefits_by_category: Record<string, UtilizationCategory>;
+  benefits_by_type: Record<string, UtilizationType>;
   benefits: MemberBenefitUtilization[];
 }
 

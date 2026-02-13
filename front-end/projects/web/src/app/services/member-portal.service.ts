@@ -110,7 +110,7 @@ export interface DashboardData {
 
 export interface PolicyBenefit {
   name: string;
-  category: string;
+  benefit_type: string;
   is_covered: boolean;
   limit: string;
   copay: string | null;
@@ -269,17 +269,17 @@ export class MemberPortalService {
   // ── Dashboard ──────────────────────────────────────────────────────────────
 
   getDashboard(): Observable<ApiResponse<DashboardData>> {
-    return this.http.get<ApiResponse<DashboardData>>(`${this.baseUrl}/dashboard`).pipe(
-      tap((res) => this.dashboardData.set(res.data))
-    );
+    return this.http
+      .get<ApiResponse<DashboardData>>(`${this.baseUrl}/dashboard`)
+      .pipe(tap((res) => this.dashboardData.set(res.data)));
   }
 
   // ── Policy ─────────────────────────────────────────────────────────────────
 
   getPolicy(): Observable<ApiResponse<PolicyData>> {
-    return this.http.get<ApiResponse<PolicyData>>(`${this.baseUrl}/policy`).pipe(
-      tap((res) => this.policyData.set(res.data))
-    );
+    return this.http
+      .get<ApiResponse<PolicyData>>(`${this.baseUrl}/policy`)
+      .pipe(tap((res) => this.policyData.set(res.data)));
   }
 
   // ── ID Cards ───────────────────────────────────────────────────────────────
@@ -292,10 +292,9 @@ export class MemberPortalService {
   // ── Claims ─────────────────────────────────────────────────────────────────
 
   getClaims(page = 1): Observable<ApiResponse<Claim[]>> {
-    return this.http.get<ApiResponse<Claim[]>>(
-      `${this.baseUrl}/claims`,
-      { params: { page: page.toString() } }
-    );
+    return this.http.get<ApiResponse<Claim[]>>(`${this.baseUrl}/claims`, {
+      params: { page: page.toString() },
+    });
   }
 
   getClaimDetail(id: string): Observable<ApiResponse<ClaimDetail>> {

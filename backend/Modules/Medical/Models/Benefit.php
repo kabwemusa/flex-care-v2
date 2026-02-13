@@ -135,6 +135,9 @@ class Benefit extends BaseModel
 
     public function getBenefitTypeLabelAttribute(): string
     {
+        if (!$this->benefit_type) {
+            return 'Other';
+        }
         return MedicalConstants::BENEFIT_TYPES[$this->benefit_type] ?? $this->benefit_type;
     }
 

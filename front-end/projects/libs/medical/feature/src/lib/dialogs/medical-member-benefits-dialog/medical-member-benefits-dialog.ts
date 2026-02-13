@@ -6,12 +6,7 @@ import { MatDialogRef, MAT_DIALOG_DATA, MatDialogModule } from '@angular/materia
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import {
-  Member,
-  MemberBenefitUtilization,
-  UtilizationCategory,
-  MemberStore,
-} from 'medical-data';
+import { Member, MemberBenefitUtilization, UtilizationType, MemberStore } from 'medical-data';
 
 interface DialogData {
   member?: Member;
@@ -45,10 +40,10 @@ export class MedicalMemberBenefitsDialog implements OnInit {
   readonly isLoading = this.memberStore.benefitsLoading;
 
   // Computed
-  readonly categories = computed((): UtilizationCategory[] => {
+  readonly benefitTypes = computed((): UtilizationType[] => {
     const sum = this.summary();
     if (!sum) return [];
-    return Object.values(sum.benefits_by_category);
+    return Object.values(sum.benefits_by_type);
   });
 
   constructor(@Inject(MAT_DIALOG_DATA) public data: DialogData) {
