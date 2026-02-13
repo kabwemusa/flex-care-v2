@@ -168,23 +168,32 @@ class MemberService
         if ($member->card_number) {
             throw new Exception("Member already has a card: {$member->card_number}");
         }
-
-        // Generate Format: SCHEME-PLAN-YEAR-RANDOM
-        // e.g., AME-GLD-2025-123456
+    
         $schemeCode = strtoupper(substr($member->policy->scheme->code ?? 'GEN', 0, 3));
         $planCode = strtoupper(substr($member->policy->plan->code ?? 'STD', 0, 3));
         $year = now()->year;
-        $unique = str_pad($member->id, 6, '0', STR_PAD_LEFT); // simplified unique logic
         
-        $cardNum = "{$schemeCode}-{$planCode}-{$year}-{$unique}";
-
+        // Attempt to generate a unique card number
+        // We loop to ensure we don't accidentally create a duplicate
+        do {
+            // Option A: Random 6-digit number (e.g., 849201)
+            $unique = str_pad(mt_rand(1, 999999), 6, '0', STR_PAD_LEFT);
+    
+            // Option B: Short Alphanumeric (e.g., A7X92B) - requires Str import
+            // $unique = strtoupper(Str::random(6));
+    
+            $cardNum = "{$schemeCode}-{$planCode}-{$year}-{$unique}";
+            
+            // Check database for collision
+        } while (Member::where('card_number', $cardNum)->exists());
+    
         $member->update([
             'card_number' => $cardNum,
-            'card_status' => MedicalConstants::CARD_STATUS_ACTIVE,
+            'card_status' => MedicalConstants::CARD_STATUS_ACTIVE, // e.g. 'active'
             'card_issued_date' => now(),
             'card_expiry_date' => $member->policy->expiry_date,
         ]);
-
+    
         return $member;
     }
 
