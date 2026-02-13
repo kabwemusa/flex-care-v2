@@ -25,6 +25,7 @@ import {
   GENDERS,
   RELATIONSHIPS,
 } from 'medical-data';
+import { FeedbackService } from 'shared';
 
 interface DialogData {
   member?: Member;
@@ -50,13 +51,14 @@ interface DialogData {
     MatProgressSpinnerModule,
   ],
   providers: [provideNativeDateAdapter()],
-  template: ``,
+  templateUrl: './medical-member-dialog.html',
 })
 export class MedicalMemberDialog implements OnInit {
   private readonly fb = inject(FormBuilder);
   readonly dialogRef = inject(MatDialogRef<MedicalMemberDialog>);
   private readonly store = inject(MemberStore);
   private readonly policyStore = inject(PolicyStore);
+  private readonly feedback = inject(FeedbackService);
 
   readonly MEMBER_TYPES = MEMBER_TYPES;
   readonly GENDERS = GENDERS;
@@ -191,7 +193,17 @@ export class MedicalMemberDialog implements OnInit {
       : this.store.create(payload);
 
     operation.subscribe({
-      next: () => this.dialogRef.close(true),
+      next: () => {
+        this.feedback.success(
+          this.isEdit ? 'Member updated successfully' : 'Member created successfully'
+        );
+        this.dialogRef.close(true);
+      },
+      error: (err) => {
+        this.feedback.error(
+          err?.error?.message ?? `Failed to ${this.isEdit ? 'update' : 'create'} member`
+        );
+      },
     });
   }
 }

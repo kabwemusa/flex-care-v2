@@ -1,23 +1,34 @@
 <mat-drawer-container class="h-full">
   <mat-drawer-content>
-    <div class="bg-slate-50 p-6 md:p-10">
+    <div class="bg-white p-6 md:p-10 min-h-[80vh] shadow-sm">
       <!-- Header -->
-      <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-6">
-        <div>
-          <h1 class="text-2xl font-bold text-slate-900">Member Registry</h1>
-          <p class="text-sm text-slate-500">Manage insured members, cards and eligibility</p>
-        </div>
-        <div class="flex gap-2">
-          <button mat-stroked-button (click)="exportToCsv()" class="!border-slate-200">
+      <lib-page-header
+        title="Member Registry"
+        subtitle="Manage insured members, cards and eligibility"
+        [showBreadcrumb]="true"
+        [breadcrumbItems]="[{ label: 'Medical', link: '/medical' }, { label: 'Members' }]"
+      >
+        <div actions class="flex gap-2">
+          <button
+            mat-button
+            (click)="exportToCsv()"
+            class="!border-divider !text-foreground-600 hover:!bg-content2 hidden sm:flex"
+          >
             <mat-icon fontSet="material-symbols-rounded">download</mat-icon>
             Export
           </button>
-          <button mat-flat-button color="primary" (click)="openDialog()">
+          <button
+            *libPermission="permissions.MEMBERS_ADD"
+            mat-flat-button
+            color="primary"
+            class="!rounded-lg"
+            (click)="openDialog()"
+          >
             <mat-icon fontSet="material-symbols-rounded">person_add</mat-icon>
             Add Member
           </button>
         </div>
-      </div>
+      </lib-page-header>
 
       <!-- KPI Cards -->
       <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
@@ -262,60 +273,96 @@
               >
                 <mat-icon fontSet="material-symbols-rounded">more_vert</mat-icon>
               </button>
-              <mat-menu #rowMenu="matMenu">
+              <mat-menu
+                #rowMenu="matMenu"
+                class="!rounded-xl !border !border-slate-200 !shadow-lg !bg-white"
+              >
                 <button mat-menu-item (click)="viewDetails(row)">
-                  <mat-icon fontSet="material-symbols-rounded">visibility</mat-icon>
+                  <mat-icon fontSet="material-symbols-rounded" class="!text-slate-500"
+                    >visibility</mat-icon
+                  >
                   <span>View Details</span>
                 </button>
-                <button mat-menu-item (click)="openDialog(row)">
-                  <mat-icon fontSet="material-symbols-rounded">edit</mat-icon>
-                  <span>Edit</span>
+                <button
+                  *libPermission="permissions.MEMBERS_UPDATE"
+                  mat-menu-item
+                  (click)="openDialog(row)"
+                >
+                  <mat-icon fontSet="material-symbols-rounded" class="!text-slate-500"
+                    >edit</mat-icon
+                  >
+                  <span>Edit Member</span>
                 </button>
-                <mat-divider></mat-divider>
+                <mat-divider class="!my-1 opacity-50"></mat-divider>
 
                 <!-- Card Actions: pending → issue, issued → activate, active → block -->
                 @if (!row.card_status || row.card_status === 'pending') {
-                <button mat-menu-item (click)="issueCard(row, $event)">
+                <button
+                  *libPermission="permissions.MEMBERS_UPDATE"
+                  mat-menu-item
+                  (click)="issueCard(row, $event)"
+                >
                   <mat-icon fontSet="material-symbols-rounded" class="!text-blue-500"
                     >add_card</mat-icon
                   >
                   <span>Issue Card</span>
                 </button>
                 } @if (row.card_status === 'issued') {
-                <button mat-menu-item (click)="activateCard(row, $event)">
+                <button
+                  *libPermission="permissions.MEMBERS_UPDATE"
+                  mat-menu-item
+                  (click)="activateCard(row, $event)"
+                >
                   <mat-icon fontSet="material-symbols-rounded" class="!text-green-500"
                     >check_circle</mat-icon
                   >
                   <span>Activate Card</span>
                 </button>
                 } @if (row.card_status === 'active') {
-                <button mat-menu-item (click)="blockCard(row, $event)">
+                <button
+                  *libPermission="permissions.MEMBERS_UPDATE"
+                  mat-menu-item
+                  (click)="blockCard(row, $event)"
+                >
                   <mat-icon fontSet="material-symbols-rounded" class="!text-amber-500"
                     >block</mat-icon
                   >
                   <span>Block Card</span>
                 </button>
                 }
-                <mat-divider></mat-divider>
+                <mat-divider class="!my-1 opacity-50"></mat-divider>
 
                 <!-- Status Actions: suspended → activate, active → suspend; terminate only if not already terminated -->
                 @if (row.status === 'suspended') {
-                <button mat-menu-item (click)="activateMember(row, $event)">
+                <button
+                  *libPermission="permissions.MEMBERS_UPDATE"
+                  mat-menu-item
+                  (click)="activateMember(row, $event)"
+                >
                   <mat-icon fontSet="material-symbols-rounded" class="!text-green-500"
                     >play_arrow</mat-icon
                   >
                   <span>Activate</span>
                 </button>
                 } @if (row.status === 'active') {
-                <button mat-menu-item (click)="suspendMember(row, $event)">
+                <button
+                  *libPermission="permissions.MEMBERS_SUSPEND"
+                  mat-menu-item
+                  (click)="suspendMember(row, $event)"
+                >
                   <mat-icon fontSet="material-symbols-rounded" class="!text-amber-500"
                     >pause</mat-icon
                   >
                   <span>Suspend</span>
                 </button>
                 } @if (row.status !== 'terminated') {
-                <button mat-menu-item (click)="terminateMember(row, $event)" class="!text-red-600">
-                  <mat-icon fontSet="material-symbols-rounded" class="!text-red-600"
+                <button
+                  *libPermission="permissions.MEMBERS_EXIT"
+                  mat-menu-item
+                  class="!text-red-600 hover:!bg-red-50"
+                  (click)="terminateMember(row, $event)"
+                >
+                  <mat-icon fontSet="material-symbols-rounded" class="!text-red-500"
                     >person_off</mat-icon
                   >
                   <span>Terminate</span>
@@ -372,7 +419,7 @@
   </mat-drawer-content>
 
   <!-- Detail Drawer -->
-  <mat-drawer #detailDrawer mode="over" position="end" class="!w-[600px]">
+  <mat-drawer #detailDrawer mode="over" position="end" class="!w-full sm:!w-[600px] !bg-white">
     @if (selectedMember(); as member) {
     <div class="h-full flex flex-col">
       <!-- Drawer Header -->

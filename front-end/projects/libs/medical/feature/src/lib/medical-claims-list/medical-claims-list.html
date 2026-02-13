@@ -1,327 +1,339 @@
-<lib-page-header
-  title="Claims"
-  subtitle="Manage and process medical claims"
-  [showBreadcrumb]="true"
-  [breadcrumbItems]="[{ label: 'Medical', link: '/medical' }, { label: 'Claims' }]"
->
-  <div actions class="flex items-center gap-3">
-    <button
-      mat-stroked-button
-      (click)="loadClaims()"
-      class="!border-slate-300"
-      matTooltip="Refresh"
-    >
-      <mat-icon fontSet="material-symbols-rounded">refresh</mat-icon>
-    </button>
-    <button mat-flat-button color="primary" (click)="openNewClaimDialog()">
-      <mat-icon fontSet="material-symbols-rounded">add</mat-icon>
-      New Claim
-    </button>
-  </div>
-</lib-page-header>
-
-<mat-drawer-container class="min-h-[calc(100vh-200px)]">
+<mat-drawer-container class="h-full">
   <!-- Main Content -->
-  <div class="p-6">
-    <!-- Stats Cards -->
-    @if (store.stats(); as stats) {
-    <div class="mb-6 grid grid-cols-2 gap-4 md:grid-cols-4 lg:grid-cols-6">
-      <div class="rounded-lg border border-slate-200 bg-white p-4">
-        <p class="text-xs font-medium uppercase text-slate-500">Total Claims</p>
-        <p class="mt-1 text-2xl font-semibold text-slate-900">{{ stats.summary.total }}</p>
-      </div>
-      <div class="rounded-lg border border-blue-200 bg-blue-50 p-4">
-        <p class="text-xs font-medium uppercase text-blue-600">Submitted</p>
-        <p class="mt-1 text-2xl font-semibold text-blue-700">{{ stats.summary.submitted }}</p>
-      </div>
-      <div class="rounded-lg border border-purple-200 bg-purple-50 p-4">
-        <p class="text-xs font-medium uppercase text-purple-600">In Review</p>
-        <p class="mt-1 text-2xl font-semibold text-purple-700">{{ stats.summary.in_review }}</p>
-      </div>
-      <div class="rounded-lg border border-green-200 bg-green-50 p-4">
-        <p class="text-xs font-medium uppercase text-green-600">Approved</p>
-        <p class="mt-1 text-2xl font-semibold text-green-700">{{ stats.summary.approved }}</p>
-      </div>
-      <div class="rounded-lg border border-red-200 bg-red-50 p-4">
-        <p class="text-xs font-medium uppercase text-red-600">Rejected</p>
-        <p class="mt-1 text-2xl font-semibold text-red-700">{{ stats.summary.rejected }}</p>
-      </div>
-      <div class="rounded-lg border border-emerald-200 bg-emerald-50 p-4">
-        <p class="text-xs font-medium uppercase text-emerald-600">Paid</p>
-        <p class="mt-1 text-2xl font-semibold text-emerald-700">{{ stats.summary.paid }}</p>
-      </div>
-    </div>
-    }
-
-    <!-- Filters -->
-    <div class="mb-4 rounded-lg border border-slate-200 bg-white p-4">
-      <div class="flex flex-wrap items-center gap-4">
-        <!-- Search -->
-        <mat-form-field appearance="fill" class="minimal-input flex-1" subscriptSizing="dynamic">
-          <mat-icon matPrefix fontSet="material-symbols-rounded">search</mat-icon>
-          <input
-            matInput
-            placeholder="Search claims, members, providers..."
-            [value]="searchTerm()"
-            (input)="onSearchChange($event)"
-          />
-        </mat-form-field>
-
-        <!-- Status Filter -->
-        <mat-form-field appearance="fill" class="minimal-input w-44" subscriptSizing="dynamic">
-          <mat-select
-            placeholder="All Statuses"
-            [value]="statusFilter()"
-            (selectionChange)="statusFilter.set($event.value); onFilterChange()"
-          >
-            <mat-option value="">All Statuses</mat-option>
-            @for (status of CLAIM_STATUSES; track status.value) {
-            <mat-option [value]="status.value">{{ status.label }}</mat-option>
-            }
-          </mat-select>
-        </mat-form-field>
-
-        <!-- Claim Type Filter -->
-        <mat-form-field appearance="fill" class="minimal-input w-44" subscriptSizing="dynamic">
-          <mat-select
-            placeholder="All Types"
-            [value]="claimTypeFilter()"
-            (selectionChange)="claimTypeFilter.set($event.value); onFilterChange()"
-          >
-            <mat-option value="">All Types</mat-option>
-            @for (type of CLAIM_TYPES; track type.value) {
-            <mat-option [value]="type.value">
-              <div class="flex items-center gap-2">
-                <mat-icon fontSet="material-symbols-rounded" class="!text-base">{{
-                  type.icon
-                }}</mat-icon>
-                <span>{{ type.label }}</span>
-              </div>
-            </mat-option>
-            }
-          </mat-select>
-        </mat-form-field>
-
-        <!-- Clear Filters -->
-        @if (hasActiveFilters()) {
-        <button mat-stroked-button (click)="clearFilters()" class="!text-slate-600">
-          <mat-icon fontSet="material-symbols-rounded">filter_alt_off</mat-icon>
-          Clear
+  <mat-drawer-content>
+    <lib-page-header
+      title="Claims"
+      subtitle="Manage and process medical claims"
+      [showBreadcrumb]="true"
+      [breadcrumbItems]="[{ label: 'Medical', link: '/medical' }, { label: 'Claims' }]"
+    >
+      <div actions class="flex items-center gap-3">
+        <button
+          mat-stroked-button
+          (click)="loadClaims()"
+          class="!border-slate-300"
+          matTooltip="Refresh"
+        >
+          <mat-icon fontSet="material-symbols-rounded">refresh</mat-icon>
         </button>
+        <button mat-flat-button color="primary" (click)="openNewClaimDialog()">
+          <mat-icon fontSet="material-symbols-rounded">add</mat-icon>
+          New Claim
+        </button>
+      </div>
+    </lib-page-header>
+
+    <div class="p-6">
+      <!-- Stats Cards -->
+      @if (store.stats(); as stats) {
+      <div class="mb-6 grid grid-cols-2 gap-4 md:grid-cols-4 lg:grid-cols-6">
+        <div class="rounded-lg border border-slate-200 bg-white p-4">
+          <p class="text-xs font-medium uppercase text-slate-500">Total Claims</p>
+          <p class="mt-1 text-2xl font-semibold text-slate-900">{{ stats.summary.total }}</p>
+        </div>
+        <div class="rounded-lg border border-blue-200 bg-blue-50 p-4">
+          <p class="text-xs font-medium uppercase text-blue-600">Submitted</p>
+          <p class="mt-1 text-2xl font-semibold text-blue-700">{{ stats.summary.submitted }}</p>
+        </div>
+        <div class="rounded-lg border border-purple-200 bg-purple-50 p-4">
+          <p class="text-xs font-medium uppercase text-purple-600">In Review</p>
+          <p class="mt-1 text-2xl font-semibold text-purple-700">{{ stats.summary.in_review }}</p>
+        </div>
+        <div class="rounded-lg border border-green-200 bg-green-50 p-4">
+          <p class="text-xs font-medium uppercase text-green-600">Approved</p>
+          <p class="mt-1 text-2xl font-semibold text-green-700">{{ stats.summary.approved }}</p>
+        </div>
+        <div class="rounded-lg border border-red-200 bg-red-50 p-4">
+          <p class="text-xs font-medium uppercase text-red-600">Rejected</p>
+          <p class="mt-1 text-2xl font-semibold text-red-700">{{ stats.summary.rejected }}</p>
+        </div>
+        <div class="rounded-lg border border-emerald-200 bg-emerald-50 p-4">
+          <p class="text-xs font-medium uppercase text-emerald-600">Paid</p>
+          <p class="mt-1 text-2xl font-semibold text-emerald-700">{{ stats.summary.paid }}</p>
+        </div>
+      </div>
+      }
+
+      <!-- Filters -->
+      <div class="mb-4 rounded-lg border border-slate-200 bg-white p-4">
+        <div class="flex flex-wrap items-center gap-4">
+          <!-- Search -->
+          <mat-form-field appearance="fill" class="minimal-input flex-1" subscriptSizing="dynamic">
+            <mat-icon matPrefix fontSet="material-symbols-rounded">search</mat-icon>
+            <input
+              matInput
+              placeholder="Search claims, members, providers..."
+              [value]="searchTerm()"
+              (input)="onSearchChange($event)"
+            />
+          </mat-form-field>
+
+          <!-- Status Filter -->
+          <mat-form-field appearance="fill" class="minimal-input w-44" subscriptSizing="dynamic">
+            <mat-select
+              placeholder="All Statuses"
+              [value]="statusFilter()"
+              (selectionChange)="statusFilter.set($event.value); onFilterChange()"
+            >
+              <mat-option value="">All Statuses</mat-option>
+              @for (status of CLAIM_STATUSES; track status.value) {
+              <mat-option [value]="status.value">{{ status.label }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+
+          <!-- Claim Type Filter -->
+          <mat-form-field appearance="fill" class="minimal-input w-44" subscriptSizing="dynamic">
+            <mat-select
+              placeholder="All Types"
+              [value]="claimTypeFilter()"
+              (selectionChange)="claimTypeFilter.set($event.value); onFilterChange()"
+            >
+              <mat-option value="">All Types</mat-option>
+              @for (type of CLAIM_TYPES; track type.value) {
+              <mat-option [value]="type.value">
+                <div class="flex items-center gap-2">
+                  <mat-icon fontSet="material-symbols-rounded" class="!text-base">{{
+                    type.icon
+                  }}</mat-icon>
+                  <span>{{ type.label }}</span>
+                </div>
+              </mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+
+          <!-- Clear Filters -->
+          @if (hasActiveFilters()) {
+          <button mat-stroked-button (click)="clearFilters()" class="!text-slate-600">
+            <mat-icon fontSet="material-symbols-rounded">filter_alt_off</mat-icon>
+            Clear
+          </button>
+          }
+        </div>
+      </div>
+
+      <!-- Claims Table -->
+      <div class="overflow-hidden rounded-lg border border-slate-200 bg-white">
+        @if (store.isLoading()) {
+        <div class="flex h-64 items-center justify-center">
+          <mat-spinner diameter="40"></mat-spinner>
+        </div>
+        } @else if (store.claims().length === 0) {
+        <div class="flex h-64 flex-col items-center justify-center text-slate-500">
+          <mat-icon fontSet="material-symbols-rounded" class="!text-5xl text-slate-300"
+            >receipt_long</mat-icon
+          >
+          <p class="mt-4 text-lg">No claims found</p>
+          <p class="text-sm">Try adjusting your filters or submit a new claim</p>
+        </div>
+        } @else {
+        <table
+          mat-table
+          [dataSource]="store.claims()"
+          matSort
+          (matSortChange)="onSortChange($event)"
+          class="w-full"
+        >
+          <!-- Status Column -->
+          <ng-container matColumnDef="status">
+            <th mat-header-cell *matHeaderCellDef class="!px-4 !py-3 !font-semibold">Status</th>
+            <td mat-cell *matCellDef="let claim" class="!px-4 !py-3">
+              <span
+                class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium"
+                [class]="getStatusConfig(claim.status).color"
+              >
+                {{ getStatusConfig(claim.status).label }}
+              </span>
+              @if (claim.is_flagged) {
+              <mat-icon
+                fontSet="material-symbols-rounded"
+                class="ml-1 !text-base text-red-500"
+                matTooltip="Flagged"
+              >
+                flag
+              </mat-icon>
+              }
+            </td>
+          </ng-container>
+
+          <!-- Claim Number Column -->
+          <ng-container matColumnDef="claim_number">
+            <th
+              mat-header-cell
+              *matHeaderCellDef
+              mat-sort-header
+              class="!px-4 !py-3 !font-semibold"
+            >
+              Claim #
+            </th>
+            <td mat-cell *matCellDef="let claim" class="!px-4 !py-3">
+              <a
+                [routerLink]="['/medical/claims', claim.id]"
+                class="font-medium text-blue-600 hover:underline"
+              >
+                {{ claim.claim_number }}
+              </a>
+              @if (claim.priority && claim.priority <= 3) {
+              <span class="ml-1 rounded bg-red-100 px-1 py-0.5 text-xs text-red-700"
+                >High Priority</span
+              >
+              }
+            </td>
+          </ng-container>
+
+          <!-- Member Column -->
+          <ng-container matColumnDef="member">
+            <th mat-header-cell *matHeaderCellDef class="!px-4 !py-3 !font-semibold">Member</th>
+            <td mat-cell *matCellDef="let claim" class="!px-4 !py-3">
+              @if (claim.member) {
+              <div class="flex items-center gap-2">
+                <div
+                  class="flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 text-sm font-medium text-slate-600"
+                >
+                  {{ claim.member.full_name?.charAt(0) || 'M' }}
+                </div>
+                <div>
+                  <p class="font-medium text-slate-900">{{ claim.member.full_name }}</p>
+                  <p class="text-xs text-slate-500">{{ claim.member.member_number }}</p>
+                </div>
+              </div>
+              } @else {
+              <span class="text-slate-400">-</span>
+              }
+            </td>
+          </ng-container>
+
+          <!-- Claim Type Column -->
+          <ng-container matColumnDef="claim_type">
+            <th mat-header-cell *matHeaderCellDef class="!px-4 !py-3 !font-semibold">Type</th>
+            <td mat-cell *matCellDef="let claim" class="!px-4 !py-3">
+              <div class="flex items-center gap-2">
+                <mat-icon fontSet="material-symbols-rounded" class="!text-lg text-slate-400">
+                  {{ getClaimTypeConfig(claim.claim_type).icon }}
+                </mat-icon>
+                <span>{{ getClaimTypeConfig(claim.claim_type).label }}</span>
+              </div>
+            </td>
+          </ng-container>
+
+          <!-- Service Date Column -->
+          <ng-container matColumnDef="service_date">
+            <th
+              mat-header-cell
+              *matHeaderCellDef
+              mat-sort-header
+              class="!px-4 !py-3 !font-semibold"
+            >
+              Service Date
+            </th>
+            <td mat-cell *matCellDef="let claim" class="!px-4 !py-3">
+              <span class="text-slate-700">{{ claim.service_date | date : 'mediumDate' }}</span>
+            </td>
+          </ng-container>
+
+          <!-- Amounts Column -->
+          <ng-container matColumnDef="amounts">
+            <th
+              mat-header-cell
+              *matHeaderCellDef
+              mat-sort-header="claimed_amount"
+              class="!px-4 !py-3 !font-semibold"
+            >
+              Amount
+            </th>
+            <td mat-cell *matCellDef="let claim" class="!px-4 !py-3">
+              <div>
+                <p class="font-medium text-slate-900">
+                  {{ formatCurrency(claim.claimed_amount, claim.currency) }}
+                </p>
+                @if (claim.approved_amount > 0) {
+                <p class="text-xs text-green-600">
+                  Approved: {{ formatCurrency(claim.approved_amount, claim.currency) }}
+                </p>
+                }
+              </div>
+            </td>
+          </ng-container>
+
+          <!-- Provider Column -->
+          <ng-container matColumnDef="provider">
+            <th mat-header-cell *matHeaderCellDef class="!px-4 !py-3 !font-semibold">Provider</th>
+            <td mat-cell *matCellDef="let claim" class="!px-4 !py-3">
+              @if (claim.provider_name) {
+              <div>
+                <p class="text-slate-700">{{ claim.provider_name }}</p>
+                <p class="text-xs text-slate-500">{{ claim.primary_diagnosis || '-' }}</p>
+              </div>
+              } @else {
+              <span class="text-slate-400">-</span>
+              }
+            </td>
+          </ng-container>
+
+          <!-- Actions Column -->
+          <ng-container matColumnDef="actions">
+            <th mat-header-cell *matHeaderCellDef class="!w-20 !px-4 !py-3"></th>
+            <td mat-cell *matCellDef="let claim" class="!px-4 !py-3">
+              <button
+                mat-icon-button
+                [matMenuTriggerFor]="claimMenu"
+                (click)="$event.stopPropagation()"
+              >
+                <mat-icon fontSet="material-symbols-rounded">more_vert</mat-icon>
+              </button>
+              <mat-menu #claimMenu="matMenu">
+                <a mat-menu-item [routerLink]="['/claims', claim.id]">
+                  <mat-icon fontSet="material-symbols-rounded">visibility</mat-icon>
+                  <span>View Details</span>
+                </a>
+                @if (claim.status === 'submitted') {
+                <button mat-menu-item (click)="startReview(claim)">
+                  <mat-icon fontSet="material-symbols-rounded">rate_review</mat-icon>
+                  <span>Start Review</span>
+                </button>
+                } @if (claim.can_be_approved) {
+                <button mat-menu-item (click)="approveClaim(claim)">
+                  <mat-icon fontSet="material-symbols-rounded" class="!text-green-600"
+                    >check_circle</mat-icon
+                  >
+                  <span>Quick Approve</span>
+                </button>
+                }
+                <mat-divider></mat-divider>
+                <a mat-menu-item [routerLink]="['/policies', claim.policy_id]">
+                  <mat-icon fontSet="material-symbols-rounded">policy</mat-icon>
+                  <span>View Policy</span>
+                </a>
+              </mat-menu>
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+          <tr
+            mat-row
+            *matRowDef="let row; columns: displayedColumns"
+            class="cursor-pointer hover:bg-slate-50"
+            (click)="viewClaimDetails(row)"
+          ></tr>
+        </table>
+
+        <!-- Paginator -->
+        <mat-paginator
+          [length]="store.totalItems()"
+          [pageSize]="store.pageSize()"
+          [pageIndex]="store.currentPage() - 1"
+          [pageSizeOptions]="pageSizeOptions"
+          (page)="onPageChange($event)"
+          showFirstLastButtons
+        ></mat-paginator>
         }
       </div>
     </div>
-
-    <!-- Claims Table -->
-    <div class="overflow-hidden rounded-lg border border-slate-200 bg-white">
-      @if (store.isLoading()) {
-      <div class="flex h-64 items-center justify-center">
-        <mat-spinner diameter="40"></mat-spinner>
-      </div>
-      } @else if (store.claims().length === 0) {
-      <div class="flex h-64 flex-col items-center justify-center text-slate-500">
-        <mat-icon fontSet="material-symbols-rounded" class="!text-5xl text-slate-300"
-          >receipt_long</mat-icon
-        >
-        <p class="mt-4 text-lg">No claims found</p>
-        <p class="text-sm">Try adjusting your filters or submit a new claim</p>
-      </div>
-      } @else {
-      <table
-        mat-table
-        [dataSource]="store.claims()"
-        matSort
-        (matSortChange)="onSortChange($event)"
-        class="w-full"
-      >
-        <!-- Status Column -->
-        <ng-container matColumnDef="status">
-          <th mat-header-cell *matHeaderCellDef class="!px-4 !py-3 !font-semibold">Status</th>
-          <td mat-cell *matCellDef="let claim" class="!px-4 !py-3">
-            <span
-              class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium"
-              [class]="getStatusConfig(claim.status).color"
-            >
-              {{ getStatusConfig(claim.status).label }}
-            </span>
-            @if (claim.is_flagged) {
-            <mat-icon
-              fontSet="material-symbols-rounded"
-              class="ml-1 !text-base text-red-500"
-              matTooltip="Flagged"
-            >
-              flag
-            </mat-icon>
-            }
-          </td>
-        </ng-container>
-
-        <!-- Claim Number Column -->
-        <ng-container matColumnDef="claim_number">
-          <th mat-header-cell *matHeaderCellDef mat-sort-header class="!px-4 !py-3 !font-semibold">
-            Claim #
-          </th>
-          <td mat-cell *matCellDef="let claim" class="!px-4 !py-3">
-            <a
-              [routerLink]="['/medical/claims', claim.id]"
-              class="font-medium text-blue-600 hover:underline"
-            >
-              {{ claim.claim_number }}
-            </a>
-            @if (claim.priority && claim.priority <= 3) {
-            <span class="ml-1 rounded bg-red-100 px-1 py-0.5 text-xs text-red-700"
-              >High Priority</span
-            >
-            }
-          </td>
-        </ng-container>
-
-        <!-- Member Column -->
-        <ng-container matColumnDef="member">
-          <th mat-header-cell *matHeaderCellDef class="!px-4 !py-3 !font-semibold">Member</th>
-          <td mat-cell *matCellDef="let claim" class="!px-4 !py-3">
-            @if (claim.member) {
-            <div class="flex items-center gap-2">
-              <div
-                class="flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 text-sm font-medium text-slate-600"
-              >
-                {{ claim.member.full_name?.charAt(0) || 'M' }}
-              </div>
-              <div>
-                <p class="font-medium text-slate-900">{{ claim.member.full_name }}</p>
-                <p class="text-xs text-slate-500">{{ claim.member.member_number }}</p>
-              </div>
-            </div>
-            } @else {
-            <span class="text-slate-400">-</span>
-            }
-          </td>
-        </ng-container>
-
-        <!-- Claim Type Column -->
-        <ng-container matColumnDef="claim_type">
-          <th mat-header-cell *matHeaderCellDef class="!px-4 !py-3 !font-semibold">Type</th>
-          <td mat-cell *matCellDef="let claim" class="!px-4 !py-3">
-            <div class="flex items-center gap-2">
-              <mat-icon fontSet="material-symbols-rounded" class="!text-lg text-slate-400">
-                {{ getClaimTypeConfig(claim.claim_type).icon }}
-              </mat-icon>
-              <span>{{ getClaimTypeConfig(claim.claim_type).label }}</span>
-            </div>
-          </td>
-        </ng-container>
-
-        <!-- Service Date Column -->
-        <ng-container matColumnDef="service_date">
-          <th mat-header-cell *matHeaderCellDef mat-sort-header class="!px-4 !py-3 !font-semibold">
-            Service Date
-          </th>
-          <td mat-cell *matCellDef="let claim" class="!px-4 !py-3">
-            <span class="text-slate-700">{{ claim.service_date | date : 'mediumDate' }}</span>
-          </td>
-        </ng-container>
-
-        <!-- Amounts Column -->
-        <ng-container matColumnDef="amounts">
-          <th
-            mat-header-cell
-            *matHeaderCellDef
-            mat-sort-header="claimed_amount"
-            class="!px-4 !py-3 !font-semibold"
-          >
-            Amount
-          </th>
-          <td mat-cell *matCellDef="let claim" class="!px-4 !py-3">
-            <div>
-              <p class="font-medium text-slate-900">
-                {{ formatCurrency(claim.claimed_amount, claim.currency) }}
-              </p>
-              @if (claim.approved_amount > 0) {
-              <p class="text-xs text-green-600">
-                Approved: {{ formatCurrency(claim.approved_amount, claim.currency) }}
-              </p>
-              }
-            </div>
-          </td>
-        </ng-container>
-
-        <!-- Provider Column -->
-        <ng-container matColumnDef="provider">
-          <th mat-header-cell *matHeaderCellDef class="!px-4 !py-3 !font-semibold">Provider</th>
-          <td mat-cell *matCellDef="let claim" class="!px-4 !py-3">
-            @if (claim.provider_name) {
-            <div>
-              <p class="text-slate-700">{{ claim.provider_name }}</p>
-              <p class="text-xs text-slate-500">{{ claim.primary_diagnosis || '-' }}</p>
-            </div>
-            } @else {
-            <span class="text-slate-400">-</span>
-            }
-          </td>
-        </ng-container>
-
-        <!-- Actions Column -->
-        <ng-container matColumnDef="actions">
-          <th mat-header-cell *matHeaderCellDef class="!w-20 !px-4 !py-3"></th>
-          <td mat-cell *matCellDef="let claim" class="!px-4 !py-3">
-            <button
-              mat-icon-button
-              [matMenuTriggerFor]="claimMenu"
-              (click)="$event.stopPropagation()"
-            >
-              <mat-icon fontSet="material-symbols-rounded">more_vert</mat-icon>
-            </button>
-            <mat-menu #claimMenu="matMenu">
-              <a mat-menu-item [routerLink]="['/claims', claim.id]">
-                <mat-icon fontSet="material-symbols-rounded">visibility</mat-icon>
-                <span>View Details</span>
-              </a>
-              @if (claim.status === 'submitted') {
-              <button mat-menu-item (click)="startReview(claim)">
-                <mat-icon fontSet="material-symbols-rounded">rate_review</mat-icon>
-                <span>Start Review</span>
-              </button>
-              } @if (claim.can_be_approved) {
-              <button mat-menu-item (click)="approveClaim(claim)">
-                <mat-icon fontSet="material-symbols-rounded" class="!text-green-600"
-                  >check_circle</mat-icon
-                >
-                <span>Quick Approve</span>
-              </button>
-              }
-              <mat-divider></mat-divider>
-              <a mat-menu-item [routerLink]="['/policies', claim.policy_id]">
-                <mat-icon fontSet="material-symbols-rounded">policy</mat-icon>
-                <span>View Policy</span>
-              </a>
-            </mat-menu>
-          </td>
-        </ng-container>
-
-        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-        <tr
-          mat-row
-          *matRowDef="let row; columns: displayedColumns"
-          class="cursor-pointer hover:bg-slate-50"
-          (click)="viewClaimDetails(row)"
-        ></tr>
-      </table>
-
-      <!-- Paginator -->
-      <mat-paginator
-        [length]="store.totalItems()"
-        [pageSize]="store.pageSize()"
-        [pageIndex]="store.currentPage() - 1"
-        [pageSizeOptions]="pageSizeOptions"
-        (page)="onPageChange($event)"
-        showFirstLastButtons
-      ></mat-paginator>
-      }
-    </div>
-  </div>
+  </mat-drawer-content>
 
   <!-- Detail Drawer -->
-  <mat-drawer #detailDrawer mode="over" position="end" class="!w-[450px]">
+  <mat-drawer #detailDrawer mode="over" position="end" class="!w-[600px] !bg-white">
     @if (selectedClaim(); as claim) {
     <div class="flex h-full flex-col">
       <!-- Header -->

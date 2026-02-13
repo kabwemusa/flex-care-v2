@@ -45,7 +45,8 @@ import {
   calculateAge,
   WAITING_PERIOD_TYPES,
 } from 'medical-data';
-import { FeedbackService, PageHeaderComponent } from 'shared';
+import { FeedbackService, PageHeaderComponent, PermissionDirective } from 'shared';
+import { MEDICAL_PERMISSIONS } from 'core-auth';
 import { MedicalMemberDialog } from '../dialogs/medical-member-dialog/medical-member-dialog';
 
 @Component({
@@ -70,7 +71,8 @@ import { MedicalMemberDialog } from '../dialogs/medical-member-dialog/medical-me
     MatChipsModule,
     MatProgressSpinnerModule,
     MatTabsModule,
-    // PageHeaderComponent,
+    PageHeaderComponent,
+    PermissionDirective,
   ],
   templateUrl: './medical-members-list.html',
 })
@@ -78,6 +80,9 @@ export class MedicalMembersList implements OnInit, AfterViewInit {
   readonly store = inject(MemberStore);
   private readonly dialog = inject(MatDialog);
   private readonly feedback = inject(FeedbackService);
+
+  // Permissions
+  readonly permissions = MEDICAL_PERMISSIONS;
 
   // Table
   displayedColumns = [
@@ -209,11 +214,14 @@ export class MedicalMembersList implements OnInit, AfterViewInit {
   // =========================================================================
 
   viewDetails(member: Member): void {
-    this.store.loadOne(member.id).subscribe((res) => {
-      if (res?.data) {
-        this.selectedMember.set(res.data);
-        this.detailDrawer.open();
-      }
+    this.store.loadOne(member.id).subscribe({
+      next: (res) => {
+        if (res?.data) {
+          this.selectedMember.set(res.data);
+          this.detailDrawer.open();
+        }
+      },
+      error: () => this.feedback.error('Failed to load member details'),
     });
   }
 
@@ -224,19 +232,16 @@ export class MedicalMembersList implements OnInit, AfterViewInit {
 
   openDialog(member?: Member): void {
     const dialogRef = this.dialog.open(MedicalMemberDialog, {
-      width: '70vw',
-      minWidth: '70vw',
+      maxWidth: '70vw',
       maxHeight: '90vh',
       data: { member },
-      disableClose: true,
+      panelClass: ['responsive-dialog', 'bg-white'],
+      autoFocus: false,
     });
 
     dialogRef.afterClosed().subscribe((result) => {
       if (result) {
         this.store.loadAll();
-        this.feedback.success(
-          member ? 'Member updated successfully' : 'Member created successfully'
-        );
       }
     });
   }
