@@ -2,17 +2,16 @@
   <mat-drawer-content>
     <div class="bg-white p-6 md:p-10 min-h-[80vh] shadow-sm">
       <!-- Header -->
-      <lib-page-header
-        title="Member Registry"
-        subtitle="Manage insured members, cards and eligibility"
-        [showBreadcrumb]="true"
-        [breadcrumbItems]="[{ label: 'Medical', link: '/medical' }, { label: 'Members' }]"
-      >
-        <div actions class="flex gap-2">
+      <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-6">
+        <div>
+          <h1 class="text-2xl font-bold tracking-tight text-slate-900">Member Registry</h1>
+          <p class="mt-1 text-sm text-slate-500">Manage insured members, cards and eligibility</p>
+        </div>
+        <div class="flex gap-2">
           <button
-            mat-button
+            mat-stroked-button
             (click)="exportToCsv()"
-            class="!border-divider !text-foreground-600 hover:!bg-content2 hidden sm:flex"
+            class="border-slate-200! rounded-lg! hidden sm:flex"
           >
             <mat-icon fontSet="material-symbols-rounded">download</mat-icon>
             Export
@@ -21,40 +20,28 @@
             *libPermission="permissions.MEMBERS_ADD"
             mat-flat-button
             color="primary"
-            class="!rounded-lg"
+            class="rounded-lg!"
             (click)="openDialog()"
           >
             <mat-icon fontSet="material-symbols-rounded">person_add</mat-icon>
             Add Member
           </button>
         </div>
-      </lib-page-header>
+      </div>
 
       <!-- KPI Cards -->
-      <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
+      <div class="grid grid-cols-1 gap-4 sm:grid-cols-3 mb-6">
         <div class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
           <div class="flex items-center justify-between">
             <div>
-              <p class="text-sm text-slate-500">Total</p>
-              <p class="text-2xl font-semibold text-slate-900">{{ store.members().length }}</p>
+              <div class="text-xs font-medium text-slate-500">Total Members</div>
+              <div class="mt-1 text-xl font-bold tracking-tight text-slate-900">
+                {{ store.totalItems() }}
+              </div>
             </div>
-            <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-slate-100">
-              <mat-icon fontSet="material-symbols-rounded" class="!text-slate-600">groups</mat-icon>
-            </div>
-          </div>
-        </div>
-
-        <div class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-          <div class="flex items-center justify-between">
-            <div>
-              <p class="text-sm text-slate-500">Active</p>
-              <p class="text-2xl font-semibold text-green-600">
-                {{ store.activeMembers().length }}
-              </p>
-            </div>
-            <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-green-100">
-              <mat-icon fontSet="material-symbols-rounded" class="!text-green-600"
-                >check_circle</mat-icon
+            <div class="flex h-9 w-9 items-center justify-center rounded-full bg-slate-100">
+              <mat-icon fontSet="material-symbols-rounded" class="text-[18px]! text-slate-600"
+                >groups</mat-icon
               >
             </div>
           </div>
@@ -63,13 +50,15 @@
         <div class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
           <div class="flex items-center justify-between">
             <div>
-              <p class="text-sm text-slate-500">Principals</p>
-              <p class="text-2xl font-semibold text-blue-600">
-                {{ store.principalMembers().length }}
-              </p>
+              <div class="text-xs font-medium text-slate-500">Principals</div>
+              <div class="mt-1 text-xl font-bold tracking-tight text-teal-600">
+                {{ store.principalCount() }}
+              </div>
             </div>
-            <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-100">
-              <mat-icon fontSet="material-symbols-rounded" class="!text-blue-600">person</mat-icon>
+            <div class="flex h-9 w-9 items-center justify-center rounded-full bg-teal-100">
+              <mat-icon fontSet="material-symbols-rounded" class="text-[18px]! text-teal-600"
+                >person</mat-icon
+              >
             </div>
           </div>
         </div>
@@ -77,27 +66,15 @@
         <div class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
           <div class="flex items-center justify-between">
             <div>
-              <p class="text-sm text-slate-500">Dependents</p>
-              <p class="text-2xl font-semibold text-amber-600">
-                {{ store.dependentMembers().length }}
-              </p>
+              <div class="text-xs font-medium text-slate-500">Dependants</div>
+              <div class="mt-1 text-xl font-bold tracking-tight text-violet-600">
+                {{ store.dependentCount() }}
+              </div>
             </div>
-            <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-amber-100">
-              <mat-icon fontSet="material-symbols-rounded" class="!text-amber-600"
+            <div class="flex h-9 w-9 items-center justify-center rounded-full bg-violet-100">
+              <mat-icon fontSet="material-symbols-rounded" class="text-[18px]! text-violet-600"
                 >family_restroom</mat-icon
               >
-            </div>
-          </div>
-        </div>
-
-        <div class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-          <div class="flex items-center justify-between">
-            <div>
-              <p class="text-sm text-slate-500">With Loadings</p>
-              <p class="text-2xl font-semibold text-red-600">{{ membersWithLoadings().length }}</p>
-            </div>
-            <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-red-100">
-              <mat-icon fontSet="material-symbols-rounded" class="!text-red-600">warning</mat-icon>
             </div>
           </div>
         </div>
@@ -107,11 +84,11 @@
       <div class="rounded-xl border border-slate-200 bg-white p-4 mb-6 shadow-sm">
         <div class="flex flex-wrap gap-4 items-end">
           <mat-form-field
-            appearance="outline"
+            appearance="fill"
             subscriptSizing="dynamic"
-            class="flex-1 min-w-[280px]"
+            class="flex-1 min-w-70 minimal-input"
           >
-            <mat-icon fontSet="material-symbols-rounded" matPrefix class="!text-slate-400"
+            <mat-icon fontSet="material-symbols-rounded" matPrefix class="text-slate-400!"
               >search</mat-icon
             >
             <input
@@ -127,12 +104,8 @@
             }
           </mat-form-field>
 
-          <mat-form-field appearance="outline" subscriptSizing="dynamic" class="w-40">
-            <mat-select
-              [ngModel]="statusFilter()"
-              (ngModelChange)="onStatusChange($event)"
-              placeholder="Status"
-            >
+          <mat-form-field appearance="fill" subscriptSizing="dynamic" class="w-40 minimal-input">
+            <mat-select [ngModel]="statusFilter()" (ngModelChange)="onStatusChange($event)">
               <mat-option value="">All Statuses</mat-option>
               @for (status of MEMBER_STATUSES; track status.value) {
               <mat-option [value]="status.value">{{ status.label }}</mat-option>
@@ -140,12 +113,8 @@
             </mat-select>
           </mat-form-field>
 
-          <mat-form-field appearance="outline" subscriptSizing="dynamic" class="w-40">
-            <mat-select
-              [ngModel]="typeFilter()"
-              (ngModelChange)="onTypeChange($event)"
-              placeholder="Type"
-            >
+          <mat-form-field appearance="fill" subscriptSizing="dynamic" class="w-40 minimal-input">
+            <mat-select [ngModel]="typeFilter()" (ngModelChange)="onTypeChange($event)">
               <mat-option value="">All Types</mat-option>
               @for (type of MEMBER_TYPES; track type.value) {
               <mat-option [value]="type.value">{{ type.label }}</mat-option>
@@ -154,7 +123,7 @@
           </mat-form-field>
 
           @if (hasActiveFilters()) {
-          <button mat-stroked-button (click)="clearFilters()" class="!border-slate-200">
+          <button mat-stroked-button (click)="clearFilters()" class="border-slate-200!">
             <mat-icon fontSet="material-symbols-rounded">filter_alt_off</mat-icon>
             Clear
           </button>
@@ -163,255 +132,318 @@
       </div>
 
       <!-- Table -->
-      <div class="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+      <div
+        class="flex flex-col rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden"
+      >
         @if (store.isLoading()) {
-        <div class="flex items-center justify-center h-64">
-          <mat-spinner diameter="40"></mat-spinner>
+        <div class="divide-y divide-slate-100">
+          @for (i of [1,2,3,4,5,6,7,8]; track i) {
+          <div class="flex items-center gap-4 p-4 animate-pulse">
+            <div class="h-6 w-20 rounded-full bg-slate-100"></div>
+            <div class="flex-1 space-y-2">
+              <div class="h-4 w-1/4 rounded bg-slate-100"></div>
+              <div class="h-3 w-1/5 rounded bg-slate-50"></div>
+            </div>
+            <div class="h-4 w-24 rounded bg-slate-100"></div>
+            <div class="h-4 w-12 rounded bg-slate-100"></div>
+            <div class="h-4 w-16 rounded bg-slate-100"></div>
+          </div>
+          }
         </div>
         } @else {
-        <table mat-table [dataSource]="dataSource" matSort class="w-full">
-          <!-- Status -->
-          <ng-container matColumnDef="status">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header class="!pl-6 !w-28">Status</th>
-            <td mat-cell *matCellDef="let row" class="!pl-6">
-              <span
-                class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium"
-                [class]="getStatusClasses(row.status)"
+        <div class="overflow-x-auto">
+          <table mat-table [dataSource]="store.members()" matSort class="w-full">
+            <!-- Status -->
+            <ng-container matColumnDef="status">
+              <th
+                mat-header-cell
+                *matHeaderCellDef
+                mat-sort-header
+                class="bg-slate-50! px-4! py-3! text-xs font-semibold uppercase tracking-wider text-slate-500 w-28!"
               >
+                Status
+              </th>
+              <td mat-cell *matCellDef="let row" class="px-4! py-3!">
                 <span
-                  class="h-1.5 w-1.5 rounded-full"
-                  [class]="getStatusDotColor(row.status)"
-                ></span>
-                {{ getLabelByValue(MEMBER_STATUSES, row.status) }}
-              </span>
-            </td>
-          </ng-container>
+                  class="inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-xs font-medium"
+                  [class]="getStatusClasses(row.status)"
+                >
+                  <span
+                    class="h-1.5 w-1.5 rounded-full"
+                    [class]="getStatusDotColor(row.status)"
+                  ></span>
+                  {{ getLabelByValue(MEMBER_STATUSES, row.status) }}
+                </span>
+              </td>
+            </ng-container>
 
-          <!-- Member # -->
-          <ng-container matColumnDef="member_number">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header>Member #</th>
-            <td mat-cell *matCellDef="let row">
-              <button
-                class="font-mono text-sm text-slate-700 hover:text-blue-600"
-                (click)="viewDetails(row); $event.stopPropagation()"
+            <!-- Member # -->
+            <ng-container matColumnDef="member_number">
+              <th
+                mat-header-cell
+                *matHeaderCellDef
+                mat-sort-header
+                class="bg-slate-50! px-4! py-3! text-xs font-semibold uppercase tracking-wider text-slate-500"
               >
-                {{ row.member_number }}
-              </button>
-            </td>
-          </ng-container>
+                Member #
+              </th>
+              <td mat-cell *matCellDef="let row" class="px-4! py-3!">
+                <button
+                  class="font-mono text-sm font-medium text-slate-900 hover:text-primary transition-colors"
+                  (click)="viewDetails(row); $event.stopPropagation()"
+                >
+                  {{ row.member_number }}
+                </button>
+              </td>
+            </ng-container>
 
-          <!-- Name -->
-          <ng-container matColumnDef="name">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header>Name</th>
-            <td mat-cell *matCellDef="let row">
-              <div class="font-medium text-slate-900">
-                {{ row.full_name || row.first_name + ' ' + row.last_name }}
-              </div>
-              @if (row.national_id) {
-              <div class="text-xs text-slate-500">{{ row.national_id }}</div>
-              }
-            </td>
-          </ng-container>
-
-          <!-- Type -->
-          <ng-container matColumnDef="type">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header class="!w-32">Type</th>
-            <td mat-cell *matCellDef="let row">
-              <span class="flex items-center gap-1.5 text-sm text-slate-600">
-                <mat-icon fontSet="material-symbols-rounded" class="!text-slate-400 !text-[18px]">
-                  {{ getMemberTypeIcon(row.member_type) }}
-                </mat-icon>
-                {{ getLabelByValue(MEMBER_TYPES, row.member_type) }}
-              </span>
-            </td>
-          </ng-container>
-
-          <!-- Policy -->
-          <ng-container matColumnDef="policy">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header>Policy</th>
-            <td mat-cell *matCellDef="let row">
-              @if (row.policy_id) {
-              <span class="font-mono text-sm text-slate-700">{{ row.policy_id }}</span>
-              } @else {
-              <span class="text-slate-400">-</span>
-              }
-            </td>
-          </ng-container>
-
-          <!-- Age -->
-          <ng-container matColumnDef="age">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header class="!text-center !w-20">
-              Age
-            </th>
-            <td mat-cell *matCellDef="let row" class="!text-center text-slate-600">
-              {{ row.age || calculateAge(row.date_of_birth) }}
-            </td>
-          </ng-container>
-
-          <!-- Card -->
-          <ng-container matColumnDef="card">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header class="!w-28">Card</th>
-            <td mat-cell *matCellDef="let row">
-              <span class="inline-flex items-center gap-1.5 text-sm">
-                <span
-                  class="h-1.5 w-1.5 rounded-full"
-                  [class]="getCardStatusDotColor(row.card_status)"
-                ></span>
-                {{ getLabelByValue(CARD_STATUSES, row.card_status) || 'Pending' }}
-              </span>
-            </td>
-          </ng-container>
-
-          <!-- Actions -->
-          <ng-container matColumnDef="actions">
-            <th mat-header-cell *matHeaderCellDef class="!w-16 !pr-4"></th>
-            <td mat-cell *matCellDef="let row" class="!pr-4">
-              <button
-                mat-icon-button
-                [matMenuTriggerFor]="rowMenu"
-                (click)="$event.stopPropagation()"
+            <!-- Name -->
+            <ng-container matColumnDef="name">
+              <th
+                mat-header-cell
+                *matHeaderCellDef
+                mat-sort-header
+                class="bg-slate-50! px-4! py-3! text-xs font-semibold uppercase tracking-wider text-slate-500"
               >
-                <mat-icon fontSet="material-symbols-rounded">more_vert</mat-icon>
-              </button>
-              <mat-menu
-                #rowMenu="matMenu"
-                class="!rounded-xl !border !border-slate-200 !shadow-lg !bg-white"
-              >
-                <button mat-menu-item (click)="viewDetails(row)">
-                  <mat-icon fontSet="material-symbols-rounded" class="!text-slate-500"
-                    >visibility</mat-icon
-                  >
-                  <span>View Details</span>
-                </button>
-                <button
-                  *libPermission="permissions.MEMBERS_UPDATE"
-                  mat-menu-item
-                  (click)="openDialog(row)"
-                >
-                  <mat-icon fontSet="material-symbols-rounded" class="!text-slate-500"
-                    >edit</mat-icon
-                  >
-                  <span>Edit Member</span>
-                </button>
-                <mat-divider class="!my-1 opacity-50"></mat-divider>
-
-                <!-- Card Actions: pending → issue, issued → activate, active → block -->
-                @if (!row.card_status || row.card_status === 'pending') {
-                <button
-                  *libPermission="permissions.MEMBERS_UPDATE"
-                  mat-menu-item
-                  (click)="issueCard(row, $event)"
-                >
-                  <mat-icon fontSet="material-symbols-rounded" class="!text-blue-500"
-                    >add_card</mat-icon
-                  >
-                  <span>Issue Card</span>
-                </button>
-                } @if (row.card_status === 'issued') {
-                <button
-                  *libPermission="permissions.MEMBERS_UPDATE"
-                  mat-menu-item
-                  (click)="activateCard(row, $event)"
-                >
-                  <mat-icon fontSet="material-symbols-rounded" class="!text-green-500"
-                    >check_circle</mat-icon
-                  >
-                  <span>Activate Card</span>
-                </button>
-                } @if (row.card_status === 'active') {
-                <button
-                  *libPermission="permissions.MEMBERS_UPDATE"
-                  mat-menu-item
-                  (click)="blockCard(row, $event)"
-                >
-                  <mat-icon fontSet="material-symbols-rounded" class="!text-amber-500"
-                    >block</mat-icon
-                  >
-                  <span>Block Card</span>
-                </button>
-                }
-                <mat-divider class="!my-1 opacity-50"></mat-divider>
-
-                <!-- Status Actions: suspended → activate, active → suspend; terminate only if not already terminated -->
-                @if (row.status === 'suspended') {
-                <button
-                  *libPermission="permissions.MEMBERS_UPDATE"
-                  mat-menu-item
-                  (click)="activateMember(row, $event)"
-                >
-                  <mat-icon fontSet="material-symbols-rounded" class="!text-green-500"
-                    >play_arrow</mat-icon
-                  >
-                  <span>Activate</span>
-                </button>
-                } @if (row.status === 'active') {
-                <button
-                  *libPermission="permissions.MEMBERS_SUSPEND"
-                  mat-menu-item
-                  (click)="suspendMember(row, $event)"
-                >
-                  <mat-icon fontSet="material-symbols-rounded" class="!text-amber-500"
-                    >pause</mat-icon
-                  >
-                  <span>Suspend</span>
-                </button>
-                } @if (row.status !== 'terminated') {
-                <button
-                  *libPermission="permissions.MEMBERS_EXIT"
-                  mat-menu-item
-                  class="!text-red-600 hover:!bg-red-50"
-                  (click)="terminateMember(row, $event)"
-                >
-                  <mat-icon fontSet="material-symbols-rounded" class="!text-red-500"
-                    >person_off</mat-icon
-                  >
-                  <span>Terminate</span>
-                </button>
-                }
-              </mat-menu>
-            </td>
-          </ng-container>
-
-          <tr mat-header-row *matHeaderRowDef="displayedColumns" class="!bg-slate-50"></tr>
-          <tr
-            mat-row
-            *matRowDef="let row; columns: displayedColumns"
-            class="hover:bg-slate-50 cursor-pointer"
-            (click)="viewDetails(row)"
-          ></tr>
-
-          <!-- Empty State -->
-          <tr class="mat-row" *matNoDataRow>
-            <td class="mat-cell text-center py-16" [attr.colspan]="displayedColumns.length">
-              <div class="flex flex-col items-center">
-                <div
-                  class="flex h-16 w-16 items-center justify-center rounded-full bg-slate-100 mb-4"
-                >
-                  <mat-icon fontSet="material-symbols-rounded" class="!text-[32px] !text-slate-400"
-                    >groups</mat-icon
-                  >
+                Name
+              </th>
+              <td mat-cell *matCellDef="let row" class="px-4! py-3!">
+                <div class="font-medium text-slate-900">
+                  {{ row.full_name || row.first_name + ' ' + row.last_name }}
                 </div>
-                @if (hasActiveFilters()) {
-                <p class="text-slate-600 font-medium mb-1">No members match your filters</p>
-                <button mat-stroked-button (click)="clearFilters()" class="mt-4 !border-slate-200">
-                  Clear Filters
-                </button>
-                } @else {
-                <p class="text-slate-600 font-medium mb-1">No members yet</p>
-                <button mat-flat-button color="primary" (click)="openDialog()" class="mt-4">
-                  Add First Member
-                </button>
+                @if (row.national_id) {
+                <div class="text-xs text-slate-500">{{ row.national_id }}</div>
                 }
-              </div>
-            </td>
-          </tr>
-        </table>
+              </td>
+            </ng-container>
+
+            <!-- Type -->
+            <ng-container matColumnDef="type">
+              <th
+                mat-header-cell
+                *matHeaderCellDef
+                mat-sort-header
+                class="bg-slate-50! px-4! py-3! text-xs font-semibold uppercase tracking-wider text-slate-500 w-32!"
+              >
+                Type
+              </th>
+              <td mat-cell *matCellDef="let row" class="px-4! py-3!">
+                <span class="flex items-center gap-1.5 text-sm text-slate-600">
+                  <mat-icon fontSet="material-symbols-rounded" class="text-slate-400! text-[16px]!">
+                    {{ getMemberTypeIcon(row.member_type) }}
+                  </mat-icon>
+                  {{ getLabelByValue(MEMBER_TYPES, row.member_type) }}
+                </span>
+              </td>
+            </ng-container>
+
+            <!-- Policy -->
+            <ng-container matColumnDef="policy">
+              <th
+                mat-header-cell
+                *matHeaderCellDef
+                mat-sort-header
+                class="bg-slate-50! px-4! py-3! text-xs font-semibold uppercase tracking-wider text-slate-500"
+              >
+                Policy
+              </th>
+              <td mat-cell *matCellDef="let row" class="px-4! py-3!">
+                @if (row.policy?.policy_number) {
+                <span class="font-mono text-sm text-slate-700">{{
+                  row.policy!.policy_number
+                }}</span>
+                } @else {
+                <span class="text-slate-400">-</span>
+                }
+              </td>
+            </ng-container>
+
+            <!-- Age -->
+            <ng-container matColumnDef="age">
+              <th
+                mat-header-cell
+                *matHeaderCellDef
+                mat-sort-header
+                class="bg-slate-50! px-4! py-3! text-xs font-semibold uppercase tracking-wider text-slate-500 text-center! w-20!"
+              >
+                Age
+              </th>
+              <td mat-cell *matCellDef="let row" class="px-4! py-3! text-center! text-slate-600">
+                {{ row.age || calculateAge(row.date_of_birth) }}
+              </td>
+            </ng-container>
+
+            <!-- Card -->
+            <ng-container matColumnDef="card">
+              <th
+                mat-header-cell
+                *matHeaderCellDef
+                mat-sort-header
+                class="bg-slate-50! px-4! py-3! text-xs font-semibold uppercase tracking-wider text-slate-500 w-28!"
+              >
+                Card
+              </th>
+              <td mat-cell *matCellDef="let row" class="px-4! py-3!">
+                <span class="inline-flex items-center gap-1.5 text-sm">
+                  <span
+                    class="h-1.5 w-1.5 rounded-full"
+                    [class]="getCardStatusDotColor(row.card_status)"
+                  ></span>
+                  {{ getLabelByValue(CARD_STATUSES, row.card_status) || 'Pending' }}
+                </span>
+              </td>
+            </ng-container>
+
+            <!-- Actions -->
+            <ng-container matColumnDef="actions">
+              <th
+                mat-header-cell
+                *matHeaderCellDef
+                class="bg-slate-50! px-4! py-3! text-xs font-semibold uppercase tracking-wider text-slate-500 w-16!"
+              ></th>
+              <td mat-cell *matCellDef="let row" class="px-4! py-3!">
+                <button
+                  mat-icon-button
+                  [matMenuTriggerFor]="rowMenu"
+                  (click)="$event.stopPropagation()"
+                  class="text-slate-400! hover:text-slate-600!"
+                >
+                  <mat-icon fontSet="material-symbols-rounded">more_vert</mat-icon>
+                </button>
+                <mat-menu #rowMenu="matMenu">
+                  <button mat-menu-item (click)="viewDetails(row)">
+                    <mat-icon fontSet="material-symbols-rounded">visibility</mat-icon>
+                    <span>View Details</span>
+                  </button>
+                  <button
+                    *libPermission="permissions.MEMBERS_UPDATE"
+                    mat-menu-item
+                    (click)="openDialog(row)"
+                  >
+                    <mat-icon fontSet="material-symbols-rounded">edit</mat-icon>
+                    <span>Edit Member</span>
+                  </button>
+                  <mat-divider class="my-1! opacity-50"></mat-divider>
+
+                  @if (!row.card_status || row.card_status === 'pending') {
+                  <button
+                    *libPermission="permissions.MEMBERS_UPDATE"
+                    mat-menu-item
+                    (click)="issueCard(row, $event)"
+                  >
+                    <mat-icon fontSet="material-symbols-rounded" class="text-blue-500!"
+                      >add_card</mat-icon
+                    >
+                    <span>Issue Card</span>
+                  </button>
+                  } @if (row.card_status === 'issued') {
+                  <button
+                    *libPermission="permissions.MEMBERS_UPDATE"
+                    mat-menu-item
+                    (click)="activateCard(row, $event)"
+                  >
+                    <mat-icon fontSet="material-symbols-rounded" class="text-green-500!"
+                      >check_circle</mat-icon
+                    >
+                    <span>Activate Card</span>
+                  </button>
+                  } @if (row.card_status === 'active') {
+                  <button
+                    *libPermission="permissions.MEMBERS_UPDATE"
+                    mat-menu-item
+                    (click)="blockCard(row, $event)"
+                  >
+                    <mat-icon fontSet="material-symbols-rounded" class="text-amber-500!"
+                      >block</mat-icon
+                    >
+                    <span>Block Card</span>
+                  </button>
+                  }
+                  <mat-divider class="my-1! opacity-50"></mat-divider>
+
+                  @if (row.status === 'suspended') {
+                  <button
+                    *libPermission="permissions.MEMBERS_UPDATE"
+                    mat-menu-item
+                    (click)="activateMember(row, $event)"
+                  >
+                    <mat-icon fontSet="material-symbols-rounded" class="text-green-500!"
+                      >play_arrow</mat-icon
+                    >
+                    <span>Activate</span>
+                  </button>
+                  } @if (row.status === 'active') {
+                  <button
+                    *libPermission="permissions.MEMBERS_SUSPEND"
+                    mat-menu-item
+                    (click)="suspendMember(row, $event)"
+                  >
+                    <mat-icon fontSet="material-symbols-rounded" class="text-amber-500!"
+                      >pause</mat-icon
+                    >
+                    <span>Suspend</span>
+                  </button>
+                  } @if (row.status !== 'terminated') {
+                  <button
+                    *libPermission="permissions.MEMBERS_EXIT"
+                    mat-menu-item
+                    class="text-red-600! hover:bg-red-50!"
+                    (click)="terminateMember(row, $event)"
+                  >
+                    <mat-icon fontSet="material-symbols-rounded" class="text-red-500!"
+                      >person_off</mat-icon
+                    >
+                    <span>Terminate</span>
+                  </button>
+                  }
+                </mat-menu>
+              </td>
+            </ng-container>
+
+            <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+            <tr
+              mat-row
+              *matRowDef="let row; columns: displayedColumns"
+              class="hover:bg-slate-50 cursor-pointer transition-colors"
+              (click)="viewDetails(row)"
+            ></tr>
+
+            <tr class="mat-row" *matNoDataRow>
+              <td class="mat-cell text-center py-12" [attr.colspan]="displayedColumns.length">
+                <div class="flex flex-col items-center gap-2">
+                  <mat-icon fontSet="material-symbols-rounded" class="text-[48px]! text-slate-300">
+                    groups
+                  </mat-icon>
+                  @if (hasActiveFilters()) {
+                  <p class="text-slate-500">No members match your filters</p>
+                  <button mat-stroked-button (click)="clearFilters()" class="border-slate-200!">
+                    Clear Filters
+                  </button>
+                  } @else {
+                  <p class="text-slate-500">No members yet</p>
+                  <button
+                    *libPermission="permissions.MEMBERS_ADD"
+                    mat-flat-button
+                    color="primary"
+                    (click)="openDialog()"
+                  >
+                    Add First Member
+                  </button>
+                  }
+                </div>
+              </td>
+            </tr>
+          </table>
+        </div>
 
         <mat-paginator
-          [pageSizeOptions]="[10, 25, 50, 100]"
-          [pageSize]="25"
+          [length]="store.totalItems()"
+          [pageIndex]="store.currentPage() - 1"
+          [pageSize]="store.pageSize()"
+          [pageSizeOptions]="pageSizeOptions"
+          (page)="onPageChange($event)"
           showFirstLastButtons
-          class="!border-t !border-slate-100"
+          class="border-t! border-slate-100! bg-white!"
         ></mat-paginator>
         }
       </div>
@@ -421,14 +453,14 @@
   <!-- Detail Drawer -->
   <mat-drawer #detailDrawer mode="over" position="end" class="!w-full sm:!w-[600px] !bg-white">
     @if (selectedMember(); as member) {
-    <div class="h-full flex flex-col">
-      <!-- Drawer Header -->
+    <div class="flex flex-col h-full">
+      <!-- Drawer Header (sticky) -->
       <div
-        class="px-6 py-4 border-b border-slate-100 bg-slate-50 flex items-center justify-between"
+        class="px-6 py-4 border-b border-slate-100 bg-slate-50 flex items-center justify-between sticky top-0 z-10"
       >
         <div class="flex items-center gap-3">
           <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-100">
-            <mat-icon fontSet="material-symbols-rounded" class="!text-blue-600">
+            <mat-icon fontSet="material-symbols-rounded" class="text-blue-600!">
               {{ getMemberTypeIcon(member.member_type) }}
             </mat-icon>
           </div>
@@ -439,7 +471,11 @@
             <p class="text-sm text-slate-500 font-mono">{{ member.member_number }}</p>
           </div>
         </div>
-        <button mat-icon-button (click)="closeDrawer()" class="!text-slate-400">
+        <button
+          mat-icon-button
+          (click)="closeDrawer()"
+          class="text-slate-400! hover:text-slate-600!"
+        >
           <mat-icon fontSet="material-symbols-rounded">close</mat-icon>
         </button>
       </div>
@@ -461,7 +497,7 @@
           <span
             class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 text-slate-700 rounded-full text-sm"
           >
-            <mat-icon fontSet="material-symbols-rounded" class="!text-[16px]">
+            <mat-icon fontSet="material-symbols-rounded" class="text-[16px]!">
               {{ getMemberTypeIcon(member.member_type) }}
             </mat-icon>
             {{ getLabelByValue(MEMBER_TYPES, member.member_type) }}
@@ -471,7 +507,7 @@
         <!-- Personal Info -->
         <div class="rounded-lg border border-slate-200 bg-slate-50 p-4 space-y-3">
           <h4 class="font-medium text-slate-900 flex items-center gap-2">
-            <mat-icon fontSet="material-symbols-rounded" class="!text-slate-400 !text-[20px]"
+            <mat-icon fontSet="material-symbols-rounded" class="text-slate-400! text-[20px]!"
               >person</mat-icon
             >
             Personal Information
@@ -502,7 +538,7 @@
         <!-- Contact Info -->
         <div class="rounded-lg border border-slate-200 bg-slate-50 p-4 space-y-3">
           <h4 class="font-medium text-slate-900 flex items-center gap-2">
-            <mat-icon fontSet="material-symbols-rounded" class="!text-slate-400 !text-[20px]"
+            <mat-icon fontSet="material-symbols-rounded" class="text-slate-400! text-[20px]!"
               >contact_phone</mat-icon
             >
             Contact Details
@@ -525,14 +561,16 @@
         <!-- Policy Info -->
         <div class="rounded-lg border border-blue-200 bg-blue-50 p-4 space-y-3">
           <h4 class="font-medium text-blue-900 flex items-center gap-2">
-            <mat-icon fontSet="material-symbols-rounded" class="!text-blue-600 !text-[20px]"
+            <mat-icon fontSet="material-symbols-rounded" class="text-blue-600! text-[20px]!"
               >description</mat-icon
             >
             Policy Information
           </h4>
           <div class="grid grid-cols-3 gap-2 text-sm">
             <span class="text-blue-700">Policy #</span>
-            <span class="col-span-2 font-mono text-blue-900">{{ member.policy_id || 'N/A' }}</span>
+            <span class="col-span-2 font-mono text-blue-900">{{
+              member.policy?.policy_number || 'N/A'
+            }}</span>
           </div>
           <div class="grid grid-cols-3 gap-2 text-sm">
             <span class="text-blue-700">Cover Start</span>
@@ -559,7 +597,7 @@
         <!-- Card Info -->
         <div class="rounded-lg border border-green-200 bg-green-50 p-4 space-y-3">
           <h4 class="font-medium text-green-900 flex items-center gap-2">
-            <mat-icon fontSet="material-symbols-rounded" class="!text-green-600 !text-[20px]"
+            <mat-icon fontSet="material-symbols-rounded" class="text-green-600! text-[20px]!"
               >credit_card</mat-icon
             >
             Medical Card
@@ -580,13 +618,12 @@
             <span class="col-span-2 font-mono text-green-900">{{ member.card_number }}</span>
           </div>
           }
-
           <div class="flex gap-2 pt-2">
             @if (!member.card_status || member.card_status === 'pending') {
             <button
               mat-stroked-button
               (click)="issueCard(member)"
-              class="!border-green-300 !text-green-700"
+              class="border-green-300! text-green-700!"
             >
               <mat-icon fontSet="material-symbols-rounded">add_card</mat-icon>
               Issue Card
@@ -603,28 +640,29 @@
 
         <!-- Premium Info -->
         @if (member.premium) {
-        <div class="rounded-lg border border-purple-200 bg-purple-50 p-4 space-y-3">
-          <h4 class="font-medium text-purple-900 flex items-center gap-2">
-            <mat-icon fontSet="material-symbols-rounded" class="!text-purple-600 !text-[20px]"
+        <div class="rounded-lg border border-violet-200 bg-violet-50 p-4 space-y-3">
+          <h4 class="font-medium text-violet-900 flex items-center gap-2">
+            <mat-icon fontSet="material-symbols-rounded" class="text-violet-600! text-[20px]!"
               >payments</mat-icon
             >
             Premium
           </h4>
           <div class="grid grid-cols-3 gap-2 text-sm">
-            <span class="text-purple-700">Base</span>
-            <span class="col-span-2 text-purple-900">{{ formatCurrency(member.premium) }}</span>
+            <span class="text-violet-700">Base</span>
+            <span class="col-span-2 text-violet-900">{{ formatCurrency(member.premium) }}</span>
           </div>
           @if (member.loading_amount > 0) {
           <div class="grid grid-cols-3 gap-2 text-sm">
-            <span class="text-purple-700">Loadings</span>
+            <span class="text-violet-700">Loadings</span>
             <span class="col-span-2 text-red-600"
               >+{{ formatCurrency(member.loading_amount) }}</span
             >
           </div>
           }
+          <mat-divider></mat-divider>
           <div class="grid grid-cols-3 gap-2 text-sm font-medium">
-            <span class="text-purple-700">Total</span>
-            <span class="col-span-2 text-purple-900">
+            <span class="text-violet-700">Total</span>
+            <span class="col-span-2 text-violet-900">
               {{ formatCurrency((member.premium || 0) + (member.loading_amount || 0)) }}
             </span>
           </div>
@@ -654,12 +692,17 @@
           mat-stroked-button
           [routerLink]="['/medical/members', member.id]"
           (click)="closeDrawer()"
-          class="!border-slate-200"
+          class="border-slate-200!"
         >
           <mat-icon fontSet="material-symbols-rounded">open_in_new</mat-icon>
           Full Profile
         </a>
-        <button mat-flat-button color="primary" (click)="openDialog(member)">
+        <button
+          *libPermission="permissions.MEMBERS_UPDATE"
+          mat-flat-button
+          color="primary"
+          (click)="openDialog(member)"
+        >
           <mat-icon fontSet="material-symbols-rounded">edit</mat-icon>
           Edit
         </button>

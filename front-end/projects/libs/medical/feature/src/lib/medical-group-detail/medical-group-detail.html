@@ -64,20 +64,16 @@
     <!-- Member Stats Cards -->
     <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
       <div class="rounded-lg border border-slate-200 bg-white p-3 text-center">
-        <p class="text-2xl font-semibold text-slate-900">
-          {{ totalGroupMembers() }}
-        </p>
+        <p class="text-2xl font-semibold text-slate-900">{{ totalGroupMembers() }}</p>
         <p class="text-xs text-slate-500">Total Members</p>
       </div>
-      <div class="rounded-lg border border-blue-200 bg-blue-50 p-3 text-center">
-        <p class="text-2xl font-semibold text-blue-700">{{ memberStats().principals }}</p>
-        <p class="text-xs text-blue-600">Principals</p>
+      <div class="rounded-lg border border-teal-200 bg-teal-50 p-3 text-center">
+        <p class="text-2xl font-semibold text-teal-700">{{ totalPrincipals() }}</p>
+        <p class="text-xs text-teal-600">Principals</p>
       </div>
-      <div class="rounded-lg border border-purple-200 bg-purple-50 p-3 text-center">
-        <p class="text-2xl font-semibold text-purple-700">
-          {{ memberStats().spouses + memberStats().children + memberStats().parents }}
-        </p>
-        <p class="text-xs text-purple-600">Dependents</p>
+      <div class="rounded-lg border border-violet-200 bg-violet-50 p-3 text-center">
+        <p class="text-2xl font-semibold text-violet-700">{{ totalDependants() }}</p>
+        <p class="text-xs text-violet-600">Dependants</p>
       </div>
       <div class="rounded-lg border border-amber-200 bg-amber-50 p-3 text-center">
         <p class="text-2xl font-semibold text-amber-700">{{ applications().length }}</p>
@@ -176,7 +172,7 @@
             <input
               matInput
               [ngModel]="memberSearchTerm()"
-              (ngModelChange)="memberSearchTerm.set($event)"
+              (ngModelChange)="onSearchChange($event)"
               placeholder="Search members..."
             />
             @if (memberSearchTerm()) {
@@ -189,7 +185,7 @@
           <mat-form-field appearance="fill" subscriptSizing="dynamic" class="w-48 minimal-input">
             <mat-select
               [ngModel]="applicationFilter()"
-              (ngModelChange)="applicationFilter.set($event)"
+              (ngModelChange)="onApplicationChange($event)"
             >
               <mat-option value="all">All Plans</mat-option>
               @for (app of applications(); track app.id) {
@@ -203,7 +199,7 @@
           <mat-form-field appearance="fill" subscriptSizing="dynamic" class="w-36 minimal-input">
             <mat-select
               [ngModel]="memberTypeFilter()"
-              (ngModelChange)="memberTypeFilter.set($event)"
+              (ngModelChange)="onMemberTypeChange($event)"
             >
               <mat-option value="">All Types</mat-option>
               @for (type of MEMBER_TYPES; track type.value) {
@@ -212,7 +208,7 @@
             </mat-select>
           </mat-form-field>
 
-          @if (memberSearchTerm() || memberTypeFilter()) {
+          @if (memberSearchTerm() || memberTypeFilter() || applicationFilter() !== 'all') {
           <button mat-stroked-button (click)="clearFilters()" class="!border-slate-200">
             <mat-icon fontSet="material-symbols-rounded">filter_alt_off</mat-icon>
             Clear
@@ -393,13 +389,14 @@
           group_off
         </mat-icon>
         <p class="text-slate-500 text-lg">No members found</p>
-        @if (allMembers().length === 0) {
+        @if (totalGroupMembers() === 0) {
         <p class="text-sm text-slate-500 mt-2">Upload a census file to add members</p>
         <button mat-stroked-button (click)="openCensusUploadDialog()" class="mt-4">
           <mat-icon fontSet="material-symbols-rounded">upload_file</mat-icon>
           Upload Census
         </button>
         } @else {
+        <p class="text-sm text-slate-500 mt-2">No members match your current filters</p>
         <button mat-stroked-button (click)="clearFilters()" class="mt-4">
           <mat-icon fontSet="material-symbols-rounded">filter_alt_off</mat-icon>
           Clear Filters

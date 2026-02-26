@@ -36,34 +36,56 @@ class MemberController extends Controller
 
     public function index(): JsonResponse
     {
-        $query = Member::query()
-            ->with(['policy:id,policy_number,status', 'principal:id,first_name,last_name']);
+        // Base query with search + non-type filters (used for accurate KPI counts)
+        $baseQuery = Member::query()
+            ->when(request('search'), function ($q, $search) {
+                $q->where(function ($q) use ($search) {
+                    $q->where('member_number', 'like', "%{$search}%")
+                      ->orWhere('first_name', 'like', "%{$search}%")
+                      ->orWhere('last_name', 'like', "%{$search}%")
+                      ->orWhere('email', 'like', "%{$search}%")
+                      ->orWhere('national_id', 'like', "%{$search}%")
+                      ->orWhere('employee_number', 'like', "%{$search}%");
+                });
+            })
+            ->when(request('status'), fn ($q, $v) => $q->where('status', $v))
+            ->when(request('policy_id'), fn ($q, $v) => $q->where('policy_id', $v));
 
-        // Search
-        $query->when(request('search'), function ($q, $search) {
-            $q->where(function ($q) use ($search) {
-                $q->where('member_number', 'like', "%{$search}%")
-                  ->orWhere('first_name', 'like', "%{$search}%")
-                  ->orWhere('last_name', 'like', "%{$search}%")
-                  ->orWhere('email', 'like', "%{$search}%")
-                  ->orWhere('national_id', 'like', "%{$search}%")
-                  ->orWhere('employee_number', 'like', "%{$search}%");
-            });
-        });
+        // Accurate KPI counts (not restricted by member_type filter)
+        $principalCount = (clone $baseQuery)->principals()->count();
+        $dependentCount = (clone $baseQuery)->dependents()->count();
 
-        // Filters
-        $query->when(request('status'), fn ($q, $v) => $q->where('status', $v))
-              ->when(request('policy_id'), fn ($q, $v) => $q->where('policy_id', $v))
-              ->when(request('member_type'), fn ($q, $v) => $q->where('member_type', $v));
-        
-        // Scopes
+        // Full query for paginated results (adds member_type filter + eager loads)
+        $query = (clone $baseQuery)
+            ->with(['policy:id,policy_number,status', 'principal:id,first_name,last_name'])
+            ->when(request('member_type'), fn ($q, $v) => $q->where('member_type', $v));
+
         if (request('principals_only')) $query->principals();
         if (request('dependents_only')) $query->dependents();
 
-        return $this->paginated(
-            MemberListResource::collection($query->paginate(request('per_page', 20))),
-            'Members retrieved'
-        );
+        $paginator = $query->paginate(request('per_page', 20));
+
+        return response()->json([
+            'status'  => 'success',
+            'message' => 'Members retrieved',
+            'data'    => MemberListResource::collection($paginator->items()),
+            'meta'    => [
+                'current_page'    => $paginator->currentPage(),
+                'last_page'       => $paginator->lastPage(),
+                'per_page'        => $paginator->perPage(),
+                'total'           => $paginator->total(),
+                'from'            => $paginator->firstItem(),
+                'to'              => $paginator->lastItem(),
+                'principal_count' => $principalCount,
+                'dependent_count' => $dependentCount,
+            ],
+            'links'   => [
+                'first' => $paginator->url(1),
+                'last'  => $paginator->url($paginator->lastPage()),
+                'prev'  => $paginator->previousPageUrl(),
+                'next'  => $paginator->nextPageUrl(),
+            ],
+        ]);
     }
 
     public function store(MemberRequest $request): JsonResponse

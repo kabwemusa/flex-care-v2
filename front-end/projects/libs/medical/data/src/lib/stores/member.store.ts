@@ -20,6 +20,8 @@ export interface MemberPaginationMeta {
   total: number;
   from?: number | null;
   to?: number | null;
+  principal_count?: number;
+  dependent_count?: number;
 }
 
 export interface MemberFilters {
@@ -76,6 +78,10 @@ export class MemberStore {
   readonly activeMembers = computed(() => this.members().filter((m) => m.status === 'active'));
   readonly principalMembers = computed(() => this.members().filter((m) => m.is_principal));
   readonly dependentMembers = computed(() => this.members().filter((m) => m.is_dependent));
+
+  // Server-accurate KPI counts (from meta, not current page)
+  readonly principalCount = computed(() => this.pagination()?.principal_count ?? 0);
+  readonly dependentCount = computed(() => this.pagination()?.dependent_count ?? 0);
 
   // =========================================================================
   // LOAD OPERATIONS
@@ -184,7 +190,7 @@ export class MemberStore {
   update(id: string, changes: Partial<CreateMemberPayload>) {
     this.state.update((s) => ({ ...s, saving: true }));
 
-    return this.http.patch<ApiResponse<Member>>(`${this.apiUrl}/${id}`, changes).pipe(
+    return this.http.put<ApiResponse<Member>>(`${this.apiUrl}/${id}`, changes).pipe(
       tap({
         next: (res) =>
           this.state.update((s) => ({

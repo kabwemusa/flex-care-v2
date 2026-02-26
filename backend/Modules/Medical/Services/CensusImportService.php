@@ -58,7 +58,8 @@ class CensusImportService
             $validationResult = $this->validateParsedData($data);
 
             return [
-                'success' => $validationResult['valid_count'] > 0,
+                // Change this from checking valid_count > 0 to ensuring there are zero errors
+                'success' => empty($validationResult['errors']), 
                 'data' => $data,
                 'errors' => $validationResult['errors'],
                 'summary' => $this->generateSummary($data, $validationResult),

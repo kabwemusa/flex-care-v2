@@ -581,6 +581,7 @@ Route::prefix('v1/medical')
         // Update permissions
         Route::middleware(['permission:medical.members.update'])->group(function () {
             Route::put('/{id}', [MemberController::class, 'update']);
+            Route::patch('/{id}', [MemberController::class, 'update']);
             Route::post('/{id}/activate', [MemberController::class, 'activate']);
             Route::post('/{id}/issue-card', [MemberController::class, 'issueCard']);
             Route::post('/{id}/activate-card', [MemberController::class, 'activateCard']);

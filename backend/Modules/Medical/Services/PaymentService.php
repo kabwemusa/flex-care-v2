@@ -376,7 +376,7 @@ class PaymentService
             COUNT(CASE WHEN status = ? THEN 1 END) as confirmed_count,
             COUNT(CASE WHEN status = ? THEN 1 END) as bounced_count,
             COUNT(CASE WHEN status = ? THEN 1 END) as reversed_count,
-            COUNT(CASE WHEN is_reconciled = 1 THEN 1 END) as reconciled_count,
+            COUNT(CASE WHEN is_reconciled = true THEN 1 END) as reconciled_count,
             SUM(CASE WHEN status = ? THEN amount ELSE 0 END) as bounced_amount
         ", [
             MedicalConstants::PAYMENT_STATUS_PENDING,

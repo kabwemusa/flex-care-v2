@@ -110,9 +110,9 @@ class BillingController extends Controller
         try {
             $invoice = Invoice::with([
                 'policy:id,policy_number,holder_name,holder_email,status,inception_date,expiry_date',
-                'group:id,code,name,billing_email,address',
+                'group:id,code,name,billing_email,billing_address',
                 'endorsement:id,endorsement_number,endorsement_type,effective_date',
-                'items.member:id,member_number,first_name,last_name',
+                'items.member:id,member_number,first_name,last_name,member_type',
                 'allocations.payment:id,payment_number,payment_date,amount,status',
             ])->findOrFail($id);
 

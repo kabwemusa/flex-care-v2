@@ -1,8 +1,8 @@
 // libs/medical/feature/src/lib/medical-group-detail/medical-group-detail.ts
 
-import { Component, OnInit, inject, signal, computed, effect } from '@angular/core';
+import { Component, OnInit, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 
 // Material Imports
@@ -34,7 +34,7 @@ import {
   APPLICATION_STATUSES,
   MEMBER_TYPE_STYLES,
 } from 'medical-data';
-import { FeedbackService, PageHeaderComponent } from 'shared';
+import { FeedbackService } from 'shared';
 import { MedicalCensusUploadDialog } from '../dialogs/medical-census-upload-dialog/medical-census-upload-dialog';
 
 @Component({
@@ -75,12 +75,15 @@ export class MedicalGroupDetail implements OnInit {
   readonly members = this.store.members;
   readonly membersPagination = this.store.membersPagination;
 
-  // Filters for members table
+  // Filter signals
   readonly memberSearchTerm = signal('');
   readonly memberTypeFilter = signal('');
-  readonly applicationFilter = signal('');
+  readonly applicationFilter = signal('all');
 
-  // Members from current page (with display info)
+  // Debounce for search
+  private searchDebounceTimer: ReturnType<typeof setTimeout> | null = null;
+
+  // Current-page members with display info
   readonly allMembers = computed(() => {
     const grp = this.group();
     const members = this.members();
@@ -95,70 +98,53 @@ export class MedicalGroupDetail implements OnInit {
     });
   });
 
-  // Client-side filtered members (search + member type on current page)
-  readonly filteredMembers = computed(() => {
-    let members = this.allMembers();
-
-    const search = this.memberSearchTerm().toLowerCase();
-    if (search) {
-      members = members.filter(
-        (m) =>
-          m.first_name?.toLowerCase().includes(search) ||
-          m.last_name?.toLowerCase().includes(search) ||
-          m.email?.toLowerCase().includes(search) ||
-          m.employee_number?.toLowerCase().includes(search)
-      );
-    }
-
-    const memberType = this.memberTypeFilter();
-    if (memberType) {
-      members = members.filter((m) => m.member_type === memberType);
-    }
-
-    return members;
-  });
+  // Server already filters — the table shows allMembers directly
+  readonly filteredMembers = computed(() => this.allMembers());
 
   // Pagination
   readonly memberPageSize = signal(10);
   readonly memberPageSizeOptions = [10, 25, 50];
 
-  // Total members from backend stats (across ALL applications)
-  readonly totalGroupMembers = computed(() => {
-    return this.group()?.stats?.total_application_members ?? 0;
-  });
+  // True total from group stats (independent of any filter)
+  readonly totalGroupMembers = computed(
+    () => this.group()?.stats?.total_application_members ?? 0
+  );
 
-  // Effect: load members when group or filter changes
-  readonly loadMembersEffect = effect(() => {
-    const grp = this.group();
-    const selectedAppId = this.applicationFilter();
-    const perPage = this.memberPageSize();
-
-    if (!grp) return;
-
-    // Default to 'all' (no application filter)
-    if (!selectedAppId) {
-      this.applicationFilter.set('all');
-      return;
+  // -------------------------------------------------------------------------
+  // Accurate counts derived from application-level data (server counts)
+  // Respects application filter; unaffected by page size / current page.
+  // -------------------------------------------------------------------------
+  readonly totalMembers = computed(() => {
+    const apps = this.applications();
+    const appFilter = this.applicationFilter();
+    if (appFilter && appFilter !== 'all') {
+      const app = apps.find((a) => a.id === appFilter);
+      return app?.member_count ?? 0;
     }
-
-    const appFilter = selectedAppId === 'all' ? undefined : selectedAppId;
-    this.store.loadGroupMembers(grp.id, 1, perPage, { application_id: appFilter });
+    return apps.reduce((sum, app) => sum + (app.member_count ?? 0), 0);
   });
 
-  // Member summary stats (from current page)
-  readonly memberStats = computed(() => {
-    const members = this.allMembers();
-    return {
-      total: members.length,
-      principals: members.filter((m) => m.member_type === 'principal').length,
-      spouses: members.filter((m) => m.member_type === 'spouse').length,
-      children: members.filter((m) => m.member_type === 'child').length,
-      parents: members.filter((m) => m.member_type === 'parent').length,
-      other: members.filter((m) => m.member_type === 'other').length,
-    };
+  readonly totalPrincipals = computed(() => {
+    const apps = this.applications();
+    const appFilter = this.applicationFilter();
+    if (appFilter && appFilter !== 'all') {
+      const app = apps.find((a) => a.id === appFilter);
+      return app?.principal_count ?? 0;
+    }
+    return apps.reduce((sum, app) => sum + (app.principal_count ?? 0), 0);
   });
 
-  // Applications list for dropdown
+  readonly totalDependants = computed(() => {
+    const apps = this.applications();
+    const appFilter = this.applicationFilter();
+    if (appFilter && appFilter !== 'all') {
+      const app = apps.find((a) => a.id === appFilter);
+      return app?.dependent_count ?? 0;
+    }
+    return apps.reduce((sum, app) => sum + (app.dependent_count ?? 0), 0);
+  });
+
+  // Applications list for dropdown and cards
   readonly applications = computed(() => this.group()?.applications || []);
 
   // Application cards — totals across all plans
@@ -190,14 +176,72 @@ export class MedicalGroupDetail implements OnInit {
 
   loadGroup(id: string) {
     this.store.clearMembers();
+    this.memberSearchTerm.set('');
+    this.memberTypeFilter.set('');
     this.applicationFilter.set('all');
     this.store.loadOne(id).subscribe({
-      error: (err) => {
+      next: () => this.loadMembers(1),
+      error: () => {
         this.feedback.error('Failed to load group details');
-        this.router.navigate([`/groups`]);
+        this.router.navigate(['/groups']);
       },
     });
   }
+
+  // =========================================================================
+  // SERVER-SIDE FILTER HANDLERS
+  // =========================================================================
+
+  onSearchChange(value: string): void {
+    this.memberSearchTerm.set(value);
+    if (this.searchDebounceTimer) clearTimeout(this.searchDebounceTimer);
+    this.searchDebounceTimer = setTimeout(() => this.loadMembers(1), 300);
+  }
+
+  onMemberTypeChange(value: string): void {
+    this.memberTypeFilter.set(value);
+    this.loadMembers(1);
+  }
+
+  onApplicationChange(value: string): void {
+    this.applicationFilter.set(value);
+    this.loadMembers(1);
+  }
+
+  clearFilters() {
+    this.memberSearchTerm.set('');
+    this.memberTypeFilter.set('');
+    this.loadMembers(1);
+  }
+
+  // =========================================================================
+  // PAGINATION
+  // =========================================================================
+
+  onMemberPage(event: PageEvent) {
+    this.memberPageSize.set(event.pageSize);
+    this.loadMembers(event.pageIndex + 1);
+  }
+
+  // =========================================================================
+  // PRIVATE LOAD
+  // =========================================================================
+
+  private loadMembers(page: number): void {
+    const grp = this.group();
+    if (!grp) return;
+
+    const appFilter = this.applicationFilter();
+    this.store.loadGroupMembers(grp.id, page, this.memberPageSize(), {
+      application_id: appFilter !== 'all' ? appFilter : undefined,
+      member_type: this.memberTypeFilter() || undefined,
+      search: this.memberSearchTerm() || undefined,
+    });
+  }
+
+  // =========================================================================
+  // HELPERS
+  // =========================================================================
 
   getMemberTypeLabel(value: string): string {
     return getLabelByValue(MEMBER_TYPES, value);
@@ -277,33 +321,18 @@ export class MedicalGroupDetail implements OnInit {
     dialogRef.afterClosed().subscribe((result) => {
       if (result) {
         this.feedback.success('Census uploaded and application created successfully!');
-        this.loadGroup(grp.id); // Reload to show new application
+        this.loadGroup(grp.id);
       }
     });
   }
 
-  clearFilters() {
-    this.memberSearchTerm.set('');
-    this.memberTypeFilter.set('');
-  }
-
-  onMemberPage(event: PageEvent) {
-    const grp = this.group();
-    if (!grp) return;
-    this.memberPageSize.set(event.pageSize);
-    const appFilter = this.applicationFilter();
-    const applicationId = appFilter === 'all' ? undefined : appFilter;
-    this.store.loadGroupMembers(grp.id, event.pageIndex + 1, event.pageSize, { application_id: applicationId });
-  }
-
   exportMembers() {
-    const members = this.filteredMembers();
+    const members = this.allMembers();
     if (members.length === 0) {
       this.feedback.error('No members to export');
       return;
     }
 
-    // Create CSV content
     const headers = [
       'Application',
       'Member Type',
@@ -339,7 +368,6 @@ export class MedicalGroupDetail implements OnInit {
       ),
     ].join('\n');
 
-    // Download
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     const url = URL.createObjectURL(blob);
@@ -361,7 +389,8 @@ export class MedicalGroupDetail implements OnInit {
     this.feedback.success(`Exported ${members.length} members to CSV`);
   }
 
-  formatCurrency(amount: number): string {
+  formatCurrency(amount: number | null | undefined): string {
+    if (amount === null || amount === undefined || isNaN(amount)) return '-';
     return new Intl.NumberFormat('en-ZM', {
       style: 'currency',
       currency: 'ZMW',

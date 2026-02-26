@@ -1,4 +1,11 @@
 <div class="flex h-screen w-full overflow-hidden bg-surface-50 text-foreground">
+  <!-- Navigation progress bar: visible immediately on NavigationStart -->
+  @if (navigating()) {
+    <div class="fixed top-0 left-0 right-0 z-100 h-0.5 overflow-hidden bg-teal-100">
+      <div class="nav-progress-bar h-full w-full bg-teal-500"></div>
+    </div>
+  }
+
   <lib-side-nav
     class="z-40 hidden md:flex"
     [items]="navItems"
@@ -15,7 +22,7 @@
 
     <main class="flex-1 overflow-y-auto scroll-smooth">
       <div
-        class="mx-auto w-full max-w-screen-2xl p-4 md:p-6 lg:p-8 animate-in fade-in duration-300 slide-in-from-bottom-2"
+        class="mx-auto w-full max-w-screen-2xl p-4 md:p-6 lg:p-8 animate-in fade-in duration-200 slide-in-from-bottom-1"
       >
         <router-outlet />
       </div>

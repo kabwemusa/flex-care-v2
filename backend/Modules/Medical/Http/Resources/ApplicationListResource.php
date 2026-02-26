@@ -41,9 +41,18 @@ class ApplicationListResource extends JsonResource
             
             'billing_frequency' => $this->billing_frequency,
             'currency' => $this->currency,
-            'gross_premium' => (float) $this->gross_premium,
-            
+            'base_premium' => (float) ($this->base_premium ?? 0),
+            'addon_premium' => (float) ($this->addon_premium ?? 0),
+            'loading_amount' => (float) ($this->loading_amount ?? 0),
+            'discount_amount' => (float) ($this->discount_amount ?? 0),
+            'tax_amount' => (float) ($this->tax_amount ?? 0),
+            'total_premium' => (float) ($this->total_premium ?? 0),
+            'gross_premium' => (float) ($this->gross_premium ?? 0),
+
             'member_count' => $this->member_count ?? $this->active_members_count ?? 0,
+            'principal_count' => $this->principal_count ?? 0,
+            'dependent_count' => $this->dependent_count ?? 0,
+            'policy_term_months' => $this->policy_term_months ?? 0,
             
             'status' => $this->status,
             'status_label' => $this->status_label,

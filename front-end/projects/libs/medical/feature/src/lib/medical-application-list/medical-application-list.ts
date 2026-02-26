@@ -340,7 +340,8 @@ export class MedicalApplicationList implements OnInit {
     return getLabelByValue(BILLING_FREQUENCIES, frequency);
   }
 
-  formatCurrency(amount: number, currency: string = 'ZMW'): string {
+  formatCurrency(amount: number | null | undefined, currency: string = 'ZMW'): string {
+    if (amount === null || amount === undefined || isNaN(amount)) return '-';
     return new Intl.NumberFormat('en-ZM', {
       style: 'currency',
       currency,

@@ -1580,19 +1580,20 @@ class ApplicationController extends Controller
             }
 
             // Store parsed data in session or cache for later use
+          // Store parsed data in session or cache for later use
             $cacheKey = 'census_import_' . $request->user()->id . '_' . time();
             cache()->put($cacheKey, [
                 'group_id' => $request->group_id,
                 'data' => $result['data'],
                 'summary' => $result['summary'],
-            ], now()->addHours(2)); // Cache for 2 hours
+            ], now()->addHours(2));
 
             return $this->success([
                 'import_key' => $cacheKey,
                 'summary' => $result['summary'],
-                'preview' => array_slice($result['data'], 0, 5), // First 5 rows as preview
-            ], 'Census imported successfully. Use the import_key to create application.');
-
+                'preview' => array_slice($result['data'], 0, 5),
+                'errors' => $result['errors'], // Add this line to pass errors to the frontend
+            ], 'Census parsed. Please review the errors before continuing.');
         } catch (Throwable $e) {
             return $this->error('Failed to import census: ' . $e->getMessage(), 500);
         }

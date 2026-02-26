@@ -1007,6 +1007,7 @@ export interface Member {
   has_pre_existing_conditions?: boolean;
 
   // Relations
+  policy?: { id: string; policy_number: string; status: string };
   principal?: Member;
   dependents?: Member[];
   loadings?: MemberLoading[];
@@ -2007,6 +2008,7 @@ export interface InvoiceItem {
     id: string;
     member_number: string;
     full_name?: string;
+    member_type?: string;
   };
   reference_type?: string;
   reference_id?: string;

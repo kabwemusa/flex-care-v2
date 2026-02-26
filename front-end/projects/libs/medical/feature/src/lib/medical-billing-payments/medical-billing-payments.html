@@ -1,97 +1,484 @@
-<!-- libs/medical/feature/src/lib/medical-billing-payments/medical-billing-payments.html -->
+<mat-drawer-container class="h-full">
+  <mat-drawer-content>
+    <div class="bg-white p-6 md:p-10 min-h-[80vh] shadow-sm">
 
-<mat-sidenav-container class="h-full">
-  <!-- Detail Drawer -->
-  <mat-sidenav
+      <!-- Header -->
+      <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-6">
+        <div>
+          <h1 class="text-2xl font-bold tracking-tight text-slate-900">Payments</h1>
+          <p class="mt-1 text-sm text-slate-500">Record and manage payment receipts</p>
+        </div>
+        <div class="flex gap-2">
+          <button
+            mat-stroked-button
+            (click)="exportToCsv()"
+            class="border-slate-200! rounded-lg! hidden sm:flex"
+          >
+            <mat-icon fontSet="material-symbols-rounded">download</mat-icon>
+            Export
+          </button>
+          <button
+            *libPermission="permissions.BILLING_PAYMENTS_RECORD"
+            mat-flat-button
+            color="primary"
+            class="rounded-lg!"
+            (click)="openRecordPaymentDialog()"
+          >
+            <mat-icon fontSet="material-symbols-rounded">add</mat-icon>
+            Record Payment
+          </button>
+        </div>
+      </div>
+
+      <!-- KPI Cards -->
+      <div class="grid grid-cols-1 gap-4 sm:grid-cols-3 mb-6">
+        <div class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+          <div class="flex items-center justify-between">
+            <div>
+              <div class="text-xs font-medium text-slate-500">Total Received</div>
+              <div class="mt-1 text-xl font-bold tracking-tight text-slate-900">
+                {{ formatCurrency(totalReceived()) }}
+              </div>
+            </div>
+            <div class="flex h-9 w-9 items-center justify-center rounded-full bg-green-100">
+              <mat-icon fontSet="material-symbols-rounded" class="text-[18px]! text-green-600"
+                >account_balance_wallet</mat-icon
+              >
+            </div>
+          </div>
+        </div>
+
+        <div class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+          <div class="flex items-center justify-between">
+            <div>
+              <div class="text-xs font-medium text-slate-500">Unallocated</div>
+              <div class="mt-1 text-xl font-bold tracking-tight text-amber-600">
+                {{ formatCurrency(unallocatedAmount()) }}
+              </div>
+            </div>
+            <div class="flex h-9 w-9 items-center justify-center rounded-full bg-amber-100">
+              <mat-icon fontSet="material-symbols-rounded" class="text-[18px]! text-amber-600"
+                >pending</mat-icon
+              >
+            </div>
+          </div>
+        </div>
+
+        <div class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+          <div class="flex items-center justify-between">
+            <div>
+              <div class="text-xs font-medium text-slate-500">This Month</div>
+              <div class="mt-1 text-xl font-bold tracking-tight text-blue-600">
+                {{ paymentsThisMonth() }}
+              </div>
+              <div class="text-xs text-slate-400">payments</div>
+            </div>
+            <div class="flex h-9 w-9 items-center justify-center rounded-full bg-blue-100">
+              <mat-icon fontSet="material-symbols-rounded" class="text-[18px]! text-blue-600"
+                >calendar_month</mat-icon
+              >
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Filters -->
+      <div class="rounded-xl border border-slate-200 bg-white p-4 mb-6 shadow-sm">
+        <div class="flex flex-wrap gap-4 items-end">
+          <mat-form-field
+            appearance="fill"
+            subscriptSizing="dynamic"
+            class="flex-1 min-w-75 minimal-input"
+          >
+            <mat-icon fontSet="material-symbols-rounded" matPrefix class="text-slate-400!"
+              >search</mat-icon
+            >
+            <input
+              matInput
+              [ngModel]="searchTerm()"
+              (ngModelChange)="onSearchChange($event)"
+              placeholder="Search by payment #, policy #, or reference..."
+            />
+            @if (searchTerm()) {
+            <button matSuffix mat-icon-button (click)="clearSearch()">
+              <mat-icon fontSet="material-symbols-rounded">close</mat-icon>
+            </button>
+            }
+          </mat-form-field>
+
+          <mat-form-field appearance="fill" subscriptSizing="dynamic" class="w-44 minimal-input">
+            <mat-select [ngModel]="statusFilter()" (ngModelChange)="onStatusChange($event)">
+              @for (status of PAYMENT_FILTER_OPTIONS.statuses; track status.value) {
+              <mat-option [value]="status.value">{{ status.label }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field appearance="fill" subscriptSizing="dynamic" class="w-44 minimal-input">
+            <mat-select [ngModel]="methodFilter()" (ngModelChange)="onMethodChange($event)">
+              @for (method of PAYMENT_FILTER_OPTIONS.methods; track method.value) {
+              <mat-option [value]="method.value">{{ method.label }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+
+          <button
+            mat-stroked-button
+            (click)="toggleUnallocatedOnly()"
+            [class]="unallocatedOnly() ? 'border-amber-300! text-amber-600!' : 'border-slate-200!'"
+          >
+            <mat-icon fontSet="material-symbols-rounded">{{
+              unallocatedOnly() ? 'pending' : 'check_circle'
+            }}</mat-icon>
+            Unallocated Only
+          </button>
+
+          @if (hasActiveFilters()) {
+          <button mat-stroked-button (click)="clearFilters()" class="border-slate-200!">
+            <mat-icon fontSet="material-symbols-rounded">filter_alt_off</mat-icon>
+            Clear
+          </button>
+          }
+        </div>
+      </div>
+
+      <!-- Table Card -->
+      <div
+        class="flex flex-col rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden"
+      >
+        @if (store.isPaymentLoading()) {
+        <div class="divide-y divide-slate-100">
+          @for (i of [1,2,3,4,5]; track i) {
+          <div class="flex items-center gap-4 p-4 animate-pulse">
+            <div class="h-6 w-20 rounded-full bg-slate-100"></div>
+            <div class="flex-1 space-y-2">
+              <div class="h-4 w-1/3 rounded bg-slate-100"></div>
+              <div class="h-3 w-1/4 rounded bg-slate-50"></div>
+            </div>
+            <div class="h-4 w-16 rounded bg-slate-100"></div>
+            <div class="h-4 w-20 rounded bg-slate-100"></div>
+          </div>
+          }
+        </div>
+        } @else {
+        <div class="overflow-x-auto">
+          <table mat-table [dataSource]="store.payments()" matSort class="w-full">
+
+            <!-- Status Column -->
+            <ng-container matColumnDef="status">
+              <th
+                mat-header-cell
+                *matHeaderCellDef
+                mat-sort-header
+                class="bg-slate-50! px-4! py-3! text-xs font-semibold uppercase tracking-wider text-slate-500 w-28!"
+              >
+                Status
+              </th>
+              <td mat-cell *matCellDef="let payment" class="px-4! py-3!">
+                <span
+                  class="inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-xs font-medium"
+                  [ngClass]="[
+                    getStatusStyles(payment.status).bg,
+                    getStatusStyles(payment.status).text
+                  ]"
+                >
+                  <span
+                    class="w-1.5 h-1.5 rounded-full"
+                    [ngClass]="getStatusStyles(payment.status).dot"
+                  ></span>
+                  {{ getStatusLabel(payment.status) }}
+                </span>
+              </td>
+            </ng-container>
+
+            <!-- Payment Number Column -->
+            <ng-container matColumnDef="payment_number">
+              <th
+                mat-header-cell
+                *matHeaderCellDef
+                mat-sort-header
+                class="bg-slate-50! px-4! py-3! text-xs font-semibold uppercase tracking-wider text-slate-500"
+              >
+                Payment #
+              </th>
+              <td mat-cell *matCellDef="let payment" class="px-4! py-3!">
+                <button
+                  class="text-left font-medium text-slate-900 hover:text-primary transition-colors"
+                  (click)="viewDetails(payment); $event.stopPropagation()"
+                >
+                  {{ payment.payment_number }}
+                </button>
+              </td>
+            </ng-container>
+
+            <!-- Policy Column -->
+            <ng-container matColumnDef="policy">
+              <th
+                mat-header-cell
+                *matHeaderCellDef
+                class="bg-slate-50! px-4! py-3! text-xs font-semibold uppercase tracking-wider text-slate-500"
+              >
+                Policy
+              </th>
+              <td mat-cell *matCellDef="let payment" class="px-4! py-3!">
+                <div class="font-medium text-slate-900">
+                  {{ payment.policy?.policy_number ?? '-' }}
+                </div>
+                <div class="text-xs text-slate-500">{{ payment.policy?.holder_name ?? '' }}</div>
+              </td>
+            </ng-container>
+
+            <!-- Method Column -->
+            <ng-container matColumnDef="method">
+              <th
+                mat-header-cell
+                *matHeaderCellDef
+                class="bg-slate-50! px-4! py-3! text-xs font-semibold uppercase tracking-wider text-slate-500"
+              >
+                Method
+              </th>
+              <td mat-cell *matCellDef="let payment" class="px-4! py-3!">
+                <span class="text-sm text-slate-700">{{
+                  getMethodLabel(payment.payment_method)
+                }}</span>
+              </td>
+            </ng-container>
+
+            <!-- Amount Column -->
+            <ng-container matColumnDef="amount">
+              <th
+                mat-header-cell
+                *matHeaderCellDef
+                mat-sort-header
+                class="bg-slate-50! px-4! py-3! text-xs font-semibold uppercase tracking-wider text-slate-500 text-right!"
+              >
+                Amount
+              </th>
+              <td mat-cell *matCellDef="let payment" class="px-4! py-3! text-right!">
+                <span class="font-semibold text-slate-900">{{
+                  formatCurrency(payment.amount)
+                }}</span>
+              </td>
+            </ng-container>
+
+            <!-- Allocated Column -->
+            <ng-container matColumnDef="allocated">
+              <th
+                mat-header-cell
+                *matHeaderCellDef
+                class="bg-slate-50! px-4! py-3! text-xs font-semibold uppercase tracking-wider text-slate-500 text-right!"
+              >
+                Allocated
+              </th>
+              <td mat-cell *matCellDef="let payment" class="px-4! py-3! text-right!">
+                <span class="font-medium text-green-600">{{
+                  formatCurrency(payment.allocated_amount)
+                }}</span>
+              </td>
+            </ng-container>
+
+            <!-- Unallocated Column -->
+            <ng-container matColumnDef="unallocated">
+              <th
+                mat-header-cell
+                *matHeaderCellDef
+                class="bg-slate-50! px-4! py-3! text-xs font-semibold uppercase tracking-wider text-slate-500 text-right!"
+              >
+                Unallocated
+              </th>
+              <td mat-cell *matCellDef="let payment" class="px-4! py-3! text-right!">
+                <span
+                  class="font-medium"
+                  [class.text-amber-600]="payment.unallocated_amount > 0"
+                  [class.text-slate-400]="payment.unallocated_amount === 0"
+                >
+                  {{ formatCurrency(payment.unallocated_amount) }}
+                </span>
+              </td>
+            </ng-container>
+
+            <!-- Date Column -->
+            <ng-container matColumnDef="date">
+              <th
+                mat-header-cell
+                *matHeaderCellDef
+                mat-sort-header
+                class="bg-slate-50! px-4! py-3! text-xs font-semibold uppercase tracking-wider text-slate-500"
+              >
+                Date
+              </th>
+              <td mat-cell *matCellDef="let payment" class="px-4! py-3!">
+                <span class="text-sm text-slate-700">{{ formatDate(payment.payment_date) }}</span>
+              </td>
+            </ng-container>
+
+            <!-- Actions Column -->
+            <ng-container matColumnDef="actions">
+              <th
+                mat-header-cell
+                *matHeaderCellDef
+                class="bg-slate-50! px-4! py-3! text-xs font-semibold uppercase tracking-wider text-slate-500 w-16!"
+              ></th>
+              <td mat-cell *matCellDef="let payment" class="px-4! py-3!">
+                <button
+                  mat-icon-button
+                  [matMenuTriggerFor]="rowMenu"
+                  (click)="$event.stopPropagation()"
+                  class="text-slate-400! hover:text-slate-600!"
+                >
+                  <mat-icon fontSet="material-symbols-rounded">more_vert</mat-icon>
+                </button>
+                <mat-menu #rowMenu="matMenu">
+                  <button mat-menu-item (click)="viewDetails(payment)">
+                    <mat-icon fontSet="material-symbols-rounded">visibility</mat-icon>
+                    <span>View Details</span>
+                  </button>
+                  @if (hasUnallocated(payment) && payment.status !== 'reversed') {
+                  <button
+                    *libPermission="permissions.BILLING_PAYMENTS_ALLOCATE"
+                    mat-menu-item
+                    (click)="autoAllocate(payment)"
+                  >
+                    <mat-icon fontSet="material-symbols-rounded">auto_fix_high</mat-icon>
+                    <span>Auto-Allocate</span>
+                  </button>
+                  }
+                  <mat-divider></mat-divider>
+                  @if (payment.status !== 'reversed') {
+                  <button
+                    *libPermission="permissions.BILLING_PAYMENTS_REVERSE"
+                    mat-menu-item
+                    class="text-red-600!"
+                    (click)="reversePayment(payment)"
+                  >
+                    <mat-icon fontSet="material-symbols-rounded" class="text-red-600!">undo</mat-icon>
+                    <span>Reverse Payment</span>
+                  </button>
+                  }
+                </mat-menu>
+              </td>
+            </ng-container>
+
+            <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+            <tr
+              mat-row
+              *matRowDef="let row; columns: displayedColumns"
+              class="hover:bg-slate-50 cursor-pointer transition-colors"
+              (click)="viewDetails(row)"
+            ></tr>
+
+            <tr class="mat-row" *matNoDataRow>
+              <td class="mat-cell text-center py-12" [attr.colspan]="displayedColumns.length">
+                <div class="flex flex-col items-center gap-2">
+                  <mat-icon fontSet="material-symbols-rounded" class="text-[48px]! text-slate-300">
+                    payments
+                  </mat-icon>
+                  <p class="text-slate-500">No payments found</p>
+                  <p class="text-sm text-slate-400">
+                    @if (hasActiveFilters()) { Try adjusting your filters } @else { Record a payment
+                    to get started }
+                  </p>
+                  @if (!hasActiveFilters()) {
+                  <button
+                    *libPermission="permissions.BILLING_PAYMENTS_RECORD"
+                    mat-flat-button
+                    color="primary"
+                    class="mt-2"
+                    (click)="openRecordPaymentDialog()"
+                  >
+                    <mat-icon fontSet="material-symbols-rounded">add</mat-icon>
+                    Record Payment
+                  </button>
+                  }
+                </div>
+              </td>
+            </tr>
+          </table>
+        </div>
+
+        <mat-paginator
+          [length]="store.paymentTotalItems()"
+          [pageIndex]="store.paymentCurrentPage() - 1"
+          [pageSize]="store.paymentPageSize()"
+          [pageSizeOptions]="pageSizeOptions"
+          (page)="onPageChange($event)"
+          showFirstLastButtons
+          class="border-t! border-slate-100! bg-white!"
+        ></mat-paginator>
+        }
+      </div>
+    </div>
+  </mat-drawer-content>
+
+  <mat-drawer
     #detailDrawer
     mode="over"
     position="end"
-    class="w-[520px]"
+    class="w-130!"
     (closed)="selectedPayment.set(null)"
   >
-    @if (selectedPayment()) {
-    <div class="h-full flex flex-col bg-white">
+    @if (selectedPayment(); as payment) {
+    <div class="h-full flex flex-col">
+
       <!-- Drawer Header -->
-      <div class="flex items-center justify-between p-4 border-b bg-slate-50">
-        <div>
-          <h3 class="text-lg font-semibold text-slate-800">
-            {{ selectedPayment()!.payment_number }}
-          </h3>
-          <p class="text-sm text-slate-500">
-            {{ getMethodLabel(selectedPayment()!.payment_method) }}
-          </p>
+      <div
+        class="px-6 py-4 border-b border-slate-100 bg-slate-50 flex items-center justify-between sticky top-0 z-10"
+      >
+        <div class="flex items-center gap-3">
+          <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-green-100">
+            <mat-icon fontSet="material-symbols-rounded" class="text-green-600!">payments</mat-icon>
+          </div>
+          <div>
+            <h3 class="font-semibold text-slate-900">{{ payment.payment_number }}</h3>
+            <p class="text-sm text-slate-500">{{ getMethodLabel(payment.payment_method) }}</p>
+          </div>
         </div>
-        <button mat-icon-button (click)="closeDrawer()">
+        <button
+          mat-icon-button
+          (click)="closeDrawer()"
+          class="text-slate-400! hover:text-slate-600!"
+        >
           <mat-icon fontSet="material-symbols-rounded">close</mat-icon>
         </button>
       </div>
 
       <!-- Drawer Content -->
-      <div class="flex-1 overflow-y-auto p-4 space-y-6">
-        <!-- Status & Amount -->
-        <div class="flex items-center justify-between">
+      <div class="flex-1 overflow-y-auto p-6 space-y-5">
+
+        <!-- Status Badge -->
+        <div class="flex items-center gap-2 flex-wrap">
           <span
             class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium"
-            [ngClass]="[
-              getStatusStyles(selectedPayment()!.status).bg,
-              getStatusStyles(selectedPayment()!.status).text
-            ]"
+            [ngClass]="[getStatusStyles(payment.status).bg, getStatusStyles(payment.status).text]"
           >
             <span
-              class="w-2 h-2 rounded-full"
-              [ngClass]="getStatusStyles(selectedPayment()!.status).dot"
+              class="h-1.5 w-1.5 rounded-full"
+              [ngClass]="getStatusStyles(payment.status).dot"
             ></span>
-            {{ getStatusLabel(selectedPayment()!.status) }}
+            {{ getStatusLabel(payment.status) }}
           </span>
-          <div class="text-right">
-            <p class="text-2xl font-bold text-slate-800">
-              {{ formatCurrency(selectedPayment()!.amount) }}
-            </p>
-          </div>
+          <span
+            class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 text-slate-700 rounded-full text-sm"
+          >
+            {{ getMethodLabel(payment.payment_method) }}
+          </span>
         </div>
 
-        <!-- Allocation Summary -->
-        <div class="bg-slate-50 rounded-lg p-4">
-          <h4 class="text-sm font-medium text-slate-500 mb-3">Allocation Summary</h4>
-          <div class="space-y-3">
-            <div class="flex justify-between items-center">
-              <span class="text-slate-600">Total Amount</span>
-              <span class="font-medium">{{ formatCurrency(selectedPayment()!.amount) }}</span>
-            </div>
-            <div class="flex justify-between items-center">
-              <span class="text-slate-600">Allocated</span>
-              <span class="font-medium text-green-600">
-                {{ formatCurrency(selectedPayment()!.allocated_amount) }}
-              </span>
-            </div>
-            <div class="flex justify-between items-center">
-              <span class="text-slate-600">Unallocated</span>
-              <span
-                class="font-medium"
-                [class.text-amber-600]="selectedPayment()!.unallocated_amount > 0"
-              >
-                {{ formatCurrency(selectedPayment()!.unallocated_amount) }}
-              </span>
-            </div>
-            <!-- Progress bar -->
-            <div class="h-2 bg-slate-200 rounded-full overflow-hidden">
-              <div
-                class="h-full bg-green-500 transition-all"
-                [style.width.%]="
-                  (selectedPayment()!.allocated_amount / selectedPayment()!.amount) * 100
-                "
-              ></div>
-            </div>
-          </div>
+        <!-- Total Amount -->
+        <div class="flex items-end justify-between">
+          <span class="text-sm text-slate-500">Total Amount</span>
+          <p class="text-2xl font-bold text-slate-900">{{ formatCurrency(payment.amount) }}</p>
         </div>
 
         <!-- Unallocated Warning -->
-        @if (hasUnallocated(selectedPayment()!)) {
-        <div class="bg-amber-50 border border-amber-200 rounded-lg p-3">
+        @if (hasUnallocated(payment)) {
+        <div class="rounded-lg border border-amber-200 bg-amber-50 p-3">
           <div class="flex items-center gap-2 text-amber-700">
-            <mat-icon fontSet="material-symbols-rounded" class="text-amber-500">info</mat-icon>
+            <mat-icon fontSet="material-symbols-rounded" class="text-amber-500! text-[20px]!"
+              >info</mat-icon
+            >
             <span class="font-medium">
-              {{ formatCurrency(selectedPayment()!.unallocated_amount) }} unallocated
+              {{ formatCurrency(payment.unallocated_amount) }} unallocated
             </span>
           </div>
           <p class="text-sm text-amber-600 mt-1">
@@ -101,52 +488,114 @@
         }
 
         <!-- Policy Info -->
-        <div class="bg-slate-50 rounded-lg p-4">
-          <h4 class="text-sm font-medium text-slate-500 mb-2">Policy Information</h4>
-          <div class="space-y-2">
-            <div class="flex justify-between">
-              <span class="text-slate-600">Policy #</span>
-              <span class="font-medium">{{ selectedPayment()!.policy?.policy_number ?? '-' }}</span>
-            </div>
-            <div class="flex justify-between">
-              <span class="text-slate-600">Holder</span>
-              <span class="font-medium">{{ selectedPayment()!.policy?.holder_name ?? '-' }}</span>
-            </div>
+        <div class="rounded-lg border border-blue-200 bg-blue-50 p-4 space-y-3">
+          <h4 class="font-medium text-blue-900 flex items-center gap-2">
+            <mat-icon fontSet="material-symbols-rounded" class="text-blue-600! text-[20px]!"
+              >policy</mat-icon
+            >
+            Policy Information
+          </h4>
+          <div class="grid grid-cols-3 gap-2 text-sm">
+            <span class="text-blue-700">Policy #</span>
+            <span class="col-span-2 text-blue-900 font-medium">{{
+              payment.policy?.policy_number ?? '-'
+            }}</span>
+          </div>
+          <div class="grid grid-cols-3 gap-2 text-sm">
+            <span class="text-blue-700">Holder</span>
+            <span class="col-span-2 text-blue-900">{{
+              payment.policy?.holder_name ?? '-'
+            }}</span>
+          </div>
+        </div>
+
+        <!-- Allocation Summary -->
+        <div class="rounded-lg border border-slate-200 bg-slate-50 p-4 space-y-3">
+          <h4 class="font-medium text-slate-900 flex items-center gap-2">
+            <mat-icon fontSet="material-symbols-rounded" class="text-slate-400! text-[20px]!"
+              >pie_chart</mat-icon
+            >
+            Allocation Summary
+          </h4>
+          <div class="grid grid-cols-3 gap-2 text-sm">
+            <span class="text-slate-500">Total</span>
+            <span class="col-span-2 text-slate-900 font-medium">{{
+              formatCurrency(payment.amount)
+            }}</span>
+          </div>
+          <div class="grid grid-cols-3 gap-2 text-sm">
+            <span class="text-slate-500">Allocated</span>
+            <span class="col-span-2 text-green-600 font-medium">{{
+              formatCurrency(payment.allocated_amount)
+            }}</span>
+          </div>
+          <div class="grid grid-cols-3 gap-2 text-sm">
+            <span class="text-slate-500">Unallocated</span>
+            <span
+              class="col-span-2 font-medium"
+              [class.text-amber-600]="payment.unallocated_amount > 0"
+              [class.text-slate-500]="payment.unallocated_amount === 0"
+              >{{ formatCurrency(payment.unallocated_amount) }}</span
+            >
+          </div>
+          <div class="h-2 bg-slate-200 rounded-full overflow-hidden">
+            <div
+              class="h-full bg-green-500 transition-all"
+              [style.width.%]="(payment.allocated_amount / payment.amount) * 100"
+            ></div>
           </div>
         </div>
 
         <!-- Payment Details -->
-        <div class="grid grid-cols-2 gap-4">
-          <div class="bg-slate-50 rounded-lg p-3">
-            <p class="text-xs text-slate-500 mb-1">Payment Date</p>
-            <p class="font-medium">{{ formatDate(selectedPayment()!.payment_date) }}</p>
+        <div class="rounded-lg border border-slate-200 bg-slate-50 p-4 space-y-3">
+          <h4 class="font-medium text-slate-900 flex items-center gap-2">
+            <mat-icon fontSet="material-symbols-rounded" class="text-slate-400! text-[20px]!"
+              >receipt</mat-icon
+            >
+            Payment Details
+          </h4>
+          <div class="grid grid-cols-3 gap-2 text-sm">
+            <span class="text-slate-500">Date</span>
+            <span class="col-span-2 text-slate-900">{{ formatDate(payment.payment_date) }}</span>
           </div>
-          <div class="bg-slate-50 rounded-lg p-3">
-            <p class="text-xs text-slate-500 mb-1">Method</p>
-            <p class="font-medium">{{ getMethodLabel(selectedPayment()!.payment_method) }}</p>
+          <div class="grid grid-cols-3 gap-2 text-sm">
+            <span class="text-slate-500">Method</span>
+            <span class="col-span-2 text-slate-900">{{
+              getMethodLabel(payment.payment_method)
+            }}</span>
           </div>
-          @if (selectedPayment()!.payment_reference) {
-          <div class="bg-slate-50 rounded-lg p-3 col-span-2">
-            <p class="text-xs text-slate-500 mb-1">Reference</p>
-            <p class="font-medium">{{ selectedPayment()!.payment_reference }}</p>
+          @if (payment.payment_reference) {
+          <div class="grid grid-cols-3 gap-2 text-sm">
+            <span class="text-slate-500">Reference</span>
+            <span class="col-span-2 text-slate-900 font-medium">{{
+              payment.payment_reference
+            }}</span>
+          </div>
+          } @if (payment.received_by) {
+          <div class="grid grid-cols-3 gap-2 text-sm">
+            <span class="text-slate-500">Received by</span>
+            <span class="col-span-2 text-slate-900">{{ payment.received_by }}</span>
           </div>
           }
         </div>
 
         <!-- Allocations -->
-        @if (selectedPayment()!.allocations && selectedPayment()!.allocations!.length > 0) {
+        @if (payment.allocations && payment.allocations!.length > 0) {
         <div>
-          <h4 class="text-sm font-medium text-slate-700 mb-3">Allocated to Invoices</h4>
-          <div class="border rounded-lg divide-y">
-            @for (alloc of selectedPayment()!.allocations; track alloc.id) {
+          <h4 class="font-medium text-slate-700 mb-3 flex items-center gap-2">
+            <mat-icon fontSet="material-symbols-rounded" class="text-slate-400! text-[20px]!"
+              >link</mat-icon
+            >
+            Allocated to Invoices
+          </h4>
+          <div class="rounded-lg border border-slate-200 divide-y divide-slate-100">
+            @for (alloc of payment.allocations; track alloc.id) {
             <div class="p-3 flex justify-between items-center">
               <div>
                 <p class="font-medium text-slate-800">{{ alloc.invoice?.invoice_number }}</p>
                 <p class="text-xs text-slate-500">{{ formatDate(alloc.allocation_date) }}</p>
               </div>
-              <span class="font-medium text-green-600">
-                {{ formatCurrency(alloc.amount) }}
-              </span>
+              <span class="font-medium text-green-600">{{ formatCurrency(alloc.amount) }}</span>
             </div>
             }
           </div>
@@ -154,39 +603,43 @@
         }
 
         <!-- Notes -->
-        @if (selectedPayment()!.notes) {
-        <div>
-          <h4 class="text-sm font-medium text-slate-700 mb-2">Notes</h4>
-          <p class="text-slate-600 text-sm bg-slate-50 rounded-lg p-3">
-            {{ selectedPayment()!.notes }}
-          </p>
+        @if (payment.notes) {
+        <div class="rounded-lg border border-slate-200 bg-slate-50 p-4">
+          <h4 class="font-medium text-slate-900 flex items-center gap-2 mb-2">
+            <mat-icon fontSet="material-symbols-rounded" class="text-slate-400! text-[20px]!"
+              >notes</mat-icon
+            >
+            Notes
+          </h4>
+          <p class="text-sm text-slate-700">{{ payment.notes }}</p>
         </div>
         }
-
-        <!-- Metadata -->
-        <div class="text-xs text-slate-400 space-y-1">
-          @if (selectedPayment()!.received_by) {
-          <p>Received by: {{ selectedPayment()!.received_by }}</p>
-          }
-          <p>Created: {{ formatDate(selectedPayment()!.created_at) }}</p>
-        </div>
       </div>
 
-      <!-- Drawer Actions -->
-      <div class="p-4 border-t bg-slate-50 flex gap-2">
-        @if (hasUnallocated(selectedPayment()!) && selectedPayment()!.status !== 'reversed') {
+      <!-- Drawer Footer -->
+      <div
+        class="px-6 py-4 border-t border-slate-100 bg-slate-50 flex items-center justify-between gap-3"
+      >
+        <div class="flex gap-2">
+          @if (hasUnallocated(payment) && payment.status !== 'reversed') {
+          <button
+            *libPermission="permissions.BILLING_PAYMENTS_ALLOCATE"
+            mat-flat-button
+            color="primary"
+            (click)="autoAllocate(payment)"
+          >
+            <mat-icon fontSet="material-symbols-rounded">auto_fix_high</mat-icon>
+            Auto-Allocate
+          </button>
+          }
+        </div>
+        @if (payment.status !== 'reversed') {
         <button
-          *libPermission="permissions.BILLING_PAYMENTS_ALLOCATE"
-          mat-flat-button
-          color="primary"
-          class="flex-1"
-          (click)="autoAllocate(selectedPayment()!)"
+          *libPermission="permissions.BILLING_PAYMENTS_REVERSE"
+          mat-stroked-button
+          color="warn"
+          (click)="reversePayment(payment)"
         >
-          <mat-icon fontSet="material-symbols-rounded">auto_fix_high</mat-icon>
-          Auto-Allocate
-        </button>
-        } @if (selectedPayment()!.status !== 'reversed') {
-        <button *libPermission="permissions.BILLING_PAYMENTS_REVERSE" mat-stroked-button color="warn" (click)="reversePayment(selectedPayment()!)">
           <mat-icon fontSet="material-symbols-rounded">undo</mat-icon>
           Reverse
         </button>
@@ -194,303 +647,5 @@
       </div>
     </div>
     }
-  </mat-sidenav>
-
-  <!-- Main Content -->
-  <mat-sidenav-content class="bg-slate-50">
-    <div class="p-6 space-y-6">
-      <!-- Page Header -->
-      <lib-page-header
-        title="Payments"
-        subtitle="Record and manage payment receipts"
-        icon="payments"
-      >
-        <div class="flex items-center gap-3">
-          <button mat-stroked-button (click)="exportToCsv()">
-            <mat-icon fontSet="material-symbols-rounded">download</mat-icon>
-            Export
-          </button>
-          <button *libPermission="permissions.BILLING_PAYMENTS_RECORD" mat-flat-button color="primary" (click)="openRecordPaymentDialog()">
-            <mat-icon fontSet="material-symbols-rounded">add</mat-icon>
-            Record Payment
-          </button>
-        </div>
-      </lib-page-header>
-
-      <!-- KPI Cards -->
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div class="bg-white rounded-xl shadow-sm border p-4">
-          <div class="flex items-center justify-between">
-            <div>
-              <p class="text-sm text-slate-500">Total Received</p>
-              <p class="text-2xl font-bold text-slate-800">
-                {{ formatCurrency(totalReceived()) }}
-              </p>
-            </div>
-            <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-              <mat-icon fontSet="material-symbols-rounded" class="text-green-600"
-                >account_balance_wallet</mat-icon
-              >
-            </div>
-          </div>
-        </div>
-
-        <div class="bg-white rounded-xl shadow-sm border p-4">
-          <div class="flex items-center justify-between">
-            <div>
-              <p class="text-sm text-slate-500">Unallocated</p>
-              <p class="text-2xl font-bold text-amber-600">
-                {{ formatCurrency(unallocatedAmount()) }}
-              </p>
-            </div>
-            <div class="w-12 h-12 bg-amber-100 rounded-lg flex items-center justify-center">
-              <mat-icon fontSet="material-symbols-rounded" class="text-amber-600">pending</mat-icon>
-            </div>
-          </div>
-        </div>
-
-        <div class="bg-white rounded-xl shadow-sm border p-4">
-          <div class="flex items-center justify-between">
-            <div>
-              <p class="text-sm text-slate-500">This Month</p>
-              <p class="text-2xl font-bold text-blue-600">{{ paymentsThisMonth() }}</p>
-              <p class="text-xs text-slate-400">payments</p>
-            </div>
-            <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-              <mat-icon fontSet="material-symbols-rounded" class="text-blue-600"
-                >calendar_month</mat-icon
-              >
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Filters -->
-      <div class="bg-white rounded-xl shadow-sm border p-4">
-        <div class="flex flex-wrap items-center gap-4">
-          <!-- Search -->
-          <mat-form-field appearance="fill" class="flex-1 min-w-[250px] minimal-input">
-            <mat-label>Search payments</mat-label>
-            <input
-              matInput
-              [value]="searchTerm()"
-              (input)="onSearchChange($any($event.target).value)"
-              placeholder="Payment #, policy #, or reference..."
-            />
-            <mat-icon fontSet="material-symbols-rounded" matPrefix class="text-slate-400"
-              >search</mat-icon
-            >
-            @if (searchTerm()) {
-            <button matSuffix mat-icon-button (click)="clearSearch()">
-              <mat-icon fontSet="material-symbols-rounded">close</mat-icon>
-            </button>
-            }
-          </mat-form-field>
-
-          <!-- Status Filter -->
-          <mat-form-field appearance="fill" class="w-48 minimal-input">
-            <mat-label>Status</mat-label>
-            <mat-select [value]="statusFilter()" (selectionChange)="onStatusChange($event.value)">
-              @for (status of PAYMENT_FILTER_OPTIONS.statuses; track status.value) {
-              <mat-option [value]="status.value">{{ status.label }}</mat-option>
-              }
-            </mat-select>
-          </mat-form-field>
-
-          <!-- Method Filter -->
-          <mat-form-field appearance="fill" class="w-48 minimal-input">
-            <mat-label>Method</mat-label>
-            <mat-select [value]="methodFilter()" (selectionChange)="onMethodChange($event.value)">
-              @for (method of PAYMENT_FILTER_OPTIONS.methods; track method.value) {
-              <mat-option [value]="method.value">{{ method.label }}</mat-option>
-              }
-            </mat-select>
-          </mat-form-field>
-
-          <!-- Unallocated Toggle -->
-          <button
-            mat-stroked-button
-            [color]="unallocatedOnly() ? 'accent' : undefined"
-            (click)="toggleUnallocatedOnly()"
-          >
-            <mat-icon fontSet="material-symbols-rounded">{{
-              unallocatedOnly() ? 'pending' : 'check_circle'
-            }}</mat-icon>
-            Unallocated Only
-          </button>
-
-          @if (hasActiveFilters()) {
-          <button mat-button color="primary" (click)="clearFilters()">
-            <mat-icon fontSet="material-symbols-rounded">filter_alt_off</mat-icon>
-            Clear Filters
-          </button>
-          }
-        </div>
-      </div>
-
-      <!-- Data Table -->
-      <div class="bg-white rounded-xl shadow-sm border overflow-hidden">
-        @if (store.isPaymentLoading()) {
-        <div class="flex items-center justify-center py-12">
-          <mat-spinner diameter="40"></mat-spinner>
-        </div>
-        } @else if (store.payments().length === 0) {
-        <div class="text-center py-12">
-          <mat-icon fontSet="material-symbols-rounded" class="text-6xl text-slate-300"
-            >payments</mat-icon
-          >
-          <h3 class="mt-4 text-lg font-medium text-slate-600">No payments found</h3>
-          <p class="text-slate-500">
-            @if (hasActiveFilters()) { Try adjusting your filters } @else { Record a payment to get
-            started }
-          </p>
-          @if (!hasActiveFilters()) {
-          <button *libPermission="permissions.BILLING_PAYMENTS_RECORD" mat-flat-button color="primary" class="mt-4" (click)="openRecordPaymentDialog()">
-            <mat-icon fontSet="material-symbols-rounded">add</mat-icon>
-            Record Payment
-          </button>
-          }
-        </div>
-        } @else {
-        <table mat-table [dataSource]="store.payments()" matSort class="w-full">
-          <!-- Status Column -->
-          <ng-container matColumnDef="status">
-            <th mat-header-cell *matHeaderCellDef>Status</th>
-            <td mat-cell *matCellDef="let payment">
-              <span
-                class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium"
-                [ngClass]="[
-                  getStatusStyles(payment.status).bg,
-                  getStatusStyles(payment.status).text
-                ]"
-              >
-                <span
-                  class="w-1.5 h-1.5 rounded-full"
-                  [ngClass]="getStatusStyles(payment.status).dot"
-                ></span>
-                {{ getStatusLabel(payment.status) }}
-              </span>
-            </td>
-          </ng-container>
-
-          <!-- Payment Number Column -->
-          <ng-container matColumnDef="payment_number">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header>Payment #</th>
-            <td mat-cell *matCellDef="let payment">
-              <span class="font-medium text-blue-600 cursor-pointer hover:underline">
-                {{ payment.payment_number }}
-              </span>
-            </td>
-          </ng-container>
-
-          <!-- Policy Column -->
-          <ng-container matColumnDef="policy">
-            <th mat-header-cell *matHeaderCellDef>Policy</th>
-            <td mat-cell *matCellDef="let payment">
-              <div>
-                <p class="font-medium">{{ payment.policy?.policy_number ?? '-' }}</p>
-                <p class="text-xs text-slate-500">{{ payment.policy?.holder_name ?? '' }}</p>
-              </div>
-            </td>
-          </ng-container>
-
-          <!-- Method Column -->
-          <ng-container matColumnDef="method">
-            <th mat-header-cell *matHeaderCellDef>Method</th>
-            <td mat-cell *matCellDef="let payment">
-              <span class="text-slate-600">{{ getMethodLabel(payment.payment_method) }}</span>
-            </td>
-          </ng-container>
-
-          <!-- Amount Column -->
-          <ng-container matColumnDef="amount">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header>Amount</th>
-            <td mat-cell *matCellDef="let payment">
-              <span class="font-medium">{{ formatCurrency(payment.amount) }}</span>
-            </td>
-          </ng-container>
-
-          <!-- Allocated Column -->
-          <ng-container matColumnDef="allocated">
-            <th mat-header-cell *matHeaderCellDef>Allocated</th>
-            <td mat-cell *matCellDef="let payment">
-              <span class="font-medium text-green-600">
-                {{ formatCurrency(payment.allocated_amount) }}
-              </span>
-            </td>
-          </ng-container>
-
-          <!-- Unallocated Column -->
-          <ng-container matColumnDef="unallocated">
-            <th mat-header-cell *matHeaderCellDef>Unallocated</th>
-            <td mat-cell *matCellDef="let payment">
-              <span
-                class="font-medium"
-                [class.text-amber-600]="payment.unallocated_amount > 0"
-                [class.text-slate-400]="payment.unallocated_amount === 0"
-              >
-                {{ formatCurrency(payment.unallocated_amount) }}
-              </span>
-            </td>
-          </ng-container>
-
-          <!-- Date Column -->
-          <ng-container matColumnDef="date">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header>Date</th>
-            <td mat-cell *matCellDef="let payment">
-              <span class="text-slate-600">{{ formatDate(payment.payment_date) }}</span>
-            </td>
-          </ng-container>
-
-          <!-- Actions Column -->
-          <ng-container matColumnDef="actions">
-            <th mat-header-cell *matHeaderCellDef class="w-16"></th>
-            <td mat-cell *matCellDef="let payment">
-              <button mat-icon-button [matMenuTriggerFor]="menu" (click)="$event.stopPropagation()">
-                <mat-icon fontSet="material-symbols-rounded">more_vert</mat-icon>
-              </button>
-              <mat-menu #menu="matMenu">
-                <button mat-menu-item (click)="viewDetails(payment)">
-                  <mat-icon fontSet="material-symbols-rounded">visibility</mat-icon>
-                  <span>View Details</span>
-                </button>
-                @if (hasUnallocated(payment) && payment.status !== 'reversed') {
-                <button *libPermission="permissions.BILLING_PAYMENTS_ALLOCATE" mat-menu-item (click)="autoAllocate(payment)">
-                  <mat-icon fontSet="material-symbols-rounded">auto_fix_high</mat-icon>
-                  <span>Auto-Allocate</span>
-                </button>
-                }
-                <mat-divider></mat-divider>
-                @if (payment.status !== 'reversed') {
-                <button *libPermission="permissions.BILLING_PAYMENTS_REVERSE" mat-menu-item class="text-red-600" (click)="reversePayment(payment)">
-                  <mat-icon fontSet="material-symbols-rounded" class="text-red-600">undo</mat-icon>
-                  <span>Reverse Payment</span>
-                </button>
-                }
-              </mat-menu>
-            </td>
-          </ng-container>
-
-          <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-          <tr
-            mat-row
-            *matRowDef="let row; columns: displayedColumns"
-            class="cursor-pointer hover:bg-slate-50"
-            (click)="viewDetails(row)"
-          ></tr>
-        </table>
-
-        <!-- Paginator -->
-        <mat-paginator
-          [length]="store.paymentTotalItems()"
-          [pageIndex]="store.paymentCurrentPage() - 1"
-          [pageSize]="store.paymentPageSize()"
-          [pageSizeOptions]="pageSizeOptions"
-          (page)="onPageChange($event)"
-          showFirstLastButtons
-        ></mat-paginator>
-        }
-      </div>
-    </div>
-  </mat-sidenav-content>
-</mat-sidenav-container>
+  </mat-drawer>
+</mat-drawer-container>

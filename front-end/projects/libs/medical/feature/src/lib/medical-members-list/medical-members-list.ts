@@ -1,21 +1,12 @@
 // libs/medical/feature/src/lib/members/medical-members-list.ts
-import {
-  Component,
-  OnInit,
-  AfterViewInit,
-  ViewChild,
-  inject,
-  signal,
-  computed,
-  effect,
-} from '@angular/core';
+import { Component, OnInit, ViewChild, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 
 // Material Imports
-import { MatTableDataSource, MatTableModule } from '@angular/material/table';
-import { MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
+import { MatTableModule } from '@angular/material/table';
+import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { MatSort, MatSortModule } from '@angular/material/sort';
 import { MatDialog } from '@angular/material/dialog';
 import { MatMenuModule } from '@angular/material/menu';
@@ -29,11 +20,11 @@ import { MatInputModule } from '@angular/material/input';
 import { MatDrawer, MatSidenavModule } from '@angular/material/sidenav';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { MatTabsModule } from '@angular/material/tabs';
 
 // Domain Imports
 import {
   MemberStore,
+  MemberFilters,
   Member,
   MEMBER_TYPES,
   MEMBER_STATUSES,
@@ -43,7 +34,6 @@ import {
   getStatusConfig,
   formatCurrency,
   calculateAge,
-  WAITING_PERIOD_TYPES,
 } from 'medical-data';
 import { FeedbackService, PageHeaderComponent, PermissionDirective } from 'shared';
 import { MEDICAL_PERMISSIONS } from 'core-auth';
@@ -70,13 +60,12 @@ import { MedicalMemberDialog } from '../dialogs/medical-member-dialog/medical-me
     MatSidenavModule,
     MatChipsModule,
     MatProgressSpinnerModule,
-    MatTabsModule,
     PageHeaderComponent,
     PermissionDirective,
   ],
   templateUrl: './medical-members-list.html',
 })
-export class MedicalMembersList implements OnInit, AfterViewInit {
+export class MedicalMembersList implements OnInit {
   readonly store = inject(MemberStore);
   private readonly dialog = inject(MatDialog);
   private readonly feedback = inject(FeedbackService);
@@ -85,7 +74,7 @@ export class MedicalMembersList implements OnInit, AfterViewInit {
   readonly permissions = MEDICAL_PERMISSIONS;
 
   // Table
-  displayedColumns = [
+  readonly displayedColumns = [
     'status',
     'member_number',
     'name',
@@ -95,19 +84,23 @@ export class MedicalMembersList implements OnInit, AfterViewInit {
     'card',
     'actions',
   ];
-  dataSource = new MatTableDataSource<Member>([]);
 
-  @ViewChild(MatPaginator) paginator!: MatPaginator;
   @ViewChild(MatSort) sort!: MatSort;
   @ViewChild('detailDrawer') detailDrawer!: MatDrawer;
 
-  // Filters
+  // Filters (local UI state — sent to server)
   searchTerm = signal('');
   statusFilter = signal('');
   typeFilter = signal('');
 
+  // Debounce timer for search
+  private searchDebounceTimer: ReturnType<typeof setTimeout> | null = null;
+
   // Selected item for drawer
   selectedMember = signal<Member | null>(null);
+
+  // Page size options
+  readonly pageSizeOptions = [10, 20, 50, 100];
 
   // Constants
   readonly MEMBER_TYPES = MEMBER_TYPES;
@@ -118,95 +111,73 @@ export class MedicalMembersList implements OnInit, AfterViewInit {
   readonly formatCurrency = formatCurrency;
   readonly calculateAge = calculateAge;
 
-  // Computed Properties for Logic
+  // Computed Properties
   readonly hasActiveFilters = computed(
     () => this.searchTerm() !== '' || this.statusFilter() !== '' || this.typeFilter() !== ''
   );
 
-  // Local KPIs (derived from store list for immediate feedback)
-  // Note: store.activeMembers, etc are already in the store, but we add 'With Loadings' here
-  readonly membersWithLoadings = computed(() =>
-    this.store
-      .members()
-      .filter((m) => (m.loadings && m.loadings.length > 0) || m.loading_amount > 0)
-  );
-
-  constructor() {
-    effect(() => {
-      const members = this.store.members();
-      this.dataSource.data = members;
-    });
-  }
-
   ngOnInit(): void {
     this.store.loadAll();
-    // this.store.loadStats(); // Optional if stats endpoint is separate
-    this.setupFilter();
   }
 
-  ngAfterViewInit(): void {
-    this.dataSource.paginator = this.paginator;
-    this.dataSource.sort = this.sort;
-  }
+  // =========================================================================
+  // FILTER HELPERS
+  // =========================================================================
 
-  private setupFilter(): void {
-    this.dataSource.filterPredicate = (data: Member, filter: string) => {
-      const searchData = JSON.parse(filter);
-
-      const textMatch =
-        !searchData.search ||
-        data.member_number.toLowerCase().includes(searchData.search) ||
-        data.first_name.toLowerCase().includes(searchData.search) ||
-        data.last_name.toLowerCase().includes(searchData.search) ||
-        (data.full_name?.toLowerCase().includes(searchData.search) ?? false) ||
-        (data.national_id?.toLowerCase().includes(searchData.search) ?? false) ||
-        (data.policy_id?.toLowerCase().includes(searchData.search) ?? false);
-
-      const statusMatch = !searchData.status || data.status === searchData.status;
-      const typeMatch = !searchData.type || data.member_type === searchData.type;
-
-      return textMatch && statusMatch && typeMatch;
+  private buildFilters(): MemberFilters {
+    const filters: MemberFilters = {
+      per_page: this.store.pageSize(),
+      page: this.store.currentPage(),
     };
+    if (this.searchTerm()) filters.search = this.searchTerm();
+    if (this.statusFilter()) filters.status = this.statusFilter();
+    if (this.typeFilter()) filters.member_type = this.typeFilter();
+    return filters;
   }
 
-  private applyFilter(): void {
-    const filterValue = JSON.stringify({
-      search: this.searchTerm().toLowerCase(),
-      status: this.statusFilter(),
-      type: this.typeFilter(),
-    });
-    this.dataSource.filter = filterValue;
-
-    if (this.dataSource.paginator) {
-      this.dataSource.paginator.firstPage();
-    }
-  }
+  // =========================================================================
+  // FILTER HANDLERS (server-side)
+  // =========================================================================
 
   onSearchChange(value: string): void {
     this.searchTerm.set(value);
-    this.applyFilter();
+    if (this.searchDebounceTimer) clearTimeout(this.searchDebounceTimer);
+    this.searchDebounceTimer = setTimeout(() => {
+      this.store.loadAll({ ...this.buildFilters(), page: 1 });
+    }, 300);
   }
 
   onStatusChange(value: string): void {
     this.statusFilter.set(value);
-    this.applyFilter();
+    this.store.loadAll({ ...this.buildFilters(), page: 1 });
   }
 
   onTypeChange(value: string): void {
     this.typeFilter.set(value);
-    this.applyFilter();
+    this.store.loadAll({ ...this.buildFilters(), page: 1 });
   }
 
   clearSearch(): void {
     this.searchTerm.set('');
-    this.applyFilter();
+    this.store.loadAll({ ...this.buildFilters(), search: undefined, page: 1 });
   }
 
   clearFilters(): void {
     this.searchTerm.set('');
     this.statusFilter.set('');
     this.typeFilter.set('');
-    this.applyFilter();
+    this.store.loadAll({ per_page: this.store.pageSize(), page: 1 });
+  }
+
+  // =========================================================================
+  // PAGINATION
+  // =========================================================================
+
+  onPageChange(event: PageEvent): void {
+    const filters = this.buildFilters();
+    filters.page = event.pageIndex + 1;
+    filters.per_page = event.pageSize;
+    this.store.loadAll(filters);
   }
 
   // =========================================================================
@@ -232,16 +203,17 @@ export class MedicalMembersList implements OnInit, AfterViewInit {
 
   openDialog(member?: Member): void {
     const dialogRef = this.dialog.open(MedicalMemberDialog, {
-      maxWidth: '70vw',
+      width: '70vw',
+      minWidth: '70vw',
       maxHeight: '90vh',
       data: { member },
-      panelClass: ['responsive-dialog', 'bg-white'],
+      panelClass: 'bg-white',
       autoFocus: false,
     });
 
     dialogRef.afterClosed().subscribe((result) => {
       if (result) {
-        this.store.loadAll();
+        this.store.loadAll(this.buildFilters());
       }
     });
   }
@@ -364,23 +336,8 @@ export class MedicalMembersList implements OnInit, AfterViewInit {
     return match ? `bg-${match[1]}-500` : 'bg-slate-400';
   }
 
-  getWaitingPeriodStatus(member: Member): { active: boolean; type?: string; daysLeft?: number } {
-    const today = new Date();
-    // Simplified logic, would usually check specific member exclusions
-    const waitingPeriods = [{ type: 'General', end: WAITING_PERIOD_TYPES[0].defaultDays }];
-    // This is placeholder logic as actual WP dates are on exclusions/cover dates
-    if (member.waiting_period_end_date) {
-      const endDate = new Date(member.waiting_period_end_date);
-      if (endDate > today) {
-        const daysLeft = Math.ceil((endDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-        return { active: true, type: 'General', daysLeft };
-      }
-    }
-    return { active: false };
-  }
-
   exportToCsv(): void {
-    const data = this.dataSource.filteredData;
+    const data = this.store.members();
     if (data.length === 0) {
       this.feedback.error('No data to export');
       return;

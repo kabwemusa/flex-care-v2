@@ -334,6 +334,22 @@ export class MedicalBillingInvoices implements OnInit {
     return found?.label ?? type;
   }
 
+  getPrincipalsCount(invoice: Invoice): number {
+    return (invoice.items ?? []).filter(
+      (i) => i.item_type === 'member_premium' && i.member?.member_type === 'principal'
+    ).length;
+  }
+
+  getDependantsCount(invoice: Invoice): number {
+    return (invoice.items ?? []).filter(
+      (i) => i.item_type === 'member_premium' && i.member?.member_type && i.member.member_type !== 'principal'
+    ).length;
+  }
+
+  getMembersCount(invoice: Invoice): number {
+    return (invoice.items ?? []).filter((i) => i.item_type === 'member_premium').length;
+  }
+
   isOverdue(invoice: Invoice): boolean {
     if (!invoice.due_date || invoice.status === 'paid' || invoice.status === 'cancelled') {
       return false;

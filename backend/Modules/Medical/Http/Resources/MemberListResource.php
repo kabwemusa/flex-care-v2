@@ -28,16 +28,25 @@ class MemberListResource extends JsonResource
                 'full_name' => $this->principal->full_name,
             ]),
             
+            'first_name' => $this->first_name,
+            'last_name' => $this->last_name,
             'full_name' => $this->full_name,
             'short_name' => $this->short_name,
             'date_of_birth' => $this->date_of_birth?->toDateString(),
             'age' => $this->age,
             'gender' => $this->gender,
-            
+
+            'principal_id' => $this->principal_id,
+            'relationship' => $this->relationship,
+
             'national_id' => $this->national_id,
+            'passport_number' => $this->passport_number,
             'employee_number' => $this->employee_number,
             'email' => $this->email,
             'mobile' => $this->mobile,
+            'phone' => $this->phone,
+            'address' => $this->address,
+            'city' => $this->city,
             
             'cover_start_date' => $this->cover_start_date?->toDateString(),
             'cover_end_date' => $this->cover_end_date?->toDateString(),
