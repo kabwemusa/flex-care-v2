@@ -5,7 +5,7 @@
   <div class="flex items-center justify-between px-6 py-4 border-b border-slate-200">
     <div class="flex items-center gap-3">
       <div class="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
-        <mat-icon fontSet="material-symbols-rounded" class="!text-primary">
+        <mat-icon fontSet="material-symbols-rounded" class="text-primary!">
           {{ isEditMode() ? 'edit' : 'add_circle' }}
         </mat-icon>
       </div>
@@ -16,7 +16,7 @@
         <p class="text-sm text-slate-500">Enter application details</p>
       </div>
     </div>
-    <button mat-icon-button (click)="cancel()" class="!text-slate-400">
+    <button mat-icon-button (click)="cancel()" class="text-slate-400!">
       <mat-icon fontSet="material-symbols-rounded">close</mat-icon>
     </button>
   </div>
@@ -25,12 +25,13 @@
   <div class="flex-1 overflow-y-auto">
     <mat-stepper [linear]="false" #stepper class="p-4">
       <ng-template matStepperIcon="edit">
-        <mat-icon fontSet="material-symbols-rounded" class="!text-green-600">check</mat-icon>
+        <mat-icon fontSet="material-symbols-rounded" class="text-green-600!">check</mat-icon>
       </ng-template>
 
       <ng-template matStepperIcon="done">
-        <mat-icon fontSet="material-symbols-rounded" class="!text-green-600">check</mat-icon>
+        <mat-icon fontSet="material-symbols-rounded" class="text-green-600!">check</mat-icon>
       </ng-template>
+
       <!-- Step 1: Product Selection -->
       <form [formGroup]="form" class="p-6 space-y-5">
         <mat-step [stepControl]="form" [completed]="stepper.selectedIndex > 0">
@@ -97,7 +98,7 @@
             }
 
             <div class="flex justify-end pt-4">
-              <button mat-icon-button matStepperNext matTooltip="Next step" class="!text-primary">
+              <button mat-icon-button matStepperNext matTooltip="Next step" class="text-primary!">
                 <mat-icon fontSet="material-symbols-rounded">chevron_right</mat-icon>
               </button>
             </div>
@@ -130,11 +131,11 @@
                 mat-icon-button
                 matStepperPrevious
                 matTooltip="Previous step"
-                class="!text-slate-600 hover:!bg-slate-200"
+                class="text-slate-600! hover:bg-slate-200!"
               >
                 <mat-icon fontSet="material-symbols-rounded">chevron_left</mat-icon>
               </button>
-              <button mat-icon-button matStepperNext matTooltip="Next step" class="!text-primary">
+              <button mat-icon-button matStepperNext matTooltip="Next step" class="text-primary!">
                 <mat-icon fontSet="material-symbols-rounded">chevron_right</mat-icon>
               </button>
             </div>
@@ -193,18 +194,32 @@
                 mat-icon-button
                 matStepperPrevious
                 matTooltip="Previous step"
-                class="!text-slate-600 hover:!bg-slate-200"
+                class="text-slate-600! hover:bg-slate-200!"
               >
                 <mat-icon fontSet="material-symbols-rounded">chevron_left</mat-icon>
               </button>
-              <button mat-icon-button matStepperNext matTooltip="Next step" class="!text-primary">
+
+              @if (isEditMode()) {
+              <!-- Edit mode: Save button is here (no Members step) -->
+              <button mat-flat-button color="primary" (click)="save()" [disabled]="isSaving()">
+                @if (isSaving()) {
+                <mat-icon fontSet="material-symbols-rounded" class="animate-spin"
+                  >progress_activity</mat-icon
+                >
+                }
+                Update Application
+              </button>
+              } @else {
+              <button mat-icon-button matStepperNext matTooltip="Next step" class="text-primary!">
                 <mat-icon fontSet="material-symbols-rounded">chevron_right</mat-icon>
               </button>
+              }
             </div>
           </div>
         </mat-step>
 
-        <!-- Step 4: Members -->
+        <!-- Step 4: Members — create only; edit uses policy/member management pages -->
+        @if (!isEditMode()) {
         <mat-step>
           <ng-template matStepLabel>Members</ng-template>
           <div class="py-4">
@@ -213,14 +228,14 @@
               <button
                 mat-stroked-button
                 (click)="addMember(membersArray.length === 0)"
-                class="!border-primary !text-primary"
+                class="border-primary! text-primary!"
               >
                 <mat-icon fontSet="material-symbols-rounded">person_add</mat-icon>
                 Add Member
               </button>
             </div>
 
-            <div class="space-y-4 max-h-[400px] overflow-y-auto">
+            <div class="space-y-4 max-h-100 overflow-y-auto">
               @for (member of membersArray.controls; track $index; let i = $index) {
               <div class="rounded-sm border border-slate-200 p-4" [formGroup]="$any(member)">
                 <div class="flex items-center justify-between mb-3">
@@ -244,7 +259,7 @@
                   <button
                     mat-icon-button
                     (click)="removeMember(i)"
-                    class="!text-slate-400 hover:!text-red-600 !w-8 !h-8"
+                    class="text-slate-400! hover:text-red-600! w-8! h-8!"
                   >
                     <mat-icon fontSet="material-symbols-rounded">close</mat-icon>
                   </button>
@@ -328,7 +343,7 @@
                 mat-icon-button
                 matStepperPrevious
                 matTooltip="Previous step"
-                class="!text-slate-600 hover:!bg-slate-200"
+                class="text-slate-600! hover:bg-slate-200!"
               >
                 <mat-icon fontSet="material-symbols-rounded">chevron_left</mat-icon>
               </button>
@@ -338,11 +353,12 @@
                   >progress_activity</mat-icon
                 >
                 }
-                {{ isEditMode() ? 'Update' : 'Create' }} Application
+                Create Application
               </button>
             </div>
           </div>
         </mat-step>
+        }
       </form>
     </mat-stepper>
   </div>

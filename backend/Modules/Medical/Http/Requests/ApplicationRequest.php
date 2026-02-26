@@ -27,7 +27,7 @@ class ApplicationRequest extends FormRequest
             'contact_email' => 'nullable|email|max:255',
             'contact_phone' => 'nullable|string|max:50',
             
-            'proposed_start_date' => 'nullable|date|after_or_equal:today',
+            'proposed_start_date' => $this->isMethod('POST') ? 'nullable|date|after_or_equal:today' : 'nullable|date',
             'proposed_end_date' => 'nullable|date|after:proposed_start_date',
             'policy_term_months' => 'nullable|integer|min:1|max:36',
             'billing_frequency' => 'nullable|in:' . implode(',', array_keys(MedicalConstants::BILLING_FREQUENCIES)),

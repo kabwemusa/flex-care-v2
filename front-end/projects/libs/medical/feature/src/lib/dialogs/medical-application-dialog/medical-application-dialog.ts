@@ -248,14 +248,8 @@ export class MedicalApplicationDialog implements OnInit {
       });
     }
 
-    // 3. Patch Members
-    this.membersArray.clear(); // Clear initial empty member
-    if (app.members?.length) {
-      app.members.forEach((m) => this.addMember(m.is_principal, m));
-    } else {
-      // Should ensure at least one slot if empty (though rare for edit)
-      this.addMember(true);
-    }
+    // Members are not patched in edit mode — they are managed through
+    // the policy/member management pages after underwriting.
   }
 
   // Members FormArray
@@ -319,13 +313,19 @@ export class MedicalApplicationDialog implements OnInit {
 
     const formValue = this.form.value;
 
-    // Format dates and clean up member data
-    const payload = {
+    const payload: any = {
       ...formValue,
       proposed_start_date: formValue.proposed_start_date
         ? this.formatDate(formValue.proposed_start_date)
         : null,
-      members: formValue.members.map((m: any) => {
+    };
+
+    // Members are never sent on update — managed via policy/member pages
+    delete payload.members;
+
+    if (!this.isEditMode()) {
+      // Only include members when creating a new application
+      payload.members = formValue.members.map((m: any) => {
         const member = {
           ...m,
           date_of_birth: m.date_of_birth ? this.formatDate(m.date_of_birth) : null,
@@ -343,8 +343,8 @@ export class MedicalApplicationDialog implements OnInit {
         if (!member.phone) delete member.phone;
 
         return member;
-      }),
-    };
+      });
+    }
 
     // Remove empty group_id
     if (!payload.group_id) {
