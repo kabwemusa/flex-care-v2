@@ -1,9 +1,9 @@
 <!-- ─── No Quote Data ────────────────────────────────────────────────────── -->
 @if (noQuoteData()) {
-  <section class="bg-gradient-to-b from-gray-50 to-white pt-16">
+  <section class="bg-linear-to-b from-gray-50 to-white pt-24">
     <div class="max-w-2xl mx-auto px-4 sm:px-6 py-24 text-center fc-fade-in">
       <div class="w-16 h-16 rounded-2xl bg-gray-100 flex items-center justify-center mx-auto mb-5">
-        <span class="material-symbols-rounded text-gray-400" style="font-size: 32px">info</span>
+        <span class="material-symbols-rounded text-gray-400" style="font-size: 28px; font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24">info</span>
       </div>
       <h2 class="text-xl font-medium text-gray-800 mt-4">No quote to apply with</h2>
       <p class="text-gray-500 mt-2 text-sm font-light">Please get a quote first before submitting an application.</p>
@@ -16,24 +16,34 @@
 @if (!noQuoteData() && savedQuote()) {
 
   <!-- Page Header -->
-  <section class="bg-linear-to-b from-violet-50/40 via-white to-white border-b border-gray-100 pt-16">
-    <div class="max-w-4xl mx-auto px-4 sm:px-6 py-12 text-center">
-      @if (step() < 4) {
-        <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-violet-50 border border-violet-100 mb-4 fc-fade-in">
-          <span class="material-symbols-rounded text-violet-600" style="font-size: 16px">description</span>
-          <span class="text-xs font-medium text-violet-700">Application Form</span>
+  @if (step() < 4) {
+    <section class="relative bg-teal-900 overflow-hidden min-h-50 sm:min-h-60 flex items-end">
+      <div class="absolute inset-0">
+        <img
+          src="https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=1920&q=60"
+          alt=""
+          class="w-full h-full object-cover"
+          loading="eager"
+        />
+        <div class="absolute inset-0 bg-linear-to-b from-teal-900/80 to-teal-800/95"></div>
+      </div>
+      <div class="relative z-10 w-full max-w-4xl mx-auto px-5 sm:px-6 pt-24 pb-10 sm:pt-28 sm:pb-12">
+        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 border border-white/20 mb-4">
+          <span class="material-symbols-rounded text-white/80" style="font-size: 14px; font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24">description</span>
+          <span class="text-xs font-light text-white/80">Application Form</span>
         </div>
-        <h1 class="text-2xl sm:text-4xl font-semibold text-gray-900 mb-3 tracking-tight fc-slide-up">Complete Your Application</h1>
-        <p class="text-gray-500 font-light text-base max-w-xl mx-auto fc-slide-up fc-slide-up-delay-1">
+        <h1 class="text-2xl sm:text-3xl font-medium text-white mb-2 tracking-tight">Complete Your Application</h1>
+        <p class="text-teal-100/70 font-light text-sm sm:text-base max-w-xl">
           We're almost there! Just a few details and you'll be on your way to coverage.
         </p>
-      }
-    </div>
-  </section>
+      </div>
+    </section>
+  }
 
   <!-- Progress Bar -->
   @if (step() < 4) {
-    <div class="max-w-2xl mx-auto px-4 sm:px-6 pt-10 pb-2">
+    <div class="bg-white border-b border-gray-100">
+    <div class="max-w-2xl mx-auto px-5 sm:px-6 py-6">
       <!-- Mobile: Compact Step Indicator -->
       <div class="sm:hidden flex items-center justify-center gap-2 mb-6">
         <div class="flex items-center gap-1.5">
@@ -46,7 +56,7 @@
                     ? 'bg-violet-600 text-white shadow-sm shadow-violet-200'
                     : 'bg-gray-200 text-gray-400'">
                 @if (step() > s) {
-                  <span class="material-symbols-rounded fc-success-pulse" style="font-size: 14px">check</span>
+                  <span class="material-symbols-rounded fc-success-pulse" style="font-size: 14px; font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24">check</span>
                 } @else {
                   {{ s }}
                 }
@@ -83,7 +93,7 @@
                   ? 'bg-violet-600 text-white ring-4 ring-violet-50 shadow-violet-300 scale-110'
                   : 'bg-white border-2 border-gray-200 text-gray-400 group-hover:border-gray-300'">
               @if (step() > s) {
-                <span class="material-symbols-rounded fc-success-pulse" style="font-size: 18px">check</span>
+                <span class="material-symbols-rounded fc-success-pulse" style="font-size: 18px; font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24">check</span>
               } @else {
                 {{ s }}
               }
@@ -101,15 +111,16 @@
         }
       </div>
     </div>
+    </div>
   }
 
-  <div class="max-w-3xl mx-auto px-4 sm:px-6 py-8">
+  <div class="max-w-3xl mx-auto px-5 sm:px-6 py-8">
 
     <!-- ═══ STEP 1 — REVIEW QUOTE ═══ -->
     @if (step() === 1) {
       <div class="fc-card p-6 fc-fade-in">
         <div class="flex items-center gap-2 mb-5">
-          <span class="material-symbols-rounded text-violet-600" style="font-size: 22px">fact_check</span>
+          <span class="material-symbols-rounded text-violet-600" style="font-size: 22px; font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24">fact_check</span>
           <h2 class="text-lg font-medium text-gray-900">Review Your Quote</h2>
         </div>
 
@@ -117,15 +128,15 @@
         <div class="bg-linear-to-r from-violet-50 to-purple-50 rounded-xl p-5 mb-5">
           <div class="flex items-start gap-4">
             <div class="w-14 h-14 rounded-xl bg-white shadow-sm flex items-center justify-center shrink-0">
-              <span class="material-symbols-rounded text-violet-600" style="font-size: 28px">verified</span>
+              <span class="material-symbols-rounded text-violet-600" style="font-size: 28px; font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24">verified</span>
             </div>
             <div class="flex-1">
-              <p class="text-base font-semibold text-gray-900">{{ savedQuote()!.quote.plan.name }}</p>
+              <p class="text-base font-medium text-gray-900">{{ savedQuote()!.quote.plan.name }}</p>
               <p class="text-xs text-gray-500 font-light mt-0.5">
                 Plan Code: <span class="font-medium text-gray-600">{{ savedQuote()!.quote.plan.code }}</span>
               </p>
               <div class="flex items-center gap-2 mt-2">
-                <span class="material-symbols-rounded text-violet-600" style="font-size: 14px">schedule</span>
+                <span class="material-symbols-rounded text-violet-600" style="font-size: 14px; font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24">schedule</span>
                 <span class="text-xs text-gray-600">{{ frequencyLabel(savedQuote()!.quote.frequency) }} billing</span>
               </div>
             </div>
@@ -135,7 +146,7 @@
         <!-- Members -->
         <div class="mb-5">
           <div class="flex items-center gap-2 mb-3">
-            <span class="material-symbols-rounded text-gray-400" style="font-size: 16px">group</span>
+            <span class="material-symbols-rounded text-gray-400" style="font-size: 16px; font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24">group</span>
             <p class="text-xs font-medium text-gray-500 uppercase tracking-wider">Covered Members</p>
           </div>
           <div class="space-y-2">
@@ -143,7 +154,7 @@
               <div class="flex items-center gap-2.5 p-2.5 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
                 <div class="w-8 h-8 rounded-lg flex items-center justify-center"
                   [class]="m.member_type === 'principal' ? 'bg-teal-50' : m.member_type === 'spouse' ? 'bg-violet-50' : m.member_type === 'child' ? 'bg-amber-50' : 'bg-emerald-50'">
-                  <span class="material-symbols-rounded" style="font-size: 16px"
+                  <span class="material-symbols-rounded" style="font-size: 16px; font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24"
                     [class]="m.member_type === 'principal' ? 'text-teal-600' : m.member_type === 'spouse' ? 'text-violet-600' : m.member_type === 'child' ? 'text-amber-600' : 'text-emerald-600'">
                     {{ m.member_type === 'principal' ? 'person' : m.member_type === 'spouse' ? 'favorite' : m.member_type === 'child' ? 'child_care' : 'elderly' }}
                   </span>
@@ -161,14 +172,14 @@
         @if (savedQuote()!.quote.addons.length > 0) {
           <div class="mb-5">
             <div class="flex items-center gap-2 mb-3">
-              <span class="material-symbols-rounded text-violet-500" style="font-size: 16px">add_circle</span>
+              <span class="material-symbols-rounded text-violet-500" style="font-size: 16px; font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24">add_circle</span>
               <p class="text-xs font-medium text-gray-500 uppercase tracking-wider">Selected Add-ons</p>
             </div>
             <div class="space-y-2">
               @for (addon of savedQuote()!.quote.addons; track addon.name) {
                 <div class="flex justify-between items-center p-2 rounded-lg bg-violet-50/50">
                   <span class="text-sm text-gray-700 font-medium">{{ addon.name }}</span>
-                  <span class="text-sm font-semibold text-violet-700">+ZMW {{ addon.amount | number:'1.2-2' }}</span>
+                  <span class="text-sm font-medium text-violet-700">+ZMW {{ addon.amount | number:'1.2-2' }}</span>
                 </div>
               }
             </div>
@@ -178,30 +189,30 @@
         <!-- Premium Breakdown -->
         <div class="border-t border-gray-200 pt-5 mt-5 space-y-3">
           <div class="flex items-center gap-2 mb-2">
-            <span class="material-symbols-rounded text-gray-400" style="font-size: 16px">payments</span>
+            <span class="material-symbols-rounded text-gray-400" style="font-size: 16px; font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24">payments</span>
             <p class="text-xs font-medium text-gray-500 uppercase tracking-wider">Premium Summary</p>
           </div>
 
           <div class="flex justify-between text-sm p-2.5 rounded-lg hover:bg-gray-50 transition-colors">
             <span class="text-gray-600">Base Premium</span>
-            <span class="text-gray-800 font-semibold">ZMW {{ savedQuote()!.quote.base_premium | number:'1.2-2' }}</span>
+            <span class="text-gray-800 font-medium">ZMW {{ savedQuote()!.quote.base_premium | number:'1.2-2' }}</span>
           </div>
           @if (savedQuote()!.quote.addon_premium > 0) {
             <div class="flex justify-between text-sm p-2.5 rounded-lg bg-violet-50/50">
               <span class="text-gray-600">Add-ons</span>
-              <span class="text-violet-700 font-semibold">+ZMW {{ savedQuote()!.quote.addon_premium | number:'1.2-2' }}</span>
+              <span class="text-violet-700 font-medium">+ZMW {{ savedQuote()!.quote.addon_premium | number:'1.2-2' }}</span>
             </div>
           }
           @if (savedQuote()!.quote.total_discount > 0) {
             <div class="flex justify-between text-sm p-2.5 rounded-lg bg-emerald-50/50">
               <span class="text-emerald-700">Savings</span>
-              <span class="text-emerald-700 font-semibold">-ZMW {{ savedQuote()!.quote.total_discount | number:'1.2-2' }}</span>
+              <span class="text-emerald-700 font-medium">-ZMW {{ savedQuote()!.quote.total_discount | number:'1.2-2' }}</span>
             </div>
           }
           @if (savedQuote()!.quote.total_loading > 0) {
             <div class="flex justify-between text-sm p-2.5 rounded-lg bg-amber-50/50">
               <span class="text-amber-700">Loadings</span>
-              <span class="text-amber-700 font-semibold">+ZMW {{ savedQuote()!.quote.total_loading | number:'1.2-2' }}</span>
+              <span class="text-amber-700 font-medium">+ZMW {{ savedQuote()!.quote.total_loading | number:'1.2-2' }}</span>
             </div>
           }
         </div>
@@ -216,7 +227,7 @@
               <p class="text-xs font-medium text-white/80 uppercase tracking-wider mb-1">Total Premium</p>
               <p class="text-sm text-white/90">{{ frequencyLabel(savedQuote()!.quote.frequency) }} Payment</p>
             </div>
-            <p class="text-3xl font-bold text-white tracking-tight">
+            <p class="text-3xl font-medium text-white tracking-tight">
               ZMW {{ savedQuote()!.quote.final_premium | number:'1.2-2' }}
             </p>
           </div>
@@ -224,12 +235,12 @@
 
         <button
           (click)="goToStep(2)"
-          class="group w-full mt-6 px-6 py-4 bg-linear-to-r from-teal-600 to-teal-700 text-white rounded-xl font-semibold text-base shadow-lg shadow-teal-200/50 hover:shadow-xl hover:shadow-teal-300/50 hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 overflow-hidden"
+          class="group w-full mt-6 px-6 py-4 bg-linear-to-r from-teal-600 to-teal-700 text-white rounded-xl font-medium text-base shadow-lg shadow-teal-200/50 hover:shadow-xl hover:shadow-teal-300/50 hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 overflow-hidden"
         >
           <div class="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
           <div class="relative flex items-center justify-center gap-2">
             <span>Continue to Member Details</span>
-            <span class="material-symbols-rounded transition-transform group-hover:translate-x-1" style="font-size: 20px">arrow_forward</span>
+            <span class="material-symbols-rounded transition-transform group-hover:translate-x-1" style="font-size: 20px; font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24">arrow_forward</span>
           </div>
         </button>
       </div>
@@ -239,7 +250,7 @@
     @if (step() === 2) {
       <div class="fc-fade-in">
         <div class="flex items-center gap-2 mb-2">
-          <span class="material-symbols-rounded text-violet-600" style="font-size: 22px">badge</span>
+          <span class="material-symbols-rounded text-violet-600" style="font-size: 22px; font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24">badge</span>
           <h2 class="text-lg font-medium text-gray-900">Member Details</h2>
         </div>
         <p class="text-gray-500 text-sm font-light mb-6">Fill in the personal details for each member on the policy.</p>
@@ -251,13 +262,13 @@
             <div class="flex items-center gap-3 mb-5">
               <div class="w-10 h-10 rounded-full flex items-center justify-center shadow-sm"
                 [class]="member.member_type === 'principal' ? 'bg-linear-to-br from-teal-50 to-teal-100' : member.member_type === 'spouse' ? 'bg-linear-to-br from-violet-50 to-violet-100' : member.member_type === 'child' ? 'bg-linear-to-br from-amber-50 to-amber-100' : 'bg-linear-to-br from-emerald-50 to-emerald-100'">
-                <span class="material-symbols-rounded" style="font-size: 20px"
+                <span class="material-symbols-rounded" style="font-size: 20px; font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24"
                   [class]="member.member_type === 'principal' ? 'text-teal-600' : member.member_type === 'spouse' ? 'text-violet-600' : member.member_type === 'child' ? 'text-amber-600' : 'text-emerald-600'">
                   {{ member.member_type === 'principal' ? 'person' : member.member_type === 'spouse' ? 'favorite' : member.member_type === 'child' ? 'child_care' : 'elderly' }}
                 </span>
               </div>
               <div>
-                <span class="text-base font-semibold block"
+                <span class="text-base font-medium block"
                   [class]="member.member_type === 'principal' ? 'text-teal-700' : member.member_type === 'spouse' ? 'text-violet-700' : member.member_type === 'child' ? 'text-amber-700' : 'text-emerald-700'">
                   {{ memberTypeLabel(member.member_type) }}
                 </span>
@@ -270,7 +281,7 @@
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label class="fc-label flex items-center gap-1">
-                  <span class="material-symbols-rounded" style="font-size: 14px">person</span>
+                  <span class="material-symbols-rounded" style="font-size: 14px; font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24">person</span>
                   First Name <span class="text-red-500">*</span>
                 </label>
                 <input
@@ -283,7 +294,7 @@
               </div>
               <div>
                 <label class="fc-label flex items-center gap-1">
-                  <span class="material-symbols-rounded" style="font-size: 14px">person</span>
+                  <span class="material-symbols-rounded" style="font-size: 14px; font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24">person</span>
                   Last Name <span class="text-red-500">*</span>
                 </label>
                 <input
@@ -296,7 +307,7 @@
               </div>
               <div>
                 <label class="fc-label flex items-center gap-1">
-                  <span class="material-symbols-rounded" style="font-size: 14px">cake</span>
+                  <span class="material-symbols-rounded" style="font-size: 14px; font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24">cake</span>
                   Date of Birth <span class="text-red-500">*</span>
                 </label>
                 <mat-form-field appearance="outline" class="w-full fc-mat-field">
@@ -312,7 +323,7 @@
               </div>
               <div>
                 <label class="fc-label flex items-center gap-1">
-                  <span class="material-symbols-rounded" style="font-size: 14px">wc</span>
+                  <span class="material-symbols-rounded" style="font-size: 14px; font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24">wc</span>
                   Gender
                 </label>
                 <mat-form-field appearance="outline" class="w-full fc-mat-field">
@@ -324,14 +335,14 @@
               </div>
               <div>
                 <label class="fc-label flex items-center gap-1">
-                  <span class="material-symbols-rounded" style="font-size: 14px">badge</span>
+                  <span class="material-symbols-rounded" style="font-size: 14px; font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24">badge</span>
                   National ID <span class="text-gray-400 font-light">(optional)</span>
                 </label>
                 <input type="text" [value]="member.national_id" (input)="updateApplyMember($index, 'national_id', $event.target!.value)" placeholder="e.g. 123456/78/9" class="fc-input" />
               </div>
               <div>
                 <label class="fc-label flex items-center gap-1">
-                  <span class="material-symbols-rounded" style="font-size: 14px">email</span>
+                  <span class="material-symbols-rounded" style="font-size: 14px; font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24">email</span>
                   Email <span class="text-gray-400 font-light">(optional)</span>
                 </label>
                 <input type="email" [value]="member.email" (input)="updateApplyMember($index, 'email', $event.target!.value)" placeholder="member@email.com" class="fc-input" />
@@ -342,7 +353,7 @@
 
         <div class="flex flex-col sm:flex-row gap-3 mt-6">
           <button (click)="goToStep(1)" class="fc-btn-ghost order-2 sm:order-1">
-            <span class="material-symbols-rounded" style="font-size: 18px">arrow_back</span>
+            <span class="material-symbols-rounded" style="font-size: 18px; font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24">arrow_back</span>
             Back to Review
           </button>
           <button
@@ -352,13 +363,13 @@
             [class.opacity-50]="!membersValid()"
             [class.cursor-not-allowed]="!membersValid()"
           >
-            <span class="material-symbols-rounded" style="font-size: 20px">arrow_forward</span>
+            <span class="material-symbols-rounded" style="font-size: 20px; font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24">arrow_forward</span>
             Continue to Payment
           </button>
         </div>
         @if (!membersValid()) {
           <p class="text-center text-sm text-amber-600 mt-4 flex items-center justify-center gap-2">
-            <span class="material-symbols-rounded" style="font-size: 16px">info</span>
+            <span class="material-symbols-rounded" style="font-size: 16px; font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24">info</span>
             <span>Please fill in all required fields (First Name, Last Name, Date of Birth)</span>
           </p>
         }
@@ -371,20 +382,20 @@
         <!-- Contact -->
         <div class="fc-card p-6 mb-5">
           <div class="flex items-center gap-2 mb-5">
-            <span class="material-symbols-rounded text-violet-600" style="font-size: 20px">contact_mail</span>
-            <h2 class="text-base font-semibold text-gray-800">Contact Information</h2>
+            <span class="material-symbols-rounded text-violet-600" style="font-size: 20px; font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24">contact_mail</span>
+            <h2 class="text-base font-medium text-gray-800">Contact Information</h2>
           </div>
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label class="fc-label flex items-center gap-1">
-                <span class="material-symbols-rounded" style="font-size: 14px">person</span>
+                <span class="material-symbols-rounded" style="font-size: 14px; font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24">person</span>
                 Contact Name
               </label>
               <input type="text" [value]="contactName()" (input)="contactName.set($event.target!.value)" placeholder="Your full name" class="fc-input" />
             </div>
             <div>
               <label class="fc-label flex items-center gap-1">
-                <span class="material-symbols-rounded" style="font-size: 14px">email</span>
+                <span class="material-symbols-rounded" style="font-size: 14px; font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24">email</span>
                 Email <span class="text-red-500">*</span>
               </label>
               <input
@@ -400,7 +411,7 @@
             </div>
             <div class="sm:col-span-2">
               <label class="fc-label flex items-center gap-1">
-                <span class="material-symbols-rounded" style="font-size: 14px">phone</span>
+                <span class="material-symbols-rounded" style="font-size: 14px; font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24">phone</span>
                 Phone
               </label>
               <input type="tel" [value]="contactPhone()" (input)="contactPhone.set($event.target!.value)" placeholder="+260 123 456 789" class="fc-input" />
@@ -411,13 +422,13 @@
         <!-- Coverage Details -->
         <div class="fc-card p-6 mb-5">
           <div class="flex items-center gap-2 mb-5">
-            <span class="material-symbols-rounded text-violet-600" style="font-size: 20px">calendar_month</span>
-            <h2 class="text-base font-semibold text-gray-800">Coverage Details</h2>
+            <span class="material-symbols-rounded text-violet-600" style="font-size: 20px; font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24">calendar_month</span>
+            <h2 class="text-base font-medium text-gray-800">Coverage Details</h2>
           </div>
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label class="fc-label flex items-center gap-1">
-                <span class="material-symbols-rounded" style="font-size: 14px">event</span>
+                <span class="material-symbols-rounded" style="font-size: 14px; font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24">event</span>
                 Coverage Start Date
               </label>
               <mat-form-field appearance="outline" class="w-full fc-mat-field">
@@ -434,7 +445,7 @@
             </div>
             <div>
               <label class="fc-label flex items-center gap-1">
-                <span class="material-symbols-rounded" style="font-size: 14px">payments</span>
+                <span class="material-symbols-rounded" style="font-size: 14px; font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24">payments</span>
                 Billing Frequency
               </label>
               <mat-form-field appearance="outline" class="w-full fc-mat-field">
@@ -452,7 +463,7 @@
         <!-- Terms -->
         <div class="bg-linear-to-br from-gray-50 to-gray-100/50 rounded-xl border border-gray-200 p-6 mb-5">
           <div class="flex items-start gap-3 mb-4">
-            <span class="material-symbols-rounded text-gray-400 mt-0.5" style="font-size: 20px">policy</span>
+            <span class="material-symbols-rounded text-gray-400 mt-0.5" style="font-size: 20px; font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24">policy</span>
             <div>
               <p class="text-xs text-gray-600 font-light leading-relaxed">
                 By submitting this application, you confirm that all information provided is accurate and complete.
@@ -478,7 +489,7 @@
         <!-- Error -->
         @if (submitError()) {
           <div class="bg-red-50 border border-red-100 rounded-xl px-4 py-3 mb-5 flex items-start gap-3">
-            <span class="material-symbols-rounded text-red-600" style="font-size: 20px">error</span>
+            <span class="material-symbols-rounded text-red-600" style="font-size: 20px; font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24">error</span>
             <p class="text-sm text-red-600 font-light flex-1">{{ submitError() }}</p>
           </div>
         }
@@ -486,13 +497,13 @@
         <!-- Actions -->
         <div class="flex flex-col sm:flex-row gap-3">
           <button (click)="goToStep(2)" class="fc-btn-ghost order-2 sm:order-1">
-            <span class="material-symbols-rounded" style="font-size: 18px">arrow_back</span>
+            <span class="material-symbols-rounded" style="font-size: 18px; font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24">arrow_back</span>
             Back to Details
           </button>
           <button
             (click)="submitApplication()"
             [disabled]="!contactValid() || submitLoading()"
-            class="group relative flex-1 px-6 py-4 rounded-xl font-semibold text-base shadow-lg overflow-hidden transition-all duration-300 order-1 sm:order-2"
+            class="group relative flex-1 px-6 py-4 rounded-xl font-medium text-base shadow-lg overflow-hidden transition-all duration-300 order-1 sm:order-2"
             [class]="contactValid() && !submitLoading()
               ? 'bg-linear-to-r from-emerald-600 to-emerald-700 text-white shadow-emerald-200/50 hover:shadow-xl hover:shadow-emerald-300/50 hover:scale-[1.02] active:scale-[0.98]'
               : 'bg-gray-200 text-gray-400 cursor-not-allowed opacity-50'"
@@ -500,10 +511,10 @@
             <div class="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
             <div class="relative flex items-center justify-center gap-2">
               @if (submitLoading()) {
-                <span class="w-5 h-5 border-3 border-white border-t-transparent rounded-full animate-spin"></span>
+                <span class="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
                 <span>Submitting...</span>
               } @else {
-                <span class="material-symbols-rounded" style="font-size: 22px">send</span>
+                <span class="material-symbols-rounded" style="font-size: 22px; font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24">send</span>
                 <span>Submit Application</span>
               }
             </div>
@@ -511,7 +522,7 @@
         </div>
         @if (!contactValid() && contactEmail()) {
           <p class="text-center text-sm text-amber-600 mt-4 flex items-center justify-center gap-2">
-            <span class="material-symbols-rounded" style="font-size: 16px">info</span>
+            <span class="material-symbols-rounded" style="font-size: 16px; font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24">info</span>
             <span>Please enter a valid email and accept the terms to continue</span>
           </p>
         }
@@ -530,7 +541,7 @@
           <div class="absolute inset-0 rounded-full border-2 border-emerald-200 animate-ping opacity-20"></div>
         </div>
 
-        <h1 class="text-3xl sm:text-4xl font-bold text-gray-900 mb-3 tracking-tight">Application Submitted!</h1>
+        <h1 class="text-3xl sm:text-4xl font-medium text-gray-900 mb-3 tracking-tight">Application Submitted!</h1>
         <p class="text-gray-500 text-base font-light mb-8 max-w-md mx-auto">
           Your application has been received and will be reviewed by our underwriting team.
         </p>
@@ -542,14 +553,14 @@
 
           <div class="relative">
             <div class="flex items-center gap-2 mb-3">
-              <span class="material-symbols-rounded text-white/80" style="font-size: 20px">confirmation_number</span>
+              <span class="material-symbols-rounded text-white/80" style="font-size: 20px; font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24">confirmation_number</span>
               <p class="text-xs font-medium text-white/90 uppercase tracking-wider">Application Reference</p>
             </div>
-            <p class="text-2xl sm:text-3xl font-bold text-white tracking-tight mb-2">
+            <p class="text-2xl sm:text-3xl font-medium text-white tracking-tight mb-2">
               {{ applicationResult()!.application_number }}
             </p>
             <div class="flex items-center gap-2 text-white/80 text-sm">
-              <span class="material-symbols-rounded" style="font-size: 16px">verified</span>
+              <span class="material-symbols-rounded" style="font-size: 16px; font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24">verified</span>
               <span>{{ applicationResult()!.plan.name }}</span>
             </div>
           </div>
@@ -559,10 +570,10 @@
         <div class="fc-card p-5 mb-6 max-w-lg mx-auto text-left">
           <div class="flex items-start gap-3">
             <div class="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center shrink-0">
-              <span class="material-symbols-rounded text-blue-600" style="font-size: 20px">mark_email_read</span>
+              <span class="material-symbols-rounded text-blue-600" style="font-size: 20px; font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24">mark_email_read</span>
             </div>
             <div class="flex-1">
-              <p class="text-sm font-semibold text-gray-800 mb-1">Confirmation Email Sent</p>
+              <p class="text-sm font-medium text-gray-800 mb-1">Confirmation Email Sent</p>
               <p class="text-xs text-gray-500 font-light">
                 A detailed confirmation has been sent to <span class="font-medium text-gray-700">{{ applicationResult()!.contact_email }}</span>
               </p>
@@ -573,8 +584,8 @@
         <!-- What Happens Next -->
         <div class="fc-card p-6 mb-8 max-w-lg mx-auto text-left">
           <div class="flex items-center gap-2 mb-5">
-            <span class="material-symbols-rounded text-violet-600" style="font-size: 22px">timeline</span>
-            <h3 class="text-base font-semibold text-gray-800">What Happens Next?</h3>
+            <span class="material-symbols-rounded text-violet-600" style="font-size: 22px; font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24">timeline</span>
+            <h3 class="text-base font-medium text-gray-800">What Happens Next?</h3>
           </div>
           <div class="relative pl-10">
             <!-- Vertical line -->
@@ -605,8 +616,8 @@
           </div>
         </div>
 
-        <a routerLink="/" class="group inline-flex items-center gap-2 px-8 py-4 bg-linear-to-r from-teal-600 to-teal-700 text-white rounded-xl font-semibold text-base shadow-lg shadow-teal-200/50 hover:shadow-xl hover:shadow-teal-300/50 hover:scale-[1.02] active:scale-[0.98] transition-all duration-300">
-          <span class="material-symbols-rounded" style="font-size: 22px">home</span>
+        <a routerLink="/" class="group inline-flex items-center gap-2 px-8 py-4 bg-linear-to-r from-teal-600 to-teal-700 text-white rounded-xl font-medium text-base shadow-lg shadow-teal-200/50 hover:shadow-xl hover:shadow-teal-300/50 hover:scale-[1.02] active:scale-[0.98] transition-all duration-300">
+          <span class="material-symbols-rounded" style="font-size: 22px; font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24">home</span>
           <span>Return to Home</span>
         </a>
       </div>

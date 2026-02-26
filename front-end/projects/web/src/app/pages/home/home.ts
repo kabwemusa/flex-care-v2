@@ -1,7 +1,6 @@
 import { Component, signal, OnInit } from '@angular/core';
 import { RouterModule } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
-import { SliderComponent } from '../../components/slider/slider';
 
 interface FeaturedPlan {
   id: string;
@@ -16,43 +15,12 @@ interface FeaturedPlan {
 @Component({
   selector: 'app-home',
   standalone: true,
-  imports: [RouterModule, SliderComponent],
+  imports: [RouterModule],
   templateUrl: './home.html',
 })
 export class HomePage implements OnInit {
   plans = signal<FeaturedPlan[]>([]);
   plansLoading = signal(true);
-
-  testimonials = [
-    {
-      name: 'Mary Tembo',
-      role: 'Family Plan Member',
-      initials: 'MT',
-      stars: 5,
-      text: 'FlexCare made it so easy to find the right plan for my family. The online claims process saved me hours of paperwork.',
-    },
-    {
-      name: 'James Mwanza',
-      role: 'Corporate HR Manager',
-      initials: 'JM',
-      stars: 5,
-      text: 'We switched our company health plan to FlexCare and our employees love the digital ID cards and quick claims turnaround.',
-    },
-    {
-      name: 'Linda Banda',
-      role: 'Individual Plan Member',
-      initials: 'LB',
-      stars: 4,
-      text: 'The quote process took less than 2 minutes. I knew exactly what I was paying before I applied. Truly transparent.',
-    },
-    {
-      name: 'David Phiri',
-      role: 'Small Business Owner',
-      initials: 'DP',
-      stars: 5,
-      text: 'As a small business owner, covering my team was always complicated. FlexCare simplified everything with their online platform.',
-    },
-  ];
 
   healthTips = [
     {
@@ -117,9 +85,5 @@ export class HomePage implements OnInit {
       corporate: 'business',
     };
     return icons[type] ?? 'health_and_safety';
-  }
-
-  starsArray(count: number): number[] {
-    return Array(count).fill(0);
   }
 }

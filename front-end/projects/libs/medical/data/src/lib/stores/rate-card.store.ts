@@ -216,12 +216,12 @@ export class RateCardListStore {
     return this.http.post<ApiResponse<RateCardTier>>(`${this.apiUrl}/${rateCardId}/tiers`, tier);
   }
 
-  updateTier(rateCardId: string, tier: Partial<RateCardTier>) {
-    return this.http.patch<ApiResponse<RateCardTier>>(`${this.apiUrl}/${rateCardId}/tiers`, tier);
+  updateTier(tierId: string, tier: Partial<RateCardTier>) {
+    return this.http.put<ApiResponse<RateCardTier>>(`/api/v1/medical/rate-card-tiers/${tierId}`, tier);
   }
 
-  deleteTier(rateCardId: string) {
-    return this.http.delete<ApiResponse<RateCardTier>>(`${this.apiUrl}/${rateCardId}/tiers`);
+  deleteTier(tierId: string) {
+    return this.http.delete<ApiResponse<RateCardTier>>(`/api/v1/medical/rate-card-tiers/${tierId}`);
   }
 
   // =========================================================================

@@ -1,7 +1,7 @@
 <!-- ═══════════════════════════════════════════════════════════════════════
      Section 1 — Hero with lifestyle background
      ═══════════════════════════════════════════════════════════════════════ -->
-<section class="relative min-h-[90vh] flex items-center overflow-hidden">
+<section class="relative min-h-[92vh] flex items-center overflow-hidden">
   <!-- Background Image -->
   <div class="absolute inset-0">
     <img
@@ -10,40 +10,41 @@
       class="w-full h-full object-cover"
       loading="eager"
     />
-    <div class="absolute inset-0 bg-gradient-to-r from-teal-900/90 via-teal-800/75 to-teal-700/50"></div>
+    <div class="absolute inset-0 bg-linear-to-r from-teal-900/90 via-teal-800/75 to-teal-700/40"></div>
   </div>
 
-  <!-- Content -->
-  <div class="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 py-32">
-    <div class="max-w-2xl">
-      <h1 class="text-4xl sm:text-5xl lg:text-6xl font-semibold text-white leading-[1.1] tracking-tight mb-6 fc-slide-up">
-        Your Health,<br/>Our Priority
-      </h1>
-      <p class="text-lg text-white/75 font-light leading-relaxed mb-10 max-w-lg fc-slide-up fc-slide-up-delay-1">
-        Compare plans, get an instant quote, and secure your coverage — all online in minutes. Healthcare made simple.
-      </p>
-      <div class="flex flex-col sm:flex-row items-start gap-4 fc-slide-up fc-slide-up-delay-2">
-        <a routerLink="/quote" class="fc-btn-primary-lg shadow-lg shadow-teal-900/30">
-          Get a Free Quote
-          <span class="material-symbols-rounded" style="font-size: 18px">arrow_forward</span>
-        </a>
-        <a routerLink="/plans" class="fc-btn-white-outline !px-6 !py-3">
-          View All Plans
-        </a>
+  <!-- Content — top-padded to clear fixed nav on all screen sizes -->
+  <div class="relative z-10 w-full max-w-6xl mx-auto px-5 sm:px-6 pt-24 pb-16 sm:pt-32 sm:pb-20">
+    <div class="max-w-xl">
+
+      <!-- Eyebrow label -->
+      <div class="inline-flex items-center gap-1.5 mb-5 fc-fade-in">
+        <span class="material-symbols-rounded text-teal-300" style="font-size: 15px; font-variation-settings: 'FILL' 1, 'wght' 300, 'GRAD' 0, 'opsz' 24">verified</span>
+        <span class="text-xs text-white/60 tracking-wide">Trusted by 10,000+ members across Zambia</span>
       </div>
 
-      <!-- Trust micro-badge -->
-      <div class="mt-10 flex items-center gap-2 fc-slide-up fc-slide-up-delay-3">
-        <span class="material-symbols-rounded text-teal-300" style="font-size: 18px">verified</span>
-        <span class="text-sm text-white/60 font-light">Trusted by 10,000+ members across Zambia</span>
+      <h1 class="text-3xl sm:text-5xl lg:text-6xl font-medium text-white leading-[1.12] tracking-tight mb-4 fc-slide-up">
+        Your Health,<br/>Our Priority
+      </h1>
+      <p class="text-base sm:text-lg text-white/70 font-light leading-relaxed mb-8 max-w-md fc-slide-up fc-slide-up-delay-1">
+        Compare plans, get an instant quote, and secure your coverage — all online in minutes.
+      </p>
+      <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 fc-slide-up fc-slide-up-delay-2">
+        <a routerLink="/quote" class="fc-btn-primary-lg shadow-lg shadow-teal-900/30 justify-center sm:justify-start">
+          Get a Free Quote
+          <span class="material-symbols-rounded" style="font-size: 17px">arrow_forward</span>
+        </a>
+        <a routerLink="/plans" class="fc-btn-white-outline px-6! py-3! justify-center sm:justify-start">
+          View All Plans
+        </a>
       </div>
     </div>
   </div>
 
   <!-- Scroll indicator -->
-  <div class="absolute bottom-8 left-1/2 -translate-x-1/2 z-10 hidden sm:block">
-    <div class="w-6 h-10 rounded-full border-2 border-white/30 flex items-start justify-center p-1.5">
-      <div class="w-1 h-2.5 bg-white/60 rounded-full animate-bounce"></div>
+  <div class="absolute bottom-7 left-1/2 -translate-x-1/2 z-10 hidden sm:block">
+    <div class="w-5 h-8 rounded-full border border-white/25 flex items-start justify-center p-1">
+      <div class="w-0.5 h-2 bg-white/50 rounded-full animate-bounce"></div>
     </div>
   </div>
 </section>
@@ -52,35 +53,35 @@
      Section 2 — Trust Statistics Bar
      ═══════════════════════════════════════════════════════════════════════ -->
 <section class="bg-white border-b border-gray-100">
-  <div class="max-w-5xl mx-auto px-4 sm:px-6 py-12">
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-8 text-center fc-stagger">
+  <div class="max-w-5xl mx-auto px-5 sm:px-6 py-10 sm:py-12">
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-6 sm:gap-8 text-center fc-stagger">
       <div>
-        <div class="flex items-center justify-center mb-2">
-          <span class="material-symbols-rounded text-teal-500 mr-2" style="font-size: 22px">shield</span>
-          <span class="text-3xl font-semibold text-gray-900">15+</span>
+        <div class="flex items-center justify-center mb-1.5">
+          <span class="material-symbols-rounded text-teal-400 mr-1.5" style="font-size: 18px; font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24">shield</span>
+          <span class="text-2xl sm:text-3xl font-medium text-gray-900">15+</span>
         </div>
-        <p class="text-sm text-gray-500 font-light">Years of Excellence</p>
+        <p class="text-xs sm:text-sm text-gray-400 font-light">Years of Excellence</p>
       </div>
       <div>
-        <div class="flex items-center justify-center mb-2">
-          <span class="material-symbols-rounded text-teal-500 mr-2" style="font-size: 22px">group</span>
-          <span class="text-3xl font-semibold text-gray-900">10K+</span>
+        <div class="flex items-center justify-center mb-1.5">
+          <span class="material-symbols-rounded text-teal-400 mr-1.5" style="font-size: 18px; font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24">group</span>
+          <span class="text-2xl sm:text-3xl font-medium text-gray-900">10K+</span>
         </div>
-        <p class="text-sm text-gray-500 font-light">Members Served</p>
+        <p class="text-xs sm:text-sm text-gray-400 font-light">Members Served</p>
       </div>
       <div>
-        <div class="flex items-center justify-center mb-2">
-          <span class="material-symbols-rounded text-teal-500 mr-2" style="font-size: 22px">task_alt</span>
-          <span class="text-3xl font-semibold text-gray-900">98.5%</span>
+        <div class="flex items-center justify-center mb-1.5">
+          <span class="material-symbols-rounded text-teal-400 mr-1.5" style="font-size: 18px; font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24">task_alt</span>
+          <span class="text-2xl sm:text-3xl font-medium text-gray-900">98.5%</span>
         </div>
-        <p class="text-sm text-gray-500 font-light">Claims Approved</p>
+        <p class="text-xs sm:text-sm text-gray-400 font-light">Claims Approved</p>
       </div>
       <div>
-        <div class="flex items-center justify-center mb-2">
-          <span class="material-symbols-rounded text-teal-500 mr-2" style="font-size: 22px">star</span>
-          <span class="text-3xl font-semibold text-gray-900">4.9/5</span>
+        <div class="flex items-center justify-center mb-1.5">
+          <span class="material-symbols-rounded text-teal-400 mr-1.5" style="font-size: 18px; font-variation-settings: 'FILL' 1, 'wght' 300, 'GRAD' 0, 'opsz' 24">star</span>
+          <span class="text-2xl sm:text-3xl font-medium text-gray-900">4.9/5</span>
         </div>
-        <p class="text-sm text-gray-500 font-light">Member Rating</p>
+        <p class="text-xs sm:text-sm text-gray-400 font-light">Member Rating</p>
       </div>
     </div>
   </div>
@@ -89,46 +90,46 @@
 <!-- ═══════════════════════════════════════════════════════════════════════
      Section 3 — Why FlexCare
      ═══════════════════════════════════════════════════════════════════════ -->
-<section class="py-20 px-4 sm:px-6 bg-white">
+<section class="py-16 sm:py-20 px-5 sm:px-6 bg-white">
   <div class="max-w-5xl mx-auto">
-    <div class="text-center mb-14">
-      <h2 class="text-2xl sm:text-3xl font-medium text-gray-900 mb-3 tracking-tight">Why choose FlexCare?</h2>
-      <p class="text-gray-500 text-base font-light max-w-xl mx-auto">
-        We make health insurance simple, transparent, and accessible.
+    <div class="text-center mb-10 sm:mb-14">
+      <h2 class="text-xl sm:text-3xl font-medium text-gray-900 mb-2 sm:mb-3 tracking-tight">Why choose FlexCare?</h2>
+      <p class="text-gray-400 text-sm sm:text-base font-light max-w-md mx-auto leading-relaxed">
+        Simple, transparent, and accessible health insurance.
       </p>
     </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-7 fc-stagger">
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-5 sm:gap-7 fc-stagger">
       <!-- Instant Quotes -->
-      <div class="fc-card p-7">
-        <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-teal-50 to-teal-100 flex items-center justify-center mb-5">
-          <span class="material-symbols-rounded text-teal-600" style="font-size: 24px">bolt</span>
+      <div class="fc-card p-6 sm:p-7">
+        <div class="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-teal-50 flex items-center justify-center mb-4 sm:mb-5">
+          <span class="material-symbols-rounded text-teal-500" style="font-size: 20px; font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24">bolt</span>
         </div>
-        <h3 class="text-base font-medium text-gray-900 mb-2">Instant Quotes</h3>
-        <p class="text-gray-500 text-sm font-light leading-relaxed">
-          Get an accurate premium quote in seconds. No paperwork, no waiting — just pick a plan and see your price.
+        <h3 class="text-sm sm:text-base font-medium text-gray-800 mb-1.5 sm:mb-2">Instant Quotes</h3>
+        <p class="text-gray-400 text-sm font-light leading-relaxed">
+          Get an accurate premium quote in seconds. No paperwork, no waiting.
         </p>
       </div>
 
       <!-- Wide Network -->
-      <div class="fc-card p-7">
-        <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-violet-50 to-violet-100 flex items-center justify-center mb-5">
-          <span class="material-symbols-rounded text-violet-600" style="font-size: 24px">lan</span>
+      <div class="fc-card p-6 sm:p-7">
+        <div class="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-violet-50 flex items-center justify-center mb-4 sm:mb-5">
+          <span class="material-symbols-rounded text-violet-500" style="font-size: 20px; font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24">lan</span>
         </div>
-        <h3 class="text-base font-medium text-gray-900 mb-2">Wide Network</h3>
-        <p class="text-gray-500 text-sm font-light leading-relaxed">
-          Access a growing network of hospitals, clinics, and specialists across the country at preferential rates.
+        <h3 class="text-sm sm:text-base font-medium text-gray-800 mb-1.5 sm:mb-2">Wide Network</h3>
+        <p class="text-gray-400 text-sm font-light leading-relaxed">
+          Hospitals, clinics, and specialists across the country at preferential rates.
         </p>
       </div>
 
       <!-- Hassle-Free Claims -->
-      <div class="fc-card p-7">
-        <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-50 to-emerald-100 flex items-center justify-center mb-5">
-          <span class="material-symbols-rounded text-emerald-600" style="font-size: 24px">verified_user</span>
+      <div class="fc-card p-6 sm:p-7">
+        <div class="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-emerald-50 flex items-center justify-center mb-4 sm:mb-5">
+          <span class="material-symbols-rounded text-emerald-500" style="font-size: 20px; font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24">verified_user</span>
         </div>
-        <h3 class="text-base font-medium text-gray-900 mb-2">Hassle-Free Claims</h3>
-        <p class="text-gray-500 text-sm font-light leading-relaxed">
-          Submit claims online and track them in real time. Our team handles the rest so you can focus on your health.
+        <h3 class="text-sm sm:text-base font-medium text-gray-800 mb-1.5 sm:mb-2">Hassle-Free Claims</h3>
+        <p class="text-gray-400 text-sm font-light leading-relaxed">
+          Submit claims online and track them in real time. We handle the rest.
         </p>
       </div>
     </div>
@@ -138,66 +139,66 @@
 <!-- ═══════════════════════════════════════════════════════════════════════
      Section 4 — How It Works
      ═══════════════════════════════════════════════════════════════════════ -->
-<section class="py-20 px-4 sm:px-6 bg-gradient-to-b from-gray-50 to-white">
+<section class="py-16 sm:py-20 px-5 sm:px-6 bg-gray-50/60" id="how-it-works">
   <div class="max-w-5xl mx-auto">
-    <div class="text-center mb-14">
-      <h2 class="text-2xl sm:text-3xl font-medium text-gray-900 mb-3 tracking-tight">How it works</h2>
-      <p class="text-gray-500 text-base font-light max-w-xl mx-auto">
-        Get covered in four simple steps. No hassle, no complexity.
+    <div class="text-center mb-10 sm:mb-14">
+      <h2 class="text-xl sm:text-3xl font-medium text-gray-900 mb-2 sm:mb-3 tracking-tight">How it works</h2>
+      <p class="text-gray-400 text-sm sm:text-base font-light max-w-md mx-auto leading-relaxed">
+        Get covered in four simple steps.
       </p>
     </div>
 
     <div class="relative">
       <!-- Connecting Line (Desktop only) -->
-      <div class="hidden md:block absolute top-10 left-[12.5%] right-[12.5%] h-px bg-gray-200"></div>
+      <div class="hidden md:block absolute top-9 left-[12.5%] right-[12.5%] h-px bg-gray-200"></div>
 
-      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 relative">
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-6 sm:gap-8 relative">
         <!-- Step 1 -->
         <div class="text-center fc-slide-up">
-          <div class="w-20 h-20 rounded-full bg-white border-2 border-teal-200 flex items-center justify-center mx-auto mb-5 relative z-10 shadow-sm">
-            <span class="material-symbols-rounded text-teal-600" style="font-size: 28px">search</span>
+          <div class="w-16 h-16 sm:w-18 sm:h-18 rounded-full bg-white border border-gray-200 flex items-center justify-center mx-auto mb-4 relative z-10 shadow-xs">
+            <span class="material-symbols-rounded text-teal-500" style="font-size: 22px; font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24">search</span>
           </div>
-          <span class="text-xs font-medium text-teal-600 tracking-wider uppercase mb-1 block">Step 1</span>
-          <h3 class="text-base font-medium text-gray-900 mb-2">Choose a Plan</h3>
-          <p class="text-sm text-gray-500 font-light">Browse our plans and find the perfect fit for your needs.</p>
+          <span class="text-[10px] font-medium text-teal-500 tracking-widest uppercase mb-1 block">Step 1</span>
+          <h3 class="text-sm font-medium text-gray-800 mb-1">Choose a Plan</h3>
+          <p class="text-xs sm:text-sm text-gray-400 font-light leading-relaxed">Browse and find the right fit.</p>
         </div>
 
         <!-- Step 2 -->
         <div class="text-center fc-slide-up fc-slide-up-delay-1">
-          <div class="w-20 h-20 rounded-full bg-white border-2 border-teal-200 flex items-center justify-center mx-auto mb-5 relative z-10 shadow-sm">
-            <span class="material-symbols-rounded text-teal-600" style="font-size: 28px">calculate</span>
+          <div class="w-16 h-16 sm:w-18 sm:h-18 rounded-full bg-white border border-gray-200 flex items-center justify-center mx-auto mb-4 relative z-10 shadow-xs">
+            <span class="material-symbols-rounded text-teal-500" style="font-size: 22px; font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24">calculate</span>
           </div>
-          <span class="text-xs font-medium text-teal-600 tracking-wider uppercase mb-1 block">Step 2</span>
-          <h3 class="text-base font-medium text-gray-900 mb-2">Get a Quote</h3>
-          <p class="text-sm text-gray-500 font-light">Enter your details and get an instant, accurate premium quote.</p>
+          <span class="text-[10px] font-medium text-teal-500 tracking-widest uppercase mb-1 block">Step 2</span>
+          <h3 class="text-sm font-medium text-gray-800 mb-1">Get a Quote</h3>
+          <p class="text-xs sm:text-sm text-gray-400 font-light leading-relaxed">Instant, accurate pricing.</p>
         </div>
 
         <!-- Step 3 -->
         <div class="text-center fc-slide-up fc-slide-up-delay-2">
-          <div class="w-20 h-20 rounded-full bg-white border-2 border-teal-200 flex items-center justify-center mx-auto mb-5 relative z-10 shadow-sm">
-            <span class="material-symbols-rounded text-teal-600" style="font-size: 28px">edit_document</span>
+          <div class="w-16 h-16 sm:w-18 sm:h-18 rounded-full bg-white border border-gray-200 flex items-center justify-center mx-auto mb-4 relative z-10 shadow-xs">
+            <span class="material-symbols-rounded text-teal-500" style="font-size: 22px; font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24">edit_document</span>
           </div>
-          <span class="text-xs font-medium text-teal-600 tracking-wider uppercase mb-1 block">Step 3</span>
-          <h3 class="text-base font-medium text-gray-900 mb-2">Apply Online</h3>
-          <p class="text-sm text-gray-500 font-light">Fill out a simple application form with your personal details.</p>
+          <span class="text-[10px] font-medium text-teal-500 tracking-widest uppercase mb-1 block">Step 3</span>
+          <h3 class="text-sm font-medium text-gray-800 mb-1">Apply Online</h3>
+          <p class="text-xs sm:text-sm text-gray-400 font-light leading-relaxed">A simple digital form.</p>
         </div>
 
         <!-- Step 4 -->
         <div class="text-center fc-slide-up fc-slide-up-delay-3">
-          <div class="w-20 h-20 rounded-full bg-white border-2 border-teal-200 flex items-center justify-center mx-auto mb-5 relative z-10 shadow-sm">
-            <span class="material-symbols-rounded text-teal-600" style="font-size: 28px">verified</span>
+          <div class="w-16 h-16 sm:w-18 sm:h-18 rounded-full bg-white border border-gray-200 flex items-center justify-center mx-auto mb-4 relative z-10 shadow-xs">
+            <span class="material-symbols-rounded text-teal-500" style="font-size: 22px; font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24">verified</span>
           </div>
-          <span class="text-xs font-medium text-teal-600 tracking-wider uppercase mb-1 block">Step 4</span>
-          <h3 class="text-base font-medium text-gray-900 mb-2">Get Covered</h3>
-          <p class="text-sm text-gray-500 font-light">Receive your digital ID card and start enjoying your benefits.</p>
+          <span class="text-[10px] font-medium text-teal-500 tracking-widest uppercase mb-1 block">Step 4</span>
+          <h3 class="text-sm font-medium text-gray-800 mb-1">Get Covered</h3>
+          <p class="text-xs sm:text-sm text-gray-400 font-light leading-relaxed">Digital ID card, ready to use.</p>
         </div>
       </div>
     </div>
 
-    <div class="text-center mt-12">
+    <div class="text-center mt-10 sm:mt-12">
       <a routerLink="/quote" class="fc-btn-primary">
         Start Now
-        <span class="material-symbols-rounded" style="font-size: 18px">arrow_forward</span>
+        <span class="material-symbols-rounded" style="font-size: 17px">arrow_forward</span>
       </a>
     </div>
   </div>
@@ -206,21 +207,21 @@
 <!-- ═══════════════════════════════════════════════════════════════════════
      Section 5 — Featured Plans
      ═══════════════════════════════════════════════════════════════════════ -->
-<section class="py-20 px-4 sm:px-6 bg-white">
+<section class="py-16 sm:py-20 px-5 sm:px-6 bg-white">
   <div class="max-w-5xl mx-auto">
-    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-10 gap-4">
+    <div class="flex flex-col sm:flex-row items-start sm:items-end justify-between mb-8 sm:mb-10 gap-3">
       <div>
-        <h2 class="text-2xl sm:text-3xl font-medium text-gray-900 mb-2 tracking-tight">Plans built for your needs</h2>
-        <p class="text-gray-500 text-base font-light">From individual coverage to comprehensive family plans.</p>
+        <h2 class="text-xl sm:text-3xl font-medium text-gray-900 mb-1.5 tracking-tight">Plans built for you</h2>
+        <p class="text-gray-400 text-sm sm:text-base font-light">From individual coverage to comprehensive family plans.</p>
       </div>
-      <a routerLink="/plans" class="fc-btn-outline text-sm">
-        View All Plans
-        <span class="material-symbols-rounded" style="font-size: 16px">arrow_forward</span>
+      <a routerLink="/plans" class="fc-btn-outline text-xs sm:text-sm shrink-0">
+        View All
+        <span class="material-symbols-rounded" style="font-size: 15px">arrow_forward</span>
       </a>
     </div>
 
     @if (plansLoading()) {
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
         @for (i of [1,2,3]; track i) {
           <div class="fc-card p-6 animate-pulse">
             <div class="h-4 bg-gray-100 rounded w-2/3 mb-3"></div>
@@ -232,68 +233,76 @@
         }
       </div>
     } @else if (plans().length > 0) {
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 fc-stagger">
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6 fc-stagger">
         @for (plan of plans(); track plan.id) {
-          <div class="fc-card-interactive p-6 border-t-4"
+          <div class="fc-card-interactive p-5 sm:p-6 border-t-[3px]"
             [style.border-top-color]="plan.tier_level === 1 ? '#cbd5e1' : plan.tier_level === 2 ? '#14b8a6' : plan.tier_level === 3 ? '#8b5cf6' : '#f59e0b'">
-            <div class="flex items-center justify-between mb-3">
-              <h3 class="text-base font-medium text-gray-900">{{ plan.name }}</h3>
-              <span class="text-xs font-medium px-2.5 py-1 rounded-full" [class]="tierColor(plan.tier_level)">
+            <div class="flex items-start justify-between mb-3">
+              <h3 class="text-sm sm:text-base font-medium text-gray-800 leading-snug">{{ plan.name }}</h3>
+              <span class="text-xs font-normal px-2 py-0.5 rounded-full shrink-0 ml-2" [class]="tierColor(plan.tier_level)">
                 {{ tierLabel(plan.tier_level) }}
               </span>
             </div>
-            <div class="flex items-center gap-2 mb-3">
-              <span class="material-symbols-rounded text-gray-400" style="font-size: 16px">{{ planTypeIcon(plan.plan_type) }}</span>
-              <span class="text-xs text-gray-400 capitalize">{{ plan.plan_type }}</span>
+            <div class="flex items-center gap-1.5 mb-3">
+              <span class="material-symbols-rounded text-gray-300" style="font-size: 14px; font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24">{{ planTypeIcon(plan.plan_type) }}</span>
+              <span class="text-xs text-gray-400 capitalize font-light">{{ plan.plan_type }}</span>
             </div>
-            <p class="text-sm text-gray-500 font-light leading-relaxed mb-4 line-clamp-2">
+            <p class="text-xs sm:text-sm text-gray-400 font-light leading-relaxed mb-4 line-clamp-2">
               {{ plan.description || 'Comprehensive health coverage tailored to your needs.' }}
             </p>
-            <div class="flex items-center gap-4 text-xs text-gray-400 mb-5">
+            <div class="flex items-center gap-3 text-xs text-gray-400 mb-4">
               <span class="flex items-center gap-1">
-                <span class="material-symbols-rounded" style="font-size: 14px">check_circle</span>
+                <span class="material-symbols-rounded text-teal-400" style="font-size: 13px; font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24">check_circle</span>
                 {{ plan.plan_benefits_count }} benefits
               </span>
               @if (plan.plan_addons_count > 0) {
                 <span class="flex items-center gap-1">
-                  <span class="material-symbols-rounded" style="font-size: 14px">add_circle</span>
+                  <span class="material-symbols-rounded text-gray-300" style="font-size: 13px; font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24">add_circle</span>
                   {{ plan.plan_addons_count }} add-ons
                 </span>
               }
             </div>
-            <div class="flex items-center gap-3">
-              <a [routerLink]="['/plans', plan.id]" class="fc-btn-ghost text-xs !px-3 !py-1.5">Details</a>
-              <a [routerLink]="['/quote']" [queryParams]="{plan: plan.id}" class="fc-btn-primary text-xs !px-3 !py-1.5">Get a Quote</a>
+            <div class="space-y-1.5 mt-auto">
+              <a [routerLink]="['/quote']" [queryParams]="{plan: plan.id}"
+                class="group flex items-center justify-between w-full px-4 py-2.5 bg-teal-600 hover:bg-teal-700 text-white rounded-xl text-xs font-medium transition-colors duration-200">
+                <span>Get a Quote</span>
+                <span class="material-symbols-rounded group-hover:translate-x-0.5 transition-transform" style="font-size: 15px; font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24">arrow_forward</span>
+              </a>
+              <a [routerLink]="['/plans', plan.id]"
+                class="flex items-center justify-center gap-1 w-full py-1.5 text-[11px] text-gray-400 hover:text-teal-600 font-light transition-colors duration-200">
+                View Details
+                <span class="material-symbols-rounded" style="font-size: 12px; font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24">chevron_right</span>
+              </a>
             </div>
           </div>
         }
       </div>
     } @else {
-      <!-- Fallback: Plan type cards (when API unavailable) -->
-      <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 fc-stagger">
-        <div class="fc-card-interactive p-8 text-center">
-          <div class="w-14 h-14 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-teal-50 to-teal-100 flex items-center justify-center">
-            <span class="material-symbols-rounded text-teal-600" style="font-size: 28px">person</span>
+      <!-- Fallback: Plan type cards -->
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-5 sm:gap-6 fc-stagger">
+        <div class="fc-card-interactive p-7 sm:p-8 text-center">
+          <div class="w-12 h-12 mx-auto mb-4 rounded-2xl bg-teal-50 flex items-center justify-center">
+            <span class="material-symbols-rounded text-teal-500" style="font-size: 22px; font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24">person</span>
           </div>
-          <h3 class="text-base font-medium text-gray-900 mb-1">Individual</h3>
-          <p class="text-sm text-gray-500 font-light">Full coverage for yourself</p>
+          <h3 class="text-sm sm:text-base font-medium text-gray-800 mb-1">Individual</h3>
+          <p class="text-xs sm:text-sm text-gray-400 font-light">Full coverage for yourself</p>
         </div>
-        <div class="fc-card-interactive p-8 text-center border-2 !border-teal-400 relative">
-          <span class="absolute -top-3 left-1/2 -translate-x-1/2 bg-teal-600 text-white text-xs font-medium px-3 py-0.5 rounded-full">
+        <div class="fc-card-interactive p-7 sm:p-8 text-center border-2 border-teal-400! relative">
+          <span class="absolute -top-3 left-1/2 -translate-x-1/2 bg-teal-600 text-white text-[10px] font-medium px-3 py-0.5 rounded-full">
             Most Popular
           </span>
-          <div class="w-14 h-14 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-teal-50 to-teal-100 flex items-center justify-center">
-            <span class="material-symbols-rounded text-teal-600" style="font-size: 28px">family_restroom</span>
+          <div class="w-12 h-12 mx-auto mb-4 rounded-2xl bg-teal-50 flex items-center justify-center">
+            <span class="material-symbols-rounded text-teal-500" style="font-size: 22px; font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24">family_restroom</span>
           </div>
-          <h3 class="text-base font-medium text-gray-900 mb-1">Family</h3>
-          <p class="text-sm text-gray-500 font-light">Cover your whole family</p>
+          <h3 class="text-sm sm:text-base font-medium text-gray-800 mb-1">Family</h3>
+          <p class="text-xs sm:text-sm text-gray-400 font-light">Cover your whole family</p>
         </div>
-        <div class="fc-card-interactive p-8 text-center">
-          <div class="w-14 h-14 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-teal-50 to-teal-100 flex items-center justify-center">
-            <span class="material-symbols-rounded text-teal-600" style="font-size: 28px">business</span>
+        <div class="fc-card-interactive p-7 sm:p-8 text-center">
+          <div class="w-12 h-12 mx-auto mb-4 rounded-2xl bg-teal-50 flex items-center justify-center">
+            <span class="material-symbols-rounded text-teal-500" style="font-size: 22px; font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24">business</span>
           </div>
-          <h3 class="text-base font-medium text-gray-900 mb-1">Corporate</h3>
-          <p class="text-sm text-gray-500 font-light">For your employees</p>
+          <h3 class="text-sm sm:text-base font-medium text-gray-800 mb-1">Corporate</h3>
+          <p class="text-xs sm:text-sm text-gray-400 font-light">For your employees</p>
         </div>
       </div>
     }
@@ -301,67 +310,21 @@
 </section>
 
 <!-- ═══════════════════════════════════════════════════════════════════════
-     Section 6 — Testimonials Slider
+     Section 6 — Health & Wellness Tips
      ═══════════════════════════════════════════════════════════════════════ -->
-<section class="py-20 px-4 sm:px-6 bg-gradient-to-br from-teal-50 via-white to-violet-50">
-  <div class="max-w-4xl mx-auto">
-    <div class="text-center mb-12">
-      <h2 class="text-2xl sm:text-3xl font-medium text-gray-900 mb-3 tracking-tight">What our members say</h2>
-      <p class="text-gray-500 text-base font-light max-w-md mx-auto">
-        Real stories from real people who trust FlexCare.
-      </p>
-    </div>
-
-    <app-slider [autoPlayMs]="6000" [showDots]="true" [showArrows]="true">
-      @for (t of testimonials; track t.name) {
-        <div class="slider-slide px-4">
-          <div class="bg-white rounded-2xl p-8 sm:p-10 shadow-sm border border-gray-100 relative">
-            <!-- Quote Mark -->
-            <div class="absolute top-6 right-8 text-teal-100 select-none" style="font-size: 80px; line-height: 1; font-family: Georgia, serif;">"</div>
-
-            <!-- Stars -->
-            <div class="flex items-center gap-0.5 mb-5">
-              @for (s of starsArray(t.stars); track $index) {
-                <span class="material-symbols-rounded text-amber-400" style="font-size: 18px; font-variation-settings: 'FILL' 1, 'wght' 250, 'GRAD' 0, 'opsz' 24">star</span>
-              }
-            </div>
-
-            <p class="text-gray-600 text-base font-light leading-relaxed mb-8 relative z-10">
-              "{{ t.text }}"
-            </p>
-
-            <div class="flex items-center gap-3">
-              <div class="w-10 h-10 rounded-full bg-gradient-to-br from-teal-500 to-teal-600 flex items-center justify-center text-white text-sm font-medium">
-                {{ t.initials }}
-              </div>
-              <div>
-                <div class="text-sm font-medium text-gray-900">{{ t.name }}</div>
-                <div class="text-xs text-gray-400 font-light">{{ t.role }}</div>
-              </div>
-            </div>
-          </div>
-        </div>
-      }
-    </app-slider>
-  </div>
-</section>
-
-<!-- ═══════════════════════════════════════════════════════════════════════
-     Section 7 — Health & Wellness Tips
-     ═══════════════════════════════════════════════════════════════════════ -->
-<section class="py-20 px-4 sm:px-6 bg-white">
+<section class="py-16 sm:py-20 px-5 sm:px-6 bg-gray-50/60">
   <div class="max-w-5xl mx-auto">
-    <div class="text-center mb-12">
-      <h2 class="text-2xl sm:text-3xl font-medium text-gray-900 mb-3 tracking-tight">Live your healthiest life</h2>
-      <p class="text-gray-500 text-base font-light max-w-md mx-auto">
+    <div class="text-center mb-10 sm:mb-12">
+      <h2 class="text-xl sm:text-3xl font-medium text-gray-900 mb-2 sm:mb-3 tracking-tight">Live your healthiest life</h2>
+      <p class="text-gray-400 text-sm sm:text-base font-light max-w-md mx-auto leading-relaxed">
         Tips and inspiration for a healthier, happier you.
       </p>
     </div>
 
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-7 fc-stagger">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-7 fc-stagger">
       @for (tip of healthTips; track tip.title) {
         <div class="fc-card overflow-hidden group">
-          <div class="aspect-[16/10] overflow-hidden">
+          <div class="aspect-16/10 overflow-hidden">
             <img
               [src]="tip.image"
               [alt]="tip.title"
@@ -369,10 +332,10 @@
               loading="lazy"
             />
           </div>
-          <div class="p-6">
-            <span class="text-xs font-medium text-teal-600 uppercase tracking-wider">{{ tip.category }}</span>
-            <h3 class="text-base font-medium text-gray-900 mt-2 mb-2">{{ tip.title }}</h3>
-            <p class="text-sm text-gray-500 font-light leading-relaxed">{{ tip.excerpt }}</p>
+          <div class="p-5 sm:p-6">
+            <span class="text-[10px] font-medium text-teal-500 uppercase tracking-wider">{{ tip.category }}</span>
+            <h3 class="text-sm sm:text-base font-medium text-gray-800 mt-1.5 mb-1.5">{{ tip.title }}</h3>
+            <p class="text-xs sm:text-sm text-gray-400 font-light leading-relaxed">{{ tip.excerpt }}</p>
           </div>
         </div>
       }
@@ -381,47 +344,48 @@
 </section>
 
 <!-- ═══════════════════════════════════════════════════════════════════════
-     Section 8 — CTA + Provider + Newsletter
+     Section 7 — CTA + Provider
      ═══════════════════════════════════════════════════════════════════════ -->
 <section class="relative overflow-hidden">
   <!-- Background -->
-  <div class="absolute inset-0 bg-gradient-to-br from-teal-700 via-teal-800 to-teal-900"></div>
-  <!-- Subtle pattern overlay -->
-  <div class="absolute inset-0 opacity-[0.04]" style="background-image: radial-gradient(circle at 1px 1px, white 1px, transparent 0); background-size: 32px 32px;"></div>
+  <div class="absolute inset-0 bg-linear-to-br from-teal-700 via-teal-800 to-teal-900"></div>
+  <!-- Subtle dot pattern -->
+  <div class="absolute inset-0 opacity-[0.04]" style="background-image: radial-gradient(circle at 1px 1px, white 1px, transparent 0); background-size: 28px 28px;"></div>
 
-  <div class="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 py-20">
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+  <div class="relative z-10 max-w-5xl mx-auto px-5 sm:px-6 py-16 sm:py-20">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-10 sm:gap-12 items-center">
+
       <!-- Left: CTA -->
       <div>
-        <h2 class="text-3xl sm:text-4xl font-semibold text-white leading-tight tracking-tight mb-4">
+        <h2 class="text-2xl sm:text-4xl font-medium text-white leading-tight tracking-tight mb-3 sm:mb-4">
           Ready to get covered?
         </h2>
-        <p class="text-teal-200 font-light text-base mb-8 max-w-md">
-          Join thousands of members who trust FlexCare for their health coverage. Get your personalized quote today.
+        <p class="text-teal-200 font-light text-sm sm:text-base mb-7 sm:mb-8 max-w-md leading-relaxed">
+          Join thousands of members who trust FlexCare. Get your personalised quote today.
         </p>
         <div class="flex flex-col sm:flex-row gap-3">
-          <a routerLink="/quote" class="fc-btn-white shadow-lg">
+          <a routerLink="/quote" class="fc-btn-white shadow-lg justify-center sm:justify-start">
             Get a Free Quote
-            <span class="material-symbols-rounded" style="font-size: 18px">arrow_forward</span>
+            <span class="material-symbols-rounded" style="font-size: 17px">arrow_forward</span>
           </a>
-          <a routerLink="/plans" class="fc-btn-white-outline">
+          <a routerLink="/plans" class="fc-btn-white-outline justify-center sm:justify-start">
             Compare Plans
           </a>
         </div>
       </div>
 
       <!-- Right: Provider CTA -->
-      <div class="bg-white/10 backdrop-blur-sm rounded-2xl p-8 border border-white/10">
-        <div class="w-12 h-12 rounded-xl bg-white/10 flex items-center justify-center mb-4">
-          <span class="material-symbols-rounded text-teal-200" style="font-size: 24px">local_hospital</span>
+      <div class="bg-white/8 backdrop-blur-sm rounded-2xl p-6 sm:p-8 border border-white/10">
+        <div class="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center mb-4">
+          <span class="material-symbols-rounded text-teal-200" style="font-size: 20px; font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24">local_hospital</span>
         </div>
-        <h3 class="text-xl font-medium text-white mb-2">Are you a healthcare provider?</h3>
-        <p class="text-teal-200 text-sm font-light mb-6 leading-relaxed">
-          Join the FlexCare network. Register your facility, get API access, and start serving our members.
+        <h3 class="text-base sm:text-xl font-medium text-white mb-2">Are you a healthcare provider?</h3>
+        <p class="text-teal-200 text-sm font-light mb-5 sm:mb-6 leading-relaxed">
+          Join the FlexCare network. Register your facility and start serving our members.
         </p>
         <a routerLink="/provider/register" class="fc-btn-white-outline text-sm">
           Register Your Facility
-          <span class="material-symbols-rounded" style="font-size: 16px">arrow_forward</span>
+          <span class="material-symbols-rounded" style="font-size: 15px">arrow_forward</span>
         </a>
       </div>
     </div>

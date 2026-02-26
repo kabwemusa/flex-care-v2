@@ -17,8 +17,13 @@ interface PlanBenefit {
 
 interface PlanAddon {
   id: string;
-  addon: { code: string; name: string; description: string; pricing_type: string; amount: number };
+  name: string;
+  description: string;
   availability: string;
+  availability_label: string;
+  pricing_type: string;
+  amount: number | null;
+  percentage: number | null;
 }
 
 interface FullPlan {
@@ -71,7 +76,10 @@ export class PlanDetailPage implements OnInit {
   formatLimit(benefit: PlanBenefit): string {
     if (!benefit.is_covered) return 'Not Covered';
     if (benefit.limit_display) {
-      return `ZMW ${benefit.limit_display.toLocaleString()} / ${benefit.limit_frequency}`;
+      // limit_display already contains the formatted value (e.g. "K9,000.00")
+      // limit_frequency may be absent from the API response
+      const freq = benefit.limit_frequency ? ` / ${benefit.limit_frequency}` : '';
+      return `${benefit.limit_display}${freq}`;
     }
     return 'Covered';
   }
