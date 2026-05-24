@@ -1,11 +1,12 @@
 import { Component, signal, HostListener, PLATFORM_ID, inject } from '@angular/core';
 import { RouterModule } from '@angular/router';
 import { isPlatformBrowser } from '@angular/common';
+import { ToastComponent } from '../../components/toast/toast.component';
 
 @Component({
   selector: 'app-web-layout',
   standalone: true,
-  imports: [RouterModule],
+  imports: [RouterModule, ToastComponent],
   templateUrl: './web-layout.html',
   styles: [
     `

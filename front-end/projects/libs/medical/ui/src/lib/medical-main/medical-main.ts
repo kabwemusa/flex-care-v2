@@ -39,13 +39,13 @@ export class MedicalMain {
           href: '/admin/users',
           label: 'User Management',
           icon: 'group',
-          requireSystemAdmin: true,
+          requiredPermissions: ['users.view'],
         },
         {
           href: '/admin/roles',
           label: 'Roles & Permissions',
           icon: 'badge',
-          requireSystemAdmin: true,
+          requiredPermissions: ['roles.view'],
         },
       ],
     },
@@ -105,47 +105,6 @@ export class MedicalMain {
           label: 'Plans',
           icon: 'description',
           requiredPermissions: [MEDICAL_PERMISSIONS.PLANS_VIEW],
-        },
-        {
-          label: 'Plan Configuration',
-          icon: 'tune',
-          children: [
-            {
-              href: '/benefits',
-              label: 'Benefits Catalog',
-              requiredPermissions: [MEDICAL_PERMISSIONS.PLANS_VIEW], // Using plans as proxy since no separate benefits permission
-            },
-            {
-              href: '/addons',
-              label: 'Add-ons Catalog',
-              requiredPermissions: [MEDICAL_PERMISSIONS.ADDONS_VIEW],
-            },
-          ],
-        },
-      ],
-    },
-    {
-      label: 'Pricing & Rating',
-      icon: 'payments',
-      requiredModule: MODULES.MEDICAL,
-      children: [
-        {
-          href: '/rate-cards',
-          label: 'Rate Cards',
-          icon: 'calculate',
-          requiredPermissions: [MEDICAL_PERMISSIONS.RATE_CARDS_VIEW],
-        },
-        {
-          href: '/discounts',
-          label: 'Discount Rules',
-          icon: 'local_offer',
-          requiredPermissions: [MEDICAL_PERMISSIONS.PREMIUM_VIEW], // Using premium as proxy
-        },
-        {
-          href: '/loading-rule',
-          label: 'Loading Rules',
-          icon: 'trending_up',
-          requiredPermissions: [MEDICAL_PERMISSIONS.UNDERWRITING_VIEW], // Using underwriting as proxy
         },
       ],
     },
@@ -216,6 +175,8 @@ export class MedicalMain {
       href: '/reports',
       label: 'Reports',
       icon: 'analytics',
+      requiredModule: MODULES.MEDICAL,
+      requiredPermissions: [MEDICAL_PERMISSIONS.REPORTS_VIEW],
     },
   ]);
 

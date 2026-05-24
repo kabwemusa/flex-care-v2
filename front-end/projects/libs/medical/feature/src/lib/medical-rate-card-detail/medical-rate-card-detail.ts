@@ -21,8 +21,8 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatChipsModule } from '@angular/material/chips';
 
 // Domain Imports
+import type { RateCard } from 'medical-data';
 import {
-  RateCard,
   RateCardEntry,
   RateCardTier,
   RateCardListStore,
@@ -30,10 +30,11 @@ import {
   PREMIUM_BASES,
   getLabelByValue,
 } from 'medical-data';
-import { FeedbackService, PageHeaderComponent } from 'shared';
+import { FeedbackService } from 'shared';
 import { RateCardEntryDialog } from '../dialogs/medical-rate-card-entry-dialog/medical-rate-card-entry-dialog';
 import { RateCardTierDialog } from '../dialogs/medical-rate-card-tier-dialog/medical-rate-card-tier-dialog';
 import { RateCardBulkImportDialog } from '../dialogs/medical-rate-card-bulk-dialog/medical-rate-card-bulk-dialog';
+import { MedicalRateCardListDialog } from '../dialogs/medical-rate-cards-list-dialog/medical-rate-cards-list-dialog';
 
 @Component({
   selector: 'lib-medical-rate-card-detail',
@@ -41,6 +42,7 @@ import { RateCardBulkImportDialog } from '../dialogs/medical-rate-card-bulk-dial
   imports: [
     CommonModule,
     FormsModule,
+    RouterLink,
     MatTabsModule,
     MatIconModule,
     MatButtonModule,
@@ -145,6 +147,18 @@ export class MedicalRateCardDetail implements OnInit {
   // Navigation
   goBack() {
     this.router.navigate(['/rate-cards']);
+  }
+
+  // ─── Status helpers ───────────────────────────────────────────────────────
+
+  getStatusBadge(rc: RateCard): { label: string; cssClass: string } {
+    if (rc.is_active) {
+      return { label: 'Active', cssClass: 'bg-green-50 text-green-700 border-green-200' };
+    }
+    if (rc.is_draft) {
+      return { label: 'Draft', cssClass: 'bg-amber-50 text-amber-700 border-amber-200' };
+    }
+    return { label: 'Inactive', cssClass: 'bg-gray-100 text-gray-600 border-gray-200' };
   }
 
   // Label helpers
@@ -289,18 +303,64 @@ export class MedicalRateCardDetail implements OnInit {
     });
   }
 
-  // ==================== ACTIONS ====================
+  // ==================== RATE CARD ACTIONS ====================
+
+  openEditDialog() {
+    const rc = this.rateCard();
+    if (!rc) return;
+
+    const dialogRef = this.dialog.open(MedicalRateCardListDialog, {
+      maxWidth: '70vw',
+      maxHeight: '90vh',
+      data: { ...rc },
+      panelClass: ['responsive-dialog', 'bg-white'],
+      autoFocus: false,
+    });
+
+    dialogRef.afterClosed().subscribe((result) => {
+      if (!result) return;
+      this.store.update(rc.id, result).subscribe({
+        next: () => {
+          this.feedback.success('Rate card updated successfully');
+          this.loadRateCard(rc.id);
+        },
+        error: (err) =>
+          this.feedback.error(err?.error?.message ?? 'Failed to update rate card'),
+      });
+    });
+  }
+
+  async cloneRateCard() {
+    const rc = this.rateCard();
+    if (!rc) return;
+
+    const confirmed = await this.feedback.confirm(
+      'Clone Rate Card?',
+      'This will create a draft copy with all entries and configurations.'
+    );
+    if (!confirmed) return;
+
+    this.store.clone(rc.id).subscribe({
+      next: (res) => {
+        this.feedback.success('Rate card cloned successfully');
+        this.router.navigate(['/rate-cards', res.data.id]);
+      },
+      error: (err) => this.feedback.error(err?.error?.message ?? 'Failed to clone rate card'),
+    });
+  }
 
   async toggleStatus() {
     const rc = this.rateCard();
     if (!rc) return;
 
-    const action = rc.is_active ? 'deactivate' : 'activate';
+    const isActivating = !rc.is_active;
+    const action = isActivating ? 'activate' : 'deactivate';
+
     const confirmed = await this.feedback.confirm(
       `${action.charAt(0).toUpperCase() + action.slice(1)} Rate Card?`,
-      rc.is_active
-        ? 'This rate card will no longer be used for new quotes and applications.'
-        : 'This will make this the active rate card for the plan. The current active rate card will be deactivated.'
+      isActivating
+        ? 'This will make this rate card active for the plan. Any currently active rate card will be deactivated.'
+        : 'This rate card will no longer be used for new quotes and applications.'
     );
     if (!confirmed) return;
 
@@ -310,6 +370,30 @@ export class MedicalRateCardDetail implements OnInit {
         this.loadRateCard(rc.id);
       },
       error: (err) => this.feedback.error(err?.error?.message ?? `Failed to ${action} rate card`),
+    });
+  }
+
+  async deleteRateCard() {
+    const rc = this.rateCard();
+    if (!rc) return;
+
+    if (rc.is_active) {
+      this.feedback.error('Cannot delete an active rate card. Deactivate it first.');
+      return;
+    }
+
+    const confirmed = await this.feedback.confirm(
+      'Delete Rate Card?',
+      `Are you sure you want to delete "${rc.name}"? This will also remove all entries and tiers. This action cannot be undone.`
+    );
+    if (!confirmed) return;
+
+    this.store.delete(rc.id).subscribe({
+      next: () => {
+        this.feedback.success('Rate card deleted');
+        this.router.navigate(['/rate-cards']);
+      },
+      error: (err) => this.feedback.error(err?.error?.message ?? 'Failed to delete rate card'),
     });
   }
 }

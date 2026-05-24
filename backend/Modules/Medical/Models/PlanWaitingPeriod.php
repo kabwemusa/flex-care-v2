@@ -9,18 +9,6 @@ class PlanWaitingPeriod extends BaseModel
 {
     protected $table = 'med_plan_waiting_periods';
 
-    /**
-     * Disable soft deletes for this model.
-     */
-    use \Illuminate\Database\Eloquent\SoftDeletes {
-        \Illuminate\Database\Eloquent\SoftDeletes::bootSoftDeletes as parentBootSoftDeletes;
-    }
-
-    public static function bootSoftDeletes()
-    {
-        // Disable soft deletes for this model
-    }
-
     protected $fillable = [
         'plan_id',
         'benefit_id',

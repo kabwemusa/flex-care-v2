@@ -2,13 +2,15 @@ import { Injectable, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, tap } from 'rxjs';
 
-// ── Interfaces ───────────────────────────────────────────────────────────────
+// ── API envelope ─────────────────────────────────────────────────────────────
 
 interface ApiResponse<T> {
   status: string;
   message: string;
   data: T;
 }
+
+// ── Alert ─────────────────────────────────────────────────────────────────────
 
 export interface Alert {
   id: string;
@@ -19,54 +21,7 @@ export interface Alert {
   action_label?: string;
 }
 
-export interface DashboardMember {
-  id: string;
-  member_number: string;
-  full_name: string;
-  email: string;
-  card_number: string | null;
-  card_status: string;
-  card_status_label: string;
-  is_in_waiting_period: boolean;
-  waiting_days_remaining: number;
-}
-
-export interface DashboardPolicy {
-  id: string;
-  policy_number: string;
-  status: string;
-  status_label: string;
-  plan_name: string;
-  scheme_name: string;
-  inception_date: string;
-  expiry_date: string;
-  days_until_expiry: number;
-}
-
-export interface DashboardDependent {
-  id: string;
-  full_name: string;
-  relationship: string;
-  age: number;
-  status: string;
-  card_status: string;
-}
-
-export interface RecentClaim {
-  id: string;
-  claim_number: string;
-  status: string;
-  status_label: string;
-  claimed_amount: number;
-  approved_amount: number | null;
-  claim_date: string;
-}
-
-export interface BenefitUsage {
-  used: number;
-  limit: number;
-  percentage: number;
-}
+// ── Dashboard ─────────────────────────────────────────────────────────────────
 
 export interface DashboardData {
   member: {
@@ -108,27 +63,7 @@ export interface DashboardData {
   alerts: Alert[];
 }
 
-export interface PolicyBenefit {
-  name: string;
-  benefit_type: string;
-  is_covered: boolean;
-  limit: string;
-  copay: string | null;
-}
-
-export interface PolicyMember {
-  id: string;
-  member_number: string;
-  full_name: string;
-  relationship: string | null;
-  member_type: string;
-  date_of_birth: string;
-  age: number;
-  card_number: string | null;
-  card_status: string;
-  card_status_label: string;
-  status: string;
-}
+// ── Policy ────────────────────────────────────────────────────────────────────
 
 export interface PolicyData {
   policy_number: string;
@@ -154,6 +89,52 @@ export interface PolicyData {
     date_of_birth: string;
     is_primary: boolean;
   }[];
+}
+
+// ── Claims ────────────────────────────────────────────────────────────────────
+
+export interface Claim {
+  id: string;
+  claim_number: string;
+  service_type: string;
+  status: string;
+  provider_name: string;
+  amount: number;
+  approved_amount?: number;
+  submitted_at: string;
+}
+
+export interface ClaimDetail {
+  id: string;
+  claim_number: string;
+  service_type: string;
+  status: string;
+  provider_name: string;
+  amount: number;
+  approved_amount?: number;
+  service_date: string;
+  submitted_at: string;
+  member_name: string;
+  diagnosis?: string;
+  benefit_category?: string;
+  notes?: string;
+  rejection_reason?: string;
+  timeline?: { status: string; date: string; note?: string }[];
+  documents?: { id: string; name: string; type: string; size: string; url: string }[];
+  payment?: { amount: number; date: string; reference?: string };
+}
+
+// ── ID Cards ──────────────────────────────────────────────────────────────────
+
+export interface IdCard {
+  member_id: string;
+  member_number: string;
+  first_name: string;
+  last_name: string;
+  date_of_birth: string;
+  plan_name: string;
+  valid_until: string;
+  is_primary: boolean;
 }
 
 export interface IdCardData {
@@ -182,61 +163,7 @@ export interface IdCardData {
   };
 }
 
-export interface Claim {
-  id: string;
-  claim_number: string;
-  service_type: string;
-  status: string;
-  provider_name: string;
-  amount: number;
-  approved_amount?: number;
-  submitted_at: string;
-}
-
-export interface ClaimDetail {
-  id: string;
-  claim_number: string;
-  service_type: string;
-  status: string;
-  provider_name: string;
-  amount: number;
-  approved_amount?: number;
-  service_date: string;
-  submitted_at: string;
-  member_name: string;
-  diagnosis?: string;
-  benefit_category?: string;
-  notes?: string;
-  rejection_reason?: string;
-  timeline?: {
-    status: string;
-    date: string;
-    note?: string;
-  }[];
-  documents?: {
-    id: string;
-    name: string;
-    type: string;
-    size: string;
-    url: string;
-  }[];
-  payment?: {
-    amount: number;
-    date: string;
-    reference?: string;
-  };
-}
-
-export interface IdCard {
-  member_id: string;
-  member_number: string;
-  first_name: string;
-  last_name: string;
-  date_of_birth: string;
-  plan_name: string;
-  valid_until: string;
-  is_primary: boolean;
-}
+// ── Profile ───────────────────────────────────────────────────────────────────
 
 export interface ProfileData {
   id: string;
@@ -252,17 +179,15 @@ export interface ProfileData {
   emergency_contact_phone?: string;
 }
 
-// ── Service ──────────────────────────────────────────────────────────────────
+// ── Service ───────────────────────────────────────────────────────────────────
 
-@Injectable({
-  providedIn: 'root',
-})
+@Injectable({ providedIn: 'root' })
 export class MemberPortalService {
   private readonly baseUrl = '/v1/medical/member/portal';
 
-  // Cached data
-  dashboardData = signal<DashboardData | null>(null);
-  policyData = signal<PolicyData | null>(null);
+  /** Signal cache — components can read these for instant display without re-fetching. */
+  readonly dashboardData = signal<DashboardData | null>(null);
+  readonly policyData    = signal<PolicyData | null>(null);
 
   constructor(private http: HttpClient) {}
 
@@ -282,23 +207,39 @@ export class MemberPortalService {
       .pipe(tap((res) => this.policyData.set(res.data)));
   }
 
-  // ── ID Cards ───────────────────────────────────────────────────────────────
-
-  getIdCard(memberId?: string): Observable<ApiResponse<IdCardData>> {
-    const url = memberId ? `${this.baseUrl}/id-card/${memberId}` : `${this.baseUrl}/id-card`;
-    return this.http.get<ApiResponse<IdCardData>>(url);
-  }
-
   // ── Claims ─────────────────────────────────────────────────────────────────
 
   getClaims(page = 1): Observable<ApiResponse<Claim[]>> {
     return this.http.get<ApiResponse<Claim[]>>(`${this.baseUrl}/claims`, {
-      params: { page: page.toString() },
+      params: { page: String(page) },
     });
   }
 
   getClaimDetail(id: string): Observable<ApiResponse<ClaimDetail>> {
     return this.http.get<ApiResponse<ClaimDetail>>(`${this.baseUrl}/claims/${id}`);
+  }
+
+  submitClaim(formData: FormData): Observable<ApiResponse<{ id: string }>> {
+    return this.http.post<ApiResponse<{ id: string }>>(`${this.baseUrl}/claims`, formData);
+  }
+
+  // ── ID Cards ───────────────────────────────────────────────────────────────
+
+  getIdCards(): Observable<ApiResponse<IdCard[]>> {
+    return this.http.get<ApiResponse<IdCard[]>>(`${this.baseUrl}/id-cards`);
+  }
+
+  getIdCard(memberId?: string): Observable<ApiResponse<IdCardData>> {
+    const url = memberId
+      ? `${this.baseUrl}/id-card/${memberId}`
+      : `${this.baseUrl}/id-card`;
+    return this.http.get<ApiResponse<IdCardData>>(url);
+  }
+
+  downloadIdCard(memberId: string): Observable<Blob> {
+    return this.http.get(`${this.baseUrl}/id-cards/${memberId}/download`, {
+      responseType: 'blob',
+    });
   }
 
   // ── Profile ────────────────────────────────────────────────────────────────
@@ -309,23 +250,5 @@ export class MemberPortalService {
 
   updateProfile(data: Partial<ProfileData>): Observable<ApiResponse<null>> {
     return this.http.put<ApiResponse<null>>(`${this.baseUrl}/profile`, data);
-  }
-
-  // ── ID Cards ───────────────────────────────────────────────────────────────
-
-  getIdCards(): Observable<ApiResponse<IdCard[]>> {
-    return this.http.get<ApiResponse<IdCard[]>>(`${this.baseUrl}/id-cards`);
-  }
-
-  downloadIdCard(memberId: string): Observable<Blob> {
-    return this.http.get(`${this.baseUrl}/id-cards/${memberId}/download`, {
-      responseType: 'blob',
-    });
-  }
-
-  // ── Claims Submission ──────────────────────────────────────────────────────
-
-  submitClaim(formData: FormData): Observable<ApiResponse<{ id: string }>> {
-    return this.http.post<ApiResponse<{ id: string }>>(`${this.baseUrl}/claims`, formData);
   }
 }

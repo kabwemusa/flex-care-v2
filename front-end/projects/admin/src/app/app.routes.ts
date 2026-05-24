@@ -38,7 +38,8 @@ export const routes: Routes = [
           import('./pages/user-management/user-management.component').then(
             (m) => m.UserManagementComponent
           ),
-        canActivate: [systemAdminGuard],
+        canActivate: [anyPermissionGuard],
+        data: { permissions: ['users.view'] },
       },
       {
         path: 'admin/roles',
@@ -46,7 +47,8 @@ export const routes: Routes = [
           import('./pages/roles-permissions/roles-permissions.component').then(
             (m) => m.RolesPermissionsComponent
           ),
-        canActivate: [systemAdminGuard],
+        canActivate: [anyPermissionGuard],
+        data: { permissions: ['roles.view'] },
       },
       {
         path: 'admin/approval-groups',
@@ -95,7 +97,7 @@ export const routes: Routes = [
         path: 'benefits',
         loadComponent: () => import('medical-feature').then((m) => m.MedicalBenefitsCatalog),
         canActivate: [moduleGuard, anyPermissionGuard],
-        data: { module: MODULES.MEDICAL, permissions: [MEDICAL_PERMISSIONS.PLANS_VIEW] },
+        data: { module: MODULES.MEDICAL, permissions: [MEDICAL_PERMISSIONS.BENEFITS_VIEW] },
       },
       {
         path: 'benefits-config',
@@ -103,7 +105,7 @@ export const routes: Routes = [
         canActivate: [moduleGuard, anyPermissionGuard],
         data: {
           module: MODULES.MEDICAL,
-          permissions: [MEDICAL_PERMISSIONS.PLANS_VIEW, MEDICAL_PERMISSIONS.PLANS_CONFIGURE],
+          permissions: [MEDICAL_PERMISSIONS.BENEFITS_VIEW, MEDICAL_PERMISSIONS.PLANS_CONFIGURE],
         },
       },
       {
@@ -128,13 +130,13 @@ export const routes: Routes = [
         path: 'discounts',
         loadComponent: () => import('medical-feature').then((m) => m.MedicalDiscountList),
         canActivate: [moduleGuard, anyPermissionGuard],
-        data: { module: MODULES.MEDICAL, permissions: [MEDICAL_PERMISSIONS.PREMIUM_VIEW] },
+        data: { module: MODULES.MEDICAL, permissions: [MEDICAL_PERMISSIONS.DISCOUNTS_VIEW] },
       },
       {
         path: 'loading-rule',
         loadComponent: () => import('medical-feature').then((m) => m.MedicalLoadingRuleList),
         canActivate: [moduleGuard, anyPermissionGuard],
-        data: { module: MODULES.MEDICAL, permissions: [MEDICAL_PERMISSIONS.UNDERWRITING_VIEW] },
+        data: { module: MODULES.MEDICAL, permissions: [MEDICAL_PERMISSIONS.LOADING_RULES_VIEW] },
       },
       {
         path: 'applications',
@@ -206,6 +208,8 @@ export const routes: Routes = [
       {
         path: 'reports',
         loadComponent: () => import('core-reports').then((m) => m.ReportDashboardComponent),
+        canActivate: [moduleGuard, anyPermissionGuard],
+        data: { module: MODULES.MEDICAL, permissions: [MEDICAL_PERMISSIONS.REPORTS_VIEW] },
       },
     ],
   },

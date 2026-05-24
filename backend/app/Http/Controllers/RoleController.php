@@ -7,6 +7,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
@@ -66,7 +67,10 @@ class RoleController extends Controller
                 'name' => 'required|string|unique:roles,name',
                 'guard_name' => 'required|string|in:web,medical,life,motor,travel',
                 'permissions' => 'nullable|array',
-                'permissions.*' => 'string|exists:permissions,name',
+                'permissions.*' => [
+                    'string',
+                    Rule::exists('permissions', 'name')->where('guard_name', $request->input('guard_name')),
+                ],
             ]);
 
             DB::beginTransaction();
@@ -110,7 +114,10 @@ class RoleController extends Controller
             $validated = $request->validate([
                 'name' => 'required|string|unique:roles,name,' . $id,
                 'permissions' => 'nullable|array',
-                'permissions.*' => 'string|exists:permissions,name',
+                'permissions.*' => [
+                    'string',
+                    Rule::exists('permissions', 'name')->where('guard_name', $role->guard_name),
+                ],
             ]);
 
             DB::beginTransaction();

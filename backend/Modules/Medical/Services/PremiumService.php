@@ -2,18 +2,24 @@
 
 namespace Modules\Medical\Services;
 
+use Illuminate\Support\Facades\Cache;
+use Modules\Medical\Constants\MedicalConstants;
+use Modules\Medical\Models\Addon;
 use Modules\Medical\Models\Application;
 use Modules\Medical\Models\ApplicationMember;
-use Modules\Medical\Models\Policy;
 use Modules\Medical\Models\Member;
-use Modules\Medical\Models\RateCard;
 use Modules\Medical\Models\PlanAddon;
-use Modules\Medical\Models\Addon;
-use Modules\Medical\Constants\MedicalConstants;
-
+use Modules\Medical\Models\Policy;
+use Modules\Medical\Models\RateCard;
 
 class PremiumService
 {
+    /** Cache TTL in seconds — rate cards and plan addons change infrequently. */
+    private const RATE_CARD_TTL = 3600;   // 1 hour
+    private const PLAN_ADDON_TTL = 3600;  // 1 hour
+    private const LOADING_RULE_TTL = 900; // 15 minutes
+
+
     // =========================================================================
     // 1. APPLICATION (SAVED DATA) CALCULATION
     // =========================================================================
@@ -391,7 +397,8 @@ class PremiumService
      */
     public function calculateQuote(RateCard $rateCard, array $membersData, array $addonIds = [], ?string $planId = null): array
     {
-        $rateCard->load(['entries', 'tiers']);
+        // Use cached rate card so repeated public quote requests don't hit the DB.
+        $rateCard = $this->getCachedRateCard($rateCard->id);
 
         $memberCount = count($membersData);
         $effectivePlanId = $planId ?? $rateCard->plan_id;
@@ -544,10 +551,8 @@ class PremiumService
      */
     public function calculateAddonPremium(Addon $addon, string $planId, float $basePremium, int $memberCount): array
     {
-        // 1. Check if included in plan (no additional charge)
-        $planAddon = PlanAddon::where('plan_id', $planId)
-            ->where('addon_id', $addon->id)
-            ->first();
+        // 1. Check if included in plan (no additional charge) — cached to avoid a DB hit per addon.
+        $planAddon = $this->getCachedPlanAddon($planId, $addon->id);
 
         if ($planAddon && $planAddon->is_included) {
             return ['success' => true, 'premium' => 0, 'is_included' => true];
@@ -581,7 +586,7 @@ class PremiumService
             }
 
             if (!empty($loading['loading_rule_id'])) {
-                $rule = \Modules\Medical\Models\LoadingRule::find($loading['loading_rule_id']);
+                $rule = $this->getCachedLoadingRule($loading['loading_rule_id']);
                 if ($rule) {
                     $total += $rule->calculateLoading($basePremium);
                     continue;
@@ -701,6 +706,99 @@ class PremiumService
         }
 
         $annualPremium = $this->annualize($premium, $fromFrequency);
+
         return $this->periodize($annualPremium, $toFrequency);
+    }
+
+    // =========================================================================
+    // 6. CACHE HELPERS
+    // =========================================================================
+
+    /**
+     * Return a RateCard with its entries and tiers, served from cache.
+     *
+     * Cache is tagged so that when a RateCard is updated the entire tag can
+     * be flushed via PremiumService::bustRateCardCache($id).
+     */
+    protected function getCachedRateCard(string $rateCardId): RateCard
+    {
+        return $this->taggedRemember(
+            ['rate-cards'],
+            "rate_card:{$rateCardId}",
+            self::RATE_CARD_TTL,
+            fn () => RateCard::with(['entries', 'tiers'])->findOrFail($rateCardId)
+        );
+    }
+
+    /**
+     * Return a PlanAddon relationship row, served from cache.
+     *
+     * Null is stored when the relationship doesn't exist so the DB isn't
+     * hit on every addon calculation for optional addons.
+     */
+    protected function getCachedPlanAddon(string $planId, string $addonId): ?PlanAddon
+    {
+        return $this->taggedRemember(
+            ['plan-addons'],
+            "plan_addon:{$planId}:{$addonId}",
+            self::PLAN_ADDON_TTL,
+            fn () => PlanAddon::where('plan_id', $planId)->where('addon_id', $addonId)->first()
+        );
+    }
+
+    /**
+     * Return a LoadingRule by ID, served from cache.
+     */
+    protected function getCachedLoadingRule(string $ruleId): ?\Modules\Medical\Models\LoadingRule
+    {
+        return $this->taggedRemember(
+            ['loading-rules'],
+            "loading_rule:{$ruleId}",
+            self::LOADING_RULE_TTL,
+            fn () => \Modules\Medical\Models\LoadingRule::find($ruleId)
+        );
+    }
+
+    /**
+     * Bust the cached rate card after an update.
+     * Call this from RateCardObserver or RateCardController after save/delete.
+     */
+    public static function bustRateCardCache(string $rateCardId): void
+    {
+        try {
+            Cache::tags(['rate-cards'])->forget("rate_card:{$rateCardId}");
+        } catch (\BadMethodCallException) {
+            Cache::forget("rate_card:{$rateCardId}");
+        }
+    }
+
+    /**
+     * Bust all cached plan-addon relationships.
+     * Call this from PlanAddonObserver after save/delete.
+     */
+    public static function bustPlanAddonCache(): void
+    {
+        try {
+            Cache::tags(['plan-addons'])->flush();
+        } catch (\BadMethodCallException) {
+            // Tag-based flush is not available on this cache driver.
+            // Individual keys will expire naturally per PLAN_ADDON_TTL.
+        }
+    }
+
+    /**
+     * Cache::remember() with tag support.
+     *
+     * Falls back to untagged cache when the configured driver does not support
+     * tagging (e.g. file, database, array). This keeps the service working in
+     * any environment while Redis/Memcached get full tag-based invalidation.
+     */
+    private function taggedRemember(array $tags, string $key, int $ttl, \Closure $callback): mixed
+    {
+        try {
+            return Cache::tags($tags)->remember($key, $ttl, $callback);
+        } catch (\BadMethodCallException) {
+            return Cache::remember($key, $ttl, $callback);
+        }
     }
 }

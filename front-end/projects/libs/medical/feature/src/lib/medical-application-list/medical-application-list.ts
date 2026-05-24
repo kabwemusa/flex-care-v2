@@ -34,7 +34,7 @@ import { ApprovalStatusBadgeComponent } from 'core-approvals';
 
 import { MedicalApplicationDialog } from '../dialogs/medical-application-dialog/medical-application-dialog';
 import { MatDivider } from '@angular/material/divider';
-import { FeedbackService, PermissionDirective } from 'shared';
+import { FeedbackService, PageHeaderComponent, PermissionDirective } from 'shared';
 import { MEDICAL_PERMISSIONS } from 'core-auth';
 
 @Component({
@@ -60,6 +60,7 @@ import { MEDICAL_PERMISSIONS } from 'core-auth';
     MatSidenavModule,
     MatDivider,
     PermissionDirective,
+    PageHeaderComponent,
     ApprovalStatusBadgeComponent,
   ],
   templateUrl: './medical-application-list.html',

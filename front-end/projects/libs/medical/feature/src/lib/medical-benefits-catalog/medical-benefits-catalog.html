@@ -7,6 +7,8 @@
       <lib-page-header
         title="Benefits Catalog"
         subtitle="Manage the master list of benefits available for medical plans."
+        [showBreadcrumb]="true"
+        [breadcrumbItems]="[{ label: 'Dashboard', link: '/' }, { label: 'Product Setup' }, { label: 'Benefits Catalog' }]"
       >
         <div actions class="flex gap-2">
           <button

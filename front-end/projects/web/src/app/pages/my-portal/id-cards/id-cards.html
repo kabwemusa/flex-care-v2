@@ -24,26 +24,8 @@
   </div>
   }
 
-  <!-- Error State -->
-  @if (error()) {
-  <div class="bg-red-50 border border-red-200 rounded-2xl p-8 text-center">
-    <div class="w-14 h-14 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-4">
-      <span class="material-symbols-rounded text-red-500 text-2xl">error</span>
-    </div>
-    <h3 class="font-medium text-red-800">Something went wrong</h3>
-    <p class="text-sm text-red-600 mt-1">{{ error() }}</p>
-    <button
-      (click)="loadCards()"
-      class="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-red-100 text-red-700 hover:bg-red-200 text-sm font-medium transition-colors"
-    >
-      <span class="material-symbols-rounded" style="font-size: 18px">refresh</span>
-      Try again
-    </button>
-  </div>
-  }
-
   <!-- ID Cards Grid -->
-  @if (!loading() && !error()) { @if (cards().length) {
+  @if (!loading()) { @if (cards().length) {
   <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
     @for (card of cards(); track card.member_id; let i = $index) {
     <div

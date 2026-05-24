@@ -16,7 +16,17 @@
   } @else if (policy(); as policy) {
   <!-- Header -->
   <div class="bg-white border-b border-slate-200 sticky top-0 z-10">
-    <div class="px-6 md:px-10 py-4">
+    <div class="px-6 md:px-10 pt-3 pb-0">
+      <!-- Breadcrumb -->
+      <nav class="flex items-center gap-0.5 text-xs text-slate-400 mb-2">
+        <a routerLink="/" class="px-1 py-0.5 rounded hover:text-slate-700 hover:bg-slate-100 transition-colors">Dashboard</a>
+        <span class="text-slate-300 select-none">/</span>
+        <a routerLink="/policies" class="px-1 py-0.5 rounded hover:text-slate-700 hover:bg-slate-100 transition-colors">Policies</a>
+        <span class="text-slate-300 select-none">/</span>
+        <span class="px-1 py-0.5 text-slate-700 font-medium truncate max-w-50">{{ policy.policy_number }}</span>
+      </nav>
+    </div>
+    <div class="px-6 md:px-10 py-3">
       <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div class="flex items-center gap-4">
           <button

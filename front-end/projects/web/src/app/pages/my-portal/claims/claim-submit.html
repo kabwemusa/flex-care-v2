@@ -16,7 +16,7 @@
       <div class="flex items-center gap-2">
         <div
           class="w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold transition-colors"
-          [class]="step() >= s ? 'bg-cyan-600 text-white' : 'bg-gray-100 text-gray-400'"
+          [class]="step() >= s ? 'bg-teal-600 text-white' : 'bg-gray-100 text-gray-400'"
         >
           @if (step() > s) {
             <span class="material-symbols-rounded" style="font-size: 18px">check</span>
@@ -25,88 +25,134 @@
           }
         </div>
         @if (s < 3) {
-          <div class="w-12 h-0.5 transition-colors" [class]="step() > s ? 'bg-cyan-600' : 'bg-gray-200'"></div>
+          <div class="w-12 h-0.5 transition-colors" [class]="step() > s ? 'bg-teal-600' : 'bg-gray-200'"></div>
         }
       </div>
     }
+    <div class="ml-3 flex gap-4 text-xs text-gray-400">
+      <span [class]="step() === 1 ? 'text-teal-700 font-medium' : ''">Details</span>
+      <span [class]="step() === 2 ? 'text-teal-700 font-medium' : ''">Documents</span>
+      <span [class]="step() === 3 ? 'text-teal-700 font-medium' : ''">Review</span>
+    </div>
   </div>
 
-  <!-- Error Message -->
-  @if (error()) {
-    <div class="bg-red-50 border border-red-100 rounded-xl px-4 py-3 mb-6">
-      <p class="text-sm text-red-600">{{ error() }}</p>
-    </div>
-  }
-
-  <!-- Step 1: Claim Details -->
+  <!-- ── Step 1: Claim Details ──────────────────────────────────────────── -->
   @if (step() === 1) {
-    <div class="bg-white rounded-2xl border border-gray-100 p-6 space-y-5">
+    <div class="bg-white rounded-2xl border border-gray-100 p-6 space-y-5 fc-fade-in">
       <h2 class="font-semibold text-gray-900">Claim Details</h2>
 
+      <!-- Service Type -->
       <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1.5">Service Type</label>
+        <label class="block text-sm font-medium text-gray-700 mb-1.5" for="service-type">
+          Service Type <span class="text-red-500">*</span>
+        </label>
         <select
+          id="service-type"
           [value]="form().service_type"
           (change)="updateForm('service_type', $any($event.target).value)"
-          class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
+          class="w-full rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-colors"
+          [class]="errors().service_type ? 'border-2 border-red-400 bg-red-50' : 'border border-gray-200'"
         >
           <option value="">Select a service type</option>
           @for (type of serviceTypes; track type.value) {
             <option [value]="type.value">{{ type.label }}</option>
           }
         </select>
+        @if (errors().service_type) {
+          <p class="mt-1.5 text-xs text-red-600 flex items-center gap-1">
+            <span class="material-symbols-rounded" style="font-size: 14px">error</span>
+            {{ errors().service_type }}
+          </p>
+        }
       </div>
 
+      <!-- Provider Name -->
       <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1.5">Provider / Hospital Name</label>
+        <label class="block text-sm font-medium text-gray-700 mb-1.5" for="provider-name">
+          Provider / Hospital Name <span class="text-red-500">*</span>
+        </label>
         <input
+          id="provider-name"
           type="text"
           [value]="form().provider_name"
           (input)="updateForm('provider_name', $any($event.target).value)"
           placeholder="e.g., City General Hospital"
-          class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
+          class="w-full rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-colors"
+          [class]="errors().provider_name ? 'border-2 border-red-400 bg-red-50' : 'border border-gray-200'"
         />
+        @if (errors().provider_name) {
+          <p class="mt-1.5 text-xs text-red-600 flex items-center gap-1">
+            <span class="material-symbols-rounded" style="font-size: 14px">error</span>
+            {{ errors().provider_name }}
+          </p>
+        }
       </div>
 
+      <!-- Date & Amount -->
       <div class="grid grid-cols-2 gap-4">
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1.5">Date of Service</label>
+          <label class="block text-sm font-medium text-gray-700 mb-1.5" for="service-date">
+            Date of Service <span class="text-red-500">*</span>
+          </label>
           <input
+            id="service-date"
             type="date"
             [value]="form().service_date"
             (input)="updateForm('service_date', $any($event.target).value)"
-            class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
+            class="w-full rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-colors"
+            [class]="errors().service_date ? 'border-2 border-red-400 bg-red-50' : 'border border-gray-200'"
           />
+          @if (errors().service_date) {
+            <p class="mt-1.5 text-xs text-red-600 flex items-center gap-1">
+              <span class="material-symbols-rounded" style="font-size: 14px">error</span>
+              {{ errors().service_date }}
+            </p>
+          }
         </div>
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1.5">Amount Claimed</label>
+          <label class="block text-sm font-medium text-gray-700 mb-1.5" for="amount">
+            Amount Claimed <span class="text-red-500">*</span>
+          </label>
           <input
+            id="amount"
             type="number"
             [value]="form().amount"
             (input)="updateForm('amount', +$any($event.target).value)"
             placeholder="0.00"
             min="0"
             step="0.01"
-            class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
+            class="w-full rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-colors"
+            [class]="errors().amount ? 'border-2 border-red-400 bg-red-50' : 'border border-gray-200'"
           />
+          @if (errors().amount) {
+            <p class="mt-1.5 text-xs text-red-600 flex items-center gap-1">
+              <span class="material-symbols-rounded" style="font-size: 14px">error</span>
+              {{ errors().amount }}
+            </p>
+          }
         </div>
       </div>
 
+      <!-- Diagnosis (optional) -->
       <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1.5">Diagnosis / Reason for Visit</label>
+        <label class="block text-sm font-medium text-gray-700 mb-1.5" for="diagnosis">
+          Diagnosis / Reason for Visit
+          <span class="text-gray-400 font-normal text-xs ml-1">(optional)</span>
+        </label>
         <input
+          id="diagnosis"
           type="text"
           [value]="form().diagnosis"
           (input)="updateForm('diagnosis', $any($event.target).value)"
           placeholder="e.g., Annual checkup, flu symptoms"
-          class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
+          class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
         />
       </div>
 
-      <div class="pt-4 flex justify-end">
+      <div class="pt-2 flex justify-end">
         <button
           (click)="nextStep()"
-          class="inline-flex items-center gap-2 bg-cyan-600 text-white font-semibold text-sm px-6 py-3 rounded-xl hover:bg-cyan-700 transition-colors"
+          class="inline-flex items-center gap-2 bg-linear-to-r from-teal-500 to-cyan-500 text-white font-semibold text-sm px-6 py-3 rounded-xl hover:shadow-lg hover:shadow-teal-500/25 transition-all"
         >
           Continue
           <span class="material-symbols-rounded" style="font-size: 18px">arrow_forward</span>
@@ -115,14 +161,19 @@
     </div>
   }
 
-  <!-- Step 2: Upload Documents -->
+  <!-- ── Step 2: Upload Documents ─────────────────────────────────────── -->
   @if (step() === 2) {
-    <div class="bg-white rounded-2xl border border-gray-100 p-6 space-y-5">
-      <h2 class="font-semibold text-gray-900">Upload Documents</h2>
-      <p class="text-sm text-gray-500">Upload receipts, invoices, or medical reports related to your claim.</p>
+    <div class="bg-white rounded-2xl border border-gray-100 p-6 space-y-5 fc-fade-in">
+      <div>
+        <h2 class="font-semibold text-gray-900">Upload Documents</h2>
+        <p class="text-sm text-gray-500 mt-1">Upload receipts, invoices, or medical reports. At least one document is required.</p>
+      </div>
 
       <!-- Upload Area -->
-      <div class="border-2 border-dashed border-gray-200 rounded-xl p-8 text-center hover:border-cyan-300 transition-colors">
+      <div
+        class="border-2 border-dashed rounded-xl p-8 text-center hover:border-teal-300 transition-colors cursor-pointer"
+        [class]="errors().documents ? 'border-red-400 bg-red-50' : 'border-gray-200'"
+      >
         <input
           type="file"
           id="file-upload"
@@ -132,21 +183,27 @@
           class="hidden"
         />
         <label for="file-upload" class="cursor-pointer">
-          <div class="w-14 h-14 rounded-full bg-cyan-50 flex items-center justify-center mx-auto mb-4">
-            <span class="material-symbols-rounded text-cyan-600 text-2xl">cloud_upload</span>
+          <div class="w-14 h-14 rounded-full bg-teal-50 flex items-center justify-center mx-auto mb-4">
+            <span class="material-symbols-rounded text-teal-600 text-2xl">cloud_upload</span>
           </div>
           <p class="font-medium text-gray-900">Click to upload files</p>
-          <p class="text-sm text-gray-500 mt-1">or drag and drop</p>
-          <p class="text-xs text-gray-400 mt-2">PNG, JPG, PDF up to 10MB each</p>
+          <p class="text-sm text-gray-500 mt-1">PNG, JPG or PDF · up to 10 MB each</p>
         </label>
       </div>
+
+      @if (errors().documents) {
+        <p class="text-xs text-red-600 flex items-center gap-1 -mt-2">
+          <span class="material-symbols-rounded" style="font-size: 14px">error</span>
+          {{ errors().documents }}
+        </p>
+      }
 
       <!-- Uploaded Files -->
       @if (files().length) {
         <div class="space-y-2">
           @for (file of files(); track $index) {
             <div class="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
-              <div class="w-10 h-10 rounded-lg bg-white border border-gray-200 flex items-center justify-center">
+              <div class="w-10 h-10 rounded-lg bg-white border border-gray-200 flex items-center justify-center shrink-0">
                 <span class="material-symbols-rounded text-gray-400">
                   {{ file.type.includes('pdf') ? 'picture_as_pdf' : 'image' }}
                 </span>
@@ -155,25 +212,25 @@
                 <p class="text-sm font-medium text-gray-900 truncate">{{ file.name }}</p>
                 <p class="text-xs text-gray-500">{{ formatFileSize(file.size) }}</p>
               </div>
-              <button (click)="removeFile($index)" class="p-1 text-gray-400 hover:text-red-500 transition-colors">
-                <span class="material-symbols-rounded" style="font-size: 20px">close</span>
+              <button (click)="removeFile($index)" class="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors">
+                <span class="material-symbols-rounded" style="font-size: 18px">close</span>
               </button>
             </div>
           }
         </div>
       }
 
-      <div class="pt-4 flex justify-between">
+      <div class="pt-2 flex justify-between">
         <button
           (click)="prevStep()"
-          class="inline-flex items-center gap-2 text-gray-600 font-semibold text-sm px-6 py-3 rounded-xl hover:bg-gray-100 transition-colors"
+          class="inline-flex items-center gap-2 text-gray-600 font-medium text-sm px-5 py-3 rounded-xl hover:bg-gray-100 transition-colors"
         >
           <span class="material-symbols-rounded" style="font-size: 18px">arrow_back</span>
           Back
         </button>
         <button
           (click)="nextStep()"
-          class="inline-flex items-center gap-2 bg-cyan-600 text-white font-semibold text-sm px-6 py-3 rounded-xl hover:bg-cyan-700 transition-colors"
+          class="inline-flex items-center gap-2 bg-linear-to-r from-teal-500 to-cyan-500 text-white font-semibold text-sm px-6 py-3 rounded-xl hover:shadow-lg hover:shadow-teal-500/25 transition-all"
         >
           Continue
           <span class="material-symbols-rounded" style="font-size: 18px">arrow_forward</span>
@@ -182,57 +239,66 @@
     </div>
   }
 
-  <!-- Step 3: Review & Submit -->
+  <!-- ── Step 3: Review & Submit ──────────────────────────────────────── -->
   @if (step() === 3) {
-    <div class="bg-white rounded-2xl border border-gray-100 p-6 space-y-5">
-      <h2 class="font-semibold text-gray-900">Review & Submit</h2>
-      <p class="text-sm text-gray-500">Please review your claim details before submitting.</p>
+    <div class="bg-white rounded-2xl border border-gray-100 p-6 space-y-5 fc-fade-in">
+      <div>
+        <h2 class="font-semibold text-gray-900">Review & Submit</h2>
+        <p class="text-sm text-gray-500 mt-1">Review your claim details before submitting.</p>
+      </div>
 
-      <div class="bg-gray-50 rounded-xl p-4 space-y-3">
-        <div class="flex justify-between">
+      <div class="bg-gray-50 rounded-xl divide-y divide-gray-100">
+        <div class="flex justify-between px-4 py-3">
           <span class="text-sm text-gray-500">Service Type</span>
-          <span class="text-sm font-medium text-gray-900">{{ form().service_type }}</span>
+          <span class="text-sm font-medium text-gray-900">{{ form().service_type | titlecase }}</span>
         </div>
-        <div class="flex justify-between">
+        <div class="flex justify-between px-4 py-3">
           <span class="text-sm text-gray-500">Provider</span>
           <span class="text-sm font-medium text-gray-900">{{ form().provider_name }}</span>
         </div>
-        <div class="flex justify-between">
+        <div class="flex justify-between px-4 py-3">
           <span class="text-sm text-gray-500">Service Date</span>
-          <span class="text-sm font-medium text-gray-900">{{ form().service_date }}</span>
+          <span class="text-sm font-medium text-gray-900">{{ form().service_date | date:'MMM d, y' }}</span>
         </div>
-        <div class="flex justify-between">
-          <span class="text-sm text-gray-500">Amount</span>
-          <span class="text-sm font-semibold text-gray-900">{{ form().amount | number:'1.2-2' }}</span>
+        <div class="flex justify-between px-4 py-3">
+          <span class="text-sm text-gray-500">Amount Claimed</span>
+          <span class="text-sm font-bold text-gray-900">{{ form().amount | number:'1.2-2' }}</span>
         </div>
         @if (form().diagnosis) {
-          <div class="flex justify-between">
+          <div class="flex justify-between px-4 py-3">
             <span class="text-sm text-gray-500">Diagnosis</span>
             <span class="text-sm font-medium text-gray-900">{{ form().diagnosis }}</span>
           </div>
         }
-        <div class="flex justify-between">
+        <div class="flex justify-between px-4 py-3">
           <span class="text-sm text-gray-500">Documents</span>
-          <span class="text-sm font-medium text-gray-900">{{ files().length }} file(s)</span>
+          <span class="text-sm font-medium text-gray-900 flex items-center gap-1">
+            <span class="material-symbols-rounded text-teal-600" style="font-size: 16px">attach_file</span>
+            {{ files().length }} file{{ files().length !== 1 ? 's' : '' }} attached
+          </span>
         </div>
       </div>
 
       <!-- Additional Notes -->
       <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1.5">Additional Notes (Optional)</label>
+        <label class="block text-sm font-medium text-gray-700 mb-1.5" for="notes">
+          Additional Notes
+          <span class="text-gray-400 font-normal text-xs ml-1">(optional)</span>
+        </label>
         <textarea
+          id="notes"
           [value]="form().notes"
           (input)="updateForm('notes', $any($event.target).value)"
           rows="3"
-          placeholder="Any additional information..."
-          class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent resize-none"
+          placeholder="Any additional information for the claims reviewer..."
+          class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent resize-none"
         ></textarea>
       </div>
 
-      <div class="pt-4 flex justify-between">
+      <div class="pt-2 flex justify-between">
         <button
           (click)="prevStep()"
-          class="inline-flex items-center gap-2 text-gray-600 font-semibold text-sm px-6 py-3 rounded-xl hover:bg-gray-100 transition-colors"
+          class="inline-flex items-center gap-2 text-gray-600 font-medium text-sm px-5 py-3 rounded-xl hover:bg-gray-100 transition-colors"
         >
           <span class="material-symbols-rounded" style="font-size: 18px">arrow_back</span>
           Back
@@ -240,12 +306,15 @@
         <button
           (click)="submitClaim()"
           [disabled]="submitting()"
-          class="inline-flex items-center gap-2 bg-cyan-600 text-white font-semibold text-sm px-6 py-3 rounded-xl hover:bg-cyan-700 transition-colors disabled:bg-gray-200 disabled:text-gray-400"
+          class="inline-flex items-center gap-2 bg-linear-to-r from-teal-500 to-cyan-500 text-white font-semibold text-sm px-6 py-3 rounded-xl hover:shadow-lg hover:shadow-teal-500/25 transition-all disabled:from-gray-200 disabled:to-gray-200 disabled:text-gray-400 disabled:shadow-none"
         >
           @if (submitting()) {
             <span class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+            Submitting...
+          } @else {
+            <span class="material-symbols-rounded" style="font-size: 18px">send</span>
+            Submit Claim
           }
-          Submit Claim
         </button>
       </div>
     </div>

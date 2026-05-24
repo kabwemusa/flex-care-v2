@@ -1,9 +1,14 @@
 <?php
 
+use App\Exceptions\BusinessException;
+use Illuminate\Auth\AuthenticationException;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Validation\ValidationException;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -51,5 +56,61 @@ return Application::configure(basePath: dirname(__DIR__))
         // ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        //
+        /*
+        |----------------------------------------------------------------------
+        | Global JSON Exception Rendering
+        |----------------------------------------------------------------------
+        | All API responses share a consistent { status, message, errors }
+        | envelope.  Controllers only need try/catch for logic that produces
+        | different HTTP codes than the defaults below; everything else falls
+        | through here automatically.
+        */
+
+        // 1. Domain / business rule violations  →  422
+        $exceptions->render(function (BusinessException $e) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => $e->getMessage(),
+                'errors'  => null,
+            ], $e->getCode() ?: 422);
+        });
+
+        // 2. Eloquent model not found  →  404
+        $exceptions->render(function (ModelNotFoundException $e) {
+            $model   = class_basename($e->getModel());
+            $message = str($model)->headline()->toString() . ' not found.';
+
+            return response()->json([
+                'status'  => 'error',
+                'message' => $message,
+                'errors'  => null,
+            ], 404);
+        });
+
+        // 3. Route-level 404  →  404
+        $exceptions->render(function (NotFoundHttpException $e) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'The requested resource was not found.',
+                'errors'  => null,
+            ], 404);
+        });
+
+        // 4. Unauthenticated  →  401
+        $exceptions->render(function (AuthenticationException $e) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'Unauthenticated. Please log in.',
+                'errors'  => null,
+            ], 401);
+        });
+
+        // 5. Laravel validation  →  422  (keeps field-level errors)
+        $exceptions->render(function (ValidationException $e) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'The given data was invalid.',
+                'errors'  => $e->errors(),
+            ], 422);
+        });
     })->create();

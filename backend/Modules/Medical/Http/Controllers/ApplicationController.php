@@ -2,37 +2,35 @@
 
 namespace Modules\Medical\Http\Controllers;
 
+use App\Exceptions\BusinessException;
 use App\Mail\QuoteEmail;
-use Illuminate\Routing\Controller;
+use App\Traits\ApiResponse;
+use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request as HttpRequest;
+use Illuminate\Routing\Controller;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
-use Symfony\Component\HttpFoundation\StreamedResponse;
-use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Str;
-use Modules\Medical\Models\Application;
-use Modules\Medical\Models\ApplicationMember;
-use Modules\Medical\Models\ApplicationAddon;
-use Modules\Medical\Models\ApplicationDocument;
-use Modules\Medical\Models\PlanAddon;
-use Modules\Medical\Models\Policy;
-use Modules\Medical\Http\Requests\ApplicationRequest;
+use Modules\Medical\Constants\MedicalConstants;
 use Modules\Medical\Http\Requests\ApplicationMemberRequest;
-use Modules\Medical\Http\Resources\ApplicationResource;
+use Modules\Medical\Http\Requests\ApplicationRequest;
 use Modules\Medical\Http\Resources\ApplicationListResource;
 use Modules\Medical\Http\Resources\ApplicationMemberResource;
+use Modules\Medical\Http\Resources\ApplicationResource;
 use Modules\Medical\Http\Resources\PolicyResource;
+use Modules\Medical\Models\Application;
+use Modules\Medical\Models\ApplicationAddon;
+use Modules\Medical\Models\ApplicationDocument;
+use Modules\Medical\Models\ApplicationMember;
+use Modules\Medical\Models\PlanAddon;
+use Modules\Medical\Models\Policy;
+use Modules\Medical\Models\RateCard;
 use Modules\Medical\Services\ApplicationService;
 use Modules\Medical\Services\PremiumService;
-use Modules\Medical\Constants\MedicalConstants;
-use App\Traits\ApiResponse;
-use Throwable;
-use Exception;
-use Illuminate\Http\Request as HttpRequest;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Mail;
-use Modules\Medical\Models\RateCard;
-use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ApplicationController extends Controller
 {
@@ -40,7 +38,7 @@ class ApplicationController extends Controller
 
     public function __construct(
         protected ApplicationService $applicationService,
-        protected PremiumService $premiumService
+        protected PremiumService $premiumService,
     ) {}
 
     // =========================================================================
@@ -51,161 +49,55 @@ class ApplicationController extends Controller
      * List applications with filtering.
      * GET /v1/medical/applications
      */
-    // public function index(): JsonResponse
-    // {
-    //     try {
-    //         $query = Application::query()
-    //             ->with(['scheme:id,code,name', 'plan:id,code,name', 'group:id,code,name'])
-    //             ->withCount('activeMembers');
-
-    //         // Search
-    //         if ($search = request('search')) {
-    //             $query->where(function ($q) use ($search) {
-    //                 $q->where('application_number', 'like', "%{$search}%")
-    //                   ->orWhere('contact_name', 'like', "%{$search}%")
-    //                   ->orWhere('contact_email', 'like', "%{$search}%");
-    //             });
-    //         }
-
-    //         // Filters
-    //         if ($status = request('status')) {
-    //             $query->where('status', $status);
-    //         }
-
-    //         if ($applicationType = request('application_type')) {
-    //             $query->where('application_type', $applicationType);
-    //         }
-
-    //         if ($policyType = request('policy_type')) {
-    //             $query->where('policy_type', $policyType);
-    //         }
-
-    //         if ($schemeId = request('scheme_id')) {
-    //             $query->where('scheme_id', $schemeId);
-    //         }
-
-    //         if ($planId = request('plan_id')) {
-    //             $query->where('plan_id', $planId);
-    //         }
-
-    //         if ($groupId = request('group_id')) {
-    //             $query->where('group_id', $groupId);
-    //         }
-
-    //         if (request('pending_underwriting')) {
-    //             $query->pendingUnderwriting();
-    //         }
-
-    //         if (request('pending_conversion')) {
-    //             $query->pendingConversion();
-    //         }
-
-    //         if (request('expired')) {
-    //             $query->expired();
-    //         }
-
-    //         if (request('corporate_only')) {
-    //             $query->corporate();
-    //         }
-
-    //         if (request('individual_only')) {
-    //             $query->individual();
-    //         }
-
-    //         // Date filters
-    //         if ($from = request('created_from')) {
-    //             $query->where('created_at', '>=', $from);
-    //         }
-    //         if ($to = request('created_to')) {
-    //             $query->where('created_at', '<=', $to);
-    //         }
-
-    //         // Sorting
-    //         $sortBy = request('sort_by', 'created_at');
-    //         $sortOrder = request('sort_order', 'desc');
-    //         $query->orderBy($sortBy, $sortOrder);
-
-    //         $applications = $query->paginate(request('per_page', 20));
-
-    //         return $this->paginated(
-    //             ApplicationListResource::collection($applications),
-    //             'Applications retrieved'
-    //         );
-    //     } catch (Throwable $e) {
-    //         return $this->error('Failed to retrieve applications: ' . $e->getMessage(), 500);
-    //     }
-    // }
-
     public function index(): JsonResponse
     {
-        try {
-            $query = Application::query()
-                ->with([
-                    'scheme:id,code,name',
-                    'plan:id,code,name',
-                    'group:id,code,name',
-                ])
-                ->withCount('activeMembers');
+        $query = Application::query()
+            ->with([
+                'scheme:id,code,name',
+                'plan:id,code,name',
+                'group:id,code,name',
+            ])
+            ->withCount('activeMembers');
 
-            // Search
-            $query->when(request('search'), function ($q, $search) {
-                $q->where(function ($q) use ($search) {
-                    $q->where('application_number', 'like', "%{$search}%")
-                    ->orWhere('contact_name', 'like', "%{$search}%")
-                    ->orWhere('contact_email', 'like', "%{$search}%");
-                });
+        $query->when(request('search'), function ($q, $search) {
+            $q->where(function ($q) use ($search) {
+                $q->where('application_number', 'like', "%{$search}%")
+                  ->orWhere('contact_name', 'like', "%{$search}%")
+                  ->orWhere('contact_email', 'like', "%{$search}%");
             });
+        });
 
-            // Filters
-            $query->when(request('status'), fn ($q, $v) => $q->where('status', $v))
-                ->when(request('application_type'), fn ($q, $v) => $q->where('application_type', $v))
-                ->when(request('policy_type'), fn ($q, $v) => $q->where('policy_type', $v))
-                ->when(request('scheme_id'), fn ($q, $v) => $q->where('scheme_id', $v))
-                ->when(request('plan_id'), fn ($q, $v) => $q->where('plan_id', $v))
-                ->when(request('group_id'), fn ($q, $v) => $q->where('group_id', $v));
+        $query->when(request('status'), fn ($q, $v) => $q->where('status', $v))
+              ->when(request('application_type'), fn ($q, $v) => $q->where('application_type', $v))
+              ->when(request('policy_type'), fn ($q, $v) => $q->where('policy_type', $v))
+              ->when(request('scheme_id'), fn ($q, $v) => $q->where('scheme_id', $v))
+              ->when(request('plan_id'), fn ($q, $v) => $q->where('plan_id', $v))
+              ->when(request('group_id'), fn ($q, $v) => $q->where('group_id', $v));
 
-            // Scopes
-            $query->when(request('pending_underwriting'), fn ($q) => $q->pendingUnderwriting())
-                ->when(request('pending_conversion'), fn ($q) => $q->pendingConversion())
-                ->when(request('expired'), fn ($q) => $q->expired())
-                ->when(request('corporate_only'), fn ($q) => $q->corporate())
-                ->when(request('individual_only'), fn ($q) => $q->individual());
+        $query->when(request('pending_underwriting'), fn ($q) => $q->pendingUnderwriting())
+              ->when(request('pending_conversion'), fn ($q) => $q->pendingConversion())
+              ->when(request('expired'), fn ($q) => $q->expired())
+              ->when(request('corporate_only'), fn ($q) => $q->corporate())
+              ->when(request('individual_only'), fn ($q) => $q->individual());
 
-            // Dates
-            $query->when(request('created_from'), fn ($q, $v) =>
-                $q->whereDate('created_at', '>=', $v)
-            );
-            $query->when(request('created_to'), fn ($q, $v) =>
-                $q->whereDate('created_at', '<=', $v)
-            );
+        $query->when(request('created_from'), fn ($q, $v) => $q->whereDate('created_at', '>=', $v))
+              ->when(request('created_to'), fn ($q, $v) => $q->whereDate('created_at', '<=', $v));
 
-            // Safe sorting
-            $allowedSorts = ['created_at', 'application_number', 'status'];
-            $sortBy = in_array(request('sort_by'), $allowedSorts)
-                ? request('sort_by')
-                : 'created_at';
+        $allowedSorts = ['created_at', 'application_number', 'status'];
+        $sortBy    = in_array(request('sort_by'), $allowedSorts) ? request('sort_by') : 'created_at';
+        $sortOrder = request('sort_order') === 'asc' ? 'asc' : 'desc';
+        $query->orderBy($sortBy, $sortOrder);
 
-            $sortOrder = request('sort_order') === 'asc' ? 'asc' : 'desc';
-            $query->orderBy($sortBy, $sortOrder);
+        $perPage      = min((int) request('per_page', 20), 100);
+        $applications = request()->has('cursor')
+            ? $query->orderBy('id')->cursorPaginate($perPage)
+            : $query->paginate($perPage);
 
-            $perPage = min((int) request('per_page', 20), 100);
-
-            $applications = request()->has('cursor')
-                ? $query->orderBy('id')->cursorPaginate($perPage)
-                : $query->paginate($perPage);
-
-            return $this->paginated(
-                ApplicationListResource::collection($applications),
-                'Applications retrieved'
-            );
-
-        } catch (Throwable $e) {
-            report($e);
-
-            return $this->error('Failed to retrieve applications'.$e->getMessage(), 500);
-        }
+        return $this->paginated(
+            ApplicationListResource::collection($applications),
+            'Applications retrieved'
+        );
     }
-
 
     /**
      * Create a new application.
@@ -213,19 +105,10 @@ class ApplicationController extends Controller
      */
     public function store(ApplicationRequest $request): JsonResponse
     {
-        try {
-            $application = DB::transaction(function () use ($request) {
-                return $this->applicationService->createApplication($request->validated());
-            });
+        // Service already wraps creation in its own DB::transaction — no need to double-wrap.
+        $application = $this->applicationService->createApplication($request->validated());
 
-            return $this->success(
-                new ApplicationResource($application),
-                'Application created',
-                201
-            );
-        } catch (Throwable $e) {
-            return $this->error('Failed to create application: ' . $e->getMessage(), 500);
-        }
+        return $this->success(new ApplicationResource($application), 'Application created', 201);
     }
 
     /**
@@ -234,31 +117,20 @@ class ApplicationController extends Controller
      */
     public function show(string $id): JsonResponse
     {
-        try {
-            $application = Application::with([
-                'scheme',
-                'plan.planBenefits.benefit',
-                'rateCard',
-                'group.primaryContact',
-                'renewalOfPolicy:id,policy_number',
-                'convertedPolicy:id,policy_number',
-                // 'activeMembers' => fn($q) => $q->orderBy('member_type')->orderBy('created_at'),
-                // 'activeMembers.principal:id,first_name,last_name',
-                'activeAddons.addon',
-                'documents' => fn($q) => $q->active()->latest(),
-            ])
-            ->withCount(['activeMembers', 'principals', 'dependents'])
-            ->findOrFail($id);
+        $application = Application::with([
+            'scheme',
+            'plan.planBenefits.benefit',
+            'rateCard',
+            'group.primaryContact',
+            'renewalOfPolicy:id,policy_number',
+            'convertedPolicy:id,policy_number',
+            'activeAddons.addon',
+            'documents' => fn ($q) => $q->active()->latest(),
+        ])
+        ->withCount(['activeMembers', 'principals', 'dependents'])
+        ->findOrFail($id);
 
-            return $this->success(
-                new ApplicationResource($application),
-                'Application retrieved'
-            );
-        } catch (ModelNotFoundException $e) {
-            return $this->error('Application not found', 404);
-        } catch (Throwable $e) {
-            return $this->error('Failed to retrieve application: ' . $e->getMessage(), 500);
-        }
+        return $this->success(new ApplicationResource($application), 'Application retrieved');
     }
 
     /**
@@ -267,36 +139,23 @@ class ApplicationController extends Controller
      */
     public function update(ApplicationRequest $request, string $id): JsonResponse
     {
-        try {
-            $application = DB::transaction(function () use ($request, $id) {
-                $application = Application::findOrFail($id);
+        $application = DB::transaction(function () use ($request, $id) {
+            $application = Application::findOrFail($id);
 
-                if (!$application->can_be_edited) {
-                    throw new Exception('Application cannot be edited in current status', 422);
-                }
+            if (!$application->can_be_edited) {
+                throw new BusinessException('Application cannot be edited in current status.');
+            }
 
-                $application->update($request->validated());
+            $application->update($request->validated());
 
-                // Recalculate premium if relevant fields changed
-                if ($request->hasAny(['plan_id', 'rate_card_id', 'billing_frequency'])) {
-                    $this->premiumService->calculateApplicationPremium($application);
-                }
+            if ($request->hasAny(['plan_id', 'rate_card_id', 'billing_frequency'])) {
+                $this->premiumService->calculateApplicationPremium($application);
+            }
 
-                return $application->fresh([
-                    'scheme', 'plan', 'rateCard', 'activeMembers', 'activeAddons'
-                ]);
-            });
+            return $application->fresh(['scheme', 'plan', 'rateCard', 'activeMembers', 'activeAddons']);
+        });
 
-            return $this->success(
-                new ApplicationResource($application),
-                'Application updated'
-            );
-        } catch (ModelNotFoundException $e) {
-            return $this->error('Application not found', 404);
-        } catch (Throwable $e) {
-            $code = $e->getCode() === 422 ? 422 : 500;
-            return $this->error($e->getMessage(), $code);
-        }
+        return $this->success(new ApplicationResource($application), 'Application updated');
     }
 
     /**
@@ -305,28 +164,20 @@ class ApplicationController extends Controller
      */
     public function destroy(string $id): JsonResponse
     {
-        try {
-            DB::transaction(function () use ($id) {
-                $application = Application::findOrFail($id);
+        DB::transaction(function () use ($id) {
+            $application = Application::findOrFail($id);
 
-                if (!$application->is_draft) {
-                    throw new Exception('Only draft applications can be deleted', 422);
-                }
+            if (!$application->is_draft) {
+                throw new BusinessException('Only draft applications can be deleted.');
+            }
 
-                // Delete related records
-                $application->members()->delete();
-                $application->addons()->delete();
-                $application->documents()->delete();
-                $application->delete();
-            });
+            $application->members()->delete();
+            $application->addons()->delete();
+            $application->documents()->delete();
+            $application->delete();
+        });
 
-            return $this->success(null, 'Application deleted');
-        } catch (ModelNotFoundException $e) {
-            return $this->error('Application not found', 404);
-        } catch (Throwable $e) {
-            $code = $e->getCode() === 422 ? 422 : 500;
-            return $this->error($e->getMessage(), $code);
-        }
+        return $this->success(null, 'Application deleted');
     }
 
     // =========================================================================
@@ -339,20 +190,11 @@ class ApplicationController extends Controller
      */
     public function calculatePremium(string $id): JsonResponse
     {
-        try {
-            $application = Application::findOrFail($id);
+        $application = Application::findOrFail($id);
+        $this->ensureMandatoryAddons($application);
+        $breakdown = $this->premiumService->calculateApplicationPremium($application);
 
-            // Auto-inject any missing mandatory addons before calculating
-            $this->ensureMandatoryAddons($application);
-
-            $breakdown = $this->premiumService->calculateApplicationPremium($application);
-
-            return $this->success($breakdown, 'Premium calculated');
-        } catch (ModelNotFoundException $e) {
-            return $this->error('Application not found', 404);
-        } catch (Throwable $e) {
-            return $this->error('Failed to calculate premium: ' . $e->getMessage(), 500);
-        }
+        return $this->success($breakdown, 'Premium calculated');
     }
 
     /**
@@ -361,133 +203,104 @@ class ApplicationController extends Controller
      */
     public function markAsQuoted(string $id): JsonResponse
     {
-        try {
-            $application = DB::transaction(function () use ($id) {
-                $application = Application::findOrFail($id);
-                return $this->applicationService->markAsQuoted($application);
-            });
+        $application = DB::transaction(function () use ($id) {
+            return $this->applicationService->markAsQuoted(Application::findOrFail($id));
+        });
 
-            return $this->success(
-                new ApplicationResource($application),
-                'Application marked as quoted'
-            );
-        } catch (ModelNotFoundException $e) {
-            return $this->error('Application not found', 404);
-        } catch (Throwable $e) {
-            return $this->error($e->getMessage(), 500);
-        }
+        return $this->success(new ApplicationResource($application), 'Application marked as quoted');
     }
 
     /**
      * Download quote as PDF.
      * GET /v1/medical/applications/{id}/quote/download
      */
-    public function downloadQuote(string $id)
+    public function downloadQuote(string $id): JsonResponse
     {
-        try {
-            $application = Application::with([
-                'scheme',
-                'plan',
-                'rateCard',
-                'group',
-                'activeMembers',
-                'activeAddons.addon'
-            ])->findOrFail($id);
+        $application = Application::with([
+            'scheme', 'plan', 'rateCard', 'group', 'activeMembers', 'activeAddons.addon',
+        ])->findOrFail($id);
 
-            // Allow download for quoted, underwriting, and approved statuses
-            $allowedStatuses = [
-                MedicalConstants::APPLICATION_STATUS_QUOTED,
-                MedicalConstants::APPLICATION_STATUS_SUBMITTED,
-                MedicalConstants::APPLICATION_STATUS_UNDERWRITING,
-                MedicalConstants::APPLICATION_STATUS_APPROVED,
-            ];
+        $allowedStatuses = [
+            MedicalConstants::APPLICATION_STATUS_QUOTED,
+            MedicalConstants::APPLICATION_STATUS_SUBMITTED,
+            MedicalConstants::APPLICATION_STATUS_UNDERWRITING,
+            MedicalConstants::APPLICATION_STATUS_APPROVED,
+        ];
 
-            if (!in_array($application->status, $allowedStatuses)) {
-                return $this->error('Quote can only be downloaded after it has been generated', 422);
-            }
-
-            $activeMembers = $application->activeMembers;
-
-            // Member type counts
-            $principalCount = $activeMembers->where('member_type', MedicalConstants::MEMBER_TYPE_PRINCIPAL)->count();
-            $spouseCount = $activeMembers->where('member_type', MedicalConstants::MEMBER_TYPE_SPOUSE)->count();
-            $childCount = $activeMembers->where('member_type', MedicalConstants::MEMBER_TYPE_CHILD)->count();
-            $parentCount = $activeMembers->where('member_type', MedicalConstants::MEMBER_TYPE_PARENT)->count();
-
-            $quoteData = [
-                'application_number' => $application->application_number,
-                'application_type' => $application->application_type,
-                'policy_type' => $application->policy_type,
-                'quote_date' => $application->quoted_at,
-                'valid_until' => $application->quote_valid_until,
-                'applicant_name' => $application->applicant_name ?? $application->contact_name,
-                'contact_email' => $application->contact_email,
-                'contact_phone' => $application->contact_phone,
-                'group' => $application->group ? [
-                    'name' => $application->group->name,
-                    'code' => $application->group->code,
-                ] : null,
-                'plan' => [
-                    'scheme' => $application->scheme->name ?? '',
-                    'name' => $application->plan->name ?? '',
-                    'tier' => $application->plan->tier_level ?? '',
-                ],
-                'member_summary' => [
-                    'total' => $activeMembers->count(),
-                    'principals' => $principalCount,
-                    'spouses' => $spouseCount,
-                    'children' => $childCount,
-                    'parents' => $parentCount,
-                ],
-                'members' => $activeMembers->map(fn($m) => [
-                    'name' => $m->full_name,
-                    'member_type' => $m->member_type,
-                    'member_type_label' => $m->member_type_label,
-                    'relationship' => $m->relationship,
-                    'age' => $m->age_at_inception ?? $m->age,
-                    'gender' => $m->gender,
-                    'base_premium' => (float) $m->base_premium,
-                    'loading_amount' => (float) $m->loading_amount,
-                    'total_premium' => (float) $m->total_premium,
-                    'has_loadings' => !empty($m->applied_loadings),
-                    'loadings' => collect($m->applied_loadings ?? [])->map(fn($l) => [
-                        'condition' => $l['condition_name'] ?? $l['name'] ?? 'Loading',
-                        'type' => $l['loading_type'] ?? 'fixed',
-                        'value' => $l['value'] ?? $l['loading_value'] ?? 0,
-                        'amount' => $l['loading_amount'] ?? 0,
-                    ])->values(),
-                ])->values(),
-                'addons' => $application->activeAddons->map(fn($a) => [
-                    'name' => $a->addon_name ?? ($a->addon->name ?? ''),
-                    'premium' => (float) $a->premium,
-                    'is_mandatory' => $a->is_mandatory ?? false,
-                ])->values(),
-                'premium_breakdown' => [
-                    'base_premium' => (float) $application->base_premium,
-                    'addon_premium' => (float) $application->addon_premium,
-                    'loading_amount' => (float) $application->loading_amount,
-                    'discount_amount' => (float) $application->discount_amount,
-                    'total_premium' => (float) $application->total_premium,
-                    'tax_rate' => config('medical.tax_rate', 0.05),
-                    'tax_amount' => (float) $application->tax_amount,
-                    'gross_premium' => (float) $application->gross_premium,
-                    'currency' => $application->currency,
-                    'billing_frequency' => $application->billing_frequency,
-                ],
-                'policy_details' => [
-                    'policy_term_months' => $application->policy_term_months,
-                    'proposed_start_date' => $application->proposed_start_date,
-                    'proposed_end_date' => $application->proposed_end_date,
-                ],
-            ];
-
-            return response()->json($quoteData);
-
-        } catch (ModelNotFoundException $e) {
-            return $this->error('Application not found', 404);
-        } catch (Throwable $e) {
-            return $this->error('Failed to generate quote: ' . $e->getMessage(), 500);
+        if (!in_array($application->status, $allowedStatuses)) {
+            throw new BusinessException('Quote can only be downloaded after it has been generated.');
         }
+
+        $activeMembers = $application->activeMembers;
+
+        $quoteData = [
+            'application_number' => $application->application_number,
+            'application_type'   => $application->application_type,
+            'policy_type'        => $application->policy_type,
+            'quote_date'         => $application->quoted_at,
+            'valid_until'        => $application->quote_valid_until,
+            'applicant_name'     => $application->applicant_name ?? $application->contact_name,
+            'contact_email'      => $application->contact_email,
+            'contact_phone'      => $application->contact_phone,
+            'group'              => $application->group ? [
+                'name' => $application->group->name,
+                'code' => $application->group->code,
+            ] : null,
+            'plan' => [
+                'scheme' => $application->scheme->name ?? '',
+                'name'   => $application->plan->name ?? '',
+                'tier'   => $application->plan->tier_level ?? '',
+            ],
+            'member_summary' => [
+                'total'      => $activeMembers->count(),
+                'principals' => $activeMembers->where('member_type', MedicalConstants::MEMBER_TYPE_PRINCIPAL)->count(),
+                'spouses'    => $activeMembers->where('member_type', MedicalConstants::MEMBER_TYPE_SPOUSE)->count(),
+                'children'   => $activeMembers->where('member_type', MedicalConstants::MEMBER_TYPE_CHILD)->count(),
+                'parents'    => $activeMembers->where('member_type', MedicalConstants::MEMBER_TYPE_PARENT)->count(),
+            ],
+            'members' => $activeMembers->map(fn ($m) => [
+                'name'              => $m->full_name,
+                'member_type'       => $m->member_type,
+                'member_type_label' => $m->member_type_label,
+                'relationship'      => $m->relationship,
+                'age'               => $m->age_at_inception ?? $m->age,
+                'gender'            => $m->gender,
+                'base_premium'      => (float) $m->base_premium,
+                'loading_amount'    => (float) $m->loading_amount,
+                'total_premium'     => (float) $m->total_premium,
+                'has_loadings'      => !empty($m->applied_loadings),
+                'loadings'          => collect($m->applied_loadings ?? [])->map(fn ($l) => [
+                    'condition' => $l['condition_name'] ?? $l['name'] ?? 'Loading',
+                    'type'      => $l['loading_type'] ?? 'fixed',
+                    'value'     => $l['value'] ?? $l['loading_value'] ?? 0,
+                    'amount'    => $l['loading_amount'] ?? 0,
+                ])->values(),
+            ])->values(),
+            'addons' => $application->activeAddons->map(fn ($a) => [
+                'name'         => $a->addon_name ?? ($a->addon->name ?? ''),
+                'premium'      => (float) $a->premium,
+                'is_mandatory' => $a->is_mandatory ?? false,
+            ])->values(),
+            'premium_breakdown' => [
+                'base_premium'    => (float) $application->base_premium,
+                'addon_premium'   => (float) $application->addon_premium,
+                'loading_amount'  => (float) $application->loading_amount,
+                'discount_amount' => (float) $application->discount_amount,
+                'total_premium'   => (float) $application->total_premium,
+                'tax_rate'        => config('medical.tax_rate', 0.05),
+                'tax_amount'      => (float) $application->tax_amount,
+                'gross_premium'   => (float) $application->gross_premium,
+                'currency'        => $application->currency,
+                'billing_frequency' => $application->billing_frequency,
+            ],
+            'policy_details' => [
+                'policy_term_months' => $application->policy_term_months,
+                'proposed_start_date' => $application->proposed_start_date,
+                'proposed_end_date'   => $application->proposed_end_date,
+            ],
+        ];
+
+        return response()->json($quoteData);
     }
 
     /**
@@ -496,41 +309,31 @@ class ApplicationController extends Controller
      */
     public function emailQuote(string $id): JsonResponse
     {
-        try {
-            $application = Application::with(['scheme', 'plan', 'members', 'addons'])->findOrFail($id);
+        $application = Application::with(['scheme', 'plan', 'members', 'addons'])->findOrFail($id);
 
-            // Allow email for quoted, underwriting, and approved statuses
-            $allowedStatuses = [
-                MedicalConstants::APPLICATION_STATUS_QUOTED,
-                MedicalConstants::APPLICATION_STATUS_SUBMITTED,
-                MedicalConstants::APPLICATION_STATUS_UNDERWRITING,
-                MedicalConstants::APPLICATION_STATUS_APPROVED,
-            ];
+        $allowedStatuses = [
+            MedicalConstants::APPLICATION_STATUS_QUOTED,
+            MedicalConstants::APPLICATION_STATUS_SUBMITTED,
+            MedicalConstants::APPLICATION_STATUS_UNDERWRITING,
+            MedicalConstants::APPLICATION_STATUS_APPROVED,
+        ];
 
-            if (!in_array($application->status, $allowedStatuses)) {
-                return $this->error('Quote can only be emailed after it has been generated', 422);
-            }
-
-            $validated = request()->validate([
-                'email' => 'required|email',
-                'message' => 'nullable|string|max:1000',
-            ]);
-
-            // Send email with PDF attachment
-            $customMessage = $validated['message'] ?? null;
-            Mail::to($validated['email'])->send(new QuoteEmail($application, $customMessage));
-
-            return $this->success([
-                'email' => $validated['email'],
-                'application_number' => $application->application_number,
-                'sent_at' => now()->toIso8601String(),
-            ], 'Quote email sent successfully');
-
-        } catch (ModelNotFoundException $e) {
-            return $this->error('Application not found', 404);
-        } catch (Throwable $e) {
-            return $this->error('Failed to send quote email: ' . $e->getMessage(), 500);
+        if (!in_array($application->status, $allowedStatuses)) {
+            throw new BusinessException('Quote can only be emailed after it has been generated.');
         }
+
+        $validated = request()->validate([
+            'email'   => 'required|email',
+            'message' => 'nullable|string|max:1000',
+        ]);
+
+        Mail::to($validated['email'])->send(new QuoteEmail($application, $validated['message'] ?? null));
+
+        return $this->success([
+            'email'              => $validated['email'],
+            'application_number' => $application->application_number,
+            'sent_at'            => now()->toIso8601String(),
+        ], 'Quote email sent successfully');
     }
 
     /**
@@ -539,21 +342,14 @@ class ApplicationController extends Controller
      */
     public function submit(string $id): JsonResponse
     {
-        try {
-            $application = DB::transaction(function () use ($id) {
-                $application = Application::findOrFail($id);
-                return $this->applicationService->submitForUnderwriting($application, request()->user());
-            });
-
-            return $this->success(
-                new ApplicationResource($application),
-                'Application submitted for underwriting'
+        $application = DB::transaction(function () use ($id) {
+            return $this->applicationService->submitForUnderwriting(
+                Application::findOrFail($id),
+                request()->user()
             );
-        } catch (ModelNotFoundException $e) {
-            return $this->error('Application not found', 404);
-        } catch (Throwable $e) {
-            return $this->error($e->getMessage(), 500);
-        }
+        });
+
+        return $this->success(new ApplicationResource($application), 'Application submitted for underwriting');
     }
 
     /**
@@ -562,67 +358,43 @@ class ApplicationController extends Controller
      */
     public function startUnderwriting(string $id): JsonResponse
     {
-        try {
-            $application = DB::transaction(function () use ($id) {
-                $application = Application::findOrFail($id);
-                $underwriterId = request('underwriter_id') ??  Str::uuid()->toString();
-                return $this->applicationService->startUnderwriting($application, $underwriterId);
-            });
+        $application = DB::transaction(function () use ($id) {
+            $application    = Application::findOrFail($id);
+            $underwriterId  = request('underwriter_id') ?? Str::uuid()->toString();
 
-            return $this->success(
-                new ApplicationResource($application),
-                'Underwriting started'
-            );
-        } catch (ModelNotFoundException $e) {
-            return $this->error('Application not found', 404);
-        } catch (Throwable $e) {
-            return $this->error($e->getMessage(), 500);
-        }
+            return $this->applicationService->startUnderwriting($application, $underwriterId);
+        });
+
+        return $this->success(new ApplicationResource($application), 'Underwriting started');
     }
 
     /**
      * Regenerate quote after underwriting changes.
-     * Recalculates premium with all loadings, discounts, and exclusions applied.
      * POST /v1/medical/applications/{id}/regenerate-quote
      */
     public function regenerateQuote(string $id): JsonResponse
     {
-        try {
-            $application = DB::transaction(function () use ($id) {
-                $application = Application::findOrFail($id);
+        $application = DB::transaction(function () use ($id) {
+            $application = Application::findOrFail($id);
 
-                // Must be in underwriting status
-                if (!in_array($application->status, [
-                    MedicalConstants::APPLICATION_STATUS_UNDERWRITING,
-                    MedicalConstants::APPLICATION_STATUS_SUBMITTED,
-                ])) {
-                    throw new Exception('Can only regenerate quote during underwriting', 422);
-                }
+            if (!in_array($application->status, [
+                MedicalConstants::APPLICATION_STATUS_UNDERWRITING,
+                MedicalConstants::APPLICATION_STATUS_SUBMITTED,
+            ])) {
+                throw new BusinessException('Can only regenerate quote during underwriting.');
+            }
 
-                // Recalculate premium with all applied loadings and discounts
-                $this->premiumService->calculateApplicationPremium($application);
+            $this->premiumService->calculateApplicationPremium($application);
 
-                // Update quote validity
-                $application->update([
-                    'quoted_at' => now(),
-                    'quote_valid_until' => now()->addDays(config('medical.quote.validity_days', 14)),
-                ]);
+            $application->update([
+                'quoted_at'         => now(),
+                'quote_valid_until' => now()->addDays(config('medical.quote.validity_days', 14)),
+            ]);
 
-                return $application->fresh([
-                    'scheme', 'plan', 'rateCard', 'activeMembers', 'activeAddons'
-                ]);
-            });
+            return $application->fresh(['scheme', 'plan', 'rateCard', 'activeMembers', 'activeAddons']);
+        });
 
-            return $this->success(
-                new ApplicationResource($application),
-                'Quote regenerated with updated terms'
-            );
-        } catch (ModelNotFoundException $e) {
-            return $this->error('Application not found', 404);
-        } catch (Throwable $e) {
-            $code = $e->getCode() === 422 ? 422 : 500;
-            return $this->error($e->getMessage(), $code);
-        }
+        return $this->success(new ApplicationResource($application), 'Quote regenerated with updated terms');
     }
 
     /**
@@ -631,30 +403,21 @@ class ApplicationController extends Controller
      */
     public function refer(string $id): JsonResponse
     {
-        try {
-            $application = DB::transaction(function () use ($id) {
-                $application = Application::findOrFail($id);
-                
-                $reason = request('reason');
-                if (!$reason) {
-                    throw new Exception('Referral reason is required', 422);
-                }
+        $application = DB::transaction(function () use ($id) {
+            $application = Application::findOrFail($id);
 
-                $underwriterId = request('underwriter_id')  ?? $application->underwriter_id;
-                
-                return $this->applicationService->referApplication($application, $underwriterId, $reason);
-            });
+            if (!request('reason')) {
+                throw new BusinessException('Referral reason is required.');
+            }
 
-            return $this->success(
-                new ApplicationResource($application),
-                'Application referred for review'
+            return $this->applicationService->referApplication(
+                $application,
+                request('underwriter_id') ?? $application->underwriter_id,
+                request('reason')
             );
-        } catch (ModelNotFoundException $e) {
-            return $this->error('Application not found', 404);
-        } catch (Throwable $e) {
-            $code = $e->getCode() === 422 ? 422 : 500;
-            return $this->error($e->getMessage(), $code);
-        }
+        });
+
+        return $this->success(new ApplicationResource($application), 'Application referred for review');
     }
 
     // =========================================================================
@@ -667,16 +430,10 @@ class ApplicationController extends Controller
      */
     public function approvalStatus(string $id): JsonResponse
     {
-        try {
-            $application = Application::findOrFail($id);
-            $status = $this->applicationService->getApprovalStatus($application);
+        $application = Application::findOrFail($id);
+        $status      = $this->applicationService->getApprovalStatus($application);
 
-            return $this->success($status, 'Approval status retrieved');
-        } catch (ModelNotFoundException $e) {
-            return $this->error('Application not found', 404);
-        } catch (Throwable $e) {
-            return $this->error($e->getMessage(), 500);
-        }
+        return $this->success($status, 'Approval status retrieved');
     }
 
     /**
@@ -685,32 +442,19 @@ class ApplicationController extends Controller
      */
     public function approvalApprove(string $id): JsonResponse
     {
-        try {
-            $result = DB::transaction(function () use ($id) {
-                $application = Application::findOrFail($id);
-                $comments = request('comments');
+        $result  = DB::transaction(fn () => $this->applicationService->approveApplicationStep(
+            Application::findOrFail($id),
+            request()->user(),
+            request('comments')
+        ));
 
-                return $this->applicationService->approveApplicationStep(
-                    $application,
-                    request()->user(),
-                    $comments
-                );
-            });
+        $message = $result['is_final'] ? 'Application fully approved' : 'Step approved, moved to next step';
 
-            $message = $result['is_final']
-                ? 'Application fully approved'
-                : 'Step approved, moved to next step';
-
-            return $this->success([
-                'application' => new ApplicationResource($result['application']),
-                'approval_status' => $result['application']->getApprovalProgress(),
-                'is_final' => $result['is_final'],
-            ], $message);
-        } catch (ModelNotFoundException $e) {
-            return $this->error('Application not found', 404);
-        } catch (Throwable $e) {
-            return $this->error($e->getMessage(), 422);
-        }
+        return $this->success([
+            'application'     => new ApplicationResource($result['application']),
+            'approval_status' => $result['application']->getApprovalProgress(),
+            'is_final'        => $result['is_final'],
+        ], $message);
     }
 
     /**
@@ -719,31 +463,20 @@ class ApplicationController extends Controller
      */
     public function approvalReject(string $id): JsonResponse
     {
-        try {
-            $reason = request('reason');
-            if (!$reason) {
-                return $this->error('Rejection reason is required', 422);
-            }
-
-            $result = DB::transaction(function () use ($id, $reason) {
-                $application = Application::findOrFail($id);
-
-                return $this->applicationService->rejectApplicationStep(
-                    $application,
-                    request()->user(),
-                    $reason
-                );
-            });
-
-            return $this->success([
-                'application' => new ApplicationResource($result['application']),
-                'approval_status' => $result['application']->getApprovalProgress(),
-            ], 'Application rejected');
-        } catch (ModelNotFoundException $e) {
-            return $this->error('Application not found', 404);
-        } catch (Throwable $e) {
-            return $this->error($e->getMessage(), 422);
+        if (!request('reason')) {
+            throw new BusinessException('Rejection reason is required.');
         }
+
+        $result = DB::transaction(fn () => $this->applicationService->rejectApplicationStep(
+            Application::findOrFail($id),
+            request()->user(),
+            request('reason')
+        ));
+
+        return $this->success([
+            'application'     => new ApplicationResource($result['application']),
+            'approval_status' => $result['application']->getApprovalProgress(),
+        ], 'Application rejected');
     }
 
     /**
@@ -752,31 +485,20 @@ class ApplicationController extends Controller
      */
     public function approvalReturn(string $id): JsonResponse
     {
-        try {
-            $reason = request('reason');
-            if (!$reason) {
-                return $this->error('Return reason is required', 422);
-            }
-
-            $result = DB::transaction(function () use ($id, $reason) {
-                $application = Application::findOrFail($id);
-
-                return $this->applicationService->returnApplicationStep(
-                    $application,
-                    request()->user(),
-                    $reason
-                );
-            });
-
-            return $this->success([
-                'application' => new ApplicationResource($result['application']),
-                'approval_status' => $result['application']->getApprovalProgress(),
-            ], 'Application returned for amendment');
-        } catch (ModelNotFoundException $e) {
-            return $this->error('Application not found', 404);
-        } catch (Throwable $e) {
-            return $this->error($e->getMessage(), 422);
+        if (!request('reason')) {
+            throw new BusinessException('Return reason is required.');
         }
+
+        $result = DB::transaction(fn () => $this->applicationService->returnApplicationStep(
+            Application::findOrFail($id),
+            request()->user(),
+            request('reason')
+        ));
+
+        return $this->success([
+            'application'     => new ApplicationResource($result['application']),
+            'approval_status' => $result['application']->getApprovalProgress(),
+        ], 'Application returned for amendment');
     }
 
     /**
@@ -785,19 +507,12 @@ class ApplicationController extends Controller
      */
     public function canApprove(string $id): JsonResponse
     {
-        try {
-            $application = Application::findOrFail($id);
-            $canApprove = $this->applicationService->canUserApprove($application, request()->user());
+        $application = Application::findOrFail($id);
 
-            return $this->success([
-                'can_approve' => $canApprove,
-                'approval_status' => $application->getApprovalProgress(),
-            ], 'Approval permission checked');
-        } catch (ModelNotFoundException $e) {
-            return $this->error('Application not found', 404);
-        } catch (Throwable $e) {
-            return $this->error($e->getMessage(), 500);
-        }
+        return $this->success([
+            'can_approve'     => $this->applicationService->canUserApprove($application, request()->user()),
+            'approval_status' => $application->getApprovalProgress(),
+        ], 'Approval permission checked');
     }
 
     /**
@@ -806,23 +521,12 @@ class ApplicationController extends Controller
      */
     public function accept(string $id): JsonResponse
     {
-        try {
-            $application = DB::transaction(function () use ($id) {
-                $application = Application::findOrFail($id);
-                $acceptanceReference = request('acceptance_reference');
+        $application = DB::transaction(fn () => $this->applicationService->acceptQuote(
+            Application::findOrFail($id),
+            request('acceptance_reference')
+        ));
 
-                return $this->applicationService->acceptQuote($application, $acceptanceReference);
-            });
-
-            return $this->success(
-                new ApplicationResource($application),
-                'Quote accepted'
-            );
-        } catch (ModelNotFoundException $e) {
-            return $this->error('Application not found', 404);
-        } catch (Throwable $e) {
-            return $this->error($e->getMessage(), 500);
-        }
+        return $this->success(new ApplicationResource($application), 'Quote accepted');
     }
 
     /**
@@ -831,23 +535,14 @@ class ApplicationController extends Controller
      */
     public function convert(string $id): JsonResponse
     {
-        try {
-            $policy = DB::transaction(function () use ($id) {
-                $application = Application::findOrFail($id);
-                $issuedBy = Auth::user()->id ?? $application->underwriter_id;
-                return $this->applicationService->convertToPolicy($application, $issuedBy);
-            });
+        $policy = DB::transaction(function () use ($id) {
+            $application = Application::findOrFail($id);
+            $issuedBy    = Auth::user()->id ?? $application->underwriter_id;
 
-            return $this->success(
-                new PolicyResource($policy),
-                'Application converted to policy',
-                201
-            );
-        } catch (ModelNotFoundException $e) {
-            return $this->error('Application not found', 404);
-        } catch (Throwable $e) {
-            return $this->error('Failed to convert: ' . $e->getMessage(), 500);
-        }
+            return $this->applicationService->convertToPolicy($application, $issuedBy);
+        });
+
+        return $this->success(new PolicyResource($policy), 'Application converted to policy', 201);
     }
 
     /**
@@ -856,28 +551,19 @@ class ApplicationController extends Controller
      */
     public function cancel(string $id): JsonResponse
     {
-        try {
-            $application = DB::transaction(function () use ($id) {
-                $application = Application::findOrFail($id);
+        $application = DB::transaction(function () use ($id) {
+            $application = Application::findOrFail($id);
 
-                if ($application->is_converted) {
-                    throw new Exception('Cannot cancel converted application', 422);
-                }
+            if ($application->is_converted) {
+                throw new BusinessException('Cannot cancel a converted application.');
+            }
 
-                $application->cancel(request('reason'));
-                return $application->fresh();
-            });
+            $application->cancel(request('reason'));
 
-            return $this->success(
-                new ApplicationResource($application),
-                'Application cancelled'
-            );
-        } catch (ModelNotFoundException $e) {
-            return $this->error('Application not found', 404);
-        } catch (Throwable $e) {
-            $code = $e->getCode() === 422 ? 422 : 500;
-            return $this->error($e->getMessage(), $code);
-        }
+            return $application->fresh();
+        });
+
+        return $this->success(new ApplicationResource($application), 'Application cancelled');
     }
 
     // =========================================================================
@@ -890,25 +576,14 @@ class ApplicationController extends Controller
      */
     public function members(string $id): JsonResponse
     {
-        try {
-            $members = ApplicationMember::where('application_id', $id)
-                ->with(['principal:id,first_name,last_name'])
-                ->orderBy('member_type')
-                ->orderBy('created_at')
-                ->paginate(request('per_page', 20));
+        $members = ApplicationMember::where('application_id', $id)
+            ->with(['principal:id,first_name,last_name'])
+            ->orderBy('member_type')
+            ->orderBy('created_at')
+            ->paginate(request('per_page', 20));
 
-            return $this->paginated(
-                ApplicationMemberResource::collection($members),
-                'Members retrieved'
-            );
-        } catch (Throwable $e) {
-            return $this->error(
-                'Failed to retrieve members: ' . $e->getMessage(),
-                500
-            );
-        }
+        return $this->paginated(ApplicationMemberResource::collection($members), 'Members retrieved');
     }
-
 
     /**
      * Add member to application.
@@ -916,46 +591,31 @@ class ApplicationController extends Controller
      */
     public function addMember(ApplicationMemberRequest $request, string $id): JsonResponse
     {
-        try {
-            $member = DB::transaction(function () use ($request, $id) {
-                $application = Application::findOrFail($id);
+        $member = DB::transaction(function () use ($request, $id) {
+            $application = Application::findOrFail($id);
 
-                if (!$application->can_be_edited) {
-                    throw new Exception('Cannot add members to application in current status', 422);
-                }
+            if (!$application->can_be_edited) {
+                throw new BusinessException('Cannot add members to application in current status.');
+            }
 
-                $data = $request->validated();
-                $data['application_id'] = $id;
+            $data                   = $request->validated();
+            $data['application_id'] = $id;
 
-                // Calculate age at inception
-                if (!empty($data['date_of_birth'])) {
-                    $data['age_at_inception'] = \Carbon\Carbon::parse($data['date_of_birth'])
-                        ->diffInYears($application->proposed_start_date);
-                }
+            if (!empty($data['date_of_birth'])) {
+                $data['age_at_inception'] = Carbon::parse($data['date_of_birth'])
+                    ->diffInYears($application->proposed_start_date);
+            }
 
-                $member = ApplicationMember::create($data);
+            $member = ApplicationMember::create($data);
 
-                // Calculate member premium
-                $this->premiumService->calculateApplicationMemberPremium($member, $application->rateCard);
+            $this->premiumService->calculateApplicationMemberPremium($member, $application->rateCard);
+            $application->updateMemberCounts();
+            $this->premiumService->calculateApplicationPremium($application);
 
-                // Update application
-                $application->updateMemberCounts();
-                $this->premiumService->calculateApplicationPremium($application);
+            return $member->fresh(['application', 'principal']);
+        });
 
-                return $member->fresh(['application', 'principal']);
-            });
-
-            return $this->success(
-                new ApplicationMemberResource($member),
-                'Member added',
-                201
-            );
-        } catch (ModelNotFoundException $e) {
-            return $this->error('Application not found', 404);
-        } catch (Throwable $e) {
-            $code = $e->getCode() === 422 ? 422 : 500;
-            return $this->error($e->getMessage(), $code);
-        }
+        return $this->success(new ApplicationMemberResource($member), 'Member added', 201);
     }
 
     /**
@@ -964,38 +624,25 @@ class ApplicationController extends Controller
      */
     public function updateMember(ApplicationMemberRequest $request, string $appId, string $memberId): JsonResponse
     {
-        try {
-            $member = DB::transaction(function () use ($request, $appId, $memberId) {
-                $member = ApplicationMember::where('application_id', $appId)
-                    ->findOrFail($memberId);
+        $member = DB::transaction(function () use ($request, $appId, $memberId) {
+            $member      = ApplicationMember::where('application_id', $appId)->findOrFail($memberId);
+            $application = $member->application;
 
-                $application = $member->application;
+            if (!$application->can_be_edited) {
+                throw new BusinessException('Cannot update members in current application status.');
+            }
 
-                if (!$application->can_be_edited) {
-                    throw new Exception('Cannot update members in current application status', 422);
-                }
+            $member->update($request->validated());
 
-                $member->update($request->validated());
+            if ($request->hasAny(['date_of_birth', 'member_type', 'gender'])) {
+                $this->premiumService->calculateApplicationMemberPremium($member, $application->rateCard);
+                $this->premiumService->calculateApplicationPremium($application);
+            }
 
-                // Recalculate premium if needed
-                if ($request->hasAny(['date_of_birth', 'member_type', 'gender'])) {
-                    $this->premiumService->calculateApplicationMemberPremium($member, $application->rateCard);
-                    $this->premiumService->calculateApplicationPremium($application);
-                }
+            return $member->fresh(['principal']);
+        });
 
-                return $member->fresh(['principal']);
-            });
-
-            return $this->success(
-                new ApplicationMemberResource($member),
-                'Member updated'
-            );
-        } catch (ModelNotFoundException $e) {
-            return $this->error('Member not found', 404);
-        } catch (Throwable $e) {
-            $code = $e->getCode() === 422 ? 422 : 500;
-            return $this->error($e->getMessage(), $code);
-        }
+        return $this->success(new ApplicationMemberResource($member), 'Member updated');
     }
 
     /**
@@ -1004,36 +651,24 @@ class ApplicationController extends Controller
      */
     public function removeMember(string $appId, string $memberId): JsonResponse
     {
-        try {
-            DB::transaction(function () use ($appId, $memberId) {
-                $member = ApplicationMember::where('application_id', $appId)
-                    ->findOrFail($memberId);
+        DB::transaction(function () use ($appId, $memberId) {
+            $member      = ApplicationMember::where('application_id', $appId)->findOrFail($memberId);
+            $application = $member->application;
 
-                $application = $member->application;
+            if (!$application->can_be_edited) {
+                throw new BusinessException('Cannot remove members in current application status.');
+            }
 
-                if (!$application->can_be_edited) {
-                    throw new Exception('Cannot remove members in current application status', 422);
-                }
+            if ($member->is_principal) {
+                ApplicationMember::where('principal_member_id', $member->id)->delete();
+            }
 
-                // If principal, also remove dependents
-                if ($member->is_principal) {
-                    ApplicationMember::where('principal_member_id', $member->id)->delete();
-                }
+            $member->delete();
+            $application->updateMemberCounts();
+            $this->premiumService->calculateApplicationPremium($application);
+        });
 
-                $member->delete();
-
-                // Update application
-                $application->updateMemberCounts();
-                $this->premiumService->calculateApplicationPremium($application);
-            });
-
-            return $this->success(null, 'Member removed');
-        } catch (ModelNotFoundException $e) {
-            return $this->error('Member not found', 404);
-        } catch (Throwable $e) {
-            $code = $e->getCode() === 422 ? 422 : 500;
-            return $this->error($e->getMessage(), $code);
-        }
+        return $this->success(null, 'Member removed');
     }
 
     // =========================================================================
@@ -1046,49 +681,31 @@ class ApplicationController extends Controller
      */
     public function underwriteMember(string $appId, string $memberId): JsonResponse
     {
-        try {
-            $member = DB::transaction(function () use ($appId, $memberId) {
-                $member = ApplicationMember::where('application_id', $appId)
-                    ->findOrFail($memberId);
+        $member = DB::transaction(function () use ($appId, $memberId) {
+            $member      = ApplicationMember::where('application_id', $appId)->findOrFail($memberId);
+            $application = $member->application;
 
-                $application = $member->application;
+            if (!$application->can_be_underwritten) {
+                throw new BusinessException('Application is not in underwriting status.');
+            }
 
-                if (!$application->can_be_underwritten) {
-                    throw new Exception('Application is not in underwriting status', 422);
-                }
+            $decision = request('decision');
+            if (!in_array($decision, ['approve', 'decline', 'terms'])) {
+                throw new BusinessException('Invalid decision. Must be: approve, decline, or terms.');
+            }
 
-                $decision = request('decision'); // 'approve', 'decline', 'terms'
-                if (!in_array($decision, ['approve', 'decline', 'terms'])) {
-                    throw new Exception('Invalid decision. Must be: approve, decline, or terms', 422);
-                }
-
-                $underwriterId = request('underwriter_id') ?? Auth::user()->id;
-                $loadings = request('loadings', []);
-                $exclusions = request('exclusions', []);
-                $discounts = request('discounts', []);
-                $notes = request('notes');
-
-                return $this->applicationService->applyMemberUnderwritingDecision(
-                    $member,
-                    $decision,
-                    $underwriterId,
-                    $loadings,
-                    $exclusions,
-                    $discounts,
-                    $notes
-                );
-            });
-
-            return $this->success(
-                new ApplicationMemberResource($member),
-                'Underwriting decision applied'
+            return $this->applicationService->applyMemberUnderwritingDecision(
+                $member,
+                $decision,
+                request('underwriter_id') ?? Auth::user()->id,
+                request('loadings', []),
+                request('exclusions', []),
+                request('discounts', []),
+                request('notes')
             );
-        } catch (ModelNotFoundException $e) {
-            return $this->error('Member not found', 404);
-        } catch (Throwable $e) {
-            $code = $e->getCode() === 422 ? 422 : 500;
-            return $this->error($e->getMessage(), $code);
-        }
+        });
+
+        return $this->success(new ApplicationMemberResource($member), 'Underwriting decision applied');
     }
 
     /**
@@ -1097,46 +714,35 @@ class ApplicationController extends Controller
      */
     public function addMemberLoading(string $appId, string $memberId): JsonResponse
     {
-        try {
-            $member = DB::transaction(function () use ($appId, $memberId) {
-                $member = ApplicationMember::where('application_id', $appId)
-                    ->findOrFail($memberId);
+        $member = DB::transaction(function () use ($appId, $memberId) {
+            $member = ApplicationMember::where('application_id', $appId)->findOrFail($memberId);
 
-                request()->validate([
-                    'condition_name' => 'required|string|max:255',
-                    'loading_type' => 'required|in:percentage,fixed',
-                    'value' => 'required|numeric|min:0',
-                    'icd10_code' => 'nullable|string|max:20',
-                    'duration_type' => 'nullable|string|in:permanent,temporary',
-                    'duration_months' => 'nullable|integer|min:1',
-                    'notes' => 'nullable|string',
-                ]);
+            request()->validate([
+                'condition_name' => 'required|string|max:255',
+                'loading_type'   => 'required|in:percentage,fixed',
+                'value'          => 'required|numeric|min:0',
+                'icd10_code'     => 'nullable|string|max:20',
+                'duration_type'  => 'nullable|in:permanent,temporary',
+                'duration_months'=> 'nullable|integer|min:1',
+                'notes'          => 'nullable|string',
+            ]);
 
-                $member->addLoading([
-                    'condition_name' => request('condition_name'),
-                    'loading_type' => request('loading_type'),
-                    'value' => request('value'),
-                    'icd10_code' => request('icd10_code'),
-                    'duration_type' => request('duration_type', 'permanent'),
-                    'duration_months' => request('duration_months'),
-                    'notes' => request('notes'),
-                ]);
+            $member->addLoading([
+                'condition_name' => request('condition_name'),
+                'loading_type'   => request('loading_type'),
+                'value'          => request('value'),
+                'icd10_code'     => request('icd10_code'),
+                'duration_type'  => request('duration_type', 'permanent'),
+                'duration_months'=> request('duration_months'),
+                'notes'          => request('notes'),
+            ]);
 
-                // Recalculate
-                $this->premiumService->calculateApplicationPremium($member->application);
+            $this->premiumService->calculateApplicationPremium($member->application);
 
-                return $member->fresh();
-            });
+            return $member->fresh();
+        });
 
-            return $this->success(
-                new ApplicationMemberResource($member),
-                'Loading added'
-            );
-        } catch (ModelNotFoundException $e) {
-            return $this->error('Member not found', 404);
-        } catch (Throwable $e) {
-            return $this->error($e->getMessage(), 500);
-        }
+        return $this->success(new ApplicationMemberResource($member), 'Loading added');
     }
 
     /**
@@ -1145,43 +751,33 @@ class ApplicationController extends Controller
      */
     public function addMemberExclusion(string $appId, string $memberId): JsonResponse
     {
-        try {
-            $member = DB::transaction(function () use ($appId, $memberId) {
-                $member = ApplicationMember::where('application_id', $appId)
-                    ->findOrFail($memberId);
+        $member = DB::transaction(function () use ($appId, $memberId) {
+            $member = ApplicationMember::where('application_id', $appId)->findOrFail($memberId);
 
-                request()->validate([
-                    'exclusion_name' => 'required|string|max:255',
-                    'exclusion_type' => 'nullable|string|in:condition,benefit,procedure',
-                    'benefit_id' => 'nullable|uuid|exists:med_benefits,id',
-                    'icd10_codes' => 'nullable|array',
-                    'description' => 'nullable|string',
-                    'is_permanent' => 'nullable|boolean',
-                    'notes' => 'nullable|string',
-                ]);
+            request()->validate([
+                'exclusion_name' => 'required|string|max:255',
+                'exclusion_type' => 'nullable|in:condition,benefit,procedure',
+                'benefit_id'     => 'nullable|uuid|exists:med_benefits,id',
+                'icd10_codes'    => 'nullable|array',
+                'description'    => 'nullable|string',
+                'is_permanent'   => 'nullable|boolean',
+                'notes'          => 'nullable|string',
+            ]);
 
-                $member->addExclusion([
-                    'exclusion_name' => request('exclusion_name'),
-                    'exclusion_type' => request('exclusion_type', 'condition'),
-                    'benefit_id' => request('benefit_id'),
-                    'icd10_codes' => request('icd10_codes'),
-                    'description' => request('description'),
-                    'is_permanent' => request('is_permanent', true),
-                    'notes' => request('notes'),
-                ]);
+            $member->addExclusion([
+                'exclusion_name' => request('exclusion_name'),
+                'exclusion_type' => request('exclusion_type', 'condition'),
+                'benefit_id'     => request('benefit_id'),
+                'icd10_codes'    => request('icd10_codes'),
+                'description'    => request('description'),
+                'is_permanent'   => request('is_permanent', true),
+                'notes'          => request('notes'),
+            ]);
 
-                return $member->fresh();
-            });
+            return $member->fresh();
+        });
 
-            return $this->success(
-                new ApplicationMemberResource($member),
-                'Exclusion added'
-            );
-        } catch (ModelNotFoundException $e) {
-            return $this->error('Member not found', 404);
-        } catch (Throwable $e) {
-            return $this->error($e->getMessage(), 500);
-        }
+        return $this->success(new ApplicationMemberResource($member), 'Exclusion added');
     }
 
     // =========================================================================
@@ -1194,43 +790,34 @@ class ApplicationController extends Controller
      */
     public function addAddon(string $id): JsonResponse
     {
-        try {
-            $addon = DB::transaction(function () use ($id) {
-                $application = Application::findOrFail($id);
+        $addon = DB::transaction(function () use ($id) {
+            $application = Application::findOrFail($id);
 
-                if (!$application->can_be_edited) {
-                    throw new Exception('Cannot add addons in current status', 422);
-                }
+            if (!$application->can_be_edited) {
+                throw new BusinessException('Cannot add addons in current status.');
+            }
 
-                request()->validate([
-                    'addon_id' => 'required|uuid|exists:med_addons,id',
-                    'addon_rate_id' => 'nullable|uuid|exists:med_addon_rates,id',
-                ]);
+            request()->validate([
+                'addon_id'      => 'required|uuid|exists:med_addons,id',
+                'addon_rate_id' => 'nullable|uuid|exists:med_addon_rates,id',
+            ]);
 
-                // Check if already added
-                if ($application->addons()->where('addon_id', request('addon_id'))->exists()) {
-                    throw new Exception('Addon already added to this application', 422);
-                }
+            if ($application->addons()->where('addon_id', request('addon_id'))->exists()) {
+                throw new BusinessException('Addon already added to this application.');
+            }
 
-                $addon = ApplicationAddon::create([
-                    'application_id' => $id,
-                    'addon_id' => request('addon_id'),
-                    'addon_rate_id' => request('addon_rate_id'),
-                ]);
+            $addon = ApplicationAddon::create([
+                'application_id' => $id,
+                'addon_id'       => request('addon_id'),
+                'addon_rate_id'  => request('addon_rate_id'),
+            ]);
 
-                // Recalculate premium
-                $this->premiumService->calculateApplicationPremium($application);
+            $this->premiumService->calculateApplicationPremium($application);
 
-                return $addon->fresh(['addon']);
-            });
+            return $addon->fresh(['addon']);
+        });
 
-            return $this->success($addon, 'Addon added', 201);
-        } catch (ModelNotFoundException $e) {
-            return $this->error('Application not found', 404);
-        } catch (Throwable $e) {
-            $code = $e->getCode() === 422 ? 422 : 500;
-            return $this->error($e->getMessage(), $code);
-        }
+        return $this->success($addon, 'Addon added', 201);
     }
 
     /**
@@ -1239,49 +826,379 @@ class ApplicationController extends Controller
      */
     public function removeAddon(string $id, string $addonId): JsonResponse
     {
-        try {
-            DB::transaction(function () use ($id, $addonId) {
-                $application = Application::findOrFail($id);
+        DB::transaction(function () use ($id, $addonId) {
+            $application = Application::findOrFail($id);
 
-                if (!$application->can_be_edited) {
-                    throw new Exception('Cannot remove addons in current status', 422);
-                }
+            if (!$application->can_be_edited) {
+                throw new BusinessException('Cannot remove addons in current status.');
+            }
 
-                $appAddon = $application->addons()->findOrFail($addonId);
+            $appAddon    = $application->addons()->findOrFail($addonId);
+            $isMandatory = PlanAddon::where('plan_id', $application->plan_id)
+                ->where('addon_id', $appAddon->addon_id)
+                ->where('is_active', true)
+                ->mandatory()
+                ->exists();
 
-                // Prevent removal of mandatory addons
-                $isMandatory = PlanAddon::where('plan_id', $application->plan_id)
-                    ->where('addon_id', $appAddon->addon_id)
-                    ->where('is_active', true)
-                    ->mandatory()
-                    ->exists();
+            if ($isMandatory) {
+                throw new BusinessException('Mandatory addons cannot be removed.');
+            }
 
-                if ($isMandatory) {
-                    throw new Exception('Mandatory addons cannot be removed', 422);
-                }
+            $appAddon->delete();
+            $this->premiumService->calculateApplicationPremium($application);
+        });
 
-                $appAddon->delete();
-
-                // Recalculate premium
-                $this->premiumService->calculateApplicationPremium($application);
-            });
-
-            return $this->success(null, 'Addon removed');
-        } catch (ModelNotFoundException $e) {
-            return $this->error('Application or addon not found', 404);
-        } catch (Throwable $e) {
-            $code = $e->getCode() === 422 ? 422 : 500;
-            return $this->error($e->getMessage(), $code);
-        }
+        return $this->success(null, 'Addon removed');
     }
 
     // =========================================================================
-    // MANDATORY ADDON ENFORCEMENT
+    // PROMO CODE
+    // =========================================================================
+
+    /**
+     * Apply promo code to application.
+     * POST /v1/medical/applications/{id}/promo-code
+     */
+    public function applyPromoCode(string $id): JsonResponse
+    {
+        $application = DB::transaction(function () use ($id) {
+            $application = Application::findOrFail($id);
+
+            if (!request('code')) {
+                throw new BusinessException('Promo code is required.');
+            }
+
+            return $this->applicationService->applyPromoCode($application, request('code'));
+        });
+
+        return $this->success(new ApplicationResource($application), 'Promo code applied');
+    }
+
+    // =========================================================================
+    // DOCUMENTS
+    // =========================================================================
+
+    /**
+     * List application documents.
+     * GET /v1/medical/applications/{id}/documents
+     */
+    public function documents(string $id): JsonResponse
+    {
+        $documents = ApplicationDocument::where('application_id', $id)
+            ->with('member:id,first_name,last_name')
+            ->active()
+            ->orderByDesc('created_at')
+            ->get();
+
+        return $this->success($documents, 'Documents retrieved');
+    }
+
+    /**
+     * Upload document.
+     * POST /v1/medical/applications/{id}/documents
+     */
+    public function uploadDocument(string $id): JsonResponse
+    {
+        return DB::transaction(function () use ($id) {
+            $application = Application::findOrFail($id);
+            $request     = request();
+
+            $request->validate([
+                'document_type'          => 'required|string',
+                'title'                  => 'required|string|max:255',
+                'file'                   => 'required|file|max:10240|mimes:pdf,jpg,jpeg,png,doc,docx',
+                'application_member_id'  => 'nullable|uuid|exists:med_application_members,id',
+            ]);
+
+            $file = $request->file('file');
+            $path = $file->store("applications/{$application->id}", 'local');
+
+            $doc = ApplicationDocument::create([
+                'application_id'        => $id,
+                'application_member_id' => $request->application_member_id,
+                'document_type'         => $request->document_type,
+                'title'                 => $request->title,
+                'file_path'             => $path,
+                'file_name'             => $file->getClientOriginalName(),
+                'mime_type'             => $file->getMimeType(),
+                'file_size'             => $file->getSize(),
+            ]);
+
+            return $this->success($doc, 'Document uploaded', 201);
+        });
+    }
+
+    /**
+     * Download/view application document.
+     * GET /v1/medical/applications/{id}/documents/{documentId}/download
+     */
+    public function downloadDocument(string $id, string $documentId): StreamedResponse|JsonResponse
+    {
+        $document = ApplicationDocument::where('application_id', $id)
+            ->where('id', $documentId)
+            ->active()
+            ->firstOrFail();
+
+        if (!Storage::disk('local')->exists($document->file_path)) {
+            return $this->error('File not found on disk.', 404);
+        }
+
+        $disposition = request()->query('inline') === 'true' ? 'inline' : 'attachment';
+
+        return Storage::disk('local')->download(
+            $document->file_path,
+            $document->file_name,
+            [
+                'Content-Type'        => $document->mime_type,
+                'Content-Disposition' => "{$disposition}; filename=\"{$document->file_name}\"",
+            ]
+        );
+    }
+
+    // =========================================================================
+    // RENEWAL & QUOTES
+    // =========================================================================
+
+    /**
+     * Create renewal application from policy.
+     * POST /v1/medical/policies/{policyId}/renewal-application
+     */
+    public function createRenewalApplication(string $policyId): JsonResponse
+    {
+        $application = DB::transaction(fn () => $this->applicationService->createRenewalApplication(
+            Policy::findOrFail($policyId),
+            request()->all()
+        ));
+
+        return $this->success(new ApplicationResource($application), 'Renewal application created', 201);
+    }
+
+    /**
+     * Generate quick quote (without creating application).
+     * POST /v1/medical/quote
+     */
+    public function generateQuote(HttpRequest $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'rate_card_id'               => 'required|uuid|exists:med_rate_cards,id',
+            'billing_frequency'          => 'nullable|in:monthly,quarterly,semi_annual,annual',
+            'members'                    => 'required|array|min:1',
+            'members.*.date_of_birth'    => 'required|date',
+            'members.*.member_type'      => 'required|string',
+            'members.*.gender'           => 'nullable|in:M,F',
+            'members.*.age'              => 'nullable|integer',
+            'addons'                     => 'nullable|array',
+            'addons.*.addon_id'          => 'required|uuid|exists:med_addons,id',
+        ]);
+
+        $rateCard    = RateCard::findOrFail($validated['rate_card_id']);
+        $membersData = array_map(function ($m) {
+            if (!isset($m['age']) && isset($m['date_of_birth'])) {
+                $m['age'] = Carbon::parse($m['date_of_birth'])->age;
+            }
+
+            return $m;
+        }, $validated['members']);
+
+        $addonIds = array_column($validated['addons'] ?? [], 'addon_id');
+        $quote    = $this->premiumService->calculateQuote($rateCard, $membersData, $addonIds);
+
+        $quote['billing_frequency'] = $validated['billing_frequency'] ?? 'monthly';
+        $quote['period_premium']    = $this->premiumService->periodize(
+            $quote['gross_premium'] ?? $quote['total_premium'],
+            $quote['billing_frequency']
+        );
+
+        return $this->success($quote, 'Quote generated');
+    }
+
+    // =========================================================================
+    // STATISTICS
+    // =========================================================================
+
+    /**
+     * Get application statistics.
+     * GET /v1/medical/applications/stats
+     */
+    public function stats(): JsonResponse
+    {
+        $stats = Application::query()
+            ->selectRaw('count(*) as total')
+            ->selectRaw('count(case when status = ? then 1 end) as draft', [MedicalConstants::APPLICATION_STATUS_DRAFT])
+            ->selectRaw('count(case when status = ? then 1 end) as quoted', [MedicalConstants::APPLICATION_STATUS_QUOTED])
+            ->selectRaw('count(case when status = ? then 1 end) as submitted', [MedicalConstants::APPLICATION_STATUS_SUBMITTED])
+            ->selectRaw('count(case when status = ? then 1 end) as underwriting', [MedicalConstants::APPLICATION_STATUS_UNDERWRITING])
+            ->selectRaw('count(case when status = ? then 1 end) as approved', [MedicalConstants::APPLICATION_STATUS_APPROVED])
+            ->selectRaw('count(case when status = ? then 1 end) as accepted', [MedicalConstants::APPLICATION_STATUS_ACCEPTED])
+            ->first()
+            ->toArray();
+
+        $stats['total_quoted_premium'] = Application::validQuotes()->sum('gross_premium');
+
+        return $this->success($stats, 'Statistics retrieved');
+    }
+
+    // =========================================================================
+    // CORPORATE CENSUS IMPORT
+    // =========================================================================
+
+    /**
+     * Parse and validate a census CSV/Excel file.
+     * POST /v1/medical/applications/import-census
+     */
+    public function importCensus(\Modules\Medical\Http\Requests\CensusBulkImportRequest $request): JsonResponse
+    {
+        /** @var \Modules\Medical\Services\CensusImportService $censusService */
+        $censusService = app(\Modules\Medical\Services\CensusImportService::class);
+
+        $result = $censusService->parseCensusFile($request->file('file'));
+
+        if ($request->boolean('validate_only')) {
+            return $this->success(
+                new \Modules\Medical\Http\Resources\CensusImportResource($result),
+                'Census file validated'
+            );
+        }
+
+        if (!$result['success']) {
+            return $this->error('Census file validation failed.', 422, [
+                'validation_errors' => $result['errors'],
+            ]);
+        }
+
+        $cacheKey = 'census_import_' . $request->user()->id . '_' . time();
+        cache()->put($cacheKey, [
+            'group_id' => $request->group_id,
+            'data'     => $result['data'],
+            'summary'  => $result['summary'],
+        ], now()->addHours(2));
+
+        return $this->success([
+            'import_key' => $cacheKey,
+            'summary'    => $result['summary'],
+            'preview'    => array_slice($result['data'], 0, 5),
+            'errors'     => $result['errors'],
+        ], 'Census parsed. Please review any errors before continuing.');
+    }
+
+    /**
+     * Create application from imported census.
+     * POST /v1/medical/applications/create-from-census
+     */
+    public function createFromCensus(HttpRequest $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'import_key'        => 'required|string',
+            'scheme_id'         => 'required|exists:med_schemes,id',
+            'plan_id'           => 'required|exists:med_plans,id',
+            'rate_card_id'      => 'required|exists:med_rate_cards,id',
+            'inception_date'    => 'required|date|after_or_equal:today',
+            'billing_frequency' => 'required|in:' . implode(',', array_keys(MedicalConstants::BILLING_FREQUENCIES)),
+        ]);
+
+        $censusData = cache()->get($validated['import_key']);
+
+        if (!$censusData) {
+            throw new BusinessException('Census data not found or expired. Please re-upload the file.', 404);
+        }
+
+        $application = DB::transaction(function () use ($validated, $censusData) {
+            /** @var \Modules\Medical\Services\CensusImportService $censusService */
+            $censusService = app(\Modules\Medical\Services\CensusImportService::class);
+            $membersData   = $censusService->transformToMemberData($censusData['data'], $censusData['group_id']);
+
+            $application = $this->applicationService->createApplication([
+                'application_type'   => MedicalConstants::APPLICATION_TYPE_NEW,
+                'policy_type'        => MedicalConstants::POLICY_TYPE_CORPORATE,
+                'scheme_id'          => $validated['scheme_id'],
+                'plan_id'            => $validated['plan_id'],
+                'rate_card_id'       => $validated['rate_card_id'],
+                'group_id'           => $censusData['group_id'],
+                'proposed_start_date'=> $validated['inception_date'],
+                'billing_frequency'  => $validated['billing_frequency'],
+                'status'             => MedicalConstants::APPLICATION_STATUS_DRAFT,
+            ]);
+
+            foreach ($membersData as $memberData) {
+                $this->applicationService->addMember($application->id, $memberData);
+            }
+
+            $this->ensureMandatoryAddons($application);
+            $this->premiumService->calculateApplicationPremium($application);
+            $application->updateMemberCounts();
+
+            cache()->forget($validated['import_key']);
+
+            return $application;
+        });
+
+        $application->load(['scheme', 'plan', 'group', 'activeMembers' => fn ($q) => $q->orderBy('member_type')]);
+
+        return $this->success(
+            new ApplicationResource($application),
+            'Application created from census with ' . count($application->activeMembers) . ' members',
+            201
+        );
+    }
+
+    /**
+     * Create multiple applications from imported census based on plan mapping.
+     * POST /v1/medical/applications/create-multi-plan-from-census
+     */
+    public function createMultiPlanFromCensus(HttpRequest $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'import_key'        => 'required|string',
+            'group_id'          => 'required|exists:med_corporate_groups,id',
+            'scheme_id'         => 'required|exists:med_schemes,id',
+            'rate_card_id'      => 'required|exists:med_rate_cards,id',
+            'inception_date'    => 'required|date|after_or_equal:today',
+            'billing_frequency' => 'required|in:' . implode(',', array_keys(MedicalConstants::BILLING_FREQUENCIES)),
+            'plan_mapping'      => 'required|array|min:1',
+            'plan_mapping.*'    => 'required|exists:med_plans,id',
+            'mapping_type'      => 'required|in:salary_band,department,job_title',
+        ]);
+
+        $censusData = cache()->get($validated['import_key']);
+
+        if (!$censusData) {
+            throw new BusinessException('Census data not found or expired. Please re-upload the file.', 404);
+        }
+
+        /** @var \Modules\Medical\Services\PlanAssignmentService $planAssignmentService */
+        $planAssignmentService = app(\Modules\Medical\Services\PlanAssignmentService::class);
+        /** @var \Modules\Medical\Services\CensusImportService $censusService */
+        $censusService = app(\Modules\Medical\Services\CensusImportService::class);
+
+        $membersData = $censusService->transformToMemberData($censusData['data'], $censusData['group_id']);
+
+        $result = $planAssignmentService->assignMembersToPlans(
+            $membersData,
+            $validated['plan_mapping'],
+            $validated['group_id'],
+            [
+                'scheme_id'           => $validated['scheme_id'],
+                'rate_card_id'        => $validated['rate_card_id'],
+                'proposed_start_date' => $validated['inception_date'],
+                'billing_frequency'   => $validated['billing_frequency'],
+            ]
+        );
+
+        cache()->forget($validated['import_key']);
+
+        return $this->success(
+            $result,
+            "{$result['plans_used']} applications created from census with {$result['total_members']} members",
+            201
+        );
+    }
+
+    // =========================================================================
+    // PRIVATE HELPERS
     // =========================================================================
 
     /**
      * Ensure all mandatory plan addons are present on the application.
-     * Creates any missing mandatory addon records.
      */
     private function ensureMandatoryAddons(Application $application): void
     {
@@ -1296,456 +1213,12 @@ class ApplicationController extends Controller
         }
 
         $existingAddonIds = $application->addons()->pluck('addon_id')->toArray();
-        $missingAddonIds = array_diff($mandatoryAddonIds, $existingAddonIds);
 
-        foreach ($missingAddonIds as $addonId) {
+        foreach (array_diff($mandatoryAddonIds, $existingAddonIds) as $addonId) {
             ApplicationAddon::create([
                 'application_id' => $application->id,
-                'addon_id' => $addonId,
+                'addon_id'       => $addonId,
             ]);
-        }
-    }
-
-    // =========================================================================
-    // PROMO CODE
-    // =========================================================================
-
-    /**
-     * Apply promo code to application.
-     * POST /v1/medical/applications/{id}/promo-code
-     */
-    public function applyPromoCode(string $id): JsonResponse
-    {
-        try {
-            $application = DB::transaction(function () use ($id) {
-                $application = Application::findOrFail($id);
-
-                $code = request('code');
-                if (!$code) {
-                    throw new Exception('Promo code is required', 422);
-                }
-
-                return $this->applicationService->applyPromoCode($application, $code);
-            });
-
-            return $this->success(
-                new ApplicationResource($application),
-                'Promo code applied'
-            );
-        } catch (ModelNotFoundException $e) {
-            return $this->error('Application not found', 404);
-        } catch (Throwable $e) {
-            $code = $e->getCode() === 422 ? 422 : 500;
-            return $this->error($e->getMessage(), $code);
-        }
-    }
-
-    // =========================================================================
-    // DOCUMENTS
-    // =========================================================================
-
-    /**
-     * List application documents.
-     * GET /v1/medical/applications/{id}/documents
-     */
-    public function documents(string $id): JsonResponse
-    {
-        try {
-            $documents = ApplicationDocument::where('application_id', $id)
-                ->with('member:id,first_name,last_name')
-                ->active()
-                ->orderBy('created_at', 'desc')
-                ->get();
-
-            return $this->success($documents, 'Documents retrieved');
-        } catch (Throwable $e) {
-            return $this->error('Failed to retrieve documents', 500);
-        }
-    }
-
-    /**
-     * Upload document.
-     * POST /v1/medical/applications/{id}/documents
-     */
-    public function uploadDocument(string $id): JsonResponse
-    {
-        try {
-            return DB::transaction(function () use ($id) {
-                $application = Application::findOrFail($id);
-                $request = request(); // Get current request
-
-                $request->validate([
-                    'document_type' => 'required|string',
-                    'title' => 'required|string|max:255',
-                    'file' => 'required|file|max:10240|mimes:pdf,jpg,jpeg,png,doc,docx', // Added mimes security
-                    'application_member_id' => 'nullable|uuid|exists:med_application_members,id',
-                ]);
-
-                $file = $request->file('file');
-                // Store in private storage (storage/app/private/applications/{id})
-                $path = $file->store("applications/{$application->id}", 'local'); 
-
-                $doc = ApplicationDocument::create([
-                    'application_id' => $id,
-                    'application_member_id' => $request->application_member_id,
-                    'document_type' => $request->document_type,
-                    'title' => $request->title,
-                    'file_path' => $path,
-                    'file_name' => $file->getClientOriginalName(),
-                    'mime_type' => $file->getMimeType(),
-                    'file_size' => $file->getSize(),
-                ]);
-
-                return $this->success($doc, 'Document uploaded', 201);
-            });
-        } catch (Throwable $e) {
-            return $this->error('Upload failed: ' . $e->getMessage(), 500);
-        }
-    }
-
-    /**
-     * Download/view application document.
-     * GET /v1/medical/applications/{id}/documents/{documentId}/download
-     */
-    public function downloadDocument(string $id, string $documentId): StreamedResponse|JsonResponse
-    {
-        try {
-            $document = ApplicationDocument::where('application_id', $id)
-                ->where('id', $documentId)
-                ->active()
-                ->firstOrFail();
-
-            if (!Storage::disk('local')->exists($document->file_path)) {
-                return $this->error('File not found', 404);
-            }
-
-            $disposition = request()->query('inline') === 'true' ? 'inline' : 'attachment';
-
-            return Storage::disk('local')->download(
-                $document->file_path,
-                $document->file_name,
-                [
-                    'Content-Type' => $document->mime_type,
-                    'Content-Disposition' => "{$disposition}; filename=\"{$document->file_name}\"",
-                ]
-            );
-        } catch (ModelNotFoundException $e) {
-            return $this->error('Document not found', 404);
-        } catch (Throwable $e) {
-            return $this->error('Failed to download document: ' . $e->getMessage(), 500);
-        }
-    }
-
-    // =========================================================================
-    // RENEWAL & QUOTES
-    // =========================================================================
-
-    /**
-     * Create renewal application from policy.
-     * POST /v1/medical/policies/{policyId}/renewal-application
-     */
-    public function createRenewalApplication(string $policyId): JsonResponse
-    {
-        try {
-            $application = DB::transaction(function () use ($policyId) {
-                $policy = Policy::findOrFail($policyId);
-                return $this->applicationService->createRenewalApplication($policy, request()->all());
-            });
-
-            return $this->success(
-                new ApplicationResource($application),
-                'Renewal application created',
-                201
-            );
-        } catch (ModelNotFoundException $e) {
-            return $this->error('Policy not found', 404);
-        } catch (Throwable $e) {
-            return $this->error($e->getMessage(), 500);
-        }
-    }
-
-    /**
-     * Generate quick quote (without creating application).
-     * POST /v1/medical/quote
-     */
-    public function generateQuote(HttpRequest $request): JsonResponse
-    {
-        try {
-            $validated = $request->validate([
-                'rate_card_id' => 'required|uuid|exists:med_rate_cards,id',
-                'billing_frequency' => 'nullable|in:monthly,quarterly,semi_annual,annual',
-                
-                'members' => 'required|array|min:1',
-                'members.*.date_of_birth' => 'required|date', // Age calculated from this
-                'members.*.member_type' => 'required|string',
-                'members.*.gender' => 'nullable|in:M,F',
-                'members.*.age' => 'nullable|integer', // Optional override
-                
-                'addons' => 'nullable|array',
-                'addons.*.addon_id' => 'required|uuid|exists:med_addons,id',
-            ]);
-
-            $rateCard = RateCard::findOrFail($validated['rate_card_id']);
-            
-            // Map request data to what PremiumService expects
-            $membersData = array_map(function($m) {
-                if (!isset($m['age']) && isset($m['date_of_birth'])) {
-                    $m['age'] = \Carbon\Carbon::parse($m['date_of_birth'])->age;
-                }
-                return $m;
-            }, $validated['members']);
-
-            $addonIds = array_column($validated['addons'] ?? [], 'addon_id');
-
-            $quote = $this->premiumService->calculateQuote($rateCard, $membersData, $addonIds);
-
-            // Add annualization info
-            $quote['billing_frequency'] = $validated['billing_frequency'] ?? 'monthly';
-            $quote['period_premium'] = $this->premiumService->periodize($quote['gross_premium'] ?? $quote['total_premium'], $quote['billing_frequency']);
-
-            return $this->success($quote, 'Quote generated');
-        } catch (Throwable $e) {
-            return $this->error('Failed to generate quote: ' . $e->getMessage(), 500);
-        }
-    }
-
-    // =========================================================================
-    // STATISTICS
-    // =========================================================================
-
-    /**
-     * Get application statistics.
-     * GET /v1/medical/applications/stats
-     */
-    public function stats(): JsonResponse
-    {
-        try {
-            // optimized to single query
-            $stats = Application::query()
-                ->selectRaw("count(*) as total")
-                ->selectRaw("count(case when status = ? then 1 end) as draft", [MedicalConstants::APPLICATION_STATUS_DRAFT])
-                ->selectRaw("count(case when status = ? then 1 end) as quoted", [MedicalConstants::APPLICATION_STATUS_QUOTED])
-                ->selectRaw("count(case when status = ? then 1 end) as submitted", [MedicalConstants::APPLICATION_STATUS_SUBMITTED])
-                ->selectRaw("count(case when status = ? then 1 end) as underwriting", [MedicalConstants::APPLICATION_STATUS_UNDERWRITING])
-                ->selectRaw("count(case when status = ? then 1 end) as approved", [MedicalConstants::APPLICATION_STATUS_APPROVED])
-                ->selectRaw("count(case when status = ? then 1 end) as accepted", [MedicalConstants::APPLICATION_STATUS_ACCEPTED])
-                // ->selectRaw("count(case when is_converted = 1 then 1 end) as converted")
-                ->first()
-                ->toArray();
-
-            // Premium totals might need a separate query if table is large
-            $premiumStats = Application::validQuotes()->sum('gross_premium');
-            $stats['total_quoted_premium'] = $premiumStats;
-
-            return $this->success($stats, 'Statistics retrieved');
-        } catch (Throwable $e) {
-            return $this->error('Failed to retrieve statistics', 500);
-        }
-    }
-
-    // =========================================================================
-    // CORPORATE CENSUS IMPORT
-    // =========================================================================
-
-    /**
-     * Import census file (CSV/Excel) for corporate groups.
-     * POST /v1/medical/applications/import-census
-     *
-     * This validates and previews the census data without creating members.
-     * Use the separate endpoint to create application with imported members.
-     */
-    public function importCensus(\Modules\Medical\Http\Requests\CensusBulkImportRequest $request): JsonResponse
-    {
-        try {
-            $censusService = app(\Modules\Medical\Services\CensusImportService::class);
-
-            // Parse and validate the file
-            $result = $censusService->parseCensusFile($request->file('file'));
-
-            // If validate_only mode, return preview
-            if ($request->boolean('validate_only')) {
-                return $this->success(
-                    new \Modules\Medical\Http\Resources\CensusImportResource($result),
-                    'Census file validated'
-                );
-            }
-
-            // If validation failed, return errors
-            if (!$result['success']) {
-                return $this->error(
-                    'Census file validation failed',
-                    422,
-                    ['validation_errors' => $result['errors']]
-                );
-            }
-
-            // Store parsed data in session or cache for later use
-          // Store parsed data in session or cache for later use
-            $cacheKey = 'census_import_' . $request->user()->id . '_' . time();
-            cache()->put($cacheKey, [
-                'group_id' => $request->group_id,
-                'data' => $result['data'],
-                'summary' => $result['summary'],
-            ], now()->addHours(2));
-
-            return $this->success([
-                'import_key' => $cacheKey,
-                'summary' => $result['summary'],
-                'preview' => array_slice($result['data'], 0, 5),
-                'errors' => $result['errors'], // Add this line to pass errors to the frontend
-            ], 'Census parsed. Please review the errors before continuing.');
-        } catch (Throwable $e) {
-            return $this->error('Failed to import census: ' . $e->getMessage(), 500);
-        }
-    }
-
-    /**
-     * Create application from imported census.
-     * POST /v1/medical/applications/create-from-census
-     *
-     * Uses the cached census data from importCensus to create an application with bulk members.
-     */
-    public function createFromCensus(HttpRequest $request): JsonResponse
-    {
-        try {
-            $validated = $request->validate([
-                'import_key' => 'required|string',
-                'scheme_id' => 'required|exists:med_schemes,id',
-                'plan_id' => 'required|exists:med_plans,id',
-                'rate_card_id' => 'required|exists:med_rate_cards,id',
-                'inception_date' => 'required|date|after_or_equal:today',
-                'billing_frequency' => 'required|in:' . implode(',', array_keys(MedicalConstants::BILLING_FREQUENCIES)),
-            ]);
-
-            // Retrieve cached census data
-            $censusData = cache()->get($validated['import_key']);
-
-            if (!$censusData) {
-                return $this->error('Census data not found or expired. Please re-upload the file.', 404);
-            }
-
-            $application = DB::transaction(function () use ($validated, $censusData) {
-                $censusService = app(\Modules\Medical\Services\CensusImportService::class);
-
-                // Transform census data to member format
-                $membersData = $censusService->transformToMemberData(
-                    $censusData['data'],
-                    $censusData['group_id']
-                );
-
-                // Create application
-                $applicationData = [
-                    'application_type' => MedicalConstants::APPLICATION_TYPE_NEW,
-                    'policy_type' => MedicalConstants::POLICY_TYPE_CORPORATE,
-                    'scheme_id' => $validated['scheme_id'],
-                    'plan_id' => $validated['plan_id'],
-                    'rate_card_id' => $validated['rate_card_id'],
-                    'group_id' => $censusData['group_id'],
-                    'proposed_start_date' => $validated['inception_date'],
-                    'billing_frequency' => $validated['billing_frequency'],
-                    'status' => MedicalConstants::APPLICATION_STATUS_DRAFT,
-                ];
-
-                $application = $this->applicationService->createApplication($applicationData);
-
-                // Bulk create members
-                foreach ($membersData as $memberData) {
-                    $this->applicationService->addMember($application->id, $memberData);
-                }
-
-                // Ensure mandatory addons and calculate premium after all members are added
-                $this->ensureMandatoryAddons($application);
-                $this->premiumService->calculateApplicationPremium($application);
-                $application->updateMemberCounts();
-
-                // Clear cache
-                cache()->forget($validated['import_key']);
-
-                return $application;
-            });
-
-            // Load with relationships
-            $application->load([
-                'scheme',
-                'plan',
-                'group',
-                'activeMembers' => fn($q) => $q->orderBy('member_type'),
-            ]);
-
-            return $this->success(
-                new ApplicationResource($application),
-                'Application created from census with ' . count($application->activeMembers) . ' members',
-                201
-            );
-
-        } catch (Throwable $e) {
-            return $this->error('Failed to create application from census: ' . $e->getMessage(), 500);
-        }
-    }
-
-    /**
-     * Create multiple applications from imported census based on plan mapping.
-     * POST /v1/medical/applications/create-multi-plan-from-census
-     *
-     * This supports multi-plan groups where different employees get different plans
-     * based on salary_band, department, or job_title.
-     */
-    public function createMultiPlanFromCensus(HttpRequest $request): JsonResponse
-    {
-        try {
-            $validated = $request->validate([
-                'import_key' => 'required|string',
-                'group_id' => 'required|exists:med_corporate_groups,id',
-                'scheme_id' => 'required|exists:med_schemes,id',
-                'rate_card_id' => 'required|exists:med_rate_cards,id',
-                'inception_date' => 'required|date|after_or_equal:today',
-                'billing_frequency' => 'required|in:' . implode(',', array_keys(MedicalConstants::BILLING_FREQUENCIES)),
-                'plan_mapping' => 'required|array|min:1',
-                'plan_mapping.*' => 'required|exists:med_plans,id',
-                'mapping_type' => 'required|in:salary_band,department,job_title',
-            ]);
-
-            // Retrieve cached census data
-            $censusData = cache()->get($validated['import_key']);
-
-            if (!$censusData) {
-                return $this->error('Census data not found or expired. Please re-upload the file.', 404);
-            }
-
-            // Use PlanAssignmentService for multi-plan creation
-            $planAssignmentService = app(\Modules\Medical\Services\PlanAssignmentService::class);
-            $censusService = app(\Modules\Medical\Services\CensusImportService::class);
-
-            // Transform census data to member format
-            $membersData = $censusService->transformToMemberData(
-                $censusData['data'],
-                $censusData['group_id']
-            );
-
-            // Create multiple applications based on plan mapping
-            $result = $planAssignmentService->assignMembersToPlans(
-                $membersData,
-                $validated['plan_mapping'],
-                $validated['group_id'],
-                [
-                    'scheme_id' => $validated['scheme_id'],
-                    'rate_card_id' => $validated['rate_card_id'],
-                    'proposed_start_date' => $validated['inception_date'],
-                    'billing_frequency' => $validated['billing_frequency'],
-                ]
-            );
-
-            // Clear cache
-            cache()->forget($validated['import_key']);
-
-            return $this->success(
-                $result,
-                "{$result['plans_used']} applications created from census with {$result['total_members']} members",
-                201
-            );
-
-        } catch (Throwable $e) {
-            return $this->error('Failed to create applications from census: ' . $e->getMessage(), 500);
         }
     }
 }

@@ -209,16 +209,10 @@ export class AuthService implements OnDestroy {
   isAllowed(permission: string): boolean {
     if (this.isSystemAdmin()) return true;
 
-    // Extract guard from permission string (e.g., "medical.schemes.view" -> "medical")
-    const guardName = permission.split('.')[0] as keyof PermissionsByGuard;
-
-    // Check if guard is valid
-    if (!guardName || !['web', 'medical', 'life', 'motor', 'travel'].includes(guardName)) {
-      console.warn(
-        `Invalid permission format: ${permission}. Expected format: {guard}.{resource}.{action}`
-      );
-      return false;
-    }
+    const firstSegment = permission.split('.')[0];
+    const guardName = ['medical', 'life', 'motor', 'travel'].includes(firstSegment)
+      ? (firstSegment as keyof PermissionsByGuard)
+      : 'web';
 
     const perms = this.permissionsSignal()[guardName] || [];
     return perms.includes(permission);

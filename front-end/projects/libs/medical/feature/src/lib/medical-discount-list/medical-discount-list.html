@@ -4,6 +4,8 @@
       <lib-page-header
         title="Discounts & Loadings"
         subtitle="Manage pricing adjustments, rules, and promotional codes."
+        [showBreadcrumb]="true"
+        [breadcrumbItems]="[{ label: 'Dashboard', link: '/' }, { label: 'Plans', link: '/plans' }, { label: 'Discount Rules' }]"
       >
         <div actions class="flex gap-2">
           <button

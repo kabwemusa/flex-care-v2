@@ -17,18 +17,19 @@ use Modules\Medical\Models\MemberExclusion;
 use Modules\Medical\Models\MemberDocument;
 use Modules\Medical\Models\PromoCode;
 use Modules\Medical\Constants\MedicalConstants;
+use App\Exceptions\BusinessException;
 use App\Services\ApprovalService;
 use App\Models\ApprovalRequest;
 use App\Models\User;
 use Carbon\Carbon;
-use Exception;
 use Illuminate\Support\Facades\Log;
 
 class ApplicationService
 {
     public function __construct(
         protected PremiumService $premiumService,
-        protected BillingService $billingService
+        protected BillingService $billingService,
+        protected ApprovalService $approvalService,
     ) {}
 
     // =========================================================================
@@ -296,13 +297,17 @@ class ApplicationService
             'underwriting_status' => MedicalConstants::UW_STATUS_PENDING,
         ]);
 
-        $applicationTogo = new Application();
-        $applicationTogo->activeMembers = $member;
-    
-        $this->premiumService->calculateApplicationPremium($applicationTogo);
+        // Reload the application with all relations required for premium calculation,
+        // then recalculate the full application premium (includes the new member).
+        $application->load([
+            'rateCard.entries',
+            'rateCard.tiers',
+            'activeMembers',
+            'activeAddons.addon',
+            'plan',
+        ]);
 
-        // Calculate individual premium
-        // $this->premiumService->calculateApplicationMemberPremium($member, $application->rateCard);
+        $this->premiumService->calculateApplicationPremium($application);
 
         return $member->fresh();
     }
@@ -314,7 +319,7 @@ class ApplicationService
     public function markAsQuoted(Application $application): Application
     {
         if ($application->activeMembers()->count() === 0) {
-            throw new Exception('Application must have at least one member');
+            throw new BusinessException('Application must have at least one member');
         }
 
         $this->premiumService->calculateApplicationPremium($application);
@@ -331,7 +336,7 @@ class ApplicationService
     public function submitForUnderwriting(Application $application, User $submittedBy): Application
     {
         if (!$application->can_be_submitted) {
-            throw new Exception('Application cannot be submitted. Check status.');
+            throw new BusinessException('Application cannot be submitted. Check status.');
         }
 
         $application->update([
@@ -352,7 +357,7 @@ class ApplicationService
                     'error' => $e->getMessage()
                 ]);
                 // Re-throw to notify user of the issue
-                throw new Exception('Failed to initiate approval workflow: ' . $e->getMessage());
+                throw new BusinessException('Failed to initiate approval workflow: ' . $e->getMessage());
             }
         } else {
             Log::info('No approval workflow found for application entity type: ' . $application->getApprovalEntityType());
@@ -367,7 +372,7 @@ class ApplicationService
             MedicalConstants::APPLICATION_STATUS_SUBMITTED,
             MedicalConstants::APPLICATION_STATUS_REFERRED,
         ])) {
-            throw new Exception('Application is not ready for underwriting');
+            throw new BusinessException('Application is not ready for underwriting');
         }
 
         $application->update([
@@ -417,7 +422,7 @@ class ApplicationService
                 break;
 
             default:
-                throw new Exception("Invalid decision: {$decision}");
+                throw new BusinessException("Invalid decision: {$decision}");
         }
 
         $member->update($updateData);
@@ -427,7 +432,7 @@ class ApplicationService
         $application = $member->application;
 
         if (!$application->rateCard) {
-            throw new Exception("Cannot recalculate premium: Application has no active Rate Card.");
+            throw new BusinessException("Cannot recalculate premium: Application has no active Rate Card.");
         }
 
         // Calculate and update discount amount on the application
@@ -524,7 +529,7 @@ class ApplicationService
     public function acceptQuote(Application $application, ?string $acceptanceReference = null): Application
     {
         if (!$application->can_be_accepted) {
-            throw new Exception('Application cannot be accepted. Check status and validity.');
+            throw new BusinessException('Application cannot be accepted. Check status and validity.');
         }
 
         $application->update([
@@ -545,15 +550,15 @@ class ApplicationService
      */
     public function approveApplicationStep(Application $application, User $approver, ?string $comments = null): array
     {
-        $approvalService = app(ApprovalService::class);
+        $approvalService = $this->approvalService;
         $request = $application->getActiveApprovalRequest();
 
         if (!$request) {
-            throw new Exception('No active approval request found for this application');
+            throw new BusinessException('No active approval request found for this application');
         }
 
         if (!$request->userCanApprove($approver)) {
-            throw new Exception('You are not authorized to approve at this step');
+            throw new BusinessException('You are not authorized to approve at this step');
         }
 
         $updatedRequest = $approvalService->approve($request, $approver, $comments);
@@ -570,15 +575,15 @@ class ApplicationService
      */
     public function rejectApplicationStep(Application $application, User $rejector, string $reason): array
     {
-        $approvalService = app(ApprovalService::class);
+        $approvalService = $this->approvalService;
         $request = $application->getActiveApprovalRequest();
 
         if (!$request) {
-            throw new Exception('No active approval request found for this application');
+            throw new BusinessException('No active approval request found for this application');
         }
 
         if (!$request->userCanApprove($rejector)) {
-            throw new Exception('You are not authorized to reject at this step');
+            throw new BusinessException('You are not authorized to reject at this step');
         }
 
         $updatedRequest = $approvalService->reject($request, $rejector, $reason);
@@ -594,15 +599,15 @@ class ApplicationService
      */
     public function returnApplicationStep(Application $application, User $returner, string $reason): array
     {
-        $approvalService = app(ApprovalService::class);
+        $approvalService = $this->approvalService;
         $request = $application->getActiveApprovalRequest();
 
         if (!$request) {
-            throw new Exception('No active approval request found for this application');
+            throw new BusinessException('No active approval request found for this application');
         }
 
         if (!$request->userCanApprove($returner)) {
-            throw new Exception('You are not authorized to return at this step');
+            throw new BusinessException('You are not authorized to return at this step');
         }
 
         $updatedRequest = $approvalService->returnForAmendment($request, $returner, $reason);
@@ -637,7 +642,7 @@ class ApplicationService
     public function convertToPolicy(Application $application, string $issuedBy): Policy
     {
         if (!$application->can_be_converted) {
-            throw new Exception('Application cannot be converted.');
+            throw new BusinessException('Application cannot be converted.');
         }
 
         return DB::transaction(function () use ($application, $issuedBy) {
@@ -866,11 +871,11 @@ class ApplicationService
         $promoCode = PromoCode::byCode($code)->usable()->first();
 
         if (!$promoCode) {
-            throw new Exception('Invalid or expired promo code');
+            throw new BusinessException('Invalid or expired promo code');
         }
 
         if (!$promoCode->isEligibleForScheme($application->scheme_id) || !$promoCode->isEligibleForPlan($application->plan_id)) {
-            throw new Exception('Promo code not valid for this plan/scheme');
+            throw new BusinessException('Promo code not valid for this plan/scheme');
         }
 
         // Apply
@@ -908,11 +913,11 @@ class ApplicationService
     public function createRenewalApplication(Policy $policy, array $overrides = []): Application
     {
         if (!$policy->is_active && $policy->status !== MedicalConstants::POLICY_STATUS_EXPIRED) {
-            throw new Exception('Only active or expired policies can be renewed');
+            throw new BusinessException('Only active or expired policies can be renewed');
         }
 
         if ($policy->renewed_to_policy_id) {
-            throw new Exception('Policy has already been renewed');
+            throw new BusinessException('Policy has already been renewed');
         }
 
         return DB::transaction(function () use ($policy, $overrides) {

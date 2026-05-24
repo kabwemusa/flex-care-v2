@@ -20,7 +20,7 @@
           class="relative w-20 h-20 rounded-full bg-white/10 backdrop-blur flex items-center justify-center ring-4 ring-white/20"
         >
           <span class="text-3xl font-semibold text-white/90">
-            {{ p.first_name?.charAt(0) }}{{ p.last_name?.charAt(0) }}
+            {{ p.first_name.charAt(0) }}{{ p.last_name.charAt(0) }}
           </span>
         </div>
       </div>
@@ -44,25 +44,6 @@
       }
     </div>
   </div>
-
-  <!-- Messages -->
-  @if (success()) {
-  <div
-    class="bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-3 flex items-center gap-3 fc-fade-in"
-  >
-    <span class="material-symbols-rounded text-emerald-600" style="font-size: 20px"
-      >check_circle</span
-    >
-    <p class="text-sm text-emerald-700 font-medium">{{ success() }}</p>
-  </div>
-  } @if (error() && !loading()) {
-  <div
-    class="bg-red-50 border border-red-200 rounded-xl px-4 py-3 flex items-center gap-3 fc-fade-in"
-  >
-    <span class="material-symbols-rounded text-red-600" style="font-size: 20px">error</span>
-    <p class="text-sm text-red-700 font-medium">{{ error() }}</p>
-  </div>
-  }
 
   <!-- Loading State -->
   @if (loading()) {

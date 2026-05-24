@@ -128,6 +128,9 @@ class RoleSeeder extends Seeder
             'medical.plans.create',
             'medical.plans.update',
             'medical.plans.configure',
+            'medical.benefits.view',
+            'medical.benefits.create',
+            'medical.benefits.update',
             'medical.rate_cards.view',
             'medical.rate_cards.create',
             'medical.rate_cards.update',
@@ -136,6 +139,12 @@ class RoleSeeder extends Seeder
             'medical.addons.view',
             'medical.addons.create',
             'medical.addons.update',
+            'medical.discounts.view',
+            'medical.discounts.create',
+            'medical.discounts.update',
+            'medical.loading_rules.view',
+            'medical.loading_rules.create',
+            'medical.loading_rules.update',
         ]);
 
         // =========================================================================

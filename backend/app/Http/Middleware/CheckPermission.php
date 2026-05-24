@@ -32,8 +32,11 @@ class CheckPermission
             return $next($request);
         }
 
-        // Extract guard from permission (e.g., "medical.schemes.view" -> "medical")
-        $guardName = explode('.', $permission)[0];
+        // Extract guard from module-prefixed permissions. Global permissions use the web guard.
+        $firstSegment = explode('.', $permission)[0];
+        $guardName = in_array($firstSegment, ['medical', 'life', 'motor', 'travel'])
+            ? $firstSegment
+            : 'web';
 
         // Check if guard is valid
         if (!in_array($guardName, ['web', 'medical', 'life', 'motor', 'travel'])) {

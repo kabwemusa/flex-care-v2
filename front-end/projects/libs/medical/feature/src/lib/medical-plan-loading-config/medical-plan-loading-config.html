@@ -1,0 +1,240 @@
+<div class="space-y-5">
+
+  <!-- Header -->
+  <div class="flex items-start justify-between gap-4">
+    <div>
+      <h3 class="text-lg font-semibold text-slate-900">Medical Loading Rules</h3>
+      <p class="text-sm text-slate-500">
+        Underwriting conditions that trigger premium adjustments — applied system-wide across all plans
+      </p>
+    </div>
+    <button mat-flat-button color="primary" (click)="openDialog()" class="shrink-0">
+      <mat-icon fontSet="material-symbols-rounded">add</mat-icon>
+      Add Rule
+    </button>
+  </div>
+
+  <!-- KPI Strip -->
+  <div class="grid grid-cols-3 gap-3">
+    <div class="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-center">
+      <p class="text-xs text-slate-500 mb-0.5">Total Rules</p>
+      <p class="text-lg font-bold text-slate-900">{{ totalRules() }}</p>
+    </div>
+    <div class="rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-center">
+      <p class="text-xs text-green-600 mb-0.5">Active</p>
+      <p class="text-lg font-bold text-green-700">{{ activeRules() }}</p>
+    </div>
+    <div class="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-center">
+      <p class="text-xs text-slate-500 mb-0.5">Inactive</p>
+      <p class="text-lg font-bold text-slate-700">{{ totalRules() - activeRules() }}</p>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div class="flex flex-col sm:flex-row gap-3">
+    <!-- Search -->
+    <div class="relative flex-1">
+      <mat-icon
+        fontSet="material-symbols-rounded"
+        class="absolute left-3 top-1/2 -translate-y-1/2 !text-slate-400 !text-[18px] pointer-events-none"
+      >search</mat-icon>
+      <input
+        type="text"
+        [ngModel]="searchTerm()"
+        (ngModelChange)="onSearch($event)"
+        placeholder="Search condition, code, or ICD-10…"
+        class="w-full rounded-lg border border-slate-200 bg-white py-2 pl-9 pr-4 text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-100"
+      />
+    </div>
+
+    <!-- Category Filter -->
+    <select
+      [ngModel]="categoryFilter()"
+      (ngModelChange)="onCategoryFilter($event)"
+      class="rounded-lg border border-slate-200 bg-white py-2 pl-3 pr-8 text-sm text-slate-700 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-100"
+    >
+      <option value="">All Categories</option>
+      @for (cat of categories; track cat.value) {
+      <option [value]="cat.value">{{ cat.label }}</option>
+      }
+    </select>
+
+    <!-- Clear -->
+    @if (searchTerm() || categoryFilter()) {
+    <button
+      mat-stroked-button
+      (click)="clearFilters()"
+      class="!border-slate-200 !text-slate-600 shrink-0"
+    >
+      <mat-icon fontSet="material-symbols-rounded">filter_alt_off</mat-icon>
+      Clear
+    </button>
+    }
+  </div>
+
+  <!-- Loading -->
+  @if (store.isLoading()) {
+  <div class="flex items-center justify-center py-12">
+    <mat-spinner diameter="32"></mat-spinner>
+  </div>
+  } @else {
+
+    @if (groupedRules().length > 0) {
+
+      <!-- Grouped Sections -->
+      @for (group of groupedRules(); track group.category) {
+      <div class="space-y-2">
+
+        <!-- Group Header -->
+        <h4 class="flex items-center gap-2 text-sm font-medium text-slate-700">
+          <span
+            class="flex h-6 w-6 items-center justify-center rounded-full"
+            [class]="getCategoryClass(group.category)"
+          >
+            <mat-icon fontSet="material-symbols-rounded" class="!text-[14px]">
+              {{ group.icon }}
+            </mat-icon>
+          </span>
+          {{ group.label }}
+          <span
+            class="ml-auto rounded-full px-2 py-0.5 text-xs font-medium"
+            [class]="getCategoryBadgeClass(group.category)"
+          >
+            {{ group.rules.length }}
+          </span>
+        </h4>
+
+        <!-- Rule Cards Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+          @for (rule of group.rules; track rule.id) {
+          <div
+            class="group relative rounded-xl border bg-white p-4 transition-all hover:shadow-sm"
+            [class]="rule.is_active ? 'border-slate-200' : 'border-slate-200 opacity-60'"
+          >
+            <!-- Active indicator -->
+            <span
+              class="absolute left-0 top-3 bottom-3 w-0.5 rounded-full"
+              [class]="rule.is_active ? getCategoryClass(rule.condition_category).split(' ')[0].replace('bg-', 'bg-').replace('100', '400') : 'bg-slate-200'"
+            ></span>
+
+            <!-- Header row -->
+            <div class="flex items-start justify-between pl-3 mb-2">
+              <div class="min-w-0">
+                <p class="text-sm font-semibold text-slate-900 leading-tight">
+                  {{ rule.condition_name }}
+                </p>
+                <p class="text-xs text-slate-400 mt-0.5">
+                  {{ rule.code }}@if (rule.icd10_code) { · {{ rule.icd10_code }} }
+                </p>
+              </div>
+              <button
+                mat-icon-button
+                [matMenuTriggerFor]="loadingMenu"
+                class="!text-slate-300 group-hover:!text-slate-500 transition-colors shrink-0 -mt-1 -mr-2"
+              >
+                <mat-icon fontSet="material-symbols-rounded">more_vert</mat-icon>
+              </button>
+
+              <mat-menu #loadingMenu="matMenu">
+                <button mat-menu-item (click)="openDialog(rule)">
+                  <mat-icon fontSet="material-symbols-rounded" class="!text-slate-500">edit</mat-icon>
+                  <span>Edit Rule</span>
+                </button>
+                <button mat-menu-item (click)="toggleStatus(rule)">
+                  <mat-icon fontSet="material-symbols-rounded" class="!text-slate-500">
+                    {{ rule.is_active ? 'block' : 'check_circle' }}
+                  </mat-icon>
+                  <span>{{ rule.is_active ? 'Deactivate' : 'Activate' }}</span>
+                </button>
+                <mat-divider></mat-divider>
+                <button mat-menu-item class="!text-red-600" (click)="deleteRule(rule)">
+                  <mat-icon fontSet="material-symbols-rounded" class="!text-red-500">delete</mat-icon>
+                  <span>Delete</span>
+                </button>
+              </mat-menu>
+            </div>
+
+            <!-- Stats row -->
+            <div class="pl-3 flex flex-wrap gap-1.5 mb-3">
+              <!-- Loading value badge -->
+              <span
+                class="rounded-full px-2 py-0.5 text-xs font-semibold"
+                [class]="getCategoryClass(rule.condition_category).replace('text-', 'text-').replace('bg-', 'bg-').replace('100', '50')"
+              >
+                {{ getLoadingLabel(rule) }}
+              </span>
+
+              <!-- Duration badge -->
+              <span class="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600">
+                <mat-icon fontSet="material-symbols-rounded" class="!text-[11px] !align-text-bottom">
+                  schedule
+                </mat-icon>
+                {{ getDurationLabel(rule) }}
+              </span>
+
+              <!-- Exclusion available -->
+              @if (rule.exclusion_available) {
+              <span class="rounded-full bg-red-50 px-2 py-0.5 text-xs font-medium text-red-600 border border-red-200">
+                Excl. Available
+              </span>
+              }
+
+              <!-- Inactive -->
+              @if (!rule.is_active) {
+              <span class="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-500">
+                Inactive
+              </span>
+              }
+            </div>
+
+            <!-- Underwriting notes (if any) -->
+            @if (rule.underwriting_notes) {
+            <p class="pl-3 text-xs text-slate-500 line-clamp-2 border-t border-slate-100 pt-2">
+              {{ rule.underwriting_notes }}
+            </p>
+            }
+          </div>
+          }
+        </div>
+      </div>
+      }
+
+    } @else if (searchTerm() || categoryFilter()) {
+
+      <!-- No Results -->
+      <div class="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-8 text-center">
+        <mat-icon fontSet="material-symbols-rounded" class="!text-slate-400 !text-[40px] mb-3">
+          search_off
+        </mat-icon>
+        <h4 class="text-sm font-medium text-slate-900">No rules match your filters</h4>
+        <p class="text-sm text-slate-500 mt-1">Try adjusting your search or category filter.</p>
+        <button mat-stroked-button class="mt-4 !border-slate-200" (click)="clearFilters()">
+          Clear Filters
+        </button>
+      </div>
+
+    } @else {
+
+      <!-- Empty State -->
+      <div class="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-10 text-center">
+        <div
+          class="flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 mx-auto mb-4"
+        >
+          <mat-icon fontSet="material-symbols-rounded" class="!text-slate-400">
+            policy
+          </mat-icon>
+        </div>
+        <h4 class="text-sm font-medium text-slate-900">No Loading Rules Configured</h4>
+        <p class="mt-1 text-sm text-slate-500 max-w-sm mx-auto">
+          Loading rules define how pre-existing conditions and chronic illnesses affect premium calculations during underwriting.
+        </p>
+        <button mat-flat-button color="primary" class="mt-4" (click)="openDialog()">
+          <mat-icon fontSet="material-symbols-rounded">add</mat-icon>
+          Add First Rule
+        </button>
+      </div>
+
+    }
+  }
+
+</div>

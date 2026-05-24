@@ -9,18 +9,6 @@ class PlanBenefitLimit extends BaseModel
 {
     protected $table = 'med_plan_benefit_limits';
 
-    /**
-     * Disable soft deletes for this model.
-     */
-    use \Illuminate\Database\Eloquent\SoftDeletes {
-        \Illuminate\Database\Eloquent\SoftDeletes::bootSoftDeletes as parentBootSoftDeletes;
-    }
-
-    public static function bootSoftDeletes()
-    {
-        // Disable soft deletes for this model
-    }
-
     protected $fillable = [
         'plan_benefit_id',
         'member_type',

@@ -23,6 +23,7 @@ import {
   MEMBER_TYPES,
   getLabelByValue,
 } from 'medical-data';
+import { AuthService, MEDICAL_PERMISSIONS } from 'core-auth';
 import { FeedbackService, PageHeaderComponent } from 'shared';
 import { MedicalPlanListDialog } from '../dialogs/medical-plan-list-dialog/medical-plan-list-dialog';
 
@@ -31,6 +32,8 @@ import { MedicalPlanBenefitsConfig } from '../medical-plan-benefits-config/medic
 import { MedicalPlanRateCardConfig } from '../medical-plan-rate-card-config/medical-plan-rate-card-config';
 import { MedicalPlanAddonConfig } from '../medical-plan-addon-config/medical-plan-addon-config';
 import { MedicalPlanExclusionConfig } from '../medical-plan-exclusion-config/medical-plan-exclusion-config';
+import { MedicalPlanDiscountConfig } from '../medical-plan-discount-config/medical-plan-discount-config';
+import { MedicalPlanLoadingConfig } from '../medical-plan-loading-config/medical-plan-loading-config';
 
 @Component({
   selector: 'lib-medical-plan-detail',
@@ -48,6 +51,8 @@ import { MedicalPlanExclusionConfig } from '../medical-plan-exclusion-config/med
     MedicalPlanRateCardConfig,
     MedicalPlanAddonConfig,
     MedicalPlanExclusionConfig,
+    MedicalPlanDiscountConfig,
+    MedicalPlanLoadingConfig,
   ],
   templateUrl: './medical-plan-detail.html',
 })
@@ -57,6 +62,7 @@ export class MedicalPlanDetail implements OnInit {
   private readonly store = inject(PlanListStore);
   private readonly dialog = inject(MatDialog);
   private readonly feedback = inject(FeedbackService);
+  private readonly authService = inject(AuthService);
 
   // Route param
   planId = signal<string>('');
@@ -98,11 +104,21 @@ export class MedicalPlanDetail implements OnInit {
   // Tab configuration
   readonly tabs = [
     { label: 'Overview', icon: 'info', key: 'overview' },
-    { label: 'Benefits', icon: 'medical_services', key: 'benefits' },
-    { label: 'Rate Cards', icon: 'payments', key: 'rate-cards' },
-    { label: 'Addons', icon: 'extension', key: 'addons' },
-    { label: 'Exclusions', icon: 'block', key: 'exclusions' },
+    { label: 'Benefits', icon: 'medical_services', key: 'benefits', permission: MEDICAL_PERMISSIONS.BENEFITS_VIEW },
+    { label: 'Rate Cards', icon: 'payments', key: 'rate-cards', permission: MEDICAL_PERMISSIONS.RATE_CARDS_VIEW },
+    { label: 'Addons', icon: 'extension', key: 'addons', permission: MEDICAL_PERMISSIONS.ADDONS_VIEW },
+    { label: 'Exclusions', icon: 'block', key: 'exclusions', permission: MEDICAL_PERMISSIONS.PLANS_VIEW },
+    { label: 'Discounts', icon: 'local_offer', key: 'discounts', permission: MEDICAL_PERMISSIONS.DISCOUNTS_VIEW },
+    { label: 'Loading Rules', icon: 'policy', key: 'loading', permission: MEDICAL_PERMISSIONS.LOADING_RULES_VIEW },
   ];
+
+  visibleTabs = computed(() =>
+    this.tabs.filter((tab) => !tab.permission || this.authService.isAllowed(tab.permission))
+  );
+
+  canViewTab(key: string): boolean {
+    return this.visibleTabs().some((tab) => tab.key === key);
+  }
 
   ngOnInit() {
     // Get plan ID from route params
@@ -118,7 +134,7 @@ export class MedicalPlanDetail implements OnInit {
     this.route.queryParamMap.subscribe((params) => {
       const tab = params.get('tab');
       if (tab) {
-        const index = this.tabs.findIndex((t) => t.key === tab);
+        const index = this.visibleTabs().findIndex((t) => t.key === tab);
         if (index >= 0) {
           this.activeTabIndex.set(index);
         }
@@ -138,7 +154,7 @@ export class MedicalPlanDetail implements OnInit {
   onTabChange(index: number) {
     this.activeTabIndex.set(index);
     // Update URL with tab key (without navigation)
-    const tab = this.tabs[index].key;
+    const tab = this.visibleTabs()[index]?.key ?? 'overview';
     this.router.navigate([], {
       relativeTo: this.route,
       queryParams: { tab },

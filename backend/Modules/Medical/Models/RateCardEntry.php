@@ -7,18 +7,6 @@ class RateCardEntry extends BaseModel
 {
     protected $table = 'med_rate_card_entries';
 
-    /**
-     * Disable soft deletes for this model.
-     */
-    use \Illuminate\Database\Eloquent\SoftDeletes {
-        \Illuminate\Database\Eloquent\SoftDeletes::bootSoftDeletes as parentBootSoftDeletes;
-    }
-
-    public static function bootSoftDeletes()
-    {
-        // Disable soft deletes for this model
-    }
-
     protected $fillable = [
         'rate_card_id',
         'min_age',

@@ -153,12 +153,12 @@
                 [class]="plan.tier_level === 1 ? 'bg-gray-50' : plan.tier_level === 2 ? 'bg-teal-50' : plan.tier_level === 3 ? 'bg-violet-50' : 'bg-amber-50'">
                 <span class="material-symbols-rounded transition-colors duration-300" style="font-size: 20px; font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24"
                   [class]="plan.tier_level === 1 ? 'text-gray-500' : plan.tier_level === 2 ? 'text-teal-500' : plan.tier_level === 3 ? 'text-violet-500' : 'text-amber-500'">
-                  {{ planTypeIcon(plan.plan_type) }}
+                  {{ ui.planTypeIcon(plan.plan_type) }}
                 </span>
               </div>
               <span class="text-[11px] font-normal px-2.5 py-0.5 rounded-full"
                 [class]="plan.tier_level === 1 ? 'bg-gray-100 text-gray-500' : plan.tier_level === 2 ? 'bg-teal-50 text-teal-600' : plan.tier_level === 3 ? 'bg-violet-50 text-violet-600' : 'bg-amber-50 text-amber-600'">
-                {{ tierLabel(plan.tier_level) }}
+                {{ ui.tierLabel(plan.tier_level) }}
               </span>
             </div>
 
@@ -251,7 +251,7 @@
               <div>
                 <span class="text-sm font-medium block"
                   [class]="$index === 0 ? 'text-teal-700' : member.member_type === 'spouse' ? 'text-violet-700' : member.member_type === 'child' ? 'text-amber-700' : 'text-emerald-700'">
-                  {{ $index === 0 ? 'Principal Member' : memberTypeLabel(member.member_type) }}
+                  {{ $index === 0 ? 'Principal Member' : ui.memberTypeLabel(member.member_type) }}
                 </span>
                 @if ($index === 0) {
                   <span class="text-[10px] text-gray-400 font-light">Primary policy holder</span>
@@ -400,7 +400,7 @@
                 [class]="billingFrequency() === freq
                   ? 'bg-teal-600 text-white'
                   : 'text-gray-400 hover:bg-gray-50'"
-              >{{ frequencyLabel(freq) }}</button>
+              >{{ ui.frequencyLabel(freq) }}</button>
             }
           </div>
         </div>
@@ -521,13 +521,6 @@
             </div>
           }
 
-          <!-- Error -->
-          @if (quoteError()) {
-            <div class="bg-red-50 border border-red-100 rounded-xl px-4 py-3 text-center">
-              <p class="text-red-500 text-sm font-light">{{ quoteError() }}</p>
-            </div>
-          }
-
           <!-- Quote Result -->
           @if (!quoteLoading() && quoteResult()) {
             <div class="fc-fade-in">
@@ -541,7 +534,7 @@
                   <div>
                     <p class="text-sm font-medium text-gray-800">{{ quoteResult()!.plan.name }}</p>
                     <p class="text-xs text-gray-400 font-light mt-0.5">
-                      {{ members().length }} member{{ members().length > 1 ? 's' : '' }} · {{ frequencyLabel(billingFrequency()) }}
+                      {{ members().length }} member{{ members().length > 1 ? 's' : '' }} · {{ ui.frequencyLabel(billingFrequency()) }}
                     </p>
                   </div>
                 </div>
@@ -568,7 +561,7 @@
                           </span>
                         </div>
                         <div>
-                          <span class="text-xs font-medium text-gray-700">{{ memberTypeLabel(m.member_type) }}</span>
+                          <span class="text-xs font-medium text-gray-700">{{ ui.memberTypeLabel(m.member_type) }}</span>
                           <span class="text-[10px] text-gray-400 font-light block">Age {{ m.age }}{{ m.gender ? ' · ' + (m.gender === 'M' ? 'Male' : 'Female') : '' }}</span>
                         </div>
                       </div>
@@ -652,6 +645,24 @@
                 </div>
               }
 
+              <!-- Tax / Levy -->
+              @if (quoteResult()!.tax_amount > 0) {
+                <div class="space-y-1 mb-4 pt-3 border-t border-gray-100">
+                  <p class="text-[10px] font-medium text-gray-400 uppercase tracking-wider mb-2">Tax &amp; Levy</p>
+                  <div class="flex justify-between items-center p-2 rounded-lg bg-gray-50">
+                    <div class="flex items-center gap-1.5">
+                      <span class="material-symbols-rounded text-gray-400" style="font-size: 13px; font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24">receipt</span>
+                      <span class="text-xs text-gray-600">{{ quoteResult()!.tax_name }} ({{ quoteResult()!.tax_rate * 100 | number:'1.0-0' }}%)</span>
+                    </div>
+                    <span class="text-xs font-medium text-gray-700">+ZMW {{ quoteResult()!.tax_amount | number:'1.2-2' }}</span>
+                  </div>
+                  <div class="flex justify-between items-center px-2 pt-1">
+                    <span class="text-xs text-gray-400">Net premium (excl. tax)</span>
+                    <span class="text-xs text-gray-500">ZMW {{ quoteResult()!.net_premium | number:'1.2-2' }}</span>
+                  </div>
+                </div>
+              }
+
               <!-- Total Premium -->
               <div class="relative overflow-hidden bg-linear-to-br from-teal-600 to-teal-700 rounded-2xl p-5 mt-5">
                 <div class="absolute top-0 right-0 w-40 h-40 bg-white/5 rounded-full -mr-16 -mt-16"></div>
@@ -666,7 +677,7 @@
                         ZMW {{ quoteResult()!.final_premium | number:'1.2-2' }}
                       </p>
                       <p class="text-xs text-white/70 font-light">
-                        {{ frequencyLabel(quoteResult()!.frequency) }} Payment
+                        {{ ui.frequencyLabel(quoteResult()!.frequency) }} · incl. {{ quoteResult()!.tax_name }}
                       </p>
                     </div>
                     @if (quoteResult()!.total_discount > 0 || quoteResult()!.promo_discount > 0) {

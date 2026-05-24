@@ -10,20 +10,31 @@ use Illuminate\Validation\ValidationException;
 class AuthService
 {
     /**
-     * Attempt to authenticate user and generate token
+     * Attempt to authenticate user and generate a Sanctum token.
      *
-     * @param  array  $credentials
-     * @return array
+     * Security notes:
+     *  - A dummy hash check is always performed when the user is not found so
+     *    that response timing is indistinguishable from a wrong-password attempt,
+     *    preventing username enumeration via timing differences.
+     *  - Failed-attempt counters and lockout are checked before the password
+     *    comparison so that a locked account can be detected quickly.
+     *
      * @throws ValidationException
      */
     public function login(array $credentials): array
     {
-        // Find user by email or username
         $user = User::where('email', $credentials['email'])
             ->orWhere('username', $credentials['email'])
             ->first();
 
-        // Check if account is locked before validating password
+        // Always run a constant-time hash check, even when the user doesn't
+        // exist, to prevent timing-based username enumeration.
+        $passwordCorrect = Hash::check(
+            $credentials['password'],
+            $user?->password ?? '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2uheWG/igi'
+        );
+
+        // Account locked — checked after the hash so timing is consistent.
         if ($user && $user->isLocked()) {
             $minutesRemaining = now()->diffInMinutes($user->locked_until);
             throw ValidationException::withMessages([
@@ -31,18 +42,15 @@ class AuthService
             ]);
         }
 
-        // Validate credentials
-        if (!$user || !Hash::check($credentials['password'], $user->password)) {
-            // Increment failed login attempts if user exists
+        if (!$user || !$passwordCorrect) {
             if ($user) {
                 $user->incrementFailedLoginAttempts();
-                $user->refresh(); // Reload to get updated failed_login_attempts
+                $user->refresh();
 
-                $maxAttempts = config('password.lockout.max_attempts', 5);
+                $maxAttempts      = config('password.lockout.max_attempts', 5);
                 $remainingAttempts = max(0, $maxAttempts - $user->failed_login_attempts);
-                $warningThreshold = ceil($maxAttempts * 0.75); // 75% threshold
+                $warningThreshold = (int) ceil($maxAttempts * 0.75);
 
-                // Show warning if attempts >= 75% of max attempts
                 if ($user->failed_login_attempts >= $warningThreshold && $remainingAttempts > 0) {
                     throw ValidationException::withMessages([
                         'email' => ["The provided credentials are incorrect. Warning: You have {$remainingAttempts} login attempt(s) remaining before your account is locked."],
@@ -55,70 +63,52 @@ class AuthService
             ]);
         }
 
-        // Check if user is active
         if (!$user->is_active) {
             throw ValidationException::withMessages([
                 'email' => ['Your account has been deactivated. Please contact support.'],
             ]);
         }
 
-        // Reset failed login attempts on successful login
         $user->resetFailedLoginAttempts();
 
-        // Check if password has expired
-        $passwordExpired = $user->passwordExpired();
+        $passwordExpired      = $user->passwordExpired();
         $passwordExpiringSoon = $user->passwordExpiringSoon();
-        $daysUntilExpiration = $user->daysUntilPasswordExpires();
+        $daysUntilExpiration  = $user->daysUntilPasswordExpires();
 
-        // Record login activity
         $user->recordLogin(request()->ip());
 
-        // Get user's accessible modules
         $moduleCodes = $user->getModuleCodes();
+        $token       = $user->createToken('auth-token', $moduleCodes)->plainTextToken;
 
-        // Create token with abilities based on module access
-        $token = $user->createToken(
-            'auth-token',
-            $moduleCodes // Token abilities = module codes
-        )->plainTextToken;
+        // Group roles by guard — uses the already-loaded relationship, no extra queries.
+        $rolesByGuard = $user->roles
+            ->groupBy('guard_name')
+            ->map(fn ($roles) => $roles->pluck('name')->all())
+            ->all();
 
-        // Group roles by guard
-        $rolesByGuard = [];
-        foreach ($user->roles as $role) {
-            $guard = $role->guard_name;
-            if (!isset($rolesByGuard[$guard])) {
-                $rolesByGuard[$guard] = [];
-            }
-            $rolesByGuard[$guard][] = $role->name;
-        }
+        // Group permissions by guard — uses getAllPermissions() which Spatie caches.
+        $permissionsByGuard = $user->getAllPermissions()
+            ->groupBy('guard_name')
+            ->map(fn ($perms) => $perms->pluck('name')->all())
+            ->all();
 
-        // Group permissions by guard
-        $permissionsByGuard = $user->getAllPermissions()->groupBy('guard_name')->map(function ($permissions) {
-            return $permissions->pluck('name')->toArray();
-        })->toArray();
-
-        $response = [
-            'user' => $user,
-            'token' => $token,
-            'modules' => $moduleCodes,
-            'roles' => $rolesByGuard,
+        return [
+            'user'        => $user,
+            'token'       => $token,
+            'modules'     => $moduleCodes,
+            'roles'       => $rolesByGuard,
             'permissions' => $permissionsByGuard,
             'password_status' => [
-                'expired' => $passwordExpired,
-                'expiring_soon' => $passwordExpiringSoon,
+                'expired'            => $passwordExpired,
+                'expiring_soon'      => $passwordExpiringSoon,
                 'days_until_expiration' => $daysUntilExpiration,
-                'force_change' => $user->force_password_change,
+                'force_change'       => $user->force_password_change,
             ],
         ];
-
-        return $response;
     }
 
     /**
-     * Revoke all tokens for a user (logout)
-     *
-     * @param  User  $user
-     * @return void
+     * Revoke all tokens for a user (logout).
      */
     public function logout(User $user): void
     {
@@ -126,57 +116,51 @@ class AuthService
     }
 
     /**
-     * Get user context with modules, roles, and permissions
+     * Get the full user context (modules, roles, permissions).
      *
-     * @param  User  $user
-     * @return array
+     * Uses the already-loaded `roles` relationship to avoid N+1 queries.
      */
     public function getUserContext(User $user): array
     {
+        // Eager-load roles and permissions once so the groupBy below is in-memory only.
+        $user->loadMissing('roles');
+
         return [
             'user' => [
-                'id' => $user->id,
-                'email' => $user->email,
-                'username' => $user->username,
+                'id'              => $user->id,
+                'email'           => $user->email,
+                'username'        => $user->username,
                 'is_system_admin' => $user->is_system_admin,
-                'is_active' => $user->is_active,
-                'mfa_enabled' => $user->mfa_enabled,
+                'is_active'       => $user->is_active,
+                'mfa_enabled'     => $user->mfa_enabled,
             ],
-            'modules' => $user->getModuleCodes(),
+            'modules'       => $user->getModuleCodes(),
             'module_access' => $user->activeModules()
                 ->get()
-                ->map(fn($access) => [
+                ->map(fn ($access) => [
                     'module_code' => $access->module_code,
-                    'granted_at' => $access->granted_at,
+                    'granted_at'  => $access->granted_at,
                 ]),
-            'roles' => $user->getRoleNames()->groupBy(function ($role) use ($user) {
-                // Group roles by guard
-                $roleModel = $user->roles()->where('name', $role)->first();
-                return $roleModel?->guard_name ?? 'web';
-            }),
-            'permissions' => $user->getAllPermissions()->groupBy('guard_name')->map(function ($permissions) {
-                return $permissions->pluck('name');
-            }),
+            // Group roles by guard using the loaded collection — zero extra queries.
+            'roles' => $user->roles
+                ->groupBy('guard_name')
+                ->map(fn ($roles) => $roles->pluck('name')),
+            // Spatie caches getAllPermissions() internally.
+            'permissions' => $user->getAllPermissions()
+                ->groupBy('guard_name')
+                ->map(fn ($perms) => $perms->pluck('name')),
         ];
     }
 
     /**
-     * Grant module access to a user
-     *
-     * @param  User  $user
-     * @param  string  $moduleCode
-     * @param  User  $grantedBy
-     * @return UserModuleAccess
+     * Grant module access to a user.
      */
     public function grantModuleAccess(User $user, string $moduleCode, User $grantedBy): UserModuleAccess
     {
         return UserModuleAccess::updateOrCreate(
+            ['user_id' => $user->id, 'module_code' => $moduleCode],
             [
-                'user_id' => $user->id,
-                'module_code' => $moduleCode,
-            ],
-            [
-                'is_active' => true,
+                'is_active'  => true,
                 'granted_at' => now(),
                 'granted_by' => $grantedBy->id,
             ]
@@ -184,15 +168,11 @@ class AuthService
     }
 
     /**
-     * Revoke module access from a user
-     *
-     * @param  User  $user
-     * @param  string  $moduleCode
-     * @return bool
+     * Revoke module access from a user.
      */
     public function revokeModuleAccess(User $user, string $moduleCode): bool
     {
-        return UserModuleAccess::where('user_id', $user->id)
+        return (bool) UserModuleAccess::where('user_id', $user->id)
             ->where('module_code', $moduleCode)
             ->update(['is_active' => false]);
     }

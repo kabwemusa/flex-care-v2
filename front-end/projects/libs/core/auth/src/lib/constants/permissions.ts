@@ -21,6 +21,12 @@ export const MEDICAL_PERMISSIONS = {
   PLANS_DELETE: 'medical.plans.delete',
   PLANS_CONFIGURE: 'medical.plans.configure',
 
+  // Benefits
+  BENEFITS_VIEW: 'medical.benefits.view',
+  BENEFITS_CREATE: 'medical.benefits.create',
+  BENEFITS_UPDATE: 'medical.benefits.update',
+  BENEFITS_DELETE: 'medical.benefits.delete',
+
   // Addons
   ADDONS_VIEW: 'medical.addons.view',
   ADDONS_CREATE: 'medical.addons.create',
@@ -39,6 +45,18 @@ export const MEDICAL_PERMISSIONS = {
   PREMIUM_VIEW: 'medical.premium.view',
   PREMIUM_CALCULATE: 'medical.premium.calculate',
   PREMIUM_OVERRIDE: 'medical.premium.override',
+
+  // Discounts
+  DISCOUNTS_VIEW: 'medical.discounts.view',
+  DISCOUNTS_CREATE: 'medical.discounts.create',
+  DISCOUNTS_UPDATE: 'medical.discounts.update',
+  DISCOUNTS_DELETE: 'medical.discounts.delete',
+
+  // Loading Rules
+  LOADING_RULES_VIEW: 'medical.loading_rules.view',
+  LOADING_RULES_CREATE: 'medical.loading_rules.create',
+  LOADING_RULES_UPDATE: 'medical.loading_rules.update',
+  LOADING_RULES_DELETE: 'medical.loading_rules.delete',
 
   // Applications
   APPLICATIONS_VIEW: 'medical.applications.view',
@@ -61,6 +79,9 @@ export const MEDICAL_PERMISSIONS = {
   GROUPS_CREATE: 'medical.groups.create',
   GROUPS_UPDATE: 'medical.groups.update',
   GROUPS_DELETE: 'medical.groups.delete',
+  GROUPS_IMPORT_CENSUS: 'medical.groups.import_census',
+  GROUPS_BULK_APPROVE: 'medical.groups.bulk_approve',
+  GROUPS_BULK_CONVERT: 'medical.groups.bulk_convert',
 
   // Policies
   POLICIES_VIEW: 'medical.policies.view',

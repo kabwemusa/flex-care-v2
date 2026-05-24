@@ -2,13 +2,11 @@
 
 namespace Modules\Medical\Services;
 
-use Exception;
+use App\Exceptions\BusinessException;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Database\Eloquent\Builder;
 use Modules\Medical\Models\Claim;
-use Modules\Medical\Models\ClaimLine;
-use Modules\Medical\Models\ClaimDocument;
 use Modules\Medical\Models\Policy;
 use Modules\Medical\Models\Member;
 use Modules\Medical\Constants\MedicalConstants;
@@ -120,37 +118,37 @@ class ClaimService
     {
         // Check policy is active
         if ($policy->status !== MedicalConstants::POLICY_STATUS_ACTIVE) {
-            throw new Exception('Policy is not active. Current status: ' . $policy->status);
+            throw new BusinessException('Policy is not active. Current status: ' . $policy->status);
         }
 
         // Check member belongs to policy
         if ($member->policy_id !== $policy->id) {
-            throw new Exception('Member does not belong to this policy');
+            throw new BusinessException('Member does not belong to this policy');
         }
 
         // Check member is active
         if ($member->status !== MedicalConstants::MEMBER_STATUS_ACTIVE) {
-            throw new Exception('Member is not active. Current status: ' . $member->status);
+            throw new BusinessException('Member is not active. Current status: ' . $member->status);
         }
 
         // Check service date is within policy period
         $serviceDate = Carbon::parse($data['service_date']);
         if ($serviceDate->lt($policy->inception_date) || $serviceDate->gt($policy->expiry_date)) {
-            throw new Exception('Service date must be within policy period');
+            throw new BusinessException('Service date must be within policy period');
         }
 
         // Check service date is not in the future
         if ($serviceDate->gt(now())) {
-            throw new Exception('Service date cannot be in the future');
+            throw new BusinessException('Service date cannot be in the future');
         }
 
         // Check member was active on service date
         if ($member->effective_date && $serviceDate->lt($member->effective_date)) {
-            throw new Exception('Service date is before member coverage start date');
+            throw new BusinessException('Service date is before member coverage start date');
         }
 
         if ($member->termination_date && $serviceDate->gt($member->termination_date)) {
-            throw new Exception('Service date is after member coverage end date');
+            throw new BusinessException('Service date is after member coverage end date');
         }
     }
 
@@ -167,7 +165,7 @@ class ClaimService
             MedicalConstants::CLAIM_STATUS_SUBMITTED,
             MedicalConstants::CLAIM_STATUS_PENDING_DOCUMENTS,
         ])) {
-            throw new Exception('Claim cannot be reviewed in current status: ' . $claim->status);
+            throw new BusinessException('Claim cannot be reviewed in current status: ' . $claim->status);
         }
 
         $oldStatus = $claim->status;
@@ -218,7 +216,7 @@ class ClaimService
     public function adjudicateClaim(Claim $claim, array $lineDecisions, string $adjudicatorId): Claim
     {
         if (!$claim->can_be_approved) {
-            throw new Exception('Claim cannot be adjudicated in current status: ' . $claim->status);
+            throw new BusinessException('Claim cannot be adjudicated in current status: ' . $claim->status);
         }
 
         return DB::transaction(function () use ($claim, $lineDecisions, $adjudicatorId) {
@@ -294,7 +292,7 @@ class ClaimService
     public function approveClaim(Claim $claim, string $approverId, ?string $notes = null): Claim
     {
         if (!$claim->can_be_approved) {
-            throw new Exception('Claim cannot be approved in current status: ' . $claim->status);
+            throw new BusinessException('Claim cannot be approved in current status: ' . $claim->status);
         }
 
         return DB::transaction(function () use ($claim, $approverId, $notes) {
@@ -343,7 +341,7 @@ class ClaimService
             MedicalConstants::CLAIM_STATUS_IN_REVIEW,
             MedicalConstants::CLAIM_STATUS_PENDING_APPROVAL,
         ])) {
-            throw new Exception('Claim cannot be rejected in current status: ' . $claim->status);
+            throw new BusinessException('Claim cannot be rejected in current status: ' . $claim->status);
         }
 
         $oldStatus = $claim->status;
@@ -384,14 +382,14 @@ class ClaimService
     public function recordPayment(Claim $claim, array $paymentData, string $processedBy): Claim
     {
         if (!$claim->can_be_paid) {
-            throw new Exception('Claim cannot be paid in current status or has no outstanding amount');
+            throw new BusinessException('Claim cannot be paid in current status or has no outstanding amount');
         }
 
         $oldStatus = $claim->status;
         $paymentAmount = $paymentData['amount'];
 
         if ($paymentAmount > $claim->outstanding_amount) {
-            throw new Exception('Payment amount exceeds outstanding amount');
+            throw new BusinessException('Payment amount exceeds outstanding amount');
         }
 
         $newPaidAmount = $claim->paid_amount + $paymentAmount;
@@ -433,7 +431,7 @@ class ClaimService
             MedicalConstants::CLAIM_STATUS_PAID,
             MedicalConstants::CLAIM_STATUS_REJECTED,
         ])) {
-            throw new Exception('Only paid or rejected claims can be closed');
+            throw new BusinessException('Only paid or rejected claims can be closed');
         }
 
         $oldStatus = $claim->status;

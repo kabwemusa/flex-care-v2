@@ -2,13 +2,13 @@
   <mat-drawer-content>
     <div class="bg-white p-6 md:p-10 min-h-[80vh] shadow-sm">
 
-      <!-- Header -->
-      <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-6">
-        <div>
-          <h1 class="text-2xl font-bold tracking-tight text-slate-900">Payments</h1>
-          <p class="mt-1 text-sm text-slate-500">Record and manage payment receipts</p>
-        </div>
-        <div class="flex gap-2">
+      <lib-page-header
+        title="Payments"
+        subtitle="Record and manage payment receipts"
+        [showBreadcrumb]="true"
+        [breadcrumbItems]="[{ label: 'Dashboard', link: '/' }, { label: 'Billing' }, { label: 'Payments' }]"
+      >
+        <div actions class="flex gap-2">
           <button
             mat-stroked-button
             (click)="exportToCsv()"
@@ -28,7 +28,7 @@
             Record Payment
           </button>
         </div>
-      </div>
+      </lib-page-header>
 
       <!-- KPI Cards -->
       <div class="grid grid-cols-1 gap-4 sm:grid-cols-3 mb-6">

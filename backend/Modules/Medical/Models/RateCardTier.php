@@ -8,18 +8,6 @@ class RateCardTier extends BaseModel
 {
     protected $table = 'med_rate_card_tiers';
 
-    /**
-     * Disable soft deletes for this model.
-     */
-    use \Illuminate\Database\Eloquent\SoftDeletes {
-        \Illuminate\Database\Eloquent\SoftDeletes::bootSoftDeletes as parentBootSoftDeletes;
-    }
-
-    public static function bootSoftDeletes()
-    {
-        // Disable soft deletes for this model
-    }
-
     protected $fillable = [
         'rate_card_id',
         'tier_name',

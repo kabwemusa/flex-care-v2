@@ -7,17 +7,19 @@
       <lib-page-header
         title="Rate Cards"
         subtitle="Manage premium rates by age bands and member types."
+        [showBreadcrumb]="true"
+        [breadcrumbItems]="[{ label: 'Dashboard', link: '/' }, { label: 'Plans', link: '/plans' }, { label: 'Rate Cards' }]"
       >
         <div actions class="flex gap-2">
           <button
-            mat-button
-            class="!border-divider !text-foreground-600 hover:!bg-content2 hidden sm:flex"
+            mat-stroked-button
+            class="border-slate-200! text-slate-600! hidden sm:flex"
           >
             <mat-icon fontSet="material-symbols-rounded">download</mat-icon>
             Export
           </button>
 
-          <button mat-flat-button color="primary" class="!rounded-lg" (click)="openCreateDialog()">
+          <button mat-flat-button color="primary" (click)="openCreateDialog()">
             <mat-icon fontSet="material-symbols-rounded">add</mat-icon>
             New Rate Card
           </button>
@@ -35,7 +37,7 @@
               </div>
             </div>
             <div class="flex h-10 w-10 items-center justify-center rounded-full bg-slate-100">
-              <mat-icon fontSet="material-symbols-rounded" class="!text-slate-500"
+              <mat-icon fontSet="material-symbols-rounded" class="text-slate-500!"
                 >payments</mat-icon
               >
             </div>
@@ -51,7 +53,7 @@
               </div>
             </div>
             <div class="flex h-10 w-10 items-center justify-center rounded-full bg-green-100">
-              <mat-icon fontSet="material-symbols-rounded" class="!text-green-600"
+              <mat-icon fontSet="material-symbols-rounded" class="text-green-600!"
                 >check_circle</mat-icon
               >
             </div>
@@ -67,7 +69,7 @@
               </div>
             </div>
             <div class="flex h-10 w-10 items-center justify-center rounded-full bg-amber-100">
-              <mat-icon fontSet="material-symbols-rounded" class="!text-amber-600"
+              <mat-icon fontSet="material-symbols-rounded" class="text-amber-600!"
                 >edit_note</mat-icon
               >
             </div>
@@ -87,7 +89,7 @@
           <div class="relative w-full sm:w-72">
             <mat-icon
               fontSet="material-symbols-rounded"
-              class="absolute left-3 top-1/2 -translate-y-1/2 !text-[20px] text-slate-400"
+              class="absolute left-3 top-1/2 -translate-y-1/2 text-[20px]! text-slate-400"
               >search</mat-icon
             >
             <input
@@ -101,7 +103,7 @@
 
           <!-- Filter Dropdowns -->
           <div class="flex items-center gap-2 flex-wrap">
-            <mat-form-field appearance="outline" subscriptSizing="dynamic" class="!w-40">
+            <mat-form-field appearance="outline" subscriptSizing="dynamic" class="w-40!">
               <mat-select
                 placeholder="All Plans"
                 [value]="selectedPlan()"
@@ -114,7 +116,7 @@
               </mat-select>
             </mat-form-field>
 
-            <mat-form-field appearance="outline" subscriptSizing="dynamic" class="!w-32">
+            <mat-form-field appearance="outline" subscriptSizing="dynamic" class="w-32!">
               <mat-select
                 placeholder="Status"
                 [value]="selectedStatus()"
@@ -130,7 +132,7 @@
             @if (selectedPlan() || selectedStatus() || searchQuery()) {
             <button
               mat-stroked-button
-              class="!border-slate-200 !text-slate-600"
+              class="border-slate-200! text-slate-600!"
               (click)="clearFilters()"
             >
               <mat-icon fontSet="material-symbols-rounded">clear</mat-icon>
@@ -164,11 +166,11 @@
                 mat-header-cell
                 *matHeaderCellDef
                 mat-sort-header
-                class="!bg-slate-50 !px-6 !py-3 text-xs font-semibold uppercase tracking-wider text-slate-500 !w-28"
+                class="bg-slate-50! px-6! py-3! text-xs font-semibold uppercase tracking-wider text-slate-500 w-28!"
               >
                 Status
               </th>
-              <td mat-cell *matCellDef="let rc" class="!px-6 !py-4">
+              <td mat-cell *matCellDef="let rc" class="px-6! py-4!">
                 <span
                   [class]="getStatusBadge(rc).class"
                   class="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium"
@@ -184,11 +186,11 @@
                 mat-header-cell
                 *matHeaderCellDef
                 mat-sort-header
-                class="!bg-slate-50 !px-6 !py-3 text-xs font-semibold uppercase tracking-wider text-slate-500"
+                class="bg-slate-50! px-6! py-3! text-xs font-semibold uppercase tracking-wider text-slate-500"
               >
                 Rate Card
               </th>
-              <td mat-cell *matCellDef="let rc" class="!px-6 !py-4">
+              <td mat-cell *matCellDef="let rc" class="px-6! py-4!">
                 <div class="flex flex-col">
                   <button
                     (click)="viewDetails(rc); $event.stopPropagation()"
@@ -207,11 +209,11 @@
                 mat-header-cell
                 *matHeaderCellDef
                 mat-sort-header
-                class="!bg-slate-50 !px-6 !py-3 text-xs font-semibold uppercase tracking-wider text-slate-500"
+                class="bg-slate-50! px-6! py-3! text-xs font-semibold uppercase tracking-wider text-slate-500"
               >
                 Plan
               </th>
-              <td mat-cell *matCellDef="let rc" class="!px-6 !py-4">
+              <td mat-cell *matCellDef="let rc" class="px-6! py-4!">
                 <span class="text-sm text-slate-700">{{ rc.plan?.name || '-' }}</span>
               </td>
             </ng-container>
@@ -221,11 +223,11 @@
               <th
                 mat-header-cell
                 *matHeaderCellDef
-                class="!bg-slate-50 !px-6 !py-3 text-xs font-semibold uppercase tracking-wider text-slate-500"
+                class="bg-slate-50! px-6! py-3! text-xs font-semibold uppercase tracking-wider text-slate-500"
               >
                 Frequency
               </th>
-              <td mat-cell *matCellDef="let rc" class="!px-6 !py-4">
+              <td mat-cell *matCellDef="let rc" class="px-6! py-4!">
                 <span
                   class="inline-flex items-center rounded-md bg-slate-100 px-2 py-1 text-xs font-medium text-slate-700"
                 >
@@ -239,11 +241,11 @@
               <th
                 mat-header-cell
                 *matHeaderCellDef
-                class="!bg-slate-50 !px-6 !py-3 text-xs font-semibold uppercase tracking-wider text-slate-500"
+                class="bg-slate-50! px-6! py-3! text-xs font-semibold uppercase tracking-wider text-slate-500"
               >
                 Basis
               </th>
-              <td mat-cell *matCellDef="let rc" class="!px-6 !py-4">
+              <td mat-cell *matCellDef="let rc" class="px-6! py-4!">
                 <span class="text-sm text-slate-600">{{ getBasisLabel(rc.premium_basis) }}</span>
               </td>
             </ng-container>
@@ -253,11 +255,11 @@
               <th
                 mat-header-cell
                 *matHeaderCellDef
-                class="!bg-slate-50 !px-6 !py-3 text-xs font-semibold uppercase tracking-wider text-slate-500 !w-32"
+                class="bg-slate-50! px-6! py-3! text-xs font-semibold uppercase tracking-wider text-slate-500 w-32!"
               >
                 Entries
               </th>
-              <td mat-cell *matCellDef="let rc" class="!px-6 !py-4">
+              <td mat-cell *matCellDef="let rc" class="px-6! py-4!">
                 <div class="flex items-center gap-2">
                   <span
                     class="flex h-6 w-6 items-center justify-center rounded-md bg-blue-50 text-xs font-medium text-blue-700"
@@ -274,78 +276,78 @@
               <th
                 mat-header-cell
                 *matHeaderCellDef
-                class="!bg-slate-50 !px-6 !py-3 text-xs font-semibold uppercase tracking-wider text-slate-500"
+                class="bg-slate-50! px-6! py-3! text-xs font-semibold uppercase tracking-wider text-slate-500"
               >
                 Effective
               </th>
-              <td mat-cell *matCellDef="let rc" class="!px-6 !py-4">
+              <td mat-cell *matCellDef="let rc" class="px-6! py-4!">
                 <span class="text-sm text-slate-600">{{ formatDate(rc.effective_from) }}</span>
               </td>
             </ng-container>
 
             <!-- Actions Column -->
             <ng-container matColumnDef="actions">
-              <th mat-header-cell *matHeaderCellDef class="!bg-slate-50 !w-16"></th>
-              <td mat-cell *matCellDef="let rc" class="!px-4 !py-4 text-right">
+              <th mat-header-cell *matHeaderCellDef class="bg-slate-50! w-16!"></th>
+              <td mat-cell *matCellDef="let rc" class="px-4! py-4! text-right">
                 <button
                   mat-icon-button
                   [matMenuTriggerFor]="menu"
                   (click)="$event.stopPropagation()"
-                  class="!text-slate-400 hover:!bg-slate-100 hover:!text-slate-900"
+                  class="text-slate-400! hover:bg-slate-100! hover:text-slate-900!"
                 >
                   <mat-icon fontSet="material-symbols-rounded">more_vert</mat-icon>
                 </button>
 
                 <mat-menu
                   #menu="matMenu"
-                  class="!rounded-xl !border !border-slate-200 !shadow-lg !bg-white"
+                  class="rounded-xl! border! border-slate-200! shadow-lg! bg-white!"
                 >
                   <button mat-menu-item (click)="viewDetails(rc)">
-                    <mat-icon fontSet="material-symbols-rounded" class="!text-slate-500"
+                    <mat-icon fontSet="material-symbols-rounded" class="text-slate-500!"
                       >visibility</mat-icon
                     >
                     <span>View Details</span>
                   </button>
                   <button mat-menu-item [routerLink]="['/rate-cards', rc.id]">
-                    <mat-icon fontSet="material-symbols-rounded" class="!text-slate-500"
+                    <mat-icon fontSet="material-symbols-rounded" class="text-slate-500!"
                       >table_chart</mat-icon
                     >
                     <span>Manage Entries</span>
                   </button>
                   <button mat-menu-item (click)="openCreateDialog(rc)">
-                    <mat-icon fontSet="material-symbols-rounded" class="!text-slate-500"
+                    <mat-icon fontSet="material-symbols-rounded" class="text-slate-500!"
                       >edit</mat-icon
                     >
                     <span>Edit</span>
                   </button>
                   @if (rc.is_active) {
                   <button mat-menu-item (click)="toggleStatus(rc)">
-                    <mat-icon fontSet="material-symbols-rounded" class="!text-red-500"
+                    <mat-icon fontSet="material-symbols-rounded" class="text-red-500!"
                       >block</mat-icon
                     >
                     <span>Deactivate</span>
                   </button>
                   } @else if (rc.is_draft) {
                   <button mat-menu-item (click)="toggleStatus(rc)">
-                    <mat-icon fontSet="material-symbols-rounded" class="!text-green-500"
+                    <mat-icon fontSet="material-symbols-rounded" class="text-green-500!"
                       >check_circle</mat-icon
                     >
                     <span>Activate</span>
                   </button>
                   }
                   <button mat-menu-item (click)="cloneRateCard(rc)">
-                    <mat-icon fontSet="material-symbols-rounded" class="!text-slate-500"
+                    <mat-icon fontSet="material-symbols-rounded" class="text-slate-500!"
                       >content_copy</mat-icon
                     >
                     <span>Clone</span>
                   </button>
-                  <mat-divider class="!my-1 opacity-50"></mat-divider>
+                  <mat-divider class="my-1! opacity-50"></mat-divider>
                   <button
                     mat-menu-item
-                    class="!text-red-600 hover:!bg-red-50"
+                    class="text-red-600! hover:bg-red-50!"
                     (click)="deleteRateCard(rc)"
                   >
-                    <mat-icon fontSet="material-symbols-rounded" class="!text-red-500"
+                    <mat-icon fontSet="material-symbols-rounded" class="text-red-500!"
                       >delete</mat-icon
                     >
                     <span>Delete</span>
@@ -367,7 +369,7 @@
           @if (store.rateCards().length === 0) {
           <div class="flex flex-col items-center justify-center py-16 text-center">
             <div class="flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 mb-4">
-              <mat-icon fontSet="material-symbols-rounded" class="!text-slate-400"
+              <mat-icon fontSet="material-symbols-rounded" class="text-slate-400!"
                 >payments</mat-icon
               >
             </div>
@@ -386,7 +388,7 @@
         <mat-paginator
           [pageSizeOptions]="[10, 20, 50]"
           showFirstLastButtons
-          class="!border-t !border-slate-100 !bg-white"
+          class="border-t! border-slate-100! bg-white!"
         ></mat-paginator>
         }
       </div>
@@ -394,7 +396,7 @@
   </mat-drawer-content>
 
   <!-- Detail Drawer -->
-  <mat-drawer #detailDrawer mode="over" position="end" class="!w-full sm:!w-[550px] !bg-white">
+  <mat-drawer #detailDrawer mode="over" position="end" class="w-full! sm:w-137.5! bg-white!">
     @if (selectedRateCard(); as rc) {
     <div class="flex flex-col h-full">
       <!-- Drawer Header -->
@@ -414,7 +416,7 @@
         <button
           mat-icon-button
           (click)="closeDrawer()"
-          class="!text-slate-400 hover:!text-slate-700"
+          class="text-slate-400! hover:text-slate-700!"
         >
           <mat-icon fontSet="material-symbols-rounded">close</mat-icon>
         </button>
@@ -448,7 +450,7 @@
             <div
               class="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary"
             >
-              <mat-icon fontSet="material-symbols-rounded" class="!text-[18px]"
+              <mat-icon fontSet="material-symbols-rounded" class="text-[18px]!"
                 >medical_services</mat-icon
               >
             </div>
@@ -524,7 +526,7 @@
             class="inline-flex items-center gap-1 text-sm text-primary hover:underline"
           >
             Manage entries
-            <mat-icon fontSet="material-symbols-rounded" class="!text-[16px]"
+            <mat-icon fontSet="material-symbols-rounded" class="text-[16px]!"
               >arrow_forward</mat-icon
             >
           </button>
@@ -544,24 +546,22 @@
         class="flex items-center justify-between gap-3 border-t border-slate-100 px-6 py-4 bg-slate-50"
       >
         @if (rc.is_active) {
-        <button mat-stroked-button (click)="toggleStatus(rc)" class="!border-red-300 !text-red-700">
+        <button mat-stroked-button (click)="toggleStatus(rc)" class="border-red-300! text-red-700!">
           <mat-icon fontSet="material-symbols-rounded">block</mat-icon>
           Deactivate
         </button>
-        } @else if (rc.is_draft) {
+        } @else {
         <button
           mat-stroked-button
           (click)="toggleStatus(rc)"
-          class="!border-green-300 !text-green-700"
+          class="border-green-300! text-green-700!"
         >
           <mat-icon fontSet="material-symbols-rounded">check_circle</mat-icon>
           Activate
         </button>
-        } @else {
-        <div></div>
         }
         <div class="flex items-center gap-2">
-          <button mat-stroked-button (click)="cloneRateCard(rc)" class="!border-slate-200">
+          <button mat-stroked-button (click)="cloneRateCard(rc)" class="border-slate-200!">
             <mat-icon fontSet="material-symbols-rounded">content_copy</mat-icon>
             Clone
           </button>

@@ -4,96 +4,67 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Services\AuthService;
+use App\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
 {
+    use ApiResponse;
+
     public function __construct(
         protected AuthService $authService
     ) {}
 
     /**
-     * Handle login request
-     *
-     * @param  Request  $request
-     * @return JsonResponse
+     * Authenticate user and return a Sanctum token.
      */
     public function login(Request $request): JsonResponse
     {
         $request->validate([
-            'email' => 'required|string',
+            'email'    => 'required|string',
             'password' => 'required|string',
         ]);
 
-        try {
-            $result = $this->authService->login($request->only('email', 'password'));
+        // ValidationException is caught by the global handler → 422 with errors array.
+        $result = $this->authService->login($request->only('email', 'password'));
 
-            return response()->json([
-                'message' => 'Login successful',
-                'data' => $result,
-            ]);
-        } catch (ValidationException $e) {
-            return response()->json([
-                'message' => 'Login failed',
-                'errors' => $e->errors(),
-            ], 422);
-        }
+        return $this->success($result, 'Login successful');
     }
 
     /**
-     * Handle logout request
-     *
-     * @param  Request  $request
-     * @return JsonResponse
+     * Revoke all tokens for the authenticated user (logout).
      */
     public function logout(Request $request): JsonResponse
     {
         $this->authService->logout($request->user());
 
-        return response()->json([
-            'message' => 'Logged out successfully',
-        ]);
+        return $this->success(null, 'Logged out successfully');
     }
 
     /**
-     * Get current authenticated user's context
-     *
-     * @param  Request  $request
-     * @return JsonResponse
+     * Return the authenticated user's full context.
      */
     public function me(Request $request): JsonResponse
     {
         $context = $this->authService->getUserContext($request->user());
 
-        return response()->json([
-            'data' => $context,
-        ]);
+        return $this->success($context, 'User context retrieved');
     }
 
     /**
-     * Refresh user token (invalidate old, create new)
-     *
-     * @param  Request  $request
-     * @return JsonResponse
+     * Rotate the current access token (delete old, issue new).
      */
     public function refresh(Request $request): JsonResponse
     {
         $user = $request->user();
 
-        // Delete current token
         $request->user()->currentAccessToken()->delete();
 
-        // Create new token
         $moduleCodes = $user->getModuleCodes();
-        $token = $user->createToken('auth-token', $moduleCodes)->plainTextToken;
+        $token       = $user->createToken('auth-token', $moduleCodes)->plainTextToken;
 
-        return response()->json([
-            'message' => 'Token refreshed successfully',
-            'data' => [
-                'token' => $token,
-            ],
-        ]);
+        return $this->success(['token' => $token], 'Token refreshed successfully');
     }
 }

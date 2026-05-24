@@ -154,18 +154,26 @@ Route::prefix('v1/medical')
     // =========================================================================
     // BENEFITS
     // =========================================================================
-    Route::middleware(['permission:medical.plans.view'])->group(function () {
+    Route::middleware(['permission:medical.benefits.view'])->group(function () {
         Route::get('benefits/tree', [BenefitController::class, 'tree']);
         Route::get('benefits', [BenefitController::class, 'index']);
         Route::get('benefits/{benefit}', [BenefitController::class, 'show']);
+    });
+    Route::middleware(['permission:medical.plans.view'])->group(function () {
         Route::get('plans/{plan}/benefits', [BenefitController::class, 'planBenefits']);
         Route::get('plans/{plan}/benefit-schedule', [BenefitController::class, 'schedule']);
         Route::post('benefits/check-eligibility', [BenefitController::class, 'checkEligibility']);
     });
-    Route::middleware(['permission:medical.plans.configure'])->group(function () {
+    Route::middleware(['permission:medical.benefits.create'])->group(function () {
         Route::post('benefits', [BenefitController::class, 'store']);
+    });
+    Route::middleware(['permission:medical.benefits.update'])->group(function () {
         Route::put('benefits/{benefit}', [BenefitController::class, 'update']);
+    });
+    Route::middleware(['permission:medical.benefits.delete'])->group(function () {
         Route::delete('benefits/{benefit}', [BenefitController::class, 'destroy']);
+    });
+    Route::middleware(['permission:medical.plans.configure'])->group(function () {
         Route::post('plans/{plan}/benefits', [BenefitController::class, 'addToPlan']);
         Route::post('plans/{plan}/benefits/bulk', [BenefitController::class, 'bulkAddToPlan']);
         Route::put('plan-benefits/{planBenefit}', [BenefitController::class, 'updatePlanBenefit']);
@@ -247,7 +255,7 @@ Route::prefix('v1/medical')
     // =========================================================================
     // DISCOUNTS & PROMO CODES
     // =========================================================================
-    Route::middleware(['permission:medical.plans.view'])->group(function () {
+    Route::middleware(['permission:medical.discounts.view'])->group(function () {
         Route::get('plans/{plan}/discounts', [DiscountController::class, 'forPlan']);
         Route::post('discounts/simulate', [DiscountController::class, 'simulate']);
         Route::get('discount-rules', [DiscountController::class, 'index']);
@@ -256,13 +264,17 @@ Route::prefix('v1/medical')
         Route::get('promo-codes', [DiscountController::class, 'promoCodes']);
         Route::get('promo-codes/{promoCode}', [DiscountController::class, 'showPromoCode']);
     });
-    Route::middleware(['permission:medical.plans.configure'])->group(function () {
+    Route::middleware(['permission:medical.discounts.create'])->group(function () {
         Route::post('discount-rules', [DiscountController::class, 'store']);
-        Route::put('discount-rules/{discountRule}', [DiscountController::class, 'update']);
-        Route::delete('discount-rules/{discountRule}', [DiscountController::class, 'destroy']);
-        Route::post('promo-codes/apply', [DiscountController::class, 'applyPromoCode']);
         Route::post('promo-codes', [DiscountController::class, 'storePromoCode']);
+    });
+    Route::middleware(['permission:medical.discounts.update'])->group(function () {
+        Route::put('discount-rules/{discountRule}', [DiscountController::class, 'update']);
+        Route::post('promo-codes/apply', [DiscountController::class, 'applyPromoCode']);
         Route::put('promo-codes/{promoCode}', [DiscountController::class, 'updatePromoCode']);
+    });
+    Route::middleware(['permission:medical.discounts.delete'])->group(function () {
+        Route::delete('discount-rules/{discountRule}', [DiscountController::class, 'destroy']);
         Route::delete('promo-codes/{promoCode}', [DiscountController::class, 'destroyPromoCode']);
     });
 
@@ -281,7 +293,7 @@ Route::prefix('v1/medical')
     // =========================================================================
     // LOADING RULES
     // =========================================================================
-    Route::middleware(['permission:medical.underwriting.view'])->group(function () {
+    Route::middleware(['permission:medical.loading_rules.view'])->group(function () {
         Route::get('loading-rules', [LoadingController::class, 'index']);
         Route::get('loading-rules/search', [LoadingController::class, 'search']);
         Route::get('loading-rules/categories', [LoadingController::class, 'categories']);
@@ -290,9 +302,13 @@ Route::prefix('v1/medical')
         Route::get('loading-rules/{loadingRule}', [LoadingController::class, 'show']);
         Route::post('loadings/calculate', [LoadingController::class, 'calculate']);
     });
-    Route::middleware(['permission:medical.plans.configure'])->group(function () {
+    Route::middleware(['permission:medical.loading_rules.create'])->group(function () {
         Route::post('loading-rules', [LoadingController::class, 'store']);
+    });
+    Route::middleware(['permission:medical.loading_rules.update'])->group(function () {
         Route::put('loading-rules/{loadingRule}', [LoadingController::class, 'update']);
+    });
+    Route::middleware(['permission:medical.loading_rules.delete'])->group(function () {
         Route::delete('loading-rules/{loadingRule}', [LoadingController::class, 'destroy']);
     });
 

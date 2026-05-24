@@ -8,6 +8,8 @@
       <lib-page-header
         title="Corporate Clients"
         subtitle="Manage corporate groups, contacts and their policies."
+        [showBreadcrumb]="true"
+        [breadcrumbItems]="[{ label: 'Dashboard', link: '/' }, { label: 'Sales & Underwriting' }, { label: 'Corporate Groups' }]"
       >
         <div actions class="flex gap-2">
           <button

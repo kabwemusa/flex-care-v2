@@ -39,7 +39,7 @@
       <span
         class="px-1.5 py-0.5 rounded-md text-xs"
         [class]="filter() === 'all' ? 'bg-white/20' : 'bg-gray-100'"
-        >{{ getFilterCount('all') }}</span
+        >{{ filterCounts().all }}</span
       >
     </button>
     <button
@@ -56,7 +56,7 @@
       <span
         class="px-1.5 py-0.5 rounded-md text-xs"
         [class]="filter() === 'pending' ? 'bg-white/20' : 'bg-amber-100 text-amber-700'"
-        >{{ getFilterCount('pending') }}</span
+        >{{ filterCounts().pending }}</span
       >
     </button>
     <button
@@ -73,7 +73,7 @@
       <span
         class="px-1.5 py-0.5 rounded-md text-xs"
         [class]="filter() === 'approved' ? 'bg-white/20' : 'bg-emerald-100 text-emerald-700'"
-        >{{ getFilterCount('approved') }}</span
+        >{{ filterCounts().approved }}</span
       >
     </button>
     <button
@@ -90,7 +90,7 @@
       <span
         class="px-1.5 py-0.5 rounded-md text-xs"
         [class]="filter() === 'rejected' ? 'bg-white/20' : 'bg-red-100 text-red-700'"
-        >{{ getFilterCount('rejected') }}</span
+        >{{ filterCounts().rejected }}</span
       >
     </button>
   </div>
@@ -107,26 +107,8 @@
   </div>
   }
 
-  <!-- Error State -->
-  @if (error()) {
-  <div class="bg-red-50 border border-red-200 rounded-2xl p-8 text-center">
-    <div class="w-14 h-14 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-4">
-      <span class="material-symbols-rounded text-red-500 text-2xl">error</span>
-    </div>
-    <h3 class="font-medium text-red-800">Something went wrong</h3>
-    <p class="text-sm text-red-600 mt-1">{{ error() }}</p>
-    <button
-      (click)="loadClaims()"
-      class="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-red-100 text-red-700 hover:bg-red-200 text-sm font-medium transition-colors"
-    >
-      <span class="material-symbols-rounded" style="font-size: 18px">refresh</span>
-      Try again
-    </button>
-  </div>
-  }
-
   <!-- Claims List -->
-  @if (!loading() && !error()) { @if (filteredClaims().length) {
+  @if (!loading()) { @if (filteredClaims().length) {
   <div class="bg-white rounded-2xl border border-gray-100 overflow-hidden divide-y divide-gray-100">
     @for (claim of filteredClaims(); track claim.id; let i = $index) {
     <a
@@ -135,7 +117,7 @@
       [style.animation-delay]="i * 30 + 'ms'"
     >
       <!-- Status indicator bar -->
-      <div class="w-1 h-14 rounded-full {{ getStatusBarColor(claim.status) }}"></div>
+      <div class="w-1 h-14 rounded-full" [class]="ui.statusBarColor(claim.status)"></div>
 
       <div
         class="w-12 h-12 rounded-xl bg-gray-100 flex items-center justify-center shrink-0 group-hover:bg-gray-200 transition-colors"
@@ -149,7 +131,8 @@
             <p class="text-sm text-gray-500 mt-0.5">{{ claim.provider_name }}</p>
           </div>
           <span
-            class="inline-block px-2.5 py-1 rounded-full text-xs font-medium {{ getStatusClasses(claim.status) }}"
+            class="inline-block px-2.5 py-1 rounded-full text-xs font-medium"
+            [class]="ui.statusClasses(claim.status)"
           >
             {{ claim.status | titlecase }}
           </span>

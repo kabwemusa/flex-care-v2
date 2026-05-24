@@ -7,6 +7,8 @@
       <lib-page-header
         title="Addons Catalog"
         subtitle="Manage optional, mandatory, and conditional addon products."
+        [showBreadcrumb]="true"
+        [breadcrumbItems]="[{ label: 'Dashboard', link: '/' }, { label: 'Product Setup' }, { label: 'Add-ons Catalog' }]"
       >
         <div actions class="flex gap-2">
           <button mat-flat-button color="primary" class="!rounded-lg" (click)="openCreateDialog()">

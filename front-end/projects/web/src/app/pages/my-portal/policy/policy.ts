@@ -1,7 +1,10 @@
-import { Component, signal, OnInit } from '@angular/core';
+import { Component, signal, OnInit, inject, DestroyRef } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RouterModule } from '@angular/router';
 import { DecimalPipe, DatePipe, TitleCasePipe } from '@angular/common';
 import { MemberPortalService, PolicyData } from '../../../services/member-portal.service';
+import { UiUtilsService } from '../../../services/ui-utils.service';
+import { ToastService } from '../../../services/toast.service';
 
 @Component({
   selector: 'app-portal-policy',
@@ -10,57 +13,32 @@ import { MemberPortalService, PolicyData } from '../../../services/member-portal
   templateUrl: './policy.html',
 })
 export class PortalPolicy implements OnInit {
-  policy = signal<PolicyData | null>(null);
+  private readonly portalService = inject(MemberPortalService);
+  private readonly toast         = inject(ToastService);
+  private readonly destroyRef    = inject(DestroyRef);
+  readonly ui                    = inject(UiUtilsService);
+
+  policy  = signal<PolicyData | null>(null);
   loading = signal(true);
-  error = signal('');
 
-  constructor(private portalService: MemberPortalService) {}
-
-  ngOnInit() {
+  ngOnInit(): void {
     this.loadPolicy();
   }
 
-  loadPolicy() {
+  loadPolicy(): void {
     this.loading.set(true);
-    this.error.set('');
 
-    this.portalService.getPolicy().subscribe({
-      next: (res) => {
-        this.policy.set(res.data);
-        this.loading.set(false);
-      },
-      error: (err) => {
-        this.error.set(err.error?.message ?? 'Failed to load policy');
-        this.loading.set(false);
-      },
-    });
-  }
-
-  getBenefitIcon(category: string): string {
-    const icons: Record<string, string> = {
-      inpatient: 'local_hospital',
-      outpatient: 'medical_services',
-      dental: 'dentistry',
-      optical: 'visibility',
-      maternity: 'pregnant_woman',
-      wellness: 'spa',
-    };
-    return icons[category?.toLowerCase()] || 'healing';
-  }
-
-  getUsageColor(percentage: number): string {
-    if (percentage >= 90) return 'bg-linear-to-r from-red-500 to-rose-500';
-    if (percentage >= 70) return 'bg-linear-to-r from-amber-500 to-orange-500';
-    return 'bg-linear-to-r from-teal-500 to-cyan-500';
-  }
-
-  getMemberIcon(relationship: string, isPrimary: boolean): string {
-    if (isPrimary) return 'person';
-    switch (relationship?.toLowerCase()) {
-      case 'spouse': return 'favorite';
-      case 'child': return 'child_care';
-      case 'parent': return 'elderly';
-      default: return 'person';
-    }
+    this.portalService.getPolicy()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (res) => {
+          this.policy.set(res.data);
+          this.loading.set(false);
+        },
+        error: (err) => {
+          this.loading.set(false);
+          this.toast.error(err.error?.message ?? 'Failed to load policy. Please refresh.');
+        },
+      });
   }
 }

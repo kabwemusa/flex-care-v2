@@ -1,0 +1,227 @@
+<div class="space-y-5">
+
+  <!-- Header -->
+  <div class="flex items-center justify-between">
+    <div>
+      <h3 class="text-lg font-semibold text-slate-900">Discount &amp; Adjustment Rules</h3>
+      <p class="text-sm text-slate-500">
+        Premium discounts and loading adjustments configured for this plan
+      </p>
+    </div>
+    <button mat-flat-button color="primary" (click)="openDialog()">
+      <mat-icon fontSet="material-symbols-rounded">add</mat-icon>
+      Add Rule
+    </button>
+  </div>
+
+  <!-- Loading -->
+  @if (store.isLoading()) {
+  <div class="flex items-center justify-center py-12">
+    <mat-spinner diameter="32"></mat-spinner>
+  </div>
+  } @else {
+
+    @if (totalRules() > 0) {
+
+      <!-- ── Discount Rules ─────────────────────────────────────── -->
+      @if (discountRules().length > 0) {
+      <div class="space-y-2">
+        <h4 class="flex items-center gap-2 text-sm font-medium text-slate-700">
+          <span class="flex h-6 w-6 items-center justify-center rounded-full bg-green-100">
+            <mat-icon fontSet="material-symbols-rounded" class="!text-green-600 !text-[14px]">
+              percent
+            </mat-icon>
+          </span>
+          Discounts
+          <span class="ml-auto rounded-full bg-green-50 px-2 py-0.5 text-xs font-medium text-green-700">
+            {{ discountRules().length }}
+          </span>
+        </h4>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+          @for (rule of discountRules(); track rule.id) {
+          <ng-container
+            *ngTemplateOutlet="ruleCard; context: { $implicit: rule, type: 'discount' }"
+          ></ng-container>
+          }
+        </div>
+      </div>
+      }
+
+      <!-- ── Loading / Adjustment Rules ────────────────────────── -->
+      @if (loadingRules().length > 0) {
+      <div class="space-y-2">
+        <h4 class="flex items-center gap-2 text-sm font-medium text-slate-700">
+          <span class="flex h-6 w-6 items-center justify-center rounded-full bg-orange-100">
+            <mat-icon fontSet="material-symbols-rounded" class="!text-orange-600 !text-[14px]">
+              trending_up
+            </mat-icon>
+          </span>
+          Loading Adjustments
+          <span class="ml-auto rounded-full bg-orange-50 px-2 py-0.5 text-xs font-medium text-orange-700">
+            {{ loadingRules().length }}
+          </span>
+        </h4>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+          @for (rule of loadingRules(); track rule.id) {
+          <ng-container
+            *ngTemplateOutlet="ruleCard; context: { $implicit: rule, type: 'loading' }"
+          ></ng-container>
+          }
+        </div>
+      </div>
+      }
+
+    } @else {
+
+      <!-- Empty State -->
+      <div class="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-10 text-center">
+        <div
+          class="flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 mx-auto mb-4"
+        >
+          <mat-icon fontSet="material-symbols-rounded" class="!text-slate-400">
+            local_offer
+          </mat-icon>
+        </div>
+        <h4 class="text-sm font-medium text-slate-900">No Rules Configured</h4>
+        <p class="mt-1 text-sm text-slate-500 max-w-sm mx-auto">
+          Add discount or loading rules that apply specifically to this plan's premiums.
+        </p>
+        <button mat-flat-button color="primary" class="mt-4" (click)="openDialog()">
+          <mat-icon fontSet="material-symbols-rounded">add</mat-icon>
+          Add First Rule
+        </button>
+      </div>
+
+    }
+  }
+
+  <!-- ── Rule Card Template ────────────────────────────────────────────── -->
+  <ng-template #ruleCard let-rule let-type="type">
+    <div
+      class="group relative rounded-xl border bg-white p-4 transition-all hover:shadow-sm"
+      [class]="
+        type === 'discount'
+          ? 'border-slate-200 hover:border-green-200'
+          : 'border-slate-200 hover:border-orange-200'
+      "
+    >
+      <!-- Status bar (left edge) -->
+      <span
+        class="absolute left-0 top-3 bottom-3 w-0.5 rounded-full"
+        [class]="rule.is_active
+          ? (type === 'discount' ? 'bg-green-400' : 'bg-orange-400')
+          : 'bg-slate-200'"
+      ></span>
+
+      <!-- Top row: icon + name + menu -->
+      <div class="flex items-start justify-between mb-3 pl-3">
+        <div class="flex items-center gap-3">
+          <div
+            class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full"
+            [class]="type === 'discount' ? getDiscountIconClass() : getLoadingIconClass()"
+          >
+            <mat-icon fontSet="material-symbols-rounded" class="!text-[18px]">
+              {{ type === 'discount' ? 'percent' : 'trending_up' }}
+            </mat-icon>
+          </div>
+
+          <div class="min-w-0">
+            <p class="text-sm font-semibold text-slate-900 truncate">{{ rule.name }}</p>
+            <p class="text-xs text-slate-400 truncate">{{ rule.code }}</p>
+          </div>
+        </div>
+
+        <button
+          mat-icon-button
+          [matMenuTriggerFor]="ruleMenu"
+          class="!text-slate-300 group-hover:!text-slate-500 transition-colors shrink-0"
+          matTooltip="Actions"
+        >
+          <mat-icon fontSet="material-symbols-rounded">more_vert</mat-icon>
+        </button>
+
+        <mat-menu #ruleMenu="matMenu">
+          <button mat-menu-item (click)="openDialog(rule)">
+            <mat-icon fontSet="material-symbols-rounded" class="!text-slate-500">edit</mat-icon>
+            <span>Edit Rule</span>
+          </button>
+          <button mat-menu-item (click)="toggleStatus(rule)">
+            <mat-icon fontSet="material-symbols-rounded" class="!text-slate-500">
+              {{ rule.is_active ? 'block' : 'check_circle' }}
+            </mat-icon>
+            <span>{{ rule.is_active ? 'Deactivate' : 'Activate' }}</span>
+          </button>
+          <mat-divider></mat-divider>
+          <button mat-menu-item class="!text-red-600" (click)="deleteRule(rule)">
+            <mat-icon fontSet="material-symbols-rounded" class="!text-red-500">delete</mat-icon>
+            <span>Delete</span>
+          </button>
+        </mat-menu>
+      </div>
+
+      <!-- Badges row -->
+      <div class="flex flex-wrap items-center gap-1.5 pl-3 mb-3">
+        <!-- Value badge -->
+        <span
+          class="rounded-full px-2 py-0.5 text-xs font-semibold"
+          [class]="
+            type === 'discount'
+              ? 'bg-green-100 text-green-700'
+              : 'bg-orange-100 text-orange-700'
+          "
+        >
+          {{ getValueLabel(rule) }}
+        </span>
+
+        <!-- Application method -->
+        <span
+          class="rounded-full px-2 py-0.5 text-xs font-medium"
+          [class]="getMethodClass(rule.application_method)"
+        >
+          {{ getMethodLabel(rule.application_method) }}
+        </span>
+
+        <!-- Status -->
+        @if (!rule.is_active) {
+        <span class="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-500">
+          Inactive
+        </span>
+        }
+      </div>
+
+      <!-- Details row -->
+      <div class="border-t border-slate-100 pt-3 pl-3 grid grid-cols-2 gap-x-4 gap-y-1">
+        @if (rule.priority != null) {
+        <div class="flex items-center gap-1.5">
+          <mat-icon fontSet="material-symbols-rounded" class="!text-slate-400 !text-[13px]">
+            low_priority
+          </mat-icon>
+          <span class="text-xs text-slate-500">Priority {{ rule.priority }}</span>
+        </div>
+        }
+        @if (rule.can_stack != null) {
+        <div class="flex items-center gap-1.5">
+          <mat-icon fontSet="material-symbols-rounded" class="!text-slate-400 !text-[13px]">
+            {{ rule.can_stack ? 'layers' : 'layers_clear' }}
+          </mat-icon>
+          <span class="text-xs text-slate-500">{{ rule.can_stack ? 'Stackable' : 'Non-stackable' }}</span>
+        </div>
+        }
+        @if (rule.effective_from) {
+        <div class="flex items-center gap-1.5 col-span-2">
+          <mat-icon fontSet="material-symbols-rounded" class="!text-slate-400 !text-[13px]">
+            calendar_today
+          </mat-icon>
+          <span class="text-xs text-slate-500">
+            From {{ rule.effective_from | date: 'dd MMM yyyy' }}
+            @if (rule.effective_to) { – {{ rule.effective_to | date: 'dd MMM yyyy' }} }
+          </span>
+        </div>
+        }
+      </div>
+    </div>
+  </ng-template>
+
+</div>

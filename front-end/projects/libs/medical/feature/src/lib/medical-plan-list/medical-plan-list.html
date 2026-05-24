@@ -7,6 +7,8 @@
       <lib-page-header
         title="Medical Plans"
         subtitle="Configure plan tiers, benefits, and pricing structures."
+        [showBreadcrumb]="true"
+        [breadcrumbItems]="[{ label: 'Dashboard', link: '/' }, { label: 'Product Setup' }, { label: 'Plans' }]"
       >
         <div actions class="flex gap-2">
           <button
@@ -688,13 +690,11 @@
           </div>
           @if ((plan.plan_benefits_count || 0) > 0) {
           <a
-            [routerLink]="['/medical/plans', plan.id, 'benefits']"
+            [routerLink]="['/plans', plan.id, 'benefits']"
             class="inline-flex items-center gap-1 text-sm text-primary hover:underline"
           >
             View all benefits
-            <mat-icon fontSet="material-symbols-rounded" class="!text-[16px]"
-              >arrow_forward</mat-icon
-            >
+            <mat-icon fontSet="material-symbols-rounded">arrow_forward</mat-icon>
           </a>
           } @else {
           <p class="text-sm text-slate-400">No benefits configured yet.</p>

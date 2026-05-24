@@ -10,24 +10,6 @@
 </div>
 }
 
-<!-- Error State -->
-@if (error()) {
-<div class="bg-red-50 border border-red-200 rounded-2xl p-8 text-center fc-fade-in">
-  <div class="w-14 h-14 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-4">
-    <span class="material-symbols-rounded text-red-500 text-2xl">error</span>
-  </div>
-  <h3 class="font-medium text-red-800">Something went wrong</h3>
-  <p class="text-sm text-red-600 mt-1">{{ error() }}</p>
-  <button
-    (click)="loadPolicy()"
-    class="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-red-100 text-red-700 hover:bg-red-200 text-sm font-medium transition-colors"
-  >
-    <span class="material-symbols-rounded" style="font-size: 18px">refresh</span>
-    Try again
-  </button>
-</div>
-}
-
 <!-- Policy Content -->
 @if (policy(); as p) {
 <div class="space-y-6 fc-fade-in">
@@ -108,7 +90,7 @@
   </div>
 
   <!-- Benefits Summary -->
-  @if (p.benefits?.length) {
+  @if (p.benefits.length) {
   <div class="bg-white rounded-2xl border border-gray-100 overflow-hidden fc-stagger">
     <div class="px-6 py-5 border-b border-gray-100">
       <div class="flex items-center gap-3">
@@ -132,9 +114,7 @@
           <div
             class="w-12 h-12 rounded-xl bg-linear-to-br from-teal-100 to-cyan-100 flex items-center justify-center shrink-0"
           >
-            <span class="material-symbols-rounded text-teal-600" style="font-size: 24px">{{
-              getBenefitIcon(benefit.category)
-            }}</span>
+            <span class="material-symbols-rounded text-teal-600" style="font-size: 24px">{{ ui.benefitIcon(benefit.category) }}</span>
           </div>
           <div class="flex-1 min-w-0">
             <div class="flex items-center justify-between gap-2">
@@ -167,7 +147,8 @@
               </div>
               <div class="h-2.5 bg-gray-100 rounded-full overflow-hidden">
                 <div
-                  class="h-full rounded-full transition-all duration-500 {{ getUsageColor(benefit.percentage) }}"
+                  class="h-full rounded-full transition-all duration-500"
+                  [class]="ui.usageBarClasses(benefit.percentage)"
                   [style.width.%]="benefit.percentage"
                 ></div>
               </div>
@@ -181,7 +162,7 @@
   }
 
   <!-- Covered Members -->
-  @if (p.members?.length) {
+  @if (p.members.length) {
   <div class="bg-white rounded-2xl border border-gray-100 overflow-hidden fc-stagger">
     <div class="px-6 py-5 border-b border-gray-100">
       <div class="flex items-center gap-3">
@@ -238,7 +219,7 @@
                   ? 'text-amber-600'
                   : 'text-emerald-600'
             "
-            >{{ getMemberIcon(member.relationship, member.is_primary) }}</span
+            >{{ ui.memberIcon(member.relationship, member.is_primary) }}</span
           >
         </div>
         }

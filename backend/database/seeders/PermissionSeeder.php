@@ -50,7 +50,7 @@ class PermissionSeeder extends Seeder
         ];
 
         foreach ($globalPermissions as $permission) {
-            Permission::create(['name' => $permission, 'guard_name' => 'web']);
+            Permission::findOrCreate($permission, 'web');
         }
 
         // =========================================================================
@@ -72,6 +72,12 @@ class PermissionSeeder extends Seeder
             'medical.plans.update',
             'medical.plans.delete',
             'medical.plans.configure',
+
+            // Benefit Management
+            'medical.benefits.view',
+            'medical.benefits.create',
+            'medical.benefits.update',
+            'medical.benefits.delete',
 
             // Rate Card Management
             'medical.rate_cards.view',
@@ -152,10 +158,22 @@ class PermissionSeeder extends Seeder
             'medical.premium.view',
             'medical.premium.calculate',
             'medical.premium.override',
+
+            // Discount Management
+            'medical.discounts.view',
+            'medical.discounts.create',
+            'medical.discounts.update',
+            'medical.discounts.delete',
+
+            // Loading Rule Management
+            'medical.loading_rules.view',
+            'medical.loading_rules.create',
+            'medical.loading_rules.update',
+            'medical.loading_rules.delete',
         ];
 
         foreach ($medicalPermissions as $permission) {
-            Permission::create(['name' => $permission, 'guard_name' => 'medical']);
+            Permission::findOrCreate($permission, 'medical');
         }
 
         // =========================================================================
@@ -172,7 +190,7 @@ class PermissionSeeder extends Seeder
         ];
 
         foreach ($lifePermissions as $permission) {
-            Permission::create(['name' => $permission, 'guard_name' => 'life']);
+            Permission::findOrCreate($permission, 'life');
         }
 
         $this->command->info('Permissions created successfully!');

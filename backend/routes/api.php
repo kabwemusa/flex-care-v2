@@ -49,44 +49,51 @@ Route::middleware(['auth:sanctum', 'session.check'])->group(function () {
     });
 
     // Module Access Management (Admin only)
-    Route::prefix('users/{userId}/module-access')->middleware('role:System Administrator')->group(function () {
+    Route::prefix('users/{userId}/module-access')->middleware('permission:module_access.grant')->group(function () {
         Route::get('/', [ModuleAccessController::class, 'index'])->name('module-access.index');
         Route::post('/grant', [ModuleAccessController::class, 'grant'])->name('module-access.grant');
-        Route::post('/revoke', [ModuleAccessController::class, 'revoke'])->name('module-access.revoke');
+        Route::post('/revoke', [ModuleAccessController::class, 'revoke'])
+            ->name('module-access.revoke')
+            ->middleware('permission:module_access.revoke');
     });
 
     // =========================================================================
     // USER MANAGEMENT (Admin/User Manager only)
     // =========================================================================
-    Route::middleware('role:System Administrator|User Manager')->group(function () {
+    Route::middleware('permission:users.view')->group(function () {
         // User CRUD
-        Route::apiResource('users', UserController::class);
+        Route::get('users', [UserController::class, 'index'])->name('users.index');
+        Route::post('users', [UserController::class, 'store'])->name('users.store')->middleware('permission:users.create');
+        Route::get('users/{user}', [UserController::class, 'show'])->name('users.show');
+        Route::put('users/{user}', [UserController::class, 'update'])->name('users.update')->middleware('permission:users.update');
+        Route::patch('users/{user}', [UserController::class, 'update'])->name('users.update')->middleware('permission:users.update');
+        Route::delete('users/{user}', [UserController::class, 'destroy'])->name('users.destroy')->middleware('permission:users.delete');
 
         // User Actions
-        Route::post('users/{id}/activate', [UserController::class, 'activate'])->name('users.activate');
-        Route::post('users/{id}/deactivate', [UserController::class, 'deactivate'])->name('users.deactivate');
-        Route::post('users/{id}/roles', [UserController::class, 'assignRoles'])->name('users.assign-roles');
+        Route::post('users/{id}/activate', [UserController::class, 'activate'])->name('users.activate')->middleware('permission:users.activate');
+        Route::post('users/{id}/deactivate', [UserController::class, 'deactivate'])->name('users.deactivate')->middleware('permission:users.deactivate');
+        Route::post('users/{id}/roles', [UserController::class, 'assignRoles'])->name('users.assign-roles')->middleware('permission:roles.assign');
         Route::get('users/{id}/permissions', [UserController::class, 'permissions'])->name('users.permissions');
 
         // Admin-only password actions
         Route::post('users/{id}/force-password-change', [PasswordController::class, 'forcePasswordChange'])
             ->name('users.force-password-change')
-            ->middleware('role:System Administrator');
+            ->middleware('permission:users.update');
         Route::post('users/{id}/reset-password', [PasswordController::class, 'resetPassword'])
             ->name('users.reset-password')
-            ->middleware('role:System Administrator');
+            ->middleware('permission:users.update');
     });
 
     // =========================================================================
     // ROLE & PERMISSION MANAGEMENT (Admin only)
     // =========================================================================
-    Route::middleware('role:System Administrator')->group(function () {
+    Route::middleware('permission:roles.view')->group(function () {
         // Role CRUD
         Route::get('roles', [RoleController::class, 'index'])->name('roles.index');
-        Route::post('roles', [RoleController::class, 'store'])->name('roles.store');
+        Route::post('roles', [RoleController::class, 'store'])->name('roles.store')->middleware('permission:roles.create');
         Route::get('roles/{id}', [RoleController::class, 'show'])->name('roles.show');
-        Route::patch('roles/{id}', [RoleController::class, 'update'])->name('roles.update');
-        Route::delete('roles/{id}', [RoleController::class, 'destroy'])->name('roles.destroy');
+        Route::patch('roles/{id}', [RoleController::class, 'update'])->name('roles.update')->middleware('permission:roles.update');
+        Route::delete('roles/{id}', [RoleController::class, 'destroy'])->name('roles.destroy')->middleware('permission:roles.delete');
 
         // Permissions
         Route::get('permissions', [RoleController::class, 'permissions'])->name('permissions.index');
@@ -119,16 +126,18 @@ Route::middleware(['auth:sanctum', 'session.check'])->group(function () {
     // =========================================================================
     // REPORTS (All authenticated users - view permissions can be added later)
     // =========================================================================
-    Route::prefix('reports')->group(function () {
+    Route::prefix('reports')->middleware(['module:medical', 'permission:medical.reports.view'])->group(function () {
         Route::get('/summary', [ReportController::class, 'summary'])->name('reports.summary');
         Route::get('/approvals', [ReportController::class, 'approvalMetrics'])->name('reports.approvals');
         Route::get('/policies', [ReportController::class, 'policyAnalytics'])->name('reports.policies');
         Route::get('/billing', [ReportController::class, 'billingReports'])->name('reports.billing');
 
         // Export endpoints
-        Route::get('/export/approvals', [ReportController::class, 'exportApprovals'])->name('reports.export.approvals');
-        Route::get('/export/policies', [ReportController::class, 'exportPolicies'])->name('reports.export.policies');
-        Route::get('/export/billing', [ReportController::class, 'exportBilling'])->name('reports.export.billing');
+        Route::middleware('permission:medical.reports.export')->group(function () {
+            Route::get('/export/approvals', [ReportController::class, 'exportApprovals'])->name('reports.export.approvals');
+            Route::get('/export/policies', [ReportController::class, 'exportPolicies'])->name('reports.export.policies');
+            Route::get('/export/billing', [ReportController::class, 'exportBilling'])->name('reports.export.billing');
+        });
     });
 
     // =========================================================================

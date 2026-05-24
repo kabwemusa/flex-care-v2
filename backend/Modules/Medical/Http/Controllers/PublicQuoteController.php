@@ -4,6 +4,7 @@ namespace Modules\Medical\Http\Controllers;
 
 use Illuminate\Routing\Controller;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Log;
 use Modules\Medical\Models\Plan;
 use Modules\Medical\Models\Addon;
 use Modules\Medical\Models\PlanAddon;
@@ -115,6 +116,13 @@ class PublicQuoteController extends Controller
                 }
             }
 
+            // Apply tax/levy on the net premium (after all discounts and promos)
+            $taxRate     = (float)  config('medical.tax_rate', 0.05);
+            $taxName     = (string) config('medical.tax_name', 'VAT');
+            $netPremium  = round($premium, 2);
+            $taxAmount   = round($netPremium * $taxRate, 2);
+            $grossPremium = round($netPremium + $taxAmount, 2);
+
             // Enhance member data with individual premiums
             $membersWithPremiums = [];
             foreach ($request->members as $index => $memberData) {
@@ -138,21 +146,25 @@ class PublicQuoteController extends Controller
                     'code' => $rateCard->code,
                     'version' => $rateCard->version,
                 ],
-                'premium_basis' => $premiumResult['premium_basis'],
-                'members' => $membersWithPremiums,
-                'base_premium' => $premiumResult['base_premium'],
-                'addon_premium' => $premiumResult['addon_premium'],
-                'addons' => $premiumResult['breakdown']['addons'] ?? [],
-                'discounts' => $discountResult['discounts'] ?? [],
+                'premium_basis'  => $premiumResult['premium_basis'],
+                'members'        => $membersWithPremiums,
+                'base_premium'   => $premiumResult['base_premium'],
+                'addon_premium'  => $premiumResult['addon_premium'],
+                'addons'         => $premiumResult['breakdown']['addons'] ?? [],
+                'discounts'      => $discountResult['discounts'] ?? [],
                 'total_discount' => $discountResult['total_discount'] ?? 0,
                 'promo_discount' => $promoResult['discount_amount'] ?? 0,
-                'loadings' => [],
-                'total_loading' => 0,
-                'final_premium' => round($premium, 2),
-                'currency' => $rateCard->currency,
-                'frequency' => $rateCard->premium_frequency,
-                'quote_date' => now()->toIso8601String(),
-                'valid_until' => now()->addDays(30)->toIso8601String(),
+                'loadings'       => [],
+                'total_loading'  => 0,
+                'net_premium'    => $netPremium,
+                'tax_name'       => $taxName,
+                'tax_rate'       => $taxRate,
+                'tax_amount'     => $taxAmount,
+                'final_premium'  => $grossPremium,
+                'currency'       => $rateCard->currency,
+                'frequency'      => $rateCard->premium_frequency,
+                'quote_date'     => now()->toIso8601String(),
+                'valid_until'    => now()->addDays(config('medical.quote_validity_days', 30))->toIso8601String(),
             ], 'Quote generated');
         } catch (Throwable $e) {
             return $this->error('Unable to generate quote', 500);

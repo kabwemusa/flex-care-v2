@@ -7,6 +7,8 @@
       <lib-page-header
         title="Medical Schemes"
         subtitle="Manage umbrella products, organizational tiers, and scheme rules."
+        [showBreadcrumb]="true"
+        [breadcrumbItems]="[{ label: 'Dashboard', link: '/' }, { label: 'Product Setup' }, { label: 'Schemes' }]"
       >
         <div actions class="flex gap-2">
           <button
