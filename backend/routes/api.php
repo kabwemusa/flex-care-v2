@@ -66,7 +66,7 @@ Route::middleware(['auth:sanctum', 'session.check'])->group(function () {
         Route::post('users', [UserController::class, 'store'])->name('users.store')->middleware('permission:users.create');
         Route::get('users/{user}', [UserController::class, 'show'])->name('users.show');
         Route::put('users/{user}', [UserController::class, 'update'])->name('users.update')->middleware('permission:users.update');
-        Route::patch('users/{user}', [UserController::class, 'update'])->name('users.update')->middleware('permission:users.update');
+        Route::patch('users/{user}', [UserController::class, 'update'])->name('users.patch')->middleware('permission:users.update');
         Route::delete('users/{user}', [UserController::class, 'destroy'])->name('users.destroy')->middleware('permission:users.delete');
 
         // User Actions
