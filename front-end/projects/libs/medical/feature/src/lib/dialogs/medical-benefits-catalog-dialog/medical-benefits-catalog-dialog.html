@@ -1,4 +1,4 @@
-<!-- libs/medical/ui/src/lib/dialogs/benefit-dialog/benefit-dialog.component.html -->
+﻿<!-- libs/medical/ui/src/lib/dialogs/benefit-dialog/benefit-dialog.component.html -->
 
 <div class="flex max-h-[90vh] w-full flex-col overflow-hidden rounded-lg bg-white sm:w-[70vw]">
   <!-- Header -->
@@ -24,7 +24,7 @@
     <button
       mat-icon-button
       (click)="dialogRef.close()"
-      class="!text-slate-400 hover:!text-slate-700"
+      class="text-slate-400! hover:text-slate-700!"
     >
       <mat-icon fontSet="material-symbols-rounded">close</mat-icon>
     </button>
@@ -37,14 +37,14 @@
       [linear]="!isEditMode"
       [selectedIndex]="currentStep()"
       (selectionChange)="onStepChange($event.selectedIndex)"
-      class="!bg-transparent"
+      class="bg-transparent!"
     >
       <ng-template matStepperIcon="edit">
-        <mat-icon fontSet="material-symbols-rounded" class="!text-green-600">check</mat-icon>
+        <mat-icon fontSet="material-symbols-rounded" class="text-green-600!">check</mat-icon>
       </ng-template>
 
       <ng-template matStepperIcon="done">
-        <mat-icon fontSet="material-symbols-rounded" class="!text-green-600">check</mat-icon>
+        <mat-icon fontSet="material-symbols-rounded" class="text-green-600!">check</mat-icon>
       </ng-template>
 
       <!-- Step 1: Basic Information -->
@@ -60,7 +60,7 @@
               Benefit Type <span class="text-red-500">*</span>
             </label>
             <mat-form-field appearance="fill" class="w-full minimal-input" subscriptSizing="dynamic">
-              <mat-select formControlName="benefit_type" placeholder="Select type">
+              <mat-select formControlName="benefit_type">
                 <mat-select-trigger>
                   @if (basicInfoForm.get('benefit_type')?.value; as typeValue) {
                   <span>{{ getBenefitTypeLabel(typeValue) }}</span>
@@ -69,7 +69,7 @@
                 @for (type of benefitTypes; track type.value) {
                 <mat-option [value]="type.value">
                   <div class="flex items-center gap-2">
-                    <mat-icon fontSet="material-symbols-rounded" class="!text-[18px]">{{
+                    <mat-icon fontSet="material-symbols-rounded" class="icon-md">{{
                       type.icon
                     }}</mat-icon>
                     <span>{{ type.label }}</span>
@@ -89,8 +89,8 @@
               Benefit Name <span class="text-red-500">*</span>
             </label>
             <mat-form-field appearance="fill" class="w-full minimal-input" subscriptSizing="dynamic">
-              <input matInput formControlName="name" placeholder="e.g. Hospital Room & Board" />
-              <mat-icon matSuffix fontSet="material-symbols-rounded" class="!text-slate-400"
+              <input matInput formControlName="name" />
+              <mat-icon matSuffix fontSet="material-symbols-rounded" class="text-slate-400!"
                 >badge</mat-icon
               >
               @if (basicInfoForm.get('name')?.hasError('required')) {
@@ -106,7 +106,7 @@
               <input
                 matInput
                 formControlName="display_name"
-                placeholder="Optional friendly name for members"
+               
               />
             </mat-form-field>
             <p class="text-xs text-slate-400">Shown to members if different from internal name</p>
@@ -117,7 +117,7 @@
           <div class="flex flex-col gap-1.5">
             <label class="text-sm font-medium text-slate-700">Parent Benefit <span class="text-xs font-normal text-slate-400">(optional)</span></label>
             <mat-form-field appearance="fill" class="w-full minimal-input" subscriptSizing="dynamic">
-              <mat-select formControlName="parent_id" placeholder="None (Root benefit)">
+              <mat-select formControlName="parent_id">
                 <mat-select-trigger>
                   @if (basicInfoForm.get('parent_id')?.value; as parentId) {
                   <span>{{ getParentBenefitName(parentId) }}</span>
@@ -131,7 +131,7 @@
                   <div class="flex items-center gap-2">
                     <mat-icon
                       fontSet="material-symbols-rounded"
-                      class="!text-[18px] !text-blue-500"
+                      class="icon-md text-blue-500!"
                     >
                       {{ getBenefitTypeIcon(parent.benefit_type) }}
                     </mat-icon>
@@ -156,7 +156,7 @@
                 formControlName="description"
                 rows="3"
                 placeholder="What this benefit covers..."
-                class="!resize-none"
+                class="resize-none!"
               ></textarea>
             </mat-form-field>
           </div>
@@ -241,7 +241,7 @@
 
           <div class="rounded-lg bg-blue-50 border border-blue-100 p-4">
             <div class="flex gap-3">
-              <mat-icon fontSet="material-symbols-rounded" class="!text-blue-500">info</mat-icon>
+              <mat-icon fontSet="material-symbols-rounded" class="text-blue-500!">info</mat-icon>
               <div>
                 <p class="text-sm font-medium text-blue-900">About Default Limits</p>
                 <p class="text-xs text-blue-700 mt-1">
@@ -267,7 +267,7 @@
           >
             <div class="flex items-start gap-3">
               <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-100">
-                <mat-icon fontSet="material-symbols-rounded" class="!text-amber-600 !text-[18px]"
+                <mat-icon fontSet="material-symbols-rounded" class="text-amber-600! icon-md"
                   >verified_user</mat-icon
                 >
               </div>
@@ -287,7 +287,7 @@
           >
             <div class="flex items-start gap-3">
               <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-purple-100">
-                <mat-icon fontSet="material-symbols-rounded" class="!text-purple-600 !text-[18px]"
+                <mat-icon fontSet="material-symbols-rounded" class="text-purple-600! icon-md"
                   >send</mat-icon
                 >
               </div>
@@ -311,7 +311,7 @@
               <mat-select
                 formControlName="applicable_member_types"
                 multiple
-                placeholder="Select member types"
+               
               >
                 <mat-select-trigger>
                   @if (requirementsForm.get('applicable_member_types')?.value; as types) { @if
@@ -333,7 +333,7 @@
 
           <div class="rounded-lg bg-amber-50 border border-amber-100 p-4">
             <div class="flex gap-3">
-              <mat-icon fontSet="material-symbols-rounded" class="!text-amber-500"
+              <mat-icon fontSet="material-symbols-rounded" class="text-amber-500!"
                 >lightbulb</mat-icon
               >
               <div>
@@ -370,7 +370,7 @@
     </div>
 
     <div class="flex items-center gap-2">
-      <button mat-button (click)="dialogRef.close()" class="!text-slate-600 hover:!bg-slate-200">
+      <button mat-button (click)="dialogRef.close()" class="text-slate-600! hover:bg-slate-200!">
         Cancel
       </button>
 
@@ -379,7 +379,7 @@
         mat-icon-button
         (click)="prevStep()"
         matTooltip="Previous step"
-        class="!text-slate-600 hover:!bg-slate-200"
+        class="text-slate-600! hover:bg-slate-200!"
       >
         <mat-icon fontSet="material-symbols-rounded">chevron_left</mat-icon>
       </button>
@@ -389,7 +389,7 @@
         [disabled]="!canGoNext"
         (click)="nextStep()"
         matTooltip="Next step"
-        class="!text-primary"
+        class="text-primary!"
       >
         <mat-icon fontSet="material-symbols-rounded">chevron_right</mat-icon>
       </button>
@@ -399,7 +399,7 @@
         color="primary"
         [disabled]="!isFormValid"
         (click)="save()"
-        class="!px-6 !rounded-lg"
+        class="px-6! rounded-lg!"
       >
         {{ isEditMode ? 'Save Changes' : 'Create Benefit' }}
       </button>

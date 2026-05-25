@@ -1,4 +1,4 @@
-<header
+﻿<header
   class="sticky top-0 z-30 flex h-16 w-full items-center shadow-sm bg-white border-b border-divider/60 bg-background/80 backdrop-blur-md supports-[backdrop-filter]:bg-background/60"
 >
   <div class="flex w-full items-center justify-between px-4 lg:px-6">
@@ -6,7 +6,7 @@
       <button
         mat-icon-button
         (click)="toggleSidebar.emit()"
-        class="md:!hidden !text-foreground-500 hover:!text-foreground"
+        class="md:hidden! text-foreground-500! hover:text-foreground!"
       >
         <mat-icon fontSet="material-symbols-rounded">menu</mat-icon>
       </button>
@@ -15,7 +15,7 @@
       <button
         mat-icon-button
         (click)="toggleSidebar.emit()"
-        class="!hidden md:!flex !text-foreground-500 hover:!text-foreground"
+        class="hidden! md:flex! text-foreground-500! hover:text-foreground!"
         matTooltip="Expand Sidebar"
       >
         <mat-icon fontSet="material-symbols-rounded">dock_to_right</mat-icon>
@@ -29,7 +29,7 @@
       >
         <mat-icon
           fontSet="material-symbols-rounded"
-          class="!text-[20px] !text-muted-foreground group-hover:!text-primary"
+          class="icon-md text-muted-foreground! group-hover:text-primary!"
           >search</mat-icon
         >
         <span>Search policies, claims, or customers...</span>
@@ -47,7 +47,7 @@
         mat-icon-button
         [matMenuTriggerFor]="notificationMenu"
         (menuOpened)="onNotificationMenuOpened()"
-        class="group !text-foreground-500 hover:!bg-primary/10 hover:!text-primary transition-colors"
+        class="group text-foreground-500! hover:bg-primary!/10 hover:text-primary! transition-colors"
         [matBadge]="unreadCount() > 0 ? (unreadCount() > 99 ? '99+' : unreadCount()) : null"
         [matBadgeHidden]="!hasUnread()"
         matBadgeColor="warn"
@@ -65,7 +65,7 @@
       <mat-menu
         #notificationMenu="matMenu"
         xPosition="before"
-        class="!min-w-[360px] !max-w-[400px] !rounded-xl !border !border-divider/50 !bg-background/95 !backdrop-blur-md"
+        class="min-w-[360px]! max-w-[400px]! rounded-xl! border! border-divider!/50 bg-background!/95 backdrop-blur-md!"
       >
         <!-- Header -->
         <div class="flex items-center justify-between px-4 py-3 border-b border-divider/50">
@@ -74,7 +74,7 @@
             <button
               mat-button
               (click)="markAllAsRead(); $event.stopPropagation()"
-              class="!text-xs !text-primary !min-w-0 !px-2 !h-7"
+              class="text-xs! text-primary! min-w-0! px-2! h-7!"
             >
               Mark all read
             </button>
@@ -102,7 +102,7 @@
               <button
                 mat-menu-item
                 (click)="onNotificationClick(notification)"
-                class="!h-auto !py-3 !px-4 !whitespace-normal hover:!bg-content2"
+                class="h-auto! py-3! px-4! whitespace-normal! hover:bg-content2!"
                 [class.!bg-primary/5]="!notification.read_at"
               >
                 <div class="flex items-start gap-3 w-full">
@@ -146,7 +146,7 @@
             <button
               mat-menu-item
               (click)="viewAllApprovals()"
-              class="!h-10 !justify-center !text-primary hover:!bg-primary/5"
+              class="h-10! justify-center! text-primary! hover:bg-primary!/5"
             >
               <span class="text-sm font-medium">View all approvals</span>
             </button>
@@ -157,7 +157,7 @@
       <button
         mat-button
         [matMenuTriggerFor]="userMenu"
-        class="!ml-2 !h-9 !min-w-0 !rounded-full !px-1.5 hover:!bg-content2 transition-all border border-transparent hover:border-divider/50"
+        class="ml-2! h-9! min-w-0! rounded-full! px-1!.5 hover:bg-content2! transition-all border border-transparent hover:border-divider/50"
       >
         <div class="flex items-center gap-2.5">
           <div
@@ -174,7 +174,7 @@
             <span class="text-[10px] font-medium leading-none text-muted-foreground mt-1">{{ userRole() }}</span>
           </div>
 
-          <mat-icon fontSet="material-symbols-rounded" class="!text-[18px] !text-muted-foreground"
+          <mat-icon fontSet="material-symbols-rounded" class="icon-md text-muted-foreground!"
             >arrow_drop_down</mat-icon
           >
         </div>
@@ -183,7 +183,7 @@
       <mat-menu
         #userMenu="matMenu"
         xPosition="before"
-        class="!min-w-[200px] !rounded-xl !border !border-divider/50 !bg-background/95 !backdrop-blur-md"
+        class="min-w-[200px]! rounded-xl! border! border-divider!/50 bg-background!/95 backdrop-blur-md!"
       >
         <div class="px-4 py-3 border-b border-divider/50 mb-1">
           <p class="text-sm font-semibold text-foreground">{{ displayName() }}</p>
@@ -192,9 +192,9 @@
 
         <button
           mat-menu-item
-          class="!h-10 !rounded-md !mx-1 !w-[calc(100%-8px)] hover:!bg-content2"
+          class="h-10! rounded-md! mx-1! w-[calc(100%-8px)]! hover:bg-content2!"
         >
-          <mat-icon fontSet="material-symbols-rounded" class="!text-[20px] !text-foreground-500"
+          <mat-icon fontSet="material-symbols-rounded" class="icon-md text-foreground-500!"
             >person</mat-icon
           >
           <span class="text-sm">Profile</span>
@@ -202,9 +202,9 @@
 
         <button
           mat-menu-item
-          class="!h-10 !rounded-md !mx-1 !w-[calc(100%-8px)] hover:!bg-content2"
+          class="h-10! rounded-md! mx-1! w-[calc(100%-8px)]! hover:bg-content2!"
         >
-          <mat-icon fontSet="material-symbols-rounded" class="!text-[20px] !text-foreground-500"
+          <mat-icon fontSet="material-symbols-rounded" class="icon-md text-foreground-500!"
             >settings</mat-icon
           >
           <span class="text-sm">Settings</span>
@@ -212,22 +212,22 @@
 
         <button
           mat-menu-item
-          class="!h-10 !rounded-md !mx-1 !w-[calc(100%-8px)] hover:!bg-content2"
+          class="h-10! rounded-md! mx-1! w-[calc(100%-8px)]! hover:bg-content2!"
         >
-          <mat-icon fontSet="material-symbols-rounded" class="!text-[20px] !text-foreground-500"
+          <mat-icon fontSet="material-symbols-rounded" class="icon-md text-foreground-500!"
             >credit_card</mat-icon
           >
           <span class="text-sm">Billing</span>
         </button>
 
-        <mat-divider class="!my-1 opacity-50"></mat-divider>
+        <mat-divider class="my-1! opacity-50"></mat-divider>
 
         <button
           mat-menu-item
           (click)="onLogout()"
-          class="!h-10 !rounded-md !mx-1 !w-[calc(100%-8px)] hover:!bg-red-50 !text-red-600"
+          class="h-10! rounded-md! mx-1! w-[calc(100%-8px)]! hover:bg-red-50! text-red-600!"
         >
-          <mat-icon fontSet="material-symbols-rounded" class="!text-[20px] !text-red-500"
+          <mat-icon fontSet="material-symbols-rounded" class="icon-md text-red-500!"
             >logout</mat-icon
           >
           <span class="text-sm">Log out</span>

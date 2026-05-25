@@ -23,8 +23,8 @@ class ReportService
 
         return [
             'approvals' => $this->getApprovalSummary($fromDate, $toDate),
-            'policies' => $this->getPolicySummary($fromDate, $toDate),
-            'billing' => $this->getBillingSummary($fromDate, $toDate),
+            'policies'  => $this->getPolicySummary($fromDate, $toDate),
+            'billing'   => $this->getBillingSummary($fromDate, $toDate),
         ];
     }
 
@@ -37,12 +37,12 @@ class ReportService
         $toDate = $filters['to_date'] ?? Carbon::now()->toDateString();
 
         return [
-            'summary' => $this->getApprovalSummaryDetailed($fromDate, $toDate, $filters),
+            'summary'             => $this->getApprovalSummaryDetailed($fromDate, $toDate, $filters),
             'status_distribution' => $this->getApprovalStatusDistribution($fromDate, $toDate, $filters),
-            'trend' => $this->getApprovalTrend($fromDate, $toDate, $filters),
-            'by_entity_type' => $this->getApprovalsByEntityType($fromDate, $toDate, $filters),
-            'approver_performance' => $this->getApproverPerformance($fromDate, $toDate, $filters),
-            'bottlenecks' => $this->getWorkflowBottlenecks($fromDate, $toDate, $filters),
+            'trend'               => $this->getApprovalTrend($fromDate, $toDate, $filters),
+            'by_entity_type'      => $this->getApprovalsByEntityType($fromDate, $toDate, $filters),
+            'approver_performance'=> $this->getApproverPerformance($fromDate, $toDate, $filters),
+            'bottlenecks'         => $this->getWorkflowBottlenecks($fromDate, $toDate, $filters),
         ];
     }
 
@@ -55,14 +55,14 @@ class ReportService
         $toDate = $filters['to_date'] ?? Carbon::now()->toDateString();
 
         return [
-            'summary' => $this->getPolicySummaryDetailed($filters),
-            'status_distribution' => $this->getPolicyStatusDistribution($filters),
-            'type_distribution' => $this->getPolicyTypeDistribution($filters),
-            'premium_breakdown' => $this->getPremiumBreakdown($filters),
-            'monthly_trend' => $this->getPolicyMonthlyTrend($fromDate, $toDate, $filters),
-            'renewal_pipeline' => $this->getRenewalPipeline(),
-            'top_plans' => $this->getTopPlans($filters),
-            'member_distribution' => $this->getMemberDistribution($filters),
+            'summary'              => $this->getPolicySummaryDetailed($filters),
+            'status_distribution'  => $this->getPolicyStatusDistribution($filters),
+            'type_distribution'    => $this->getPolicyTypeDistribution($filters),
+            'premium_breakdown'    => $this->getPremiumBreakdown($filters),
+            'monthly_trend'        => $this->getPolicyMonthlyTrend($fromDate, $toDate, $filters),
+            'renewal_pipeline'     => $this->getRenewalPipeline(),
+            'top_plans'            => $this->getTopPlans($filters),
+            'member_distribution'  => $this->getMemberDistribution($filters),
         ];
     }
 
@@ -75,13 +75,13 @@ class ReportService
         $toDate = $filters['to_date'] ?? Carbon::now()->toDateString();
 
         return [
-            'summary' => $this->getBillingSummaryDetailed($fromDate, $toDate, $filters),
-            'invoice_status_distribution' => $this->getInvoiceStatusDistribution($filters),
-            'collection_trend' => $this->getCollectionTrend($fromDate, $toDate, $filters),
-            'aging_analysis' => $this->getAgingAnalysis($filters),
-            'payment_methods' => $this->getPaymentMethodDistribution($fromDate, $toDate, $filters),
-            'top_outstanding' => $this->getTopOutstanding($filters),
-            'daily_collections' => $this->getDailyCollections($filters),
+            'summary'                    => $this->getBillingSummaryDetailed($fromDate, $toDate, $filters),
+            'invoice_status_distribution'=> $this->getInvoiceStatusDistribution($filters),
+            'collection_trend'           => $this->getCollectionTrend($fromDate, $toDate, $filters),
+            'aging_analysis'             => $this->getAgingAnalysis($filters),
+            'payment_methods'            => $this->getPaymentMethodDistribution($fromDate, $toDate, $filters),
+            'top_outstanding'            => $this->getTopOutstanding($filters),
+            'daily_collections'          => $this->getDailyCollections($filters),
         ];
     }
 
@@ -94,17 +94,21 @@ class ReportService
         $stats = ApprovalRequest::query()
             ->selectRaw("
                 COUNT(CASE WHEN status = 'pending' THEN 1 END) as pending_count,
-                COUNT(CASE WHEN status = 'approved' AND DATE(completed_at) >= DATE_SUB(CURDATE(), INTERVAL 7 DAY) THEN 1 END) as approved_this_week,
-                AVG(CASE WHEN completed_at IS NOT NULL THEN DATEDIFF(completed_at, created_at) END) as avg_processing_days,
-                ROUND(COUNT(CASE WHEN status = 'approved' THEN 1 END) * 100.0 / NULLIF(COUNT(CASE WHEN status IN ('approved', 'rejected') THEN 1 END), 0), 1) as approval_rate
+                COUNT(CASE WHEN status = 'approved' AND DATE(completed_at) >= CURRENT_DATE - INTERVAL '7 days' THEN 1 END) as approved_this_week,
+                AVG(CASE WHEN completed_at IS NOT NULL THEN (completed_at::date - created_at::date) END) as avg_processing_days,
+                ROUND(
+                    COUNT(CASE WHEN status = 'approved' THEN 1 END) * 100.0
+                    / NULLIF(COUNT(CASE WHEN status IN ('approved', 'rejected') THEN 1 END), 0),
+                    1
+                ) as approval_rate
             ")
             ->first();
 
         return [
-            'pending_count' => (int) ($stats->pending_count ?? 0),
-            'approved_this_week' => (int) ($stats->approved_this_week ?? 0),
+            'pending_count'       => (int) ($stats->pending_count ?? 0),
+            'approved_this_week'  => (int) ($stats->approved_this_week ?? 0),
             'avg_processing_days' => round($stats->avg_processing_days ?? 0, 1),
-            'approval_rate' => round($stats->approval_rate ?? 0, 1),
+            'approval_rate'       => round($stats->approval_rate ?? 0, 1),
         ];
     }
 
@@ -123,18 +127,22 @@ class ReportService
             COUNT(CASE WHEN status = 'rejected' THEN 1 END) as rejected,
             COUNT(CASE WHEN status = 'returned' THEN 1 END) as returned,
             COUNT(CASE WHEN status = 'cancelled' THEN 1 END) as cancelled,
-            AVG(CASE WHEN completed_at IS NOT NULL THEN DATEDIFF(completed_at, created_at) END) as avg_processing_days,
-            ROUND(COUNT(CASE WHEN status = 'approved' THEN 1 END) * 100.0 / NULLIF(COUNT(CASE WHEN status IN ('approved', 'rejected') THEN 1 END), 0), 1) as approval_rate
+            AVG(CASE WHEN completed_at IS NOT NULL THEN (completed_at::date - created_at::date) END) as avg_processing_days,
+            ROUND(
+                COUNT(CASE WHEN status = 'approved' THEN 1 END) * 100.0
+                / NULLIF(COUNT(CASE WHEN status IN ('approved', 'rejected') THEN 1 END), 0),
+                1
+            ) as approval_rate
         ")->first();
 
         return [
-            'pending' => (int) ($stats->pending ?? 0),
-            'approved' => (int) ($stats->approved ?? 0),
-            'rejected' => (int) ($stats->rejected ?? 0),
-            'returned' => (int) ($stats->returned ?? 0),
-            'cancelled' => (int) ($stats->cancelled ?? 0),
+            'pending'             => (int) ($stats->pending ?? 0),
+            'approved'            => (int) ($stats->approved ?? 0),
+            'rejected'            => (int) ($stats->rejected ?? 0),
+            'returned'            => (int) ($stats->returned ?? 0),
+            'cancelled'           => (int) ($stats->cancelled ?? 0),
             'avg_processing_days' => round($stats->avg_processing_days ?? 0, 1),
-            'approval_rate' => round($stats->approval_rate ?? 0, 1),
+            'approval_rate'       => round($stats->approval_rate ?? 0, 1),
         ];
     }
 
@@ -151,7 +159,7 @@ class ReportService
 
         return $query->get()->map(fn($row) => [
             'status' => $row->status,
-            'count' => (int) $row->count,
+            'count'  => (int) $row->count,
         ])->toArray();
     }
 
@@ -169,7 +177,7 @@ class ReportService
             ->orderBy('date');
 
         return $query->get()->map(fn($row) => [
-            'date' => $row->date,
+            'date'     => $row->date,
             'approved' => (int) $row->approved,
             'rejected' => (int) $row->rejected,
             'returned' => (int) $row->returned,
@@ -182,7 +190,7 @@ class ReportService
             ->selectRaw("
                 entity_type,
                 COUNT(*) as count,
-                AVG(CASE WHEN completed_at IS NOT NULL THEN DATEDIFF(completed_at, created_at) END) as avg_days
+                AVG(CASE WHEN completed_at IS NOT NULL THEN (completed_at::date - created_at::date) END) as avg_days
             ")
             ->whereBetween('created_at', [$fromDate, $toDate . ' 23:59:59'])
             ->groupBy('entity_type')
@@ -190,8 +198,8 @@ class ReportService
             ->get()
             ->map(fn($row) => [
                 'entity_type' => $row->entity_type,
-                'count' => (int) $row->count,
-                'avg_days' => round($row->avg_days ?? 0, 1),
+                'count'       => (int) $row->count,
+                'avg_days'    => round($row->avg_days ?? 0, 1),
             ])->toArray();
     }
 
@@ -204,7 +212,7 @@ class ReportService
                 COUNT(*) as action_count,
                 COUNT(CASE WHEN action = 'approved' THEN 1 END) as approved_count,
                 COUNT(CASE WHEN action = 'rejected' THEN 1 END) as rejected_count,
-                AVG(DATEDIFF(actioned_at, approval_histories.created_at)) as avg_response_days
+                AVG(actioned_at::date - approval_histories.created_at::date) as avg_response_days
             ")
             ->join('users', 'users.id', '=', 'approval_histories.actioned_by')
             ->whereBetween('actioned_at', [$fromDate, $toDate . ' 23:59:59'])
@@ -214,12 +222,12 @@ class ReportService
             ->limit(10)
             ->get()
             ->map(fn($row) => [
-                'user_id' => $row->user_id,
-                'user_name' => $row->user_name,
-                'action_count' => (int) $row->action_count,
-                'approved_count' => (int) $row->approved_count,
-                'rejected_count' => (int) $row->rejected_count,
-                'avg_response_days' => round($row->avg_response_days ?? 0, 1),
+                'user_id'          => $row->user_id,
+                'user_name'        => $row->user_name,
+                'action_count'     => (int) $row->action_count,
+                'approved_count'   => (int) $row->approved_count,
+                'rejected_count'   => (int) $row->rejected_count,
+                'avg_response_days'=> round($row->avg_response_days ?? 0, 1),
             ])->toArray();
     }
 
@@ -229,7 +237,7 @@ class ReportService
             ->selectRaw("
                 approval_workflows.name as workflow_name,
                 approval_steps.name as step_name,
-                AVG(DATEDIFF(COALESCE(approval_requests.completed_at, NOW()), approval_requests.created_at)) as avg_days_at_step,
+                AVG(COALESCE(approval_requests.completed_at, NOW())::date - approval_requests.created_at::date) as avg_days_at_step,
                 COUNT(CASE WHEN approval_requests.status = 'pending' THEN 1 END) as pending_count
             ")
             ->join('approval_workflows', 'approval_workflows.id', '=', 'approval_requests.workflow_id')
@@ -240,10 +248,10 @@ class ReportService
             ->limit(10)
             ->get()
             ->map(fn($row) => [
-                'workflow_name' => $row->workflow_name,
-                'step_name' => $row->step_name,
+                'workflow_name'    => $row->workflow_name,
+                'step_name'        => $row->step_name,
                 'avg_days_at_step' => round($row->avg_days_at_step ?? 0, 1),
-                'pending_count' => (int) $row->pending_count,
+                'pending_count'    => (int) $row->pending_count,
             ])->toArray();
     }
 
@@ -259,16 +267,19 @@ class ReportService
                 COUNT(CASE WHEN status = 'active' THEN 1 END) as active_count,
                 COALESCE(SUM(gross_premium), 0) as total_premium,
                 COALESCE(SUM(member_count), 0) as total_members,
-                COUNT(CASE WHEN expiry_date BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 60 DAY) AND status = 'active' THEN 1 END) as for_renewal_count
+                COUNT(
+                    CASE WHEN expiry_date BETWEEN CURRENT_DATE AND CURRENT_DATE + INTERVAL '60 days'
+                         AND status = 'active' THEN 1 END
+                ) as for_renewal_count
             ")
             ->first();
 
         return [
-            'total_policies' => (int) ($stats->total_policies ?? 0),
-            'active_count' => (int) ($stats->active_count ?? 0),
-            'total_premium' => round($stats->total_premium ?? 0, 2),
-            'total_members' => (int) ($stats->total_members ?? 0),
-            'for_renewal_count' => (int) ($stats->for_renewal_count ?? 0),
+            'total_policies'   => (int) ($stats->total_policies ?? 0),
+            'active_count'     => (int) ($stats->active_count ?? 0),
+            'total_premium'    => round($stats->total_premium ?? 0, 2),
+            'total_members'    => (int) ($stats->total_members ?? 0),
+            'for_renewal_count'=> (int) ($stats->for_renewal_count ?? 0),
         ];
     }
 
@@ -286,11 +297,11 @@ class ReportService
         ")->first();
 
         return [
-            'total_policies' => (int) ($stats->total_policies ?? 0),
+            'total_policies'  => (int) ($stats->total_policies ?? 0),
             'active_policies' => (int) ($stats->active_policies ?? 0),
-            'total_premium' => round($stats->total_premium ?? 0, 2),
-            'total_members' => (int) ($stats->total_members ?? 0),
-            'avg_premium' => round($stats->avg_premium ?? 0, 2),
+            'total_premium'   => round($stats->total_premium ?? 0, 2),
+            'total_members'   => (int) ($stats->total_members ?? 0),
+            'avg_premium'     => round($stats->avg_premium ?? 0, 2),
         ];
     }
 
@@ -304,7 +315,7 @@ class ReportService
 
         return $query->get()->map(fn($row) => [
             'status' => $row->status,
-            'count' => (int) $row->count,
+            'count'  => (int) $row->count,
         ])->toArray();
     }
 
@@ -318,8 +329,8 @@ class ReportService
 
         return $query->get()->map(fn($row) => [
             'policy_type' => $row->policy_type,
-            'count' => (int) $row->count,
-            'premium' => round($row->premium ?? 0, 2),
+            'count'       => (int) $row->count,
+            'premium'     => round($row->premium ?? 0, 2),
         ])->toArray();
     }
 
@@ -338,10 +349,10 @@ class ReportService
         $this->applyPolicyFilters($query, $filters);
 
         return $query->get()->map(fn($row) => [
-            'policy_type' => $row->policy_type,
-            'base_premium' => round($row->base_premium ?? 0, 2),
-            'addon_premium' => round($row->addon_premium ?? 0, 2),
-            'loading_amount' => round($row->loading_amount ?? 0, 2),
+            'policy_type'     => $row->policy_type,
+            'base_premium'    => round($row->base_premium ?? 0, 2),
+            'addon_premium'   => round($row->addon_premium ?? 0, 2),
+            'loading_amount'  => round($row->loading_amount ?? 0, 2),
             'discount_amount' => round($row->discount_amount ?? 0, 2),
         ])->toArray();
     }
@@ -350,21 +361,21 @@ class ReportService
     {
         $query = Policy::query()
             ->selectRaw("
-                DATE_FORMAT(inception_date, '%Y-%m') as month,
+                TO_CHAR(inception_date, 'YYYY-MM') as month,
                 COUNT(CASE WHEN status = 'active' THEN 1 END) as new_policies,
                 COUNT(CASE WHEN status = 'cancelled' THEN 1 END) as cancelled_policies
             ")
             ->whereBetween('inception_date', [$fromDate, $toDate])
-            ->groupBy(DB::raw("DATE_FORMAT(inception_date, '%Y-%m')"))
+            ->groupBy(DB::raw("TO_CHAR(inception_date, 'YYYY-MM')"))
             ->orderBy('month');
 
         $this->applyPolicyFilters($query, $filters);
 
         return $query->get()->map(fn($row) => [
-            'month' => $row->month,
-            'new_policies' => (int) $row->new_policies,
-            'cancelled_policies' => (int) $row->cancelled_policies,
-            'net_growth' => (int) $row->new_policies - (int) $row->cancelled_policies,
+            'month'               => $row->month,
+            'new_policies'        => (int) $row->new_policies,
+            'cancelled_policies'  => (int) $row->cancelled_policies,
+            'net_growth'          => (int) $row->new_policies - (int) $row->cancelled_policies,
         ])->toArray();
     }
 
@@ -373,9 +384,9 @@ class ReportService
         $stats = Policy::query()
             ->where('status', 'active')
             ->selectRaw("
-                COUNT(CASE WHEN expiry_date BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 90 DAY) THEN 1 END) as expiring_90_days,
-                COUNT(CASE WHEN expiry_date BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 60 DAY) THEN 1 END) as expiring_60_days,
-                COUNT(CASE WHEN expiry_date BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 30 DAY) THEN 1 END) as expiring_30_days
+                COUNT(CASE WHEN expiry_date BETWEEN CURRENT_DATE AND CURRENT_DATE + INTERVAL '90 days' THEN 1 END) as expiring_90_days,
+                COUNT(CASE WHEN expiry_date BETWEEN CURRENT_DATE AND CURRENT_DATE + INTERVAL '60 days' THEN 1 END) as expiring_60_days,
+                COUNT(CASE WHEN expiry_date BETWEEN CURRENT_DATE AND CURRENT_DATE + INTERVAL '30 days' THEN 1 END) as expiring_30_days
             ")
             ->first();
 
@@ -388,7 +399,7 @@ class ReportService
             'expiring_90_days' => (int) ($stats->expiring_90_days ?? 0),
             'expiring_60_days' => (int) ($stats->expiring_60_days ?? 0),
             'expiring_30_days' => (int) ($stats->expiring_30_days ?? 0),
-            'renewed' => $renewed,
+            'renewed'          => $renewed,
         ];
     }
 
@@ -410,11 +421,11 @@ class ReportService
         $this->applyPolicyFilters($query, $filters);
 
         return $query->get()->map(fn($row) => [
-            'plan_id' => $row->plan_id,
-            'plan_name' => $row->plan_name,
+            'plan_id'      => $row->plan_id,
+            'plan_name'    => $row->plan_name,
             'policy_count' => (int) $row->policy_count,
             'member_count' => (int) $row->member_count,
-            'total_premium' => round($row->total_premium ?? 0, 2),
+            'total_premium'=> round($row->total_premium ?? 0, 2),
         ])->toArray();
     }
 
@@ -434,10 +445,10 @@ class ReportService
 
         return $query->get()->map(fn($row) => [
             'policy_type' => $row->policy_type,
-            'principal' => (int) $row->principal,
-            'spouse' => (int) $row->spouse,
-            'child' => (int) $row->child,
-            'parent' => (int) $row->parent,
+            'principal'   => (int) $row->principal,
+            'spouse'      => (int) $row->spouse,
+            'child'       => (int) $row->child,
+            'parent'      => (int) $row->parent,
         ])->toArray();
     }
 
@@ -467,10 +478,10 @@ class ReportService
             : 0;
 
         return [
-            'total_outstanding' => round($invoiceStats->total_outstanding ?? 0, 2),
-            'collection_rate' => $collectionRate,
-            'overdue_amount' => round($invoiceStats->overdue_amount ?? 0, 2),
-            'overdue_count' => (int) ($invoiceStats->overdue_count ?? 0),
+            'total_outstanding'    => round($invoiceStats->total_outstanding ?? 0, 2),
+            'collection_rate'      => $collectionRate,
+            'overdue_amount'       => round($invoiceStats->overdue_amount ?? 0, 2),
+            'overdue_count'        => (int) ($invoiceStats->overdue_count ?? 0),
             'unallocated_payments' => round($unallocated ?? 0, 2),
         ];
     }
@@ -501,12 +512,12 @@ class ReportService
             : 0;
 
         return [
-            'total_invoiced' => round($stats->total_invoiced ?? 0, 2),
-            'total_collected' => round($stats->total_collected ?? 0, 2),
-            'total_outstanding' => round($stats->total_outstanding ?? 0, 2),
-            'collection_rate' => $collectionRate,
-            'overdue_amount' => round($stats->overdue_amount ?? 0, 2),
-            'overdue_count' => (int) ($stats->overdue_count ?? 0),
+            'total_invoiced'       => round($stats->total_invoiced ?? 0, 2),
+            'total_collected'      => round($stats->total_collected ?? 0, 2),
+            'total_outstanding'    => round($stats->total_outstanding ?? 0, 2),
+            'collection_rate'      => $collectionRate,
+            'overdue_amount'       => round($stats->overdue_amount ?? 0, 2),
+            'overdue_count'        => (int) ($stats->overdue_count ?? 0),
             'unallocated_payments' => round($unallocated ?? 0, 2),
         ];
     }
@@ -521,7 +532,7 @@ class ReportService
 
         return $query->get()->map(fn($row) => [
             'status' => $row->status,
-            'count' => (int) $row->count,
+            'count'  => (int) $row->count,
             'amount' => round($row->amount ?? 0, 2),
         ])->toArray();
     }
@@ -530,20 +541,20 @@ class ReportService
     {
         $invoices = Invoice::query()
             ->selectRaw("
-                DATE_FORMAT(invoice_date, '%Y-%m') as month,
+                TO_CHAR(invoice_date, 'YYYY-MM') as month,
                 COALESCE(SUM(total_amount), 0) as invoiced,
                 COALESCE(SUM(paid_amount), 0) as collected
             ")
             ->whereBetween('invoice_date', [$fromDate, $toDate])
             ->whereNotIn('status', ['draft', 'cancelled'])
-            ->groupBy(DB::raw("DATE_FORMAT(invoice_date, '%Y-%m')"))
+            ->groupBy(DB::raw("TO_CHAR(invoice_date, 'YYYY-MM')"))
             ->orderBy('month')
             ->get();
 
         return $invoices->map(fn($row) => [
-            'month' => $row->month,
-            'invoiced' => round($row->invoiced ?? 0, 2),
-            'collected' => round($row->collected ?? 0, 2),
+            'month'           => $row->month,
+            'invoiced'        => round($row->invoiced ?? 0, 2),
+            'collected'       => round($row->collected ?? 0, 2),
             'collection_rate' => $row->invoiced > 0 ? round(($row->collected / $row->invoiced) * 100, 1) : 0,
         ])->toArray();
     }
@@ -553,8 +564,8 @@ class ReportService
         $query = Invoice::query()
             ->selectRaw("
                 CASE
-                    WHEN days_overdue <= 0 THEN 'current'
-                    WHEN days_overdue BETWEEN 1 AND 30 THEN '1-30'
+                    WHEN days_overdue <= 0  THEN 'current'
+                    WHEN days_overdue BETWEEN 1  AND 30 THEN '1-30'
                     WHEN days_overdue BETWEEN 31 AND 60 THEN '31-60'
                     WHEN days_overdue BETWEEN 61 AND 90 THEN '61-90'
                     ELSE '90+'
@@ -565,13 +576,41 @@ class ReportService
             ->whereIn('status', ['sent', 'partially_paid', 'overdue'])
             ->where('balance', '>', 0)
             ->groupBy('bucket')
-            ->orderByRaw("FIELD(bucket, 'current', '1-30', '31-60', '61-90', '90+')");
+            ->orderByRaw("
+                CASE
+                    WHEN CASE WHEN days_overdue <= 0 THEN 'current'
+                              WHEN days_overdue BETWEEN 1  AND 30 THEN '1-30'
+                              WHEN days_overdue BETWEEN 31 AND 60 THEN '31-60'
+                              WHEN days_overdue BETWEEN 61 AND 90 THEN '61-90'
+                              ELSE '90+'
+                         END = 'current' THEN 1
+                    WHEN CASE WHEN days_overdue <= 0 THEN 'current'
+                              WHEN days_overdue BETWEEN 1  AND 30 THEN '1-30'
+                              WHEN days_overdue BETWEEN 31 AND 60 THEN '31-60'
+                              WHEN days_overdue BETWEEN 61 AND 90 THEN '61-90'
+                              ELSE '90+'
+                         END = '1-30' THEN 2
+                    WHEN CASE WHEN days_overdue <= 0 THEN 'current'
+                              WHEN days_overdue BETWEEN 1  AND 30 THEN '1-30'
+                              WHEN days_overdue BETWEEN 31 AND 60 THEN '31-60'
+                              WHEN days_overdue BETWEEN 61 AND 90 THEN '61-90'
+                              ELSE '90+'
+                         END = '31-60' THEN 3
+                    WHEN CASE WHEN days_overdue <= 0 THEN 'current'
+                              WHEN days_overdue BETWEEN 1  AND 30 THEN '1-30'
+                              WHEN days_overdue BETWEEN 31 AND 60 THEN '31-60'
+                              WHEN days_overdue BETWEEN 61 AND 90 THEN '61-90'
+                              ELSE '90+'
+                         END = '61-90' THEN 4
+                    ELSE 5
+                END
+            ");
 
         $this->applyBillingFilters($query, $filters);
 
         return $query->get()->map(fn($row) => [
             'bucket' => $row->bucket,
-            'count' => (int) $row->count,
+            'count'  => (int) $row->count,
             'amount' => round($row->amount ?? 0, 2),
         ])->toArray();
     }
@@ -584,12 +623,13 @@ class ReportService
             ->whereBetween('payment_date', [$fromDate, $toDate])
             ->groupBy('payment_method');
 
-        $total = $query->get()->sum('amount');
+        $rows  = $query->get();
+        $total = $rows->sum('amount');
 
-        return $query->get()->map(fn($row) => [
-            'method' => $row->method,
-            'count' => (int) $row->count,
-            'amount' => round($row->amount ?? 0, 2),
+        return $rows->map(fn($row) => [
+            'method'     => $row->method,
+            'count'      => (int) $row->count,
+            'amount'     => round($row->amount ?? 0, 2),
             'percentage' => $total > 0 ? round(($row->amount / $total) * 100, 1) : 0,
         ])->toArray();
     }
@@ -608,23 +648,27 @@ class ReportService
             ->leftJoin('med_corporate_groups', 'med_corporate_groups.id', '=', 'med_invoices.group_id')
             ->whereIn('med_invoices.status', ['sent', 'partially_paid', 'overdue'])
             ->where('med_invoices.balance', '>', 0)
-            ->groupBy('med_invoices.policy_id', 'med_policies.policy_number', DB::raw('COALESCE(med_policies.holder_name, med_corporate_groups.name)'))
+            ->groupBy(
+                'med_invoices.policy_id',
+                'med_policies.policy_number',
+                DB::raw('COALESCE(med_policies.holder_name, med_corporate_groups.name)')
+            )
             ->orderByDesc('outstanding')
             ->limit(10);
 
         return $query->get()->map(fn($row) => [
-            'policy_id' => $row->policy_id,
-            'policy_number' => $row->policy_number ?? 'N/A',
+            'policy_id'   => $row->policy_id,
+            'policy_number'=> $row->policy_number ?? 'N/A',
             'holder_name' => $row->holder_name ?? 'Unknown',
             'outstanding' => round($row->outstanding ?? 0, 2),
-            'days_overdue' => (int) ($row->days_overdue ?? 0),
+            'days_overdue'=> (int) ($row->days_overdue ?? 0),
         ])->toArray();
     }
 
     private function getDailyCollections(array $filters): array
     {
         $fromDate = Carbon::now()->subDays(30)->toDateString();
-        $toDate = Carbon::now()->toDateString();
+        $toDate   = Carbon::now()->toDateString();
 
         return Payment::query()
             ->selectRaw("
@@ -638,9 +682,9 @@ class ReportService
             ->orderBy('date')
             ->get()
             ->map(fn($row) => [
-                'date' => $row->date,
+                'date'   => $row->date,
                 'amount' => round($row->amount ?? 0, 2),
-                'count' => (int) $row->count,
+                'count'  => (int) $row->count,
             ])->toArray();
     }
 

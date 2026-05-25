@@ -1,12 +1,15 @@
 <mat-drawer-container class="h-full">
   <mat-drawer-content>
     <div class="bg-white p-6 md:p-10 min-h-[80vh] shadow-sm">
-
       <lib-page-header
         title="Invoices"
         subtitle="Manage billing invoices and track payments"
         [showBreadcrumb]="true"
-        [breadcrumbItems]="[{ label: 'Dashboard', link: '/' }, { label: 'Billing' }, { label: 'Invoices' }]"
+        [breadcrumbItems]="[
+          { label: 'Dashboard', link: '/' },
+          { label: 'Billing' },
+          { label: 'Invoices' }
+        ]"
       >
         <div actions class="flex gap-2">
           <button
@@ -31,7 +34,7 @@
               </div>
             </div>
             <div class="flex h-9 w-9 items-center justify-center rounded-full bg-blue-100">
-              <mat-icon fontSet="material-symbols-rounded" class="text-[18px]! text-blue-600"
+              <mat-icon fontSet="material-symbols-rounded" class="icon-md text-blue-600"
                 >account_balance</mat-icon
               >
             </div>
@@ -47,7 +50,7 @@
               </div>
             </div>
             <div class="flex h-9 w-9 items-center justify-center rounded-full bg-red-100">
-              <mat-icon fontSet="material-symbols-rounded" class="text-[18px]! text-red-600"
+              <mat-icon fontSet="material-symbols-rounded" class="icon-md text-red-600"
                 >warning</mat-icon
               >
             </div>
@@ -63,7 +66,7 @@
               </div>
             </div>
             <div class="flex h-9 w-9 items-center justify-center rounded-full bg-orange-100">
-              <mat-icon fontSet="material-symbols-rounded" class="text-[18px]! text-orange-600"
+              <mat-icon fontSet="material-symbols-rounded" class="icon-md text-orange-600"
                 >schedule</mat-icon
               >
             </div>
@@ -79,7 +82,7 @@
               </div>
             </div>
             <div class="flex h-9 w-9 items-center justify-center rounded-full bg-green-100">
-              <mat-icon fontSet="material-symbols-rounded" class="text-[18px]! text-green-600"
+              <mat-icon fontSet="material-symbols-rounded" class="icon-md text-green-600"
                 >trending_up</mat-icon
               >
             </div>
@@ -90,10 +93,11 @@
       <!-- Filters -->
       <div class="rounded-xl border border-slate-200 bg-white p-4 mb-6 shadow-sm">
         <div class="flex flex-wrap gap-4 items-end">
+          <!-- Search -->
           <mat-form-field
             appearance="fill"
             subscriptSizing="dynamic"
-            class="flex-1 min-w-75 minimal-input"
+            class="flex-1 min-w-60 minimal-input"
           >
             <mat-icon fontSet="material-symbols-rounded" matPrefix class="text-slate-400!"
               >search</mat-icon
@@ -102,7 +106,7 @@
               matInput
               [ngModel]="searchTerm()"
               (ngModelChange)="onSearchChange($event)"
-              placeholder="Search by invoice #, policy #, or holder name..."
+              placeholder="Search by invoice #, policy #, or holder name…"
             />
             @if (searchTerm()) {
             <button matSuffix mat-icon-button (click)="clearSearch()">
@@ -111,7 +115,9 @@
             }
           </mat-form-field>
 
-          <mat-form-field appearance="fill" subscriptSizing="dynamic" class="w-44 minimal-input">
+          <!-- Status -->
+          <mat-form-field appearance="fill" subscriptSizing="dynamic" class="w-40 minimal-input">
+            <mat-label>Status</mat-label>
             <mat-select [ngModel]="statusFilter()" (ngModelChange)="onStatusChange($event)">
               @for (status of INVOICE_FILTER_OPTIONS.statuses; track status.value) {
               <mat-option [value]="status.value">{{ status.label }}</mat-option>
@@ -119,7 +125,9 @@
             </mat-select>
           </mat-form-field>
 
-          <mat-form-field appearance="fill" subscriptSizing="dynamic" class="w-44 minimal-input">
+          <!-- Type -->
+          <mat-form-field appearance="fill" subscriptSizing="dynamic" class="w-40 minimal-input">
+            <mat-label>Type</mat-label>
             <mat-select [ngModel]="typeFilter()" (ngModelChange)="onTypeChange($event)">
               @for (type of INVOICE_FILTER_OPTIONS.types; track type.value) {
               <mat-option [value]="type.value">{{ type.label }}</mat-option>
@@ -127,6 +135,29 @@
             </mat-select>
           </mat-form-field>
 
+          <!-- Date From -->
+          <mat-form-field appearance="fill" subscriptSizing="dynamic" class="w-36 minimal-input">
+            <mat-label>From</mat-label>
+            <input
+              matInput
+              type="date"
+              [ngModel]="dateFrom()"
+              (ngModelChange)="onDateFromChange($event)"
+            />
+          </mat-form-field>
+
+          <!-- Date To -->
+          <mat-form-field appearance="fill" subscriptSizing="dynamic" class="w-36 minimal-input">
+            <mat-label>To</mat-label>
+            <input
+              matInput
+              type="date"
+              [ngModel]="dateTo()"
+              (ngModelChange)="onDateToChange($event)"
+            />
+          </mat-form-field>
+
+          <!-- Overdue Only Toggle -->
           <button
             mat-stroked-button
             (click)="toggleOverdueOnly()"
@@ -168,8 +199,7 @@
         } @else {
         <div class="overflow-x-auto">
           <table mat-table [dataSource]="store.invoices()" matSort class="w-full">
-
-            <!-- Status Column -->
+            <!-- Status -->
             <ng-container matColumnDef="status">
               <th
                 mat-header-cell
@@ -196,7 +226,7 @@
               </td>
             </ng-container>
 
-            <!-- Invoice Number Column -->
+            <!-- Invoice Number -->
             <ng-container matColumnDef="invoice_number">
               <th
                 mat-header-cell
@@ -216,7 +246,7 @@
               </td>
             </ng-container>
 
-            <!-- Policy Column -->
+            <!-- Policy -->
             <ng-container matColumnDef="policy">
               <th
                 mat-header-cell
@@ -233,7 +263,7 @@
               </td>
             </ng-container>
 
-            <!-- Type Column -->
+            <!-- Type -->
             <ng-container matColumnDef="type">
               <th
                 mat-header-cell
@@ -247,7 +277,7 @@
               </td>
             </ng-container>
 
-            <!-- Period Column -->
+            <!-- Period -->
             <ng-container matColumnDef="period">
               <th
                 mat-header-cell
@@ -261,7 +291,7 @@
               </td>
             </ng-container>
 
-            <!-- Total Column -->
+            <!-- Total -->
             <ng-container matColumnDef="total">
               <th
                 mat-header-cell
@@ -278,7 +308,7 @@
               </td>
             </ng-container>
 
-            <!-- Balance Column -->
+            <!-- Balance -->
             <ng-container matColumnDef="balance">
               <th
                 mat-header-cell
@@ -299,7 +329,7 @@
               </td>
             </ng-container>
 
-            <!-- Due Date Column -->
+            <!-- Due Date -->
             <ng-container matColumnDef="due_date">
               <th
                 mat-header-cell
@@ -321,7 +351,7 @@
                   @if (isOverdue(invoice)) {
                   <mat-icon
                     fontSet="material-symbols-rounded"
-                    class="text-[16px]! text-red-500"
+                    class="icon-sm text-red-500"
                     [matTooltip]="getDaysOverdue(invoice) + ' days overdue'"
                     >warning</mat-icon
                   >
@@ -330,7 +360,7 @@
               </td>
             </ng-container>
 
-            <!-- Actions Column -->
+            <!-- Actions -->
             <ng-container matColumnDef="actions">
               <th
                 mat-header-cell
@@ -351,6 +381,7 @@
                     <mat-icon fontSet="material-symbols-rounded">visibility</mat-icon>
                     <span>View Details</span>
                   </button>
+
                   @if (invoice.status === 'draft') {
                   <button
                     *libPermission="permissions.BILLING_INVOICES_SEND"
@@ -370,15 +401,28 @@
                     <span>Record Payment</span>
                   </button>
                   }
+
                   <mat-divider></mat-divider>
-                  @if (invoice.status !== 'paid' && invoice.status !== 'cancelled') {
+
+                  @if (invoice.status !== 'paid' && invoice.status !== 'cancelled' && invoice.status
+                  !== 'written_off') {
+                  <button
+                    *libPermission="permissions.BILLING_INVOICES_CANCEL"
+                    mat-menu-item
+                    (click)="writeOffInvoice(invoice)"
+                  >
+                    <mat-icon fontSet="material-symbols-rounded">money_off</mat-icon>
+                    <span>Write Off</span>
+                  </button>
                   <button
                     *libPermission="permissions.BILLING_INVOICES_CANCEL"
                     mat-menu-item
                     class="text-red-600!"
                     (click)="cancelInvoice(invoice)"
                   >
-                    <mat-icon fontSet="material-symbols-rounded" class="text-red-600!">cancel</mat-icon>
+                    <mat-icon fontSet="material-symbols-rounded" class="text-red-600!"
+                      >cancel</mat-icon
+                    >
                     <span>Cancel Invoice</span>
                   </button>
                   }
@@ -397,9 +441,9 @@
             <tr class="mat-row" *matNoDataRow>
               <td class="mat-cell text-center py-12" [attr.colspan]="displayedColumns.length">
                 <div class="flex flex-col items-center gap-2">
-                  <mat-icon fontSet="material-symbols-rounded" class="text-[48px]! text-slate-300">
-                    receipt_long
-                  </mat-icon>
+                  <mat-icon fontSet="material-symbols-rounded" class="icon-2xl text-slate-300"
+                    >receipt_long</mat-icon
+                  >
                   <p class="text-slate-500">No invoices found</p>
                   <p class="text-sm text-slate-400">
                     @if (hasActiveFilters()) { Try adjusting your filters } @else { Invoices will
@@ -425,23 +469,27 @@
     </div>
   </mat-drawer-content>
 
+  <!-- =========================================================================
+       Detail Drawer
+       ========================================================================= -->
   <mat-drawer
     #detailDrawer
     mode="over"
     position="end"
-    class="w-[520px]!"
+    class="w-[540px]!"
     (closed)="selectedInvoice.set(null)"
   >
     @if (selectedInvoice(); as invoice) {
     <div class="h-full flex flex-col">
-
       <!-- Drawer Header -->
       <div
         class="px-6 py-4 border-b border-slate-100 bg-slate-50 flex items-center justify-between sticky top-0 z-10"
       >
         <div class="flex items-center gap-3">
           <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-100">
-            <mat-icon fontSet="material-symbols-rounded" class="text-blue-600!">receipt_long</mat-icon>
+            <mat-icon fontSet="material-symbols-rounded" class="text-blue-600!"
+              >receipt_long</mat-icon
+            >
           </div>
           <div>
             <h3 class="font-semibold text-slate-900">{{ invoice.invoice_number }}</h3>
@@ -457,9 +505,8 @@
         </button>
       </div>
 
-      <!-- Drawer Content -->
+      <!-- Drawer Body -->
       <div class="flex-1 overflow-y-auto p-6 space-y-5">
-
         <!-- Status Badges -->
         <div class="flex items-center gap-2 flex-wrap">
           <span
@@ -479,7 +526,7 @@
           </span>
         </div>
 
-        <!-- Total Amount -->
+        <!-- Total Amount Hero -->
         <div class="flex items-end justify-between">
           <span class="text-sm text-slate-500">Total Amount</span>
           <div class="text-right">
@@ -496,7 +543,7 @@
         @if (isOverdue(invoice)) {
         <div class="rounded-lg border border-red-200 bg-red-50 p-3">
           <div class="flex items-center gap-2 text-red-700">
-            <mat-icon fontSet="material-symbols-rounded" class="text-red-500! text-[20px]!"
+            <mat-icon fontSet="material-symbols-rounded" class="text-red-500! icon-md"
               >warning</mat-icon
             >
             <span class="font-medium">{{ getDaysOverdue(invoice) }} days overdue</span>
@@ -505,31 +552,29 @@
         }
 
         <!-- Policy Info -->
-        <div class="rounded-lg border border-blue-200 bg-blue-50 p-4 space-y-3">
+        <div class="rounded-lg border border-blue-200 bg-blue-50 p-4 space-y-2">
           <h4 class="font-medium text-blue-900 flex items-center gap-2">
-            <mat-icon fontSet="material-symbols-rounded" class="text-blue-600! text-[20px]!"
+            <mat-icon fontSet="material-symbols-rounded" class="text-blue-600! icon-md"
               >policy</mat-icon
             >
             Policy Information
           </h4>
           <div class="grid grid-cols-3 gap-2 text-sm">
             <span class="text-blue-700">Policy #</span>
-            <span class="col-span-2 text-blue-900 font-medium">{{
+            <span class="col-span-2 font-medium text-blue-900">{{
               invoice.policy?.policy_number ?? '-'
             }}</span>
           </div>
           <div class="grid grid-cols-3 gap-2 text-sm">
             <span class="text-blue-700">Holder</span>
-            <span class="col-span-2 text-blue-900">{{
-              invoice.policy?.holder_name ?? '-'
-            }}</span>
+            <span class="col-span-2 text-blue-900">{{ invoice.policy?.holder_name ?? '-' }}</span>
           </div>
         </div>
 
         <!-- Dates -->
-        <div class="rounded-lg border border-slate-200 bg-slate-50 p-4 space-y-3">
+        <div class="rounded-lg border border-slate-200 bg-slate-50 p-4 space-y-2">
           <h4 class="font-medium text-slate-900 flex items-center gap-2">
-            <mat-icon fontSet="material-symbols-rounded" class="text-slate-400! text-[20px]!"
+            <mat-icon fontSet="material-symbols-rounded" class="text-slate-400! icon-md"
               >calendar_month</mat-icon
             >
             Dates
@@ -548,45 +593,15 @@
             >
           </div>
           <div class="grid grid-cols-3 gap-2 text-sm">
-            <span class="text-slate-500">Billing Period</span>
+            <span class="text-slate-500">Period</span>
             <span class="col-span-2 text-slate-900">{{ formatPeriod(invoice) }}</span>
           </div>
         </div>
 
-        <!-- Coverage Summary -->
-        @if (invoice.items && invoice.items!.length > 0) {
-        <div class="rounded-lg border border-slate-200 bg-slate-50 p-4 space-y-3">
-          <h4 class="font-medium text-slate-900 flex items-center gap-2">
-            <mat-icon fontSet="material-symbols-rounded" class="text-slate-400! text-[20px]!"
-              >group</mat-icon
-            >
-            Coverage Summary
-          </h4>
-          <div class="grid grid-cols-3 gap-3">
-            <div class="rounded-lg border border-slate-200 bg-white p-3 text-center">
-              <p class="text-xl font-bold text-slate-900">{{ getMembersCount(invoice) }}</p>
-              <p class="text-xs text-slate-500 mt-0.5">Members</p>
-            </div>
-            <div class="rounded-lg border border-teal-200 bg-teal-50 p-3 text-center">
-              <p class="text-xl font-bold text-teal-700">{{ getPrincipalsCount(invoice) }}</p>
-              <p class="text-xs text-teal-600 mt-0.5">Principals</p>
-            </div>
-            <div class="rounded-lg border border-violet-200 bg-violet-50 p-3 text-center">
-              <p class="text-xl font-bold text-violet-700">{{ getDependantsCount(invoice) }}</p>
-              <p class="text-xs text-violet-600 mt-0.5">Dependants</p>
-            </div>
-          </div>
-          <div class="grid grid-cols-3 gap-2 text-sm pt-1">
-            <span class="text-slate-500">Line Items</span>
-            <span class="col-span-2 text-slate-900 font-medium">{{ invoice.items!.length }}</span>
-          </div>
-        </div>
-        }
-
         <!-- Amount Summary -->
-        <div class="rounded-lg border border-slate-200 bg-slate-50 p-4 space-y-3">
+        <div class="rounded-lg border border-slate-200 bg-slate-50 p-4 space-y-2">
           <h4 class="font-medium text-slate-900 flex items-center gap-2">
-            <mat-icon fontSet="material-symbols-rounded" class="text-slate-400! text-[20px]!"
+            <mat-icon fontSet="material-symbols-rounded" class="text-slate-400! icon-md"
               >payments</mat-icon
             >
             Amount Summary
@@ -612,7 +627,7 @@
           <div class="grid grid-cols-3 gap-2 text-sm">
             <span class="text-slate-500">Paid</span>
             <span class="col-span-2 text-green-600"
-              >-{{ formatCurrency(invoice.paid_amount) }}</span
+              >−{{ formatCurrency(invoice.paid_amount) }}</span
             >
           </div>
           <div class="grid grid-cols-3 gap-2 text-sm font-medium">
@@ -622,11 +637,80 @@
           }
         </div>
 
+        <!-- Line Items -->
+        @if (invoice.items && invoice.items.length > 0) {
+        <div class="rounded-lg border border-slate-200 overflow-hidden">
+          <div class="bg-slate-50 px-4 py-3 flex items-center gap-2 border-b border-slate-200">
+            <mat-icon fontSet="material-symbols-rounded" class="text-slate-400! icon-md"
+              >list</mat-icon
+            >
+            <h4 class="font-medium text-slate-900">Line Items</h4>
+            <span class="ml-auto text-xs text-slate-500 bg-slate-200 rounded-full px-2 py-0.5">
+              {{ invoice.items.length }}
+            </span>
+          </div>
+          <div class="divide-y divide-slate-100">
+            @for (item of invoice.items; track item.id) {
+            <div class="flex items-start justify-between px-4 py-3 gap-3">
+              <div class="flex-1 min-w-0">
+                <p class="text-sm font-medium text-slate-900 truncate">{{ item.description }}</p>
+                @if (item.member) {
+                <p class="text-xs text-slate-500 mt-0.5">
+                  {{ item.member.full_name }} &middot;
+                  {{ item.member.member_type | titlecase }}
+                </p>
+                }
+              </div>
+              <span
+                class="text-sm font-semibold shrink-0"
+                [class.text-slate-900]="item.amount >= 0"
+                [class.text-green-600]="item.amount < 0"
+              >
+                {{ formatCurrency(item.amount) }}
+              </span>
+            </div>
+            }
+          </div>
+        </div>
+        }
+
+        <!-- Payment Allocations -->
+        @if (invoice.allocations && invoice.allocations.length > 0) {
+        <div class="rounded-lg border border-green-200 overflow-hidden">
+          <div class="bg-green-50 px-4 py-3 flex items-center gap-2 border-b border-green-200">
+            <mat-icon fontSet="material-symbols-rounded" class="text-green-600! icon-md"
+              >check_circle</mat-icon
+            >
+            <h4 class="font-medium text-green-900">Payment Allocations</h4>
+            <span class="ml-auto text-xs text-green-700 bg-green-100 rounded-full px-2 py-0.5">
+              {{ invoice.allocations.length }}
+            </span>
+          </div>
+          <div class="divide-y divide-green-100">
+            @for (alloc of invoice.allocations; track alloc.id) {
+            <div class="flex items-center justify-between px-4 py-3 gap-3">
+              <div class="flex-1 min-w-0">
+                <p class="text-sm font-medium text-slate-900">
+                  {{ alloc.payment?.payment_number ?? 'Payment' }}
+                </p>
+                <p class="text-xs text-slate-500 mt-0.5">
+                  {{ formatDate(alloc.allocation_date) }}
+                </p>
+              </div>
+              <span class="text-sm font-semibold text-green-600 shrink-0">
+                {{ formatCurrency(alloc.amount) }}
+              </span>
+            </div>
+            }
+          </div>
+        </div>
+        }
+
         <!-- Notes -->
         @if (invoice.notes) {
         <div class="rounded-lg border border-slate-200 bg-slate-50 p-4">
           <h4 class="font-medium text-slate-900 flex items-center gap-2 mb-2">
-            <mat-icon fontSet="material-symbols-rounded" class="text-slate-400! text-[20px]!"
+            <mat-icon fontSet="material-symbols-rounded" class="text-slate-400! icon-md"
               >notes</mat-icon
             >
             Notes
@@ -640,7 +724,8 @@
       <div
         class="px-6 py-4 border-t border-slate-100 bg-slate-50 flex items-center justify-between gap-3"
       >
-        <div class="flex gap-2">
+        <!-- Primary Actions -->
+        <div class="flex gap-2 flex-wrap">
           @if (invoice.status === 'draft') {
           <button
             *libPermission="permissions.BILLING_INVOICES_SEND"
@@ -651,7 +736,8 @@
             <mat-icon fontSet="material-symbols-rounded">send</mat-icon>
             Send Invoice
           </button>
-          } @if (invoice.balance > 0 && invoice.status !== 'cancelled') {
+          } @if (invoice.balance > 0 && invoice.status !== 'cancelled' && invoice.status !==
+          'written_off') {
           <button
             *libPermission="permissions.BILLING_PAYMENTS_RECORD"
             mat-flat-button
@@ -663,17 +749,31 @@
           </button>
           }
         </div>
-        @if (invoice.status !== 'paid' && invoice.status !== 'cancelled') {
-        <button
-          *libPermission="permissions.BILLING_INVOICES_CANCEL"
-          mat-stroked-button
-          color="warn"
-          (click)="cancelInvoice(invoice)"
-        >
-          <mat-icon fontSet="material-symbols-rounded">cancel</mat-icon>
-          Cancel
-        </button>
-        }
+
+        <!-- Destructive Actions -->
+        <div class="flex gap-2">
+          @if (invoice.status !== 'paid' && invoice.status !== 'cancelled' && invoice.status !==
+          'written_off') {
+          <button
+            *libPermission="permissions.BILLING_INVOICES_CANCEL"
+            mat-stroked-button
+            (click)="writeOffInvoice(invoice)"
+            class="border-amber-300! text-amber-700!"
+          >
+            <mat-icon fontSet="material-symbols-rounded">money_off</mat-icon>
+            Write Off
+          </button>
+          <button
+            *libPermission="permissions.BILLING_INVOICES_CANCEL"
+            mat-stroked-button
+            color="warn"
+            (click)="cancelInvoice(invoice)"
+          >
+            <mat-icon fontSet="material-symbols-rounded">cancel</mat-icon>
+            Cancel
+          </button>
+          }
+        </div>
       </div>
     </div>
     }

@@ -1,4 +1,4 @@
-<div class="flex flex-col max-h-[90vh] w-[700px] rounded-lg bg-white overflow-hidden">
+﻿<div class="flex flex-col max-h-[90vh] w-[700px] rounded-lg bg-white overflow-hidden">
   <!-- Header -->
   <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-white">
     <div class="flex items-center gap-3">
@@ -12,7 +12,7 @@
         <p class="text-xs text-slate-500">{{ memberName }} | {{ member.age }} yrs | Base: {{ formatCurrency(member.base_premium) }}</p>
       </div>
     </div>
-    <button mat-icon-button (click)="cancel()" class="!text-slate-400">
+    <button mat-icon-button (click)="cancel()" class="text-slate-400!">
       <mat-icon fontSet="material-symbols-rounded">close</mat-icon>
     </button>
   </div>
@@ -22,7 +22,7 @@
     <!-- Medical Context (if any) -->
     @if (member.has_pre_existing_conditions) {
     <div class="flex items-start gap-3 bg-amber-50 p-3 rounded-lg border border-amber-200 mb-4">
-      <mat-icon fontSet="material-symbols-rounded" class="text-amber-600 !text-[20px]">medical_services</mat-icon>
+      <mat-icon fontSet="material-symbols-rounded" class="text-amber-600 icon-md">medical_services</mat-icon>
       <div class="flex-1">
         <span class="text-sm font-medium text-amber-900">Pre-existing conditions:</span>
         <div class="flex flex-wrap gap-1 mt-1">
@@ -76,10 +76,10 @@
       <div class="space-y-3 animate-in fade-in slide-in-from-top-2 duration-200">
 
         <!-- Loadings Accordion -->
-        <mat-expansion-panel class="!rounded-lg !shadow-none border border-slate-200" [expanded]="loadingsExpanded()">
-          <mat-expansion-panel-header class="!px-4" (click)="loadingsExpanded.set(!loadingsExpanded())">
-            <mat-panel-title class="!flex items-center gap-2">
-              <mat-icon fontSet="material-symbols-rounded" class="!text-[18px] text-amber-600">trending_up</mat-icon>
+        <mat-expansion-panel class="rounded-lg! shadow-none! border border-slate-200" [expanded]="loadingsExpanded()">
+          <mat-expansion-panel-header class="px-4!" (click)="loadingsExpanded.set(!loadingsExpanded())">
+            <mat-panel-title class="flex! items-center gap-2">
+              <mat-icon fontSet="material-symbols-rounded" class="icon-md text-amber-600">trending_up</mat-icon>
               <span class="text-sm font-semibold">Loadings</span>
               @if (loadingsArray.controls.length > 0) {
               <span class="ml-auto text-xs font-medium text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full">
@@ -92,7 +92,7 @@
           <div class="px-4 pb-4">
             <!-- Search -->
             <div class="relative mb-3">
-              <mat-icon fontSet="material-symbols-rounded" class="absolute left-3 top-2.5 text-slate-400 !text-[16px]">search</mat-icon>
+              <mat-icon fontSet="material-symbols-rounded" class="absolute left-3 top-2.5 text-slate-400 icon-sm">search</mat-icon>
               <input
                 type="text"
                 [value]="searchQuery()"
@@ -136,10 +136,10 @@
         </mat-expansion-panel>
 
         <!-- Discounts Accordion -->
-        <mat-expansion-panel class="!rounded-lg !shadow-none border border-slate-200" [expanded]="discountsExpanded()">
-          <mat-expansion-panel-header class="!px-4" (click)="discountsExpanded.set(!discountsExpanded())">
-            <mat-panel-title class="!flex items-center gap-2">
-              <mat-icon fontSet="material-symbols-rounded" class="!text-[18px] text-emerald-600">loyalty</mat-icon>
+        <mat-expansion-panel class="rounded-lg! shadow-none! border border-slate-200" [expanded]="discountsExpanded()">
+          <mat-expansion-panel-header class="px-4!" (click)="discountsExpanded.set(!discountsExpanded())">
+            <mat-panel-title class="flex! items-center gap-2">
+              <mat-icon fontSet="material-symbols-rounded" class="icon-md text-emerald-600">loyalty</mat-icon>
               <span class="text-sm font-semibold">Discounts</span>
               @if (discountsArray.controls.length > 0) {
               <span class="ml-auto text-xs font-medium text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full">
@@ -161,12 +161,12 @@
               />
               <button
                 mat-flat-button
-                class="!bg-emerald-600 !text-white !min-w-[80px]"
+                class="bg-emerald-600! text-white! min-w-[80px]!"
                 (click)="applyPromoCode()"
                 [disabled]="isValidatingPromo() || !promoCodeControl.value"
               >
                 @if (isValidatingPromo()) {
-                <mat-spinner diameter="16" class="!text-white"></mat-spinner>
+                <mat-spinner diameter="16" class="text-white!"></mat-spinner>
                 } @else { Apply }
               </button>
             </div>
@@ -207,11 +207,11 @@
               @for (promo of appliedPromoCodes(); track $index) {
               <div class="flex items-center justify-between p-2 bg-emerald-50 rounded-lg">
                 <div class="flex items-center gap-2">
-                  <mat-icon fontSet="material-symbols-rounded" class="!text-[16px] text-emerald-600">local_offer</mat-icon>
+                  <mat-icon fontSet="material-symbols-rounded" class="icon-sm text-emerald-600">local_offer</mat-icon>
                   <span class="text-sm font-medium text-emerald-800">{{ promo.code }}</span>
                 </div>
-                <button mat-icon-button class="!w-6 !h-6" (click)="removePromoDiscount(promo.index)">
-                  <mat-icon fontSet="material-symbols-rounded" class="!text-[16px] text-slate-400">close</mat-icon>
+                <button mat-icon-button class="w-6! h-6!" (click)="removePromoDiscount(promo.index)">
+                  <mat-icon fontSet="material-symbols-rounded" class="icon-sm text-slate-400">close</mat-icon>
                 </button>
               </div>
               }
@@ -221,10 +221,10 @@
         </mat-expansion-panel>
 
         <!-- Exclusions Accordion -->
-        <mat-expansion-panel class="!rounded-lg !shadow-none border border-slate-200" [expanded]="exclusionsExpanded()">
-          <mat-expansion-panel-header class="!px-4" (click)="exclusionsExpanded.set(!exclusionsExpanded())">
-            <mat-panel-title class="!flex items-center gap-2">
-              <mat-icon fontSet="material-symbols-rounded" class="!text-[18px] text-red-600">block</mat-icon>
+        <mat-expansion-panel class="rounded-lg! shadow-none! border border-slate-200" [expanded]="exclusionsExpanded()">
+          <mat-expansion-panel-header class="px-4!" (click)="exclusionsExpanded.set(!exclusionsExpanded())">
+            <mat-panel-title class="flex! items-center gap-2">
+              <mat-icon fontSet="material-symbols-rounded" class="icon-md text-red-600">block</mat-icon>
               <span class="text-sm font-semibold">Exclusions</span>
               @if (exclusionsArray.controls.length > 0) {
               <span class="ml-auto text-xs font-medium text-red-700 bg-red-100 px-2 py-0.5 rounded-full">

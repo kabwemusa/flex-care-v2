@@ -1,10 +1,10 @@
-<div class="flex flex-col h-full w-[70vw] min-w-[70vw] max-h-[90vh] rounded-lg">
+﻿<div class="flex flex-col h-full w-[70vw] min-w-[70vw] max-h-[90vh] rounded-lg">
   <div
     class="flex items-center justify-between gap-4 border-b border-slate-100 px-6 py-4 bg-slate-50 shrink-0"
   >
     <div class="flex items-center gap-3">
       <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-100">
-        <mat-icon fontSet="material-symbols-rounded" class="!text-blue-600">
+        <mat-icon fontSet="material-symbols-rounded" class="text-blue-600!">
           {{ isEdit ? 'edit_document' : 'business' }}
         </mat-icon>
       </div>
@@ -23,7 +23,7 @@
     <button
       mat-icon-button
       (click)="dialogRef.close()"
-      class="!text-slate-400 hover:!text-slate-700"
+      class="text-slate-400! hover:text-slate-700!"
     >
       <mat-icon fontSet="material-symbols-rounded">close</mat-icon>
     </button>
@@ -35,14 +35,14 @@
       [linear]="!isEdit"
       [selectedIndex]="currentStep()"
       (selectionChange)="onStepChange($event.selectedIndex)"
-      class="!bg-transparent"
+      class="bg-transparent!"
     >
       <ng-template matStepperIcon="edit">
-        <mat-icon fontSet="material-symbols-rounded" class="!text-green-600">check</mat-icon>
+        <mat-icon fontSet="material-symbols-rounded" class="text-green-600!">check</mat-icon>
       </ng-template>
 
       <ng-template matStepperIcon="done">
-        <mat-icon fontSet="material-symbols-rounded" class="!text-green-600">check</mat-icon>
+        <mat-icon fontSet="material-symbols-rounded" class="text-green-600!">check</mat-icon>
       </ng-template>
       <mat-step [stepControl]="companyForm" label="Company Info">
         <form [formGroup]="companyForm" class="p-6 space-y-5">
@@ -59,8 +59,8 @@
               class="w-full minimal-input"
               subscriptSizing="dynamic"
             >
-              <input matInput formControlName="name" placeholder="e.g., Acme Corporation" />
-              <mat-icon matSuffix fontSet="material-symbols-rounded" class="!text-slate-400"
+              <input matInput formControlName="name" />
+              <mat-icon matSuffix fontSet="material-symbols-rounded" class="text-slate-400!"
                 >business</mat-icon
               >
               @if (companyForm.get('name')?.hasError('required')) {
@@ -78,7 +78,7 @@
                 class="w-full minimal-input"
                 subscriptSizing="dynamic"
               >
-                <input matInput formControlName="trading_name" placeholder="e.g., Acme Corp" />
+                <input matInput formControlName="trading_name" />
               </mat-form-field>
               <p class="text-xs text-slate-400">Name used for business operations</p>
             </div>
@@ -93,9 +93,9 @@
                 <input
                   matInput
                   formControlName="registration_number"
-                  placeholder="e.g., 123456789"
+                 
                 />
-                <mat-icon matSuffix fontSet="material-symbols-rounded" class="!text-slate-400"
+                <mat-icon matSuffix fontSet="material-symbols-rounded" class="text-slate-400!"
                   >tag</mat-icon
                 >
               </mat-form-field>
@@ -110,8 +110,8 @@
                 class="w-full minimal-input"
                 subscriptSizing="dynamic"
               >
-                <input matInput formControlName="tax_number" placeholder="e.g., 1234567890" />
-                <mat-icon matSuffix fontSet="material-symbols-rounded" class="!text-slate-400"
+                <input matInput formControlName="tax_number" />
+                <mat-icon matSuffix fontSet="material-symbols-rounded" class="text-slate-400!"
                   >receipt_long</mat-icon
                 >
               </mat-form-field>
@@ -124,13 +124,13 @@
                 class="w-full minimal-input"
                 subscriptSizing="dynamic"
               >
-                <mat-select formControlName="industry" placeholder="Select industry">
+                <mat-select formControlName="industry">
                   <mat-option value="">Select Industry</mat-option>
                   @for (industry of INDUSTRIES; track industry.value) {
                   <mat-option [value]="industry.value">{{ industry.label }}</mat-option>
                   }
                 </mat-select>
-                <mat-icon matSuffix fontSet="material-symbols-rounded" class="!text-slate-400"
+                <mat-icon matSuffix fontSet="material-symbols-rounded" class="text-slate-400!"
                   >category</mat-icon
                 >
               </mat-form-field>
@@ -145,13 +145,13 @@
                 class="w-full minimal-input"
                 subscriptSizing="dynamic"
               >
-                <mat-select formControlName="company_size" placeholder="Select size">
+                <mat-select formControlName="company_size">
                   <mat-option value="">Select Size</mat-option>
                   @for (size of COMPANY_SIZES; track size.value) {
                   <mat-option [value]="size.value">{{ size.label }}</mat-option>
                   }
                 </mat-select>
-                <mat-icon matSuffix fontSet="material-symbols-rounded" class="!text-slate-400"
+                <mat-icon matSuffix fontSet="material-symbols-rounded" class="text-slate-400!"
                   >groups</mat-icon
                 >
               </mat-form-field>
@@ -169,9 +169,9 @@
                   type="number"
                   formControlName="employee_count"
                   min="1"
-                  placeholder="e.g., 150"
+                 
                 />
-                <mat-icon matSuffix fontSet="material-symbols-rounded" class="!text-slate-400"
+                <mat-icon matSuffix fontSet="material-symbols-rounded" class="text-slate-400!"
                   >person</mat-icon
                 >
               </mat-form-field>
@@ -199,9 +199,9 @@
                   matInput
                   type="email"
                   formControlName="email"
-                  placeholder="info@company.com"
+                 
                 />
-                <mat-icon matSuffix fontSet="material-symbols-rounded" class="!text-slate-400"
+                <mat-icon matSuffix fontSet="material-symbols-rounded" class="text-slate-400!"
                   >mail</mat-icon
                 >
                 @if (contactForm.get('email')?.hasError('email')) {
@@ -217,8 +217,8 @@
                 class="w-full minimal-input"
                 subscriptSizing="dynamic"
               >
-                <input matInput formControlName="phone" placeholder="+260 211 123456" />
-                <mat-icon matSuffix fontSet="material-symbols-rounded" class="!text-slate-400"
+                <input matInput formControlName="phone" />
+                <mat-icon matSuffix fontSet="material-symbols-rounded" class="text-slate-400!"
                   >call</mat-icon
                 >
               </mat-form-field>
@@ -232,8 +232,8 @@
               class="w-full minimal-input"
               subscriptSizing="dynamic"
             >
-              <input matInput formControlName="website" placeholder="https://www.company.com" />
-              <mat-icon matSuffix fontSet="material-symbols-rounded" class="!text-slate-400"
+              <input matInput formControlName="website" />
+              <mat-icon matSuffix fontSet="material-symbols-rounded" class="text-slate-400!"
                 >language</mat-icon
               >
             </mat-form-field>
@@ -263,8 +263,8 @@
                 class="w-full minimal-input"
                 subscriptSizing="dynamic"
               >
-                <input matInput formControlName="city" placeholder="e.g., Lusaka" />
-                <mat-icon matSuffix fontSet="material-symbols-rounded" class="!text-slate-400"
+                <input matInput formControlName="city" />
+                <mat-icon matSuffix fontSet="material-symbols-rounded" class="text-slate-400!"
                   >location_city</mat-icon
                 >
               </mat-form-field>
@@ -277,13 +277,13 @@
                 class="w-full minimal-input"
                 subscriptSizing="dynamic"
               >
-                <mat-select formControlName="province" placeholder="Select province">
+                <mat-select formControlName="province">
                   <mat-option value="">Select Province</mat-option>
                   @for (province of PROVINCES; track province.value) {
                   <mat-option [value]="province.value">{{ province.label }}</mat-option>
                   }
                 </mat-select>
-                <mat-icon matSuffix fontSet="material-symbols-rounded" class="!text-slate-400"
+                <mat-icon matSuffix fontSet="material-symbols-rounded" class="text-slate-400!"
                   >map</mat-icon
                 >
               </mat-form-field>
@@ -300,7 +300,7 @@
 
           <div class="rounded-lg border border-slate-200 bg-slate-50 p-4 space-y-4">
             <h4 class="font-medium text-slate-900 flex items-center gap-2">
-              <mat-icon fontSet="material-symbols-rounded" class="!text-slate-500 !text-[20px]"
+              <mat-icon fontSet="material-symbols-rounded" class="text-slate-500! icon-md"
                 >receipt</mat-icon
               >
               Billing Settings
@@ -332,7 +332,7 @@
                 >
                   <mat-select
                     formControlName="preferred_payment_method"
-                    placeholder="Select method"
+                   
                   >
                     <mat-option value="">Select Method</mat-option>
                     @for (method of PAYMENT_METHODS; track method.value) {
@@ -354,9 +354,9 @@
                   matInput
                   type="email"
                   formControlName="billing_email"
-                  placeholder="billing@company.com"
+                 
                 />
-                <mat-icon matSuffix fontSet="material-symbols-rounded" class="!text-slate-400"
+                <mat-icon matSuffix fontSet="material-symbols-rounded" class="text-slate-400!"
                   >mail</mat-icon
                 >
                 @if (billingForm.get('billing_email')?.hasError('email')) {
@@ -370,7 +370,7 @@
           <div class="rounded-lg border border-blue-200 bg-blue-50 p-4 space-y-4">
             <div class="flex items-center justify-between">
               <h4 class="font-medium text-blue-900 flex items-center gap-2">
-                <mat-icon fontSet="material-symbols-rounded" class="!text-blue-600 !text-[20px]"
+                <mat-icon fontSet="material-symbols-rounded" class="text-blue-600! icon-md"
                   >person</mat-icon
                 >
                 Primary Contact
@@ -393,7 +393,7 @@
                   class="w-full minimal-input"
                   subscriptSizing="dynamic"
                 >
-                  <input matInput formControlName="first_name" placeholder="John" />
+                  <input matInput formControlName="first_name" />
                 </mat-form-field>
               </div>
 
@@ -404,7 +404,7 @@
                   class="w-full minimal-input"
                   subscriptSizing="dynamic"
                 >
-                  <input matInput formControlName="last_name" placeholder="Doe" />
+                  <input matInput formControlName="last_name" />
                 </mat-form-field>
               </div>
 
@@ -415,7 +415,7 @@
                   class="w-full minimal-input"
                   subscriptSizing="dynamic"
                 >
-                  <input matInput formControlName="job_title" placeholder="e.g., HR Manager" />
+                  <input matInput formControlName="job_title" />
                 </mat-form-field>
               </div>
 
@@ -445,9 +445,9 @@
                     matInput
                     type="email"
                     formControlName="email"
-                    placeholder="john.doe@company.com"
+                   
                   />
-                  <mat-icon matSuffix fontSet="material-symbols-rounded" class="!text-slate-400"
+                  <mat-icon matSuffix fontSet="material-symbols-rounded" class="text-slate-400!"
                     >mail</mat-icon
                   >
                 </mat-form-field>
@@ -460,8 +460,8 @@
                   class="w-full minimal-input"
                   subscriptSizing="dynamic"
                 >
-                  <input matInput formControlName="phone" placeholder="+260 977 123456" />
-                  <mat-icon matSuffix fontSet="material-symbols-rounded" class="!text-slate-400"
+                  <input matInput formControlName="phone" />
+                  <mat-icon matSuffix fontSet="material-symbols-rounded" class="text-slate-400!"
                     >call</mat-icon
                   >
                 </mat-form-field>
@@ -512,14 +512,14 @@
     </div>
 
     <div class="flex items-center gap-2">
-      <button mat-button (click)="dialogRef.close()" class="!text-slate-600">Cancel</button>
+      <button mat-button (click)="dialogRef.close()" class="text-slate-600!">Cancel</button>
 
       @if (currentStep() > 0) {
-      <button mat-icon-button (click)="previousStep()" matTooltip="Previous step" class="!text-slate-600 hover:!bg-slate-200">
+      <button mat-icon-button (click)="previousStep()" matTooltip="Previous step" class="text-slate-600! hover:bg-slate-200!">
         <mat-icon fontSet="material-symbols-rounded">chevron_left</mat-icon>
       </button>
       } @if (currentStep() < 2) {
-      <button mat-icon-button (click)="nextStep()" [disabled]="!canProceedToNextStep()" matTooltip="Next step" class="!text-primary">
+      <button mat-icon-button (click)="nextStep()" [disabled]="!canProceedToNextStep()" matTooltip="Next step" class="text-primary!">
         <mat-icon fontSet="material-symbols-rounded">chevron_right</mat-icon>
       </button>
       } @if (currentStep() === 2) {

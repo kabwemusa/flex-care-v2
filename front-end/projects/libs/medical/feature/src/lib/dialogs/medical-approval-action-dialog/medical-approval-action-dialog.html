@@ -1,4 +1,4 @@
-<!-- libs/medical/feature/src/lib/dialogs/medical-approval-action-dialog/medical-approval-action-dialog.html -->
+﻿<!-- libs/medical/feature/src/lib/dialogs/medical-approval-action-dialog/medical-approval-action-dialog.html -->
 
 <div class="flex flex-col max-h-[90vh] min-w-[500px] rounded-lg">
   <!-- Header -->
@@ -7,17 +7,17 @@
       @switch (data.action) {
         @case ('approve') {
           <div class="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-100">
-            <mat-icon fontSet="material-symbols-rounded" class="!text-[24px] text-emerald-600">check_circle</mat-icon>
+            <mat-icon fontSet="material-symbols-rounded" class="icon-lg text-emerald-600">check_circle</mat-icon>
           </div>
         }
         @case ('reject') {
           <div class="flex h-10 w-10 items-center justify-center rounded-full bg-red-100">
-            <mat-icon fontSet="material-symbols-rounded" class="!text-[24px] text-red-600">cancel</mat-icon>
+            <mat-icon fontSet="material-symbols-rounded" class="icon-lg text-red-600">cancel</mat-icon>
           </div>
         }
         @case ('return') {
           <div class="flex h-10 w-10 items-center justify-center rounded-full bg-amber-100">
-            <mat-icon fontSet="material-symbols-rounded" class="!text-[24px] text-amber-600">undo</mat-icon>
+            <mat-icon fontSet="material-symbols-rounded" class="icon-lg text-amber-600">undo</mat-icon>
           </div>
         }
       }
@@ -28,7 +28,7 @@
         }
       </div>
     </div>
-    <button mat-icon-button (click)="cancel()" class="!text-slate-400">
+    <button mat-icon-button (click)="cancel()" class="text-slate-400!">
       <mat-icon fontSet="material-symbols-rounded">close</mat-icon>
     </button>
   </div>
@@ -47,7 +47,7 @@
               </span>
             </div>
             <div class="flex items-center gap-2">
-              <mat-icon fontSet="material-symbols-rounded" class="!text-[18px] text-primary">group</mat-icon>
+              <mat-icon fontSet="material-symbols-rounded" class="icon-md text-primary">group</mat-icon>
               <span class="font-medium text-slate-900">{{ status.current_step.name }}</span>
               <span class="text-slate-500">-</span>
               <span class="text-sm text-slate-600">{{ status.current_step.group }}</span>
@@ -71,7 +71,7 @@
         @case ('approve') {
           <div class="rounded-lg border border-emerald-200 bg-emerald-50 p-4">
             <div class="flex gap-3">
-              <mat-icon fontSet="material-symbols-rounded" class="!text-[20px] text-emerald-600">info</mat-icon>
+              <mat-icon fontSet="material-symbols-rounded" class="icon-md text-emerald-600">info</mat-icon>
               <div class="flex-1">
                 <h3 class="text-sm font-medium text-emerald-900">Approval Confirmation</h3>
                 <p class="mt-1 text-sm text-emerald-700">
@@ -96,7 +96,7 @@
         @case ('reject') {
           <div class="rounded-lg border border-red-200 bg-red-50 p-4">
             <div class="flex gap-3">
-              <mat-icon fontSet="material-symbols-rounded" class="!text-[20px] text-red-600">warning</mat-icon>
+              <mat-icon fontSet="material-symbols-rounded" class="icon-md text-red-600">warning</mat-icon>
               <div class="flex-1">
                 <h3 class="text-sm font-medium text-red-900">Rejection Warning</h3>
                 <p class="mt-1 text-sm text-red-700">
@@ -128,7 +128,7 @@
         @case ('return') {
           <div class="rounded-lg border border-amber-200 bg-amber-50 p-4">
             <div class="flex gap-3">
-              <mat-icon fontSet="material-symbols-rounded" class="!text-[20px] text-amber-600">info</mat-icon>
+              <mat-icon fontSet="material-symbols-rounded" class="icon-md text-amber-600">info</mat-icon>
               <div class="flex-1">
                 <h3 class="text-sm font-medium text-amber-900">Return for Amendment</h3>
                 <p class="mt-1 text-sm text-amber-700">
@@ -174,7 +174,7 @@
           type="submit"
           (click)="submit()"
           [disabled]="isSubmitting()"
-          class="!bg-emerald-600 hover:!bg-emerald-700"
+          class="bg-emerald-600! hover:bg-emerald-700!"
         >
           @if (isSubmitting()) {
             <mat-spinner diameter="20" class="inline-block mr-2"></mat-spinner>
@@ -206,7 +206,7 @@
           type="submit"
           (click)="submit()"
           [disabled]="form.invalid || isSubmitting()"
-          class="!bg-amber-600 hover:!bg-amber-700 !text-white"
+          class="bg-amber-600! hover:bg-amber-700! text-white!"
         >
           @if (isSubmitting()) {
             <mat-spinner diameter="20" class="inline-block mr-2"></mat-spinner>

@@ -1,4 +1,4 @@
-<div class="space-y-5">
+﻿<div class="space-y-5">
   <!-- ── Header ───────────────────────────────────────────────────────────── -->
   <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
     <div>
@@ -84,7 +84,7 @@
   <!-- ── No filter results ─────────────────────────────────────────────────── -->
   } @else if (groupedBenefits().length === 0) {
   <div class="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-8 text-center">
-    <mat-icon fontSet="material-symbols-rounded" class="text-slate-400! text-[36px]! mb-2"
+    <mat-icon fontSet="material-symbols-rounded" class="text-slate-400! icon-xl mb-2"
       >search_off</mat-icon
     >
     <h4 class="text-sm font-medium text-slate-900">No benefits match your filters</h4>
@@ -158,7 +158,7 @@
               <span
                 class="inline-flex items-center gap-0.5 rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-500 shrink-0"
               >
-                <mat-icon fontSet="material-symbols-rounded" class="text-[11px]!"
+                <mat-icon fontSet="material-symbols-rounded" class="icon-xs"
                   >account_tree</mat-icon
                 >
                 {{ enabledChildCount(item) }}/{{ item.children.length }} sub
@@ -191,7 +191,7 @@
             class="hidden sm:inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700 border border-amber-200 shrink-0"
             matTooltip="Pre-authorisation required"
           >
-            <mat-icon fontSet="material-symbols-rounded" class="text-[11px]!">approval</mat-icon>
+            <mat-icon fontSet="material-symbols-rounded" class="icon-xs">approval</mat-icon>
             Pre-auth
           </span>
           }
@@ -206,7 +206,7 @@
             "
             class="shrink-0"
           >
-            <mat-icon fontSet="material-symbols-rounded" class="text-[18px]!">tune</mat-icon>
+            <mat-icon fontSet="material-symbols-rounded" class="icon-md">tune</mat-icon>
           </button>
 
           <!-- Toggle -->
@@ -263,7 +263,7 @@
               class="hidden sm:inline-flex items-center gap-0.5 rounded-full bg-amber-50 px-1.5 py-0.5 text-[10px] font-medium text-amber-700 border border-amber-200 shrink-0"
               matTooltip="Pre-auth required"
             >
-              <mat-icon fontSet="material-symbols-rounded" class="text-[10px]!">approval</mat-icon>
+              <mat-icon fontSet="material-symbols-rounded" class="icon-2xs">approval</mat-icon>
               Pre-auth
             </span>
             }
@@ -278,7 +278,7 @@
                 child.isEnabled ? 'Configure sub-benefit limits' : 'Enable sub-benefit first'
               "
             >
-              <mat-icon fontSet="material-symbols-rounded" class="text-[16px]!">tune</mat-icon>
+              <mat-icon fontSet="material-symbols-rounded" class="icon-sm">tune</mat-icon>
             </button>
 
             <!-- Toggle (locked when parent is off) -->

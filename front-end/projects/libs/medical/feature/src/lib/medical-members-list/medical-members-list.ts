@@ -203,8 +203,7 @@ export class MedicalMembersList implements OnInit {
 
   openDialog(member?: Member): void {
     const dialogRef = this.dialog.open(MedicalMemberDialog, {
-      width: '70vw',
-      minWidth: '70vw',
+      maxWidth: '70vw',
       maxHeight: '90vh',
       data: { member },
       panelClass: 'bg-white',

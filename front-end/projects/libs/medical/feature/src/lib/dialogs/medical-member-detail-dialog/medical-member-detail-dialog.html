@@ -1,4 +1,4 @@
-<!-- libs/medical/feature/src/lib/dialogs/medical-member-detail-dialog/medical-member-detail-dialog.html -->
+﻿<!-- libs/medical/feature/src/lib/dialogs/medical-member-detail-dialog/medical-member-detail-dialog.html -->
 
 <div class="w-[70vw] max-h-[85vh] flex flex-col rounded-lg">
   <!-- Header -->
@@ -29,7 +29,7 @@
         </div>
       </div>
     </div>
-    <button mat-icon-button (click)="close()" class="!text-slate-400 hover:!text-slate-600">
+    <button mat-icon-button (click)="close()" class="text-slate-400! hover:text-slate-600!">
       <mat-icon fontSet="material-symbols-rounded">close</mat-icon>
     </button>
   </div>
@@ -39,7 +39,7 @@
     <!-- Personal Information -->
     <div class="rounded-xl border border-slate-200 bg-white p-5">
       <h3 class="font-semibold text-slate-900 flex items-center gap-2 mb-4">
-        <mat-icon fontSet="material-symbols-rounded" class="!text-slate-500">person</mat-icon>
+        <mat-icon fontSet="material-symbols-rounded" class="text-slate-500!">person</mat-icon>
         Personal Information
       </h3>
       <div class="grid grid-cols-2 gap-4">
@@ -81,7 +81,7 @@
     <!-- Coverage Details -->
     <div class="rounded-xl border border-blue-200 bg-blue-50 p-5">
       <h3 class="font-semibold text-blue-900 flex items-center gap-2 mb-4">
-        <mat-icon fontSet="material-symbols-rounded" class="!text-blue-600">verified_user</mat-icon>
+        <mat-icon fontSet="material-symbols-rounded" class="text-blue-600!">verified_user</mat-icon>
         Coverage Details
       </h3>
       <div class="grid grid-cols-2 gap-4">
@@ -114,13 +114,13 @@
     <!-- Premium Information -->
     <div class="rounded-xl border border-slate-200 bg-slate-50 p-5">
       <h3 class="font-semibold text-slate-900 flex items-center gap-2 mb-4">
-        <mat-icon fontSet="material-symbols-rounded" class="!text-slate-500">payments</mat-icon>
+        <mat-icon fontSet="material-symbols-rounded" class="text-slate-500!">payments</mat-icon>
         Premium Information @if (isProratedPremium) {
         <mat-icon
           fontSet="material-symbols-rounded"
           [matTooltip]="PREMIUM_INDICATORS.prorated.tooltip"
           [class]="PREMIUM_INDICATORS.prorated.color"
-          class="!text-[18px]"
+          class="icon-md"
         >
           {{ PREMIUM_INDICATORS.prorated.icon }}
         </mat-icon>
@@ -176,7 +176,7 @@
     <div class="rounded-xl border border-amber-200 bg-amber-50 p-5">
       <div class="flex items-center justify-between mb-4">
         <h3 class="font-semibold text-amber-900 flex items-center gap-2">
-          <mat-icon fontSet="material-symbols-rounded" class="!text-amber-600"
+          <mat-icon fontSet="material-symbols-rounded" class="text-amber-600!"
             >trending_up</mat-icon
           >
           Medical Loadings
@@ -242,7 +242,7 @@
       </div>
       } @else {
       <div class="text-center py-6">
-        <mat-icon fontSet="material-symbols-rounded" class="!text-[36px] text-amber-300 mb-2">
+        <mat-icon fontSet="material-symbols-rounded" class="icon-xl text-amber-300 mb-2">
           check_circle
         </mat-icon>
         <p class="text-amber-700">No medical loadings applied</p>
@@ -254,7 +254,7 @@
     <div class="rounded-xl border border-red-200 bg-red-50 p-5">
       <div class="flex items-center justify-between mb-4">
         <h3 class="font-semibold text-red-900 flex items-center gap-2">
-          <mat-icon fontSet="material-symbols-rounded" class="!text-red-600">block</mat-icon>
+          <mat-icon fontSet="material-symbols-rounded" class="text-red-600!">block</mat-icon>
           Exclusions
         </h3>
         @if (exclusionsCount > 0) {
@@ -318,7 +318,7 @@
       </div>
       } @else {
       <div class="text-center py-6">
-        <mat-icon fontSet="material-symbols-rounded" class="!text-[36px] text-red-300 mb-2">
+        <mat-icon fontSet="material-symbols-rounded" class="icon-xl text-red-300 mb-2">
           check_circle
         </mat-icon>
         <p class="text-red-700">No exclusions applied</p>

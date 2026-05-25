@@ -69,7 +69,7 @@ export class MedicalBillingPayments implements OnInit {
   // Permissions
   readonly permissions = MEDICAL_PERMISSIONS;
 
-  // Table
+  // Table columns
   displayedColumns = [
     'status',
     'payment_number',
@@ -85,11 +85,13 @@ export class MedicalBillingPayments implements OnInit {
   @ViewChild(MatSort) sort!: MatSort;
   @ViewChild('detailDrawer') detailDrawer!: MatDrawer;
 
-  // Filters (local UI state)
-  searchTerm = signal('');
-  statusFilter = signal('');
-  methodFilter = signal('');
+  // ── Filters (local UI state) ─────────────────────────────────────────────
+  searchTerm      = signal('');
+  statusFilter    = signal('');
+  methodFilter    = signal('');
   unallocatedOnly = signal(false);
+  dateFrom        = signal<string>('');
+  dateTo          = signal<string>('');
 
   // Debounce timer for search
   private searchDebounceTimer: ReturnType<typeof setTimeout> | null = null;
@@ -98,11 +100,11 @@ export class MedicalBillingPayments implements OnInit {
   selectedPayment = signal<Payment | null>(null);
 
   // Constants
-  readonly PAYMENT_STATUS_STYLES = PAYMENT_STATUS_STYLES;
+  readonly PAYMENT_STATUS_STYLES  = PAYMENT_STATUS_STYLES;
   readonly PAYMENT_FILTER_OPTIONS = PAYMENT_FILTER_OPTIONS;
-  readonly BILLING_UI_CONFIG = BILLING_UI_CONFIG;
+  readonly BILLING_UI_CONFIG      = BILLING_UI_CONFIG;
   readonly BILLING_PAYMENT_METHODS = BILLING_PAYMENT_METHODS;
-  readonly formatCurrency = formatCurrency;
+  readonly formatCurrency          = formatCurrency;
 
   // Page size options for paginator
   readonly pageSizeOptions = BILLING_UI_CONFIG.PAGE_SIZE_OPTIONS;
@@ -110,22 +112,18 @@ export class MedicalBillingPayments implements OnInit {
   // Computed Logic
   readonly hasActiveFilters = computed(
     () =>
-      this.searchTerm() !== '' ||
-      this.statusFilter() !== '' ||
-      this.methodFilter() !== '' ||
-      this.unallocatedOnly()
+      this.searchTerm()      !== '' ||
+      this.statusFilter()    !== '' ||
+      this.methodFilter()    !== '' ||
+      this.unallocatedOnly() ||
+      this.dateFrom()        !== '' ||
+      this.dateTo()          !== ''
   );
 
   // KPIs from store stats
-  readonly totalReceived = computed(
-    () => this.store.stats()?.payments?.summary?.total_received ?? 0
-  );
-  readonly unallocatedAmount = computed(
-    () => this.store.stats()?.payments?.summary?.total_unallocated ?? 0
-  );
-  readonly paymentsThisMonth = computed(
-    () => this.store.stats()?.payments?.summary?.total_payments ?? 0
-  );
+  readonly totalReceived     = computed(() => this.store.stats()?.payments?.summary?.total_received     ?? 0);
+  readonly unallocatedAmount = computed(() => this.store.stats()?.payments?.summary?.total_unallocated  ?? 0);
+  readonly paymentsThisMonth = computed(() => this.store.stats()?.payments?.summary?.total_payments     ?? 0);
 
   ngOnInit(): void {
     this.loadPayments();
@@ -136,30 +134,28 @@ export class MedicalBillingPayments implements OnInit {
   private buildFilters(): PaymentFilters {
     const filters: PaymentFilters = {
       per_page: this.store.paymentPageSize(),
-      page: this.store.paymentCurrentPage(),
+      page:     this.store.paymentCurrentPage(),
     };
 
-    if (this.searchTerm()) filters.search = this.searchTerm();
-    if (this.statusFilter()) filters.status = this.statusFilter();
-    if (this.methodFilter()) filters.payment_method = this.methodFilter();
-    if (this.unallocatedOnly()) filters.unallocated = true;
+    if (this.searchTerm())      filters.search          = this.searchTerm();
+    if (this.statusFilter())    filters.status          = this.statusFilter();
+    if (this.methodFilter())    filters.payment_method  = this.methodFilter();
+    if (this.unallocatedOnly()) filters.unallocated     = true;
+    if (this.dateFrom())        filters.payment_date_from = this.dateFrom();
+    if (this.dateTo())          filters.payment_date_to   = this.dateTo();
 
     return filters;
   }
 
-  // Load payments with current filters
   private loadPayments(): void {
     this.store.loadPayments(this.buildFilters());
   }
 
-  // Filter Handlers with server-side filtering
+  // ── Filter Handlers ──────────────────────────────────────────────────────
+
   onSearchChange(value: string): void {
     this.searchTerm.set(value);
-
-    if (this.searchDebounceTimer) {
-      clearTimeout(this.searchDebounceTimer);
-    }
-
+    if (this.searchDebounceTimer) clearTimeout(this.searchDebounceTimer);
     this.searchDebounceTimer = setTimeout(() => {
       this.store.loadPayments({ ...this.buildFilters(), page: 1 });
     }, 300);
@@ -172,6 +168,16 @@ export class MedicalBillingPayments implements OnInit {
 
   onMethodChange(value: string): void {
     this.methodFilter.set(value);
+    this.store.loadPayments({ ...this.buildFilters(), page: 1 });
+  }
+
+  onDateFromChange(value: string): void {
+    this.dateFrom.set(value);
+    this.store.loadPayments({ ...this.buildFilters(), page: 1 });
+  }
+
+  onDateToChange(value: string): void {
+    this.dateTo.set(value);
     this.store.loadPayments({ ...this.buildFilters(), page: 1 });
   }
 
@@ -190,14 +196,16 @@ export class MedicalBillingPayments implements OnInit {
     this.statusFilter.set('');
     this.methodFilter.set('');
     this.unallocatedOnly.set(false);
+    this.dateFrom.set('');
+    this.dateTo.set('');
     this.store.loadPayments({ per_page: this.store.paymentPageSize(), page: 1 });
   }
 
-  // Pagination handlers
+  // ── Pagination ────────────────────────────────────────────────────────────
+
   onPageChange(event: { pageIndex: number; pageSize: number }): void {
-    const newPage = event.pageIndex + 1;
-    const filters = this.buildFilters();
-    filters.page = newPage;
+    const filters  = this.buildFilters();
+    filters.page     = event.pageIndex + 1;
     filters.per_page = event.pageSize;
     this.store.loadPayments(filters);
   }
@@ -248,6 +256,62 @@ export class MedicalBillingPayments implements OnInit {
     });
   }
 
+  async confirmPayment(payment: Payment, event?: Event): Promise<void> {
+    event?.stopPropagation();
+    if (
+      await this.feedback.confirm(
+        'Confirm Payment',
+        `Confirm payment ${payment.payment_number}? This marks it as verified and confirmed.`
+      )
+    ) {
+      this.store.confirmPayment(payment.id).subscribe({
+        next: () => {
+          this.feedback.success('Payment confirmed');
+          this.refreshAfterAction(payment.id);
+        },
+        error: (err) => this.feedback.error(err?.error?.message ?? 'Failed to confirm payment'),
+      });
+    }
+  }
+
+  async bouncePayment(payment: Payment, event?: Event): Promise<void> {
+    event?.stopPropagation();
+    if (
+      await this.feedback.confirm(
+        'Mark as Bounced',
+        `Mark payment ${payment.payment_number} as bounced? All allocations will be reversed.`
+      )
+    ) {
+      this.store.bouncePayment(payment.id, 'Returned / bounced by bank').subscribe({
+        next: () => {
+          this.feedback.success('Payment marked as bounced');
+          this.loadPayments();
+          this.store.loadStats();
+          if (this.selectedPayment()?.id === payment.id) this.closeDrawer();
+        },
+        error: (err) => this.feedback.error(err?.error?.message ?? 'Failed to mark payment as bounced'),
+      });
+    }
+  }
+
+  async reconcilePayment(payment: Payment, event?: Event): Promise<void> {
+    event?.stopPropagation();
+    if (
+      await this.feedback.confirm(
+        'Reconcile Payment',
+        `Reconcile payment ${payment.payment_number}? This marks it as matched against bank records.`
+      )
+    ) {
+      this.store.reconcilePayment(payment.id).subscribe({
+        next: () => {
+          this.feedback.success('Payment reconciled');
+          this.refreshAfterAction(payment.id);
+        },
+        error: (err) => this.feedback.error(err?.error?.message ?? 'Failed to reconcile payment'),
+      });
+    }
+  }
+
   async autoAllocate(payment: Payment, event?: Event): Promise<void> {
     event?.stopPropagation();
     if (payment.unallocated_amount <= 0) {
@@ -258,9 +322,7 @@ export class MedicalBillingPayments implements OnInit {
     if (
       await this.feedback.confirm(
         'Auto-Allocate Payment',
-        `Automatically allocate ${formatCurrency(
-          payment.unallocated_amount
-        )} to outstanding invoices?`
+        `Automatically allocate ${formatCurrency(payment.unallocated_amount)} to outstanding invoices?`
       )
     ) {
       this.store.autoAllocatePayment(payment.id).subscribe({
@@ -284,10 +346,9 @@ export class MedicalBillingPayments implements OnInit {
       this.store.reversePayment(payment.id, 'Reversed by user').subscribe({
         next: () => {
           this.feedback.success('Payment reversed');
-          if (this.selectedPayment()?.id === payment.id) {
-            this.closeDrawer();
-          }
+          this.loadPayments();   // reload list after reversal
           this.store.loadStats();
+          if (this.selectedPayment()?.id === payment.id) this.closeDrawer();
         },
         error: (err) => this.feedback.error(err?.error?.message ?? 'Failed to reverse payment'),
       });
@@ -300,6 +361,7 @@ export class MedicalBillingPayments implements OnInit {
         next: () => this.selectedPayment.set(this.store.selectedPayment()),
       });
     }
+    this.loadPayments();
     this.store.loadStats();
   }
 
@@ -310,9 +372,9 @@ export class MedicalBillingPayments implements OnInit {
   getStatusStyles(status: string): { bg: string; text: string; dot: string } {
     return (
       PAYMENT_STATUS_STYLES[status] ?? {
-        bg: 'bg-slate-100',
+        bg:   'bg-slate-100',
         text: 'text-slate-600',
-        dot: 'bg-slate-400',
+        dot:  'bg-slate-400',
       }
     );
   }
@@ -329,9 +391,9 @@ export class MedicalBillingPayments implements OnInit {
   formatDate(date: string | null | undefined): string {
     if (!date) return '-';
     return new Date(date).toLocaleDateString('en-ZM', {
-      day: '2-digit',
+      day:   '2-digit',
       month: 'short',
-      year: 'numeric',
+      year:  'numeric',
     });
   }
 
@@ -363,9 +425,9 @@ export class MedicalBillingPayments implements OnInit {
 
     const csvContent = [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
     const blob = new Blob([csvContent], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
+    const url  = window.URL.createObjectURL(blob);
     const link = document.createElement('a');
-    link.href = url;
+    link.href     = url;
     link.download = PAYMENT_CSV_CONFIG.filename(new Date().toISOString().split('T')[0]);
     link.click();
     window.URL.revokeObjectURL(url);

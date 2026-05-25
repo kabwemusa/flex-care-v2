@@ -1,4 +1,4 @@
-<!-- libs/medical/ui/src/lib/dialogs/addon-dialog/addon-dialog.html -->
+﻿<!-- libs/medical/ui/src/lib/dialogs/addon-dialog/addon-dialog.html -->
 
 <div class="flex max-h-[90vh] w-full flex-col overflow-hidden rounded-lg bg-white sm:w-[600px]">
   <!-- Header -->
@@ -20,7 +20,7 @@
     <button
       mat-icon-button
       (click)="dialogRef.close()"
-      class="!text-slate-400 hover:!text-slate-700"
+      class="text-slate-400! hover:text-slate-700!"
     >
       <mat-icon fontSet="material-symbols-rounded">close</mat-icon>
     </button>
@@ -33,7 +33,7 @@
       [linear]="false"
       [selectedIndex]="currentStep()"
       (selectionChange)="onStepChange($event.selectedIndex)"
-      class="!bg-transparent"
+      class="bg-transparent!"
     >
       <!-- Step 1: Basic Info -->
       <mat-step [stepControl]="basicForm" label="Basic Info">
@@ -46,7 +46,7 @@
               Name <span class="text-red-500">*</span>
             </label>
             <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
-              <input matInput formControlName="name" placeholder="e.g. Dental Plus Rider" />
+              <input matInput formControlName="name" />
               @if (basicForm.get('name')?.hasError('required')) {
               <mat-error>Name is required</mat-error>
               }
@@ -57,7 +57,7 @@
           <div class="flex flex-col gap-1.5">
             <label class="text-sm font-medium text-slate-700">Code</label>
             <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
-              <input matInput formControlName="code" placeholder="Auto-generated if empty" />
+              <input matInput formControlName="code" />
             </mat-form-field>
             <p class="text-xs text-slate-400">Leave empty to auto-generate</p>
           </div> -->
@@ -72,7 +72,7 @@
                 <mat-select-trigger>
                   @if (basicForm.get('addon_type')?.value; as type) {
                   <span class="flex items-center gap-2">
-                    <mat-icon fontSet="material-symbols-rounded" class="!text-[18px]">{{
+                    <mat-icon fontSet="material-symbols-rounded" class="icon-md">{{
                       getAddonTypeIcon(type)
                     }}</mat-icon>
                     <span>{{ getAddonTypeLabel(type) }}</span>
@@ -82,7 +82,7 @@
                 @for (type of addonTypes; track type.value) {
                 <mat-option [value]="type.value">
                   <div class="flex items-center gap-2">
-                    <mat-icon fontSet="material-symbols-rounded" class="!text-[18px]">{{
+                    <mat-icon fontSet="material-symbols-rounded" class="icon-md">{{
                       getAddonTypeIcon(type.value)
                     }}</mat-icon>
                     <div class="flex flex-col">
@@ -105,7 +105,7 @@
                 formControlName="description"
                 rows="3"
                 placeholder="Brief description of this addon..."
-                class="!resize-none"
+                class="resize-none!"
               ></textarea>
             </mat-form-field>
           </div>
@@ -142,7 +142,7 @@
           <div class="flex flex-col gap-1.5">
             <label class="text-sm font-medium text-slate-700">Currency</label>
             <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
-              <input matInput formControlName="currency" placeholder="ZMW" />
+              <input matInput formControlName="currency" />
             </mat-form-field>
           </div>
 
@@ -160,7 +160,7 @@
                 type="number"
                 formControlName="amount"
                 min="0"
-                placeholder="e.g. 150"
+               
               />
             </mat-form-field>
           </div>
@@ -176,7 +176,7 @@
                 formControlName="percentage"
                 min="0"
                 max="100"
-                placeholder="e.g. 10"
+               
               />
               <span matTextSuffix class="text-slate-400">%</span>
             </mat-form-field>
@@ -225,7 +225,7 @@
           <div class="flex flex-col gap-1.5">
             <label class="text-sm font-medium text-slate-700">Sort Order</label>
             <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
-              <input matInput type="number" formControlName="sort_order" min="0" placeholder="0" />
+              <input matInput type="number" formControlName="sort_order" min="0" />
             </mat-form-field>
             <p class="text-xs text-slate-400">Lower numbers appear first in lists</p>
           </div>
@@ -252,20 +252,20 @@
     <div class="text-xs text-slate-500">Step {{ currentStep() + 1 }} of 3</div>
 
     <div class="flex items-center gap-3">
-      <button mat-button (click)="dialogRef.close()" class="!text-slate-600 hover:!bg-slate-200">
+      <button mat-button (click)="dialogRef.close()" class="text-slate-600! hover:bg-slate-200!">
         Cancel
       </button>
 
       <!-- Back Button -->
       @if (!isFirstStep) {
-      <button mat-icon-button (click)="prevStep()" matTooltip="Previous step" class="!text-slate-600 hover:!bg-slate-200">
+      <button mat-icon-button (click)="prevStep()" matTooltip="Previous step" class="text-slate-600! hover:bg-slate-200!">
         <mat-icon fontSet="material-symbols-rounded">chevron_left</mat-icon>
       </button>
       }
 
       <!-- Next Button -->
       @if (!isLastStep) {
-      <button mat-icon-button [disabled]="!canGoNext" (click)="nextStep()" matTooltip="Next step" class="!text-primary">
+      <button mat-icon-button [disabled]="!canGoNext" (click)="nextStep()" matTooltip="Next step" class="text-primary!">
         <mat-icon fontSet="material-symbols-rounded">chevron_right</mat-icon>
       </button>
       } @else {
@@ -275,7 +275,7 @@
         color="primary"
         [disabled]="!isFormValid"
         (click)="save()"
-        class="!px-6 !rounded-lg"
+        class="px-6! rounded-lg!"
       >
         {{ isEditMode ? 'Update Addon' : 'Create Addon' }}
       </button>

@@ -1,176 +1,158 @@
-<div class="min-h-screen bg-white">
-  <!-- Header -->
-  <div class="border-b border-slate-100 sticky top-0 bg-white/80 backdrop-blur-md z-20">
-    <div class="max-w-6xl mx-auto px-6 py-6">
-      <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 class="text-2xl font-bold tracking-tight text-slate-900">Approval Groups</h1>
-          <p class="text-slate-500 text-sm mt-1">
-            Manage groups of users who can approve requests
-          </p>
-        </div>
-        <div class="flex items-center gap-3">
-          <button
-            mat-flat-button
-            color="primary"
-            class="!h-10 !rounded-lg !px-6"
-            (click)="openGroupDialog()"
-          >
-            <mat-icon fontSet="material-symbols-rounded" class="mr-2">add</mat-icon>
-            Create Group
-          </button>
-        </div>
-      </div>
+﻿<div class="bg-white p-6 md:p-10 min-h-screen shadow-sm fc-page-enter">
 
-      <!-- Search -->
-      <div class="mt-6">
-        <div class="relative max-w-md">
-          <mat-icon
-            fontSet="material-symbols-rounded"
-            class="absolute left-3 top-1/2 -translate-y-1/2 !text-slate-400 !text-xl"
-          >
-            search
-          </mat-icon>
-          <input
-            type="text"
-            [(ngModel)]="searchQuery"
-            (keyup.enter)="onSearch()"
-            placeholder="Search groups..."
-            class="w-full h-10 pl-10 pr-4 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-          />
-        </div>
-      </div>
+  <!-- Header -->
+  <div class="flex flex-col md:flex-row md:items-start justify-between gap-4 mb-8">
+    <div>
+      <h1 class="text-2xl font-bold tracking-tight text-slate-900">Approval Groups</h1>
+      <p class="text-slate-500 text-sm mt-1">Manage groups of users who can approve requests</p>
     </div>
+    <button mat-flat-button color="primary" (click)="openGroupDialog()">
+      <mat-icon fontSet="material-symbols-rounded">add</mat-icon>
+      Create Group
+    </button>
   </div>
 
-  <!-- Content -->
-  <div class="max-w-6xl mx-auto px-6 py-8">
-    @if (store.isLoading()) {
-      <div class="flex flex-col items-center justify-center py-24 space-y-4">
-        <mat-spinner diameter="32" class="opacity-60"></mat-spinner>
-        <p class="text-sm text-slate-400">Loading groups...</p>
+  <!-- Search -->
+  <div class="relative w-full sm:w-80 mb-6">
+    <mat-icon
+      fontSet="material-symbols-rounded"
+      class="absolute left-3 top-1/2 -translate-y-1/2 icon-md text-slate-400"
+    >search</mat-icon>
+    <input
+      type="text"
+      [(ngModel)]="searchQuery"
+      (keyup.enter)="onSearch()"
+      placeholder="Search groups..."
+      class="h-10 w-full rounded-lg border border-slate-200 bg-slate-50 pl-10 pr-4 text-sm text-slate-900 outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all placeholder:text-slate-400"
+    />
+  </div>
+
+  <!-- Loading State — shimmer skeleton -->
+  @if (store.isLoading()) {
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+    @for (i of [1,2,3,4,5,6]; track i) {
+    <div class="rounded-xl border border-slate-200 p-5 space-y-3">
+      <div class="flex items-center gap-3">
+        <div class="fc-skeleton h-10 w-10 rounded-full shrink-0"></div>
+        <div class="flex-1 space-y-2">
+          <div class="fc-skeleton h-4 w-32 rounded"></div>
+          <div class="fc-skeleton h-3 w-20 rounded"></div>
+        </div>
       </div>
+      <div class="fc-skeleton h-3 w-full rounded mt-3"></div>
+      <div class="fc-skeleton h-px w-full"></div>
+      <div class="fc-skeleton h-3 w-24 rounded"></div>
+    </div>
     }
+  </div>
 
-    @if (!store.isLoading() && store.groups().length > 0) {
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        @for (group of store.groups(); track group.id) {
+  } @else if (store.groups().length > 0) {
+
+  <!-- Groups Grid -->
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+    @for (group of store.groups(); track group.id) {
+    <div
+      class="group border border-slate-200 rounded-xl p-5 fc-card-hover"
+      [class.opacity-60]="!group.is_active"
+    >
+      <div class="flex items-start justify-between">
+        <div class="flex items-center gap-3">
           <div
-            class="group border border-slate-200 rounded-xl p-5 hover:border-slate-300 hover:shadow-sm transition-all"
-            [class.opacity-60]="!group.is_active"
+            class="h-10 w-10 rounded-full flex items-center justify-center shrink-0"
+            [class.bg-blue-50]="group.is_active"
+            [class.text-blue-600]="group.is_active"
+            [class.bg-slate-100]="!group.is_active"
+            [class.text-slate-400]="!group.is_active"
           >
-            <div class="flex items-start justify-between">
-              <div class="flex items-center gap-3">
-                <div
-                  class="h-10 w-10 rounded-full flex items-center justify-center shrink-0"
-                  [class.bg-blue-50]="group.is_active"
-                  [class.text-blue-600]="group.is_active"
-                  [class.bg-slate-100]="!group.is_active"
-                  [class.text-slate-400]="!group.is_active"
-                >
-                  <mat-icon fontSet="material-symbols-rounded" class="!text-xl">group</mat-icon>
-                </div>
-                <div>
-                  <h3 class="font-semibold text-slate-900">{{ group.name }}</h3>
-                  <p class="text-xs text-slate-500">{{ group.code }}</p>
-                </div>
-              </div>
-
-              <button
-                mat-icon-button
-                [matMenuTriggerFor]="groupMenu"
-                class="!text-slate-400 hover:!text-slate-600"
-              >
-                <mat-icon fontSet="material-symbols-rounded">more_vert</mat-icon>
-              </button>
-
-              <mat-menu #groupMenu="matMenu" class="!rounded-xl !min-w-[160px]">
-                <button mat-menu-item (click)="openGroupDialog(group)">
-                  <mat-icon fontSet="material-symbols-rounded">edit</mat-icon>
-                  <span>Edit</span>
-                </button>
-                <button mat-menu-item (click)="manageMembers(group)">
-                  <mat-icon fontSet="material-symbols-rounded">person_add</mat-icon>
-                  <span>Manage Members</span>
-                </button>
-                <button mat-menu-item (click)="toggleActive(group)">
-                  <mat-icon fontSet="material-symbols-rounded">
-                    {{ group.is_active ? 'block' : 'check_circle' }}
-                  </mat-icon>
-                  <span>{{ group.is_active ? 'Deactivate' : 'Activate' }}</span>
-                </button>
-                <mat-divider></mat-divider>
-                <button mat-menu-item class="!text-red-600" (click)="deleteGroup(group)">
-                  <mat-icon fontSet="material-symbols-rounded" class="!text-red-500">delete</mat-icon>
-                  <span>Delete</span>
-                </button>
-              </mat-menu>
-            </div>
-
-            @if (group.description) {
-              <p class="text-sm text-slate-600 mt-3 line-clamp-2">{{ group.description }}</p>
-            }
-
-            <div class="mt-4 pt-4 border-t border-slate-100">
-              <div class="flex items-center justify-between">
-                <div class="flex items-center gap-2">
-                  <mat-icon fontSet="material-symbols-rounded" class="!text-lg !text-slate-400">
-                    people
-                  </mat-icon>
-                  <span class="text-sm text-slate-600">
-                    {{ group.members_count || group.members?.length || 0 }} members
-                  </span>
-                </div>
-
-                @if (!group.is_active) {
-                  <span
-                    class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-600"
-                  >
-                    Inactive
-                  </span>
-                }
-              </div>
-
-              @if (group.members && group.members.length > 0) {
-                <div class="flex -space-x-2 mt-3">
-                  @for (member of group.members.slice(0, 5); track member.id) {
-                    <div
-                      class="h-7 w-7 rounded-full bg-slate-200 ring-2 ring-white flex items-center justify-center text-xs font-medium text-slate-600"
-                      [matTooltip]="member.user?.username || member.user?.email || ''"
-                    >
-                      {{ (member.user?.username || member.user?.email || '?')[0].toUpperCase() }}
-                    </div>
-                  }
-                  @if (group.members.length > 5) {
-                    <div
-                      class="h-7 w-7 rounded-full bg-slate-100 ring-2 ring-white flex items-center justify-center text-xs font-medium text-slate-500"
-                    >
-                      +{{ group.members.length - 5 }}
-                    </div>
-                  }
-                </div>
-              }
-            </div>
+            <mat-icon fontSet="material-symbols-rounded" class="icon-md">group</mat-icon>
           </div>
+          <div>
+            <h3 class="font-semibold text-slate-900">{{ group.name }}</h3>
+            <p class="text-xs text-slate-500">{{ group.code }}</p>
+          </div>
+        </div>
+
+        <button mat-icon-button [matMenuTriggerFor]="groupMenu" class="text-slate-400! hover:text-slate-600!">
+          <mat-icon fontSet="material-symbols-rounded">more_vert</mat-icon>
+        </button>
+
+        <mat-menu #groupMenu="matMenu">
+          <button mat-menu-item (click)="openGroupDialog(group)">
+            <mat-icon fontSet="material-symbols-rounded" class="text-slate-500!">edit</mat-icon>
+            <span>Edit</span>
+          </button>
+          <button mat-menu-item (click)="manageMembers(group)">
+            <mat-icon fontSet="material-symbols-rounded" class="text-slate-500!">person_add</mat-icon>
+            <span>Manage Members</span>
+          </button>
+          <button mat-menu-item (click)="toggleActive(group)">
+            <mat-icon fontSet="material-symbols-rounded" class="text-slate-500!">
+              {{ group.is_active ? 'block' : 'check_circle' }}
+            </mat-icon>
+            <span>{{ group.is_active ? 'Deactivate' : 'Activate' }}</span>
+          </button>
+          <mat-divider class="my-1!"></mat-divider>
+          <button mat-menu-item class="text-red-600!" (click)="deleteGroup(group)">
+            <mat-icon fontSet="material-symbols-rounded" class="text-red-500!">delete</mat-icon>
+            <span>Delete</span>
+          </button>
+        </mat-menu>
+      </div>
+
+      @if (group.description) {
+      <p class="text-sm text-slate-600 mt-3 line-clamp-2">{{ group.description }}</p>
+      }
+
+      <div class="mt-4 pt-4 border-t border-slate-100">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <mat-icon fontSet="material-symbols-rounded" class="icon-md text-slate-400!">people</mat-icon>
+            <span class="text-sm text-slate-600">
+              {{ group.members_count || group.members?.length || 0 }} members
+            </span>
+          </div>
+          @if (!group.is_active) {
+          <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-600">
+            Inactive
+          </span>
+          }
+        </div>
+
+        @if (group.members && group.members.length > 0) {
+        <div class="flex -space-x-2 mt-3">
+          @for (member of group.members.slice(0, 5); track member.id) {
+          <div
+            class="h-7 w-7 rounded-full bg-slate-200 ring-2 ring-white flex items-center justify-center text-xs font-medium text-slate-600"
+            [matTooltip]="member.user?.username || member.user?.email || ''"
+          >
+            {{ (member.user?.username || member.user?.email || '?')[0].toUpperCase() }}
+          </div>
+          }
+          @if (group.members.length > 5) {
+          <div class="h-7 w-7 rounded-full bg-slate-100 ring-2 ring-white flex items-center justify-center text-xs font-medium text-slate-500">
+            +{{ group.members.length - 5 }}
+          </div>
+          }
+        </div>
         }
       </div>
-    }
-
-    @if (!store.isLoading() && store.groups().length === 0) {
-      <div class="border-2 border-dashed border-slate-200 rounded-xl p-12 text-center bg-slate-50/50">
-        <div
-          class="h-14 w-14 bg-white rounded-full flex items-center justify-center shadow-sm mx-auto mb-4 text-slate-400"
-        >
-          <mat-icon fontSet="material-symbols-rounded" class="!text-3xl">group</mat-icon>
-        </div>
-        <h3 class="text-base font-semibold text-slate-900">No approval groups yet</h3>
-        <p class="text-sm text-slate-500 mt-1 mb-6">
-          Create groups to organize users who can approve requests.
-        </p>
-        <button mat-flat-button color="primary" (click)="openGroupDialog()">
-          Create Group
-        </button>
-      </div>
+    </div>
     }
   </div>
+
+  } @else {
+  <!-- Empty State -->
+  <div class="flex flex-col items-center justify-center py-16 text-center rounded-xl border-2 border-dashed border-slate-200 bg-slate-50/50">
+    <div class="flex h-12 w-12 items-center justify-center rounded-full bg-white shadow-sm mb-4">
+      <mat-icon fontSet="material-symbols-rounded" class="text-slate-400!">group</mat-icon>
+    </div>
+    <h3 class="text-sm font-medium text-slate-900">No approval groups yet</h3>
+    <p class="mt-1 text-sm text-slate-500 max-w-xs">
+      Create groups to organize users who can approve requests.
+    </p>
+    <button mat-flat-button color="primary" class="mt-4" (click)="openGroupDialog()">
+      Create Group
+    </button>
+  </div>
+  }
 </div>

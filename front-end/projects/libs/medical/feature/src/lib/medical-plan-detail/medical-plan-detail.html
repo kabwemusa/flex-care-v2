@@ -1,4 +1,4 @@
-<!-- libs/medical/ui/src/lib/plans/medical-plan-detail.html -->
+﻿<!-- libs/medical/ui/src/lib/plans/medical-plan-detail.html -->
 
 <div class="bg-white min-h-[80vh]">
   <!-- Loading State -->
@@ -29,7 +29,7 @@
     <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
       <!-- Back & Title -->
       <div class="flex items-start gap-4">
-        <button mat-icon-button (click)="goBack()" class="!bg-slate-100 hover:!bg-slate-200 !mt-1">
+        <button mat-icon-button (click)="goBack()" class="bg-slate-100! hover:bg-slate-200! mt-1!">
           <mat-icon fontSet="material-symbols-rounded">arrow_back</mat-icon>
         </button>
 
@@ -63,24 +63,24 @@
 
       <!-- Actions -->
       <div class="flex items-center gap-2">
-        <button mat-stroked-button [matMenuTriggerFor]="actionsMenu" class="!border-slate-200">
+        <button mat-stroked-button [matMenuTriggerFor]="actionsMenu" class="border-slate-200!">
           <mat-icon fontSet="material-symbols-rounded">more_horiz</mat-icon>
           Actions
         </button>
 
         <mat-menu #actionsMenu="matMenu">
           <button mat-menu-item (click)="toggleStatus()">
-            <mat-icon fontSet="material-symbols-rounded" class="!text-slate-500">
+            <mat-icon fontSet="material-symbols-rounded" class="text-slate-500!">
               {{ plan.is_active ? 'block' : 'check_circle' }}
             </mat-icon>
             <span>{{ plan.is_active ? 'Deactivate' : 'Activate' }}</span>
           </button>
           <button mat-menu-item (click)="exportToPdf()">
-            <mat-icon fontSet="material-symbols-rounded" class="!text-slate-500">download</mat-icon>
+            <mat-icon fontSet="material-symbols-rounded" class="text-slate-500!">download</mat-icon>
             <span>Export to PDF</span>
           </button>
           <button mat-menu-item (click)="clonePlan()">
-            <mat-icon fontSet="material-symbols-rounded" class="!text-slate-500"
+            <mat-icon fontSet="material-symbols-rounded" class="text-slate-500!"
               >content_copy</mat-icon
             >
             <span>Clone Plan</span>
@@ -150,7 +150,7 @@
       <!-- Overview Tab -->
       <mat-tab>
         <ng-template mat-tab-label>
-          <mat-icon fontSet="material-symbols-rounded" class="!mr-2 !text-[20px]">info</mat-icon>
+          <mat-icon fontSet="material-symbols-rounded" class="mr-2! icon-md">info</mat-icon>
           Overview
         </ng-template>
         <div class="py-6">
@@ -292,7 +292,7 @@
       @if (canViewTab('benefits')) {
       <mat-tab>
         <ng-template mat-tab-label>
-          <mat-icon fontSet="material-symbols-rounded" class="!mr-2">medical_services</mat-icon>
+          <mat-icon fontSet="material-symbols-rounded" class="mr-2!">medical_services</mat-icon>
           Benefits
         </ng-template>
         <div class="py-6">
@@ -305,7 +305,7 @@
       @if (canViewTab('rate-cards')) {
       <mat-tab>
         <ng-template mat-tab-label>
-          <mat-icon fontSet="material-symbols-rounded" class="!mr-2">payments</mat-icon>
+          <mat-icon fontSet="material-symbols-rounded" class="mr-2!">payments</mat-icon>
           Rate Cards
         </ng-template>
         <div class="py-6">
@@ -318,7 +318,7 @@
       @if (canViewTab('addons')) {
       <mat-tab>
         <ng-template mat-tab-label>
-          <mat-icon fontSet="material-symbols-rounded" class="!mr-2">extension</mat-icon>
+          <mat-icon fontSet="material-symbols-rounded" class="mr-2!">extension</mat-icon>
           Addons
         </ng-template>
         <div class="py-6">
@@ -331,7 +331,7 @@
       @if (canViewTab('exclusions')) {
       <mat-tab>
         <ng-template mat-tab-label>
-          <mat-icon fontSet="material-symbols-rounded" class="!mr-2">block</mat-icon>
+          <mat-icon fontSet="material-symbols-rounded" class="mr-2!">block</mat-icon>
           Exclusions
         </ng-template>
         <div class="py-6">
@@ -371,7 +371,7 @@
   <!-- Not Found State -->
   <div class="flex flex-col items-center justify-center py-24 text-center">
     <div class="flex h-16 w-16 items-center justify-center rounded-full bg-slate-100 mb-4">
-      <mat-icon fontSet="material-symbols-rounded" class="!text-slate-400">search_off</mat-icon>
+      <mat-icon fontSet="material-symbols-rounded" class="text-slate-400!">search_off</mat-icon>
     </div>
     <h3 class="text-lg font-medium text-slate-900">Plan not found</h3>
     <p class="mt-1 text-sm text-slate-500 max-w-sm">

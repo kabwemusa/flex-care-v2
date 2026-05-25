@@ -1,5 +1,5 @@
 import { Component, OnInit, inject, signal, computed } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, DecimalPipe, NgClass } from '@angular/common';
 import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 
@@ -8,7 +8,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { MatDialogModule, MatDialog } from '@angular/material/dialog';
+import { MatDialogModule } from '@angular/material/dialog';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatSelectModule } from '@angular/material/select';
@@ -28,6 +28,8 @@ import { FeedbackService } from 'shared';
   standalone: true,
   imports: [
     CommonModule,
+    DecimalPipe,
+    NgClass,
     FormsModule,
     MatIconModule,
     MatButtonModule,
@@ -46,7 +48,6 @@ import { FeedbackService } from 'shared';
 export class PendingApprovalsComponent implements OnInit {
   readonly store = inject(ApprovalStore);
   private readonly router = inject(Router);
-  private readonly dialog = inject(MatDialog);
   private readonly feedback = inject(FeedbackService);
 
   readonly entityTypes = ENTITY_TYPES;
@@ -243,7 +244,7 @@ export class PendingApprovalsComponent implements OnInit {
     });
   }
 
-  trackById(index: number, item: PendingApproval | ApprovalHistoryItem): string {
+  trackById(_: number, item: PendingApproval | ApprovalHistoryItem): string {
     return item.id;
   }
 }

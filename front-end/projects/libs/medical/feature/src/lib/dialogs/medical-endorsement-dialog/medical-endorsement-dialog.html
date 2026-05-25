@@ -1,4 +1,4 @@
-<!-- libs/medical/feature/src/lib/dialogs/medical-endorsement-dialog/medical-endorsement-dialog.html -->
+﻿<!-- libs/medical/feature/src/lib/dialogs/medical-endorsement-dialog/medical-endorsement-dialog.html -->
 
 <div class="flex max-h-[90vh] w-[60vw] min-w-[600px] flex-col overflow-hidden rounded-lg bg-white">
   <!-- Header -->
@@ -12,7 +12,7 @@
         <p class="text-xs text-slate-500">{{ config().subtitle }}</p>
       </div>
     </div>
-    <button mat-icon-button (click)="cancel()" class="!text-slate-400 hover:!text-slate-700">
+    <button mat-icon-button (click)="cancel()" class="text-slate-400! hover:text-slate-700!">
       <mat-icon fontSet="material-symbols-rounded">close</mat-icon>
     </button>
   </div>
@@ -54,7 +54,7 @@
       <!-- Common: Effective Date -->
       <div class="space-y-4">
         <h3 class="text-sm font-semibold text-slate-700 flex items-center gap-2">
-          <mat-icon fontSet="material-symbols-rounded" class="!text-base">event</mat-icon>
+          <mat-icon fontSet="material-symbols-rounded" class="text-base!">event</mat-icon>
           Endorsement Details
         </h3>
 
@@ -103,7 +103,7 @@
               class="w-full minimal-input"
               subscriptSizing="dynamic"
             >
-              <input matInput formControlName="notes" placeholder="Optional notes" />
+              <input matInput formControlName="notes" />
             </mat-form-field>
           </div>
         </div>
@@ -115,7 +115,7 @@
         <!-- Member Type -->
         <div class="space-y-4">
           <h3 class="text-sm font-semibold text-slate-700 flex items-center gap-2">
-            <mat-icon fontSet="material-symbols-rounded" class="!text-base">badge</mat-icon>
+            <mat-icon fontSet="material-symbols-rounded" class="text-base!">badge</mat-icon>
             Member Type
           </h3>
 
@@ -159,7 +159,7 @@
         <!-- Personal Information -->
         <div class="space-y-4">
           <h3 class="text-sm font-semibold text-slate-700 flex items-center gap-2">
-            <mat-icon fontSet="material-symbols-rounded" class="!text-base">person</mat-icon>
+            <mat-icon fontSet="material-symbols-rounded" class="text-base!">person</mat-icon>
             Personal Information
           </h3>
 
@@ -228,7 +228,7 @@
         <!-- Identification -->
         <div class="space-y-4">
           <h3 class="text-sm font-semibold text-slate-700 flex items-center gap-2">
-            <mat-icon fontSet="material-symbols-rounded" class="!text-base">id_card</mat-icon>
+            <mat-icon fontSet="material-symbols-rounded" class="text-base!">id_card</mat-icon>
             Identification
           </h3>
 
@@ -248,7 +248,7 @@
         <!-- Contact Information -->
         <div class="space-y-4">
           <h3 class="text-sm font-semibold text-slate-700 flex items-center gap-2">
-            <mat-icon fontSet="material-symbols-rounded" class="!text-base">contact_mail</mat-icon>
+            <mat-icon fontSet="material-symbols-rounded" class="text-base!">contact_mail</mat-icon>
             Contact Information
           </h3>
 
@@ -277,7 +277,7 @@
         @if (isCorporatePolicy) {
         <div class="space-y-4">
           <h3 class="text-sm font-semibold text-slate-700 flex items-center gap-2">
-            <mat-icon fontSet="material-symbols-rounded" class="!text-base">work</mat-icon>
+            <mat-icon fontSet="material-symbols-rounded" class="text-base!">work</mat-icon>
             Employment Details
           </h3>
 
@@ -303,7 +303,7 @@
         <!-- Medical Declaration -->
         <div class="space-y-4">
           <h3 class="text-sm font-semibold text-slate-700 flex items-center gap-2">
-            <mat-icon fontSet="material-symbols-rounded" class="!text-base"
+            <mat-icon fontSet="material-symbols-rounded" class="text-base!"
               >medical_information</mat-icon
             >
             Medical Declaration
@@ -359,7 +359,7 @@
         </mat-form-field>
 
         <p class="text-xs text-slate-500">
-          <mat-icon fontSet="material-symbols-rounded" class="!text-sm align-middle mr-1"
+          <mat-icon fontSet="material-symbols-rounded" class="text-sm! align-middle mr-1"
             >info</mat-icon
           >
           A pro-rated refund will be calculated based on the termination date.
@@ -402,7 +402,7 @@
 
         @if (upgradePlans().length === 0) {
         <div class="text-center py-4 text-slate-500">
-          <mat-icon fontSet="material-symbols-rounded" class="!text-3xl text-slate-300"
+          <mat-icon fontSet="material-symbols-rounded" class="text-3xl! text-slate-300"
             >info</mat-icon
           >
           <p class="mt-2">No other plans available in this scheme.</p>
@@ -410,7 +410,7 @@
         }
 
         <p class="text-xs text-slate-500">
-          <mat-icon fontSet="material-symbols-rounded" class="!text-sm align-middle mr-1"
+          <mat-icon fontSet="material-symbols-rounded" class="text-sm! align-middle mr-1"
             >info</mat-icon
           >
           Pro-rated premium difference will be calculated from the effective date.
@@ -453,7 +453,7 @@
 
         @if (downgradePlans().length === 0) {
         <div class="text-center py-4 text-slate-500">
-          <mat-icon fontSet="material-symbols-rounded" class="!text-3xl text-slate-300"
+          <mat-icon fontSet="material-symbols-rounded" class="text-3xl! text-slate-300"
             >info</mat-icon
           >
           <p class="mt-2">No other plans available in this scheme.</p>
@@ -461,7 +461,7 @@
         }
 
         <p class="text-xs text-slate-500">
-          <mat-icon fontSet="material-symbols-rounded" class="!text-sm align-middle mr-1"
+          <mat-icon fontSet="material-symbols-rounded" class="text-sm! align-middle mr-1"
             >info</mat-icon
           >
           A pro-rated refund will be calculated from the effective date.
@@ -496,7 +496,7 @@
 
         @if (availableAddonsForPolicy().length === 0) {
         <div class="text-center py-4 text-slate-500">
-          <mat-icon fontSet="material-symbols-rounded" class="!text-3xl text-slate-300"
+          <mat-icon fontSet="material-symbols-rounded" class="text-3xl! text-slate-300"
             >info</mat-icon
           >
           <p class="mt-2">No additional add-ons available for this plan.</p>
@@ -504,7 +504,7 @@
         }
 
         <p class="text-xs text-slate-500">
-          <mat-icon fontSet="material-symbols-rounded" class="!text-sm align-middle mr-1"
+          <mat-icon fontSet="material-symbols-rounded" class="text-sm! align-middle mr-1"
             >info</mat-icon
           >
           Pro-rated premium will be calculated from the effective date to policy expiry.
@@ -553,7 +553,7 @@
 
         @if (currentPolicyAddons().length === 0) {
         <div class="text-center py-4 text-slate-500">
-          <mat-icon fontSet="material-symbols-rounded" class="!text-3xl text-slate-300"
+          <mat-icon fontSet="material-symbols-rounded" class="text-3xl! text-slate-300"
             >info</mat-icon
           >
           <p class="mt-2">This policy has no active add-ons to remove.</p>
@@ -561,7 +561,7 @@
         }
 
         <p class="text-xs text-slate-500">
-          <mat-icon fontSet="material-symbols-rounded" class="!text-sm align-middle mr-1"
+          <mat-icon fontSet="material-symbols-rounded" class="text-sm! align-middle mr-1"
             >info</mat-icon
           >
           A pro-rated refund will be calculated from the effective date.
@@ -573,7 +573,7 @@
       @if (data.mode === 'add_member') {
       <div class="rounded-lg border border-blue-200 bg-blue-50 p-4">
         <div class="flex items-start gap-2 text-sm text-blue-800">
-          <mat-icon fontSet="material-symbols-rounded" class="!text-base mt-0.5">info</mat-icon>
+          <mat-icon fontSet="material-symbols-rounded" class="text-base! mt-0.5">info</mat-icon>
           <div>
             <p class="font-medium">Approval Required</p>
             <p class="text-blue-700 mt-1">
@@ -596,7 +596,7 @@
       approval before taking effect. } }
     </div>
     <div class="flex items-center gap-3">
-      <button mat-button (click)="cancel()" class="!text-slate-600" [disabled]="saving()">
+      <button mat-button (click)="cancel()" class="text-slate-600!" [disabled]="saving()">
         Cancel
       </button>
       <button
@@ -604,12 +604,12 @@
         color="primary"
         (click)="submit()"
         [disabled]="!isFormValid || saving()"
-        class="!px-6"
+        class="px-6!"
       >
         @if (saving()) {
         <mat-spinner diameter="18" class="mr-2"></mat-spinner>
         Processing... } @else {
-        <mat-icon fontSet="material-symbols-rounded" class="!text-base mr-1">{{
+        <mat-icon fontSet="material-symbols-rounded" class="text-base! mr-1">{{
           config().buttonIcon
         }}</mat-icon>
         {{ config().buttonText }}

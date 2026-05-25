@@ -75,7 +75,7 @@ export class MedicalBillingInvoices implements OnInit {
   // Permissions
   readonly permissions = MEDICAL_PERMISSIONS;
 
-  // Table
+  // Table columns
   displayedColumns = [
     'status',
     'invoice_number',
@@ -91,11 +91,13 @@ export class MedicalBillingInvoices implements OnInit {
   @ViewChild(MatSort) sort!: MatSort;
   @ViewChild('detailDrawer') detailDrawer!: MatDrawer;
 
-  // Filters (local UI state)
-  searchTerm = signal('');
+  // ── Filters (local UI state) ─────────────────────────────────────────────
+  searchTerm  = signal('');
   statusFilter = signal('');
-  typeFilter = signal('');
-  overdueOnly = signal(false);
+  typeFilter   = signal('');
+  overdueOnly  = signal(false);
+  dateFrom     = signal<string>('');
+  dateTo       = signal<string>('');
 
   // Debounce timer for search
   private searchDebounceTimer: ReturnType<typeof setTimeout> | null = null;
@@ -115,17 +117,19 @@ export class MedicalBillingInvoices implements OnInit {
   // Computed Logic
   readonly hasActiveFilters = computed(
     () =>
-      this.searchTerm() !== '' ||
+      this.searchTerm()  !== '' ||
       this.statusFilter() !== '' ||
-      this.typeFilter() !== '' ||
-      this.overdueOnly()
+      this.typeFilter()   !== '' ||
+      this.overdueOnly()  ||
+      this.dateFrom()     !== '' ||
+      this.dateTo()       !== ''
   );
 
   // KPIs from store stats
   readonly totalOutstanding = computed(() => this.store.stats()?.invoices?.summary?.total_outstanding ?? 0);
-  readonly overdueCount = computed(() => this.store.stats()?.invoices?.summary?.overdue_count ?? 0);
-  readonly overdueAmount = computed(() => this.store.stats()?.invoices?.summary?.overdue_amount ?? 0);
-  readonly collectionRate = computed(() => {
+  readonly overdueCount     = computed(() => this.store.stats()?.invoices?.summary?.overdue_count ?? 0);
+  readonly overdueAmount    = computed(() => this.store.stats()?.invoices?.summary?.overdue_amount ?? 0);
+  readonly collectionRate   = computed(() => {
     const stats = this.store.stats();
     if (!stats || stats.invoices?.summary?.total_invoiced === 0) return 0;
     return ((stats.invoices.summary.total_collected / stats.invoices.summary.total_invoiced) * 100).toFixed(1);
@@ -140,30 +144,28 @@ export class MedicalBillingInvoices implements OnInit {
   private buildFilters(): InvoiceFilters {
     const filters: InvoiceFilters = {
       per_page: this.store.pageSize(),
-      page: this.store.currentPage(),
+      page:     this.store.currentPage(),
     };
 
-    if (this.searchTerm()) filters.search = this.searchTerm();
-    if (this.statusFilter()) filters.status = this.statusFilter();
-    if (this.typeFilter()) filters.invoice_type = this.typeFilter();
-    if (this.overdueOnly()) filters.overdue = true;
+    if (this.searchTerm())   filters.search       = this.searchTerm();
+    if (this.statusFilter()) filters.status        = this.statusFilter();
+    if (this.typeFilter())   filters.invoice_type  = this.typeFilter();
+    if (this.overdueOnly())  filters.overdue       = true;
+    if (this.dateFrom())     filters.invoice_date_from = this.dateFrom();
+    if (this.dateTo())       filters.invoice_date_to   = this.dateTo();
 
     return filters;
   }
 
-  // Load invoices with current filters
   private loadInvoices(): void {
     this.store.loadInvoices(this.buildFilters());
   }
 
-  // Filter Handlers with server-side filtering
+  // ── Filter Handlers ──────────────────────────────────────────────────────
+
   onSearchChange(value: string): void {
     this.searchTerm.set(value);
-
-    if (this.searchDebounceTimer) {
-      clearTimeout(this.searchDebounceTimer);
-    }
-
+    if (this.searchDebounceTimer) clearTimeout(this.searchDebounceTimer);
     this.searchDebounceTimer = setTimeout(() => {
       this.store.loadInvoices({ ...this.buildFilters(), page: 1 });
     }, 300);
@@ -176,6 +178,16 @@ export class MedicalBillingInvoices implements OnInit {
 
   onTypeChange(value: string): void {
     this.typeFilter.set(value);
+    this.store.loadInvoices({ ...this.buildFilters(), page: 1 });
+  }
+
+  onDateFromChange(value: string): void {
+    this.dateFrom.set(value);
+    this.store.loadInvoices({ ...this.buildFilters(), page: 1 });
+  }
+
+  onDateToChange(value: string): void {
+    this.dateTo.set(value);
     this.store.loadInvoices({ ...this.buildFilters(), page: 1 });
   }
 
@@ -194,14 +206,16 @@ export class MedicalBillingInvoices implements OnInit {
     this.statusFilter.set('');
     this.typeFilter.set('');
     this.overdueOnly.set(false);
+    this.dateFrom.set('');
+    this.dateTo.set('');
     this.store.loadInvoices({ per_page: this.store.pageSize(), page: 1 });
   }
 
-  // Pagination handlers
+  // ── Pagination ────────────────────────────────────────────────────────────
+
   onPageChange(event: { pageIndex: number; pageSize: number }): void {
-    const newPage = event.pageIndex + 1;
-    const filters = this.buildFilters();
-    filters.page = newPage;
+    const filters  = this.buildFilters();
+    filters.page     = event.pageIndex + 1;
     filters.per_page = event.pageSize;
     this.store.loadInvoices(filters);
   }
@@ -258,11 +272,34 @@ export class MedicalBillingInvoices implements OnInit {
       this.store.cancelInvoice(invoice.id, 'Cancelled by user').subscribe({
         next: () => {
           this.feedback.success('Invoice cancelled');
-          if (this.selectedInvoice()?.id === invoice.id) {
-            this.closeDrawer();
-          }
+          this.loadInvoices();
+          if (this.selectedInvoice()?.id === invoice.id) this.closeDrawer();
         },
         error: (err) => this.feedback.error(err?.error?.message ?? 'Failed to cancel invoice'),
+      });
+    }
+  }
+
+  async writeOffInvoice(invoice: Invoice, event?: Event): Promise<void> {
+    event?.stopPropagation();
+    if (
+      await this.feedback.confirm(
+        'Write Off Invoice',
+        `Write off invoice ${invoice.invoice_number}? The remaining balance will be forgiven and this cannot be undone.`
+      )
+    ) {
+      this.store.writeOffInvoice(invoice.id, 'Written off by administrator').subscribe({
+        next: () => {
+          this.feedback.success('Invoice written off');
+          this.loadInvoices();
+          this.store.loadStats();
+          if (this.selectedInvoice()?.id === invoice.id) {
+            this.store.loadInvoice(invoice.id).subscribe({
+              next: () => this.selectedInvoice.set(this.store.selectedInvoice()),
+            });
+          }
+        },
+        error: (err) => this.feedback.error(err?.error?.message ?? 'Failed to write off invoice'),
       });
     }
   }
@@ -277,20 +314,20 @@ export class MedicalBillingInvoices implements OnInit {
       panelClass: ['responsive-dialog', 'bg-white'],
       autoFocus: false,
       data: {
-        policyId: invoice.policy_id ?? invoice.policy?.id,
-        invoiceId: invoice.id,
+        policyId:        invoice.policy_id ?? invoice.policy?.id,
+        invoiceId:       invoice.id,
         suggestedAmount: invoice.balance,
       },
     });
 
     dialogRef.afterClosed().subscribe((result) => {
       if (result) {
-        this.store.recordPayment(result).subscribe({
+        // Use the invoice-specific endpoint so the payment is immediately allocated
+        this.store.recordPaymentForInvoice(invoice.id, result).subscribe({
           next: () => {
-            this.feedback.success('Payment recorded successfully');
+            this.feedback.success('Payment recorded and allocated successfully');
             this.loadInvoices();
             this.store.loadStats();
-            // Refresh the invoice details if it's open in the drawer
             if (this.selectedInvoice()?.id === invoice.id) {
               this.store.loadInvoice(invoice.id).subscribe({
                 next: () => this.selectedInvoice.set(this.store.selectedInvoice()),
@@ -318,9 +355,9 @@ export class MedicalBillingInvoices implements OnInit {
   getStatusStyles(status: string): { bg: string; text: string; dot: string } {
     return (
       INVOICE_STATUS_STYLES[status] ?? {
-        bg: 'bg-slate-100',
+        bg:   'bg-slate-100',
         text: 'text-slate-600',
-        dot: 'bg-slate-400',
+        dot:  'bg-slate-400',
       }
     );
   }
@@ -351,41 +388,34 @@ export class MedicalBillingInvoices implements OnInit {
   }
 
   isOverdue(invoice: Invoice): boolean {
-    if (!invoice.due_date || invoice.status === 'paid' || invoice.status === 'cancelled') {
-      return false;
-    }
+    if (!invoice.due_date || invoice.status === 'paid' || invoice.status === 'cancelled') return false;
     return new Date(invoice.due_date) < new Date();
   }
 
   getDaysOverdue(invoice: Invoice): number {
     if (!invoice.due_date) return 0;
-    const dueDate = new Date(invoice.due_date);
-    const today = new Date();
-    const diffTime = today.getTime() - dueDate.getTime();
-    return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    const diffTime = new Date().getTime() - new Date(invoice.due_date).getTime();
+    return Math.max(0, Math.ceil(diffTime / (1000 * 60 * 60 * 24)));
   }
 
   formatDate(date: string | null | undefined): string {
     if (!date) return '-';
     return new Date(date).toLocaleDateString('en-ZM', {
-      day: '2-digit',
+      day:   '2-digit',
       month: 'short',
-      year: 'numeric',
+      year:  'numeric',
     });
   }
 
   formatPeriod(invoice: Invoice): string {
     if (!invoice.billing_period_start || !invoice.billing_period_end) return '-';
     const start = new Date(invoice.billing_period_start).toLocaleDateString('en-ZM', {
-      day: '2-digit',
-      month: 'short',
+      day: '2-digit', month: 'short',
     });
     const end = new Date(invoice.billing_period_end).toLocaleDateString('en-ZM', {
-      day: '2-digit',
-      month: 'short',
-      year: 'numeric',
+      day: '2-digit', month: 'short', year: 'numeric',
     });
-    return `${start} - ${end}`;
+    return `${start} – ${end}`;
   }
 
   exportToCsv(): void {
@@ -415,9 +445,9 @@ export class MedicalBillingInvoices implements OnInit {
 
     const csvContent = [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
     const blob = new Blob([csvContent], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
+    const url  = window.URL.createObjectURL(blob);
     const link = document.createElement('a');
-    link.href = url;
+    link.href     = url;
     link.download = INVOICE_CSV_CONFIG.filename(new Date().toISOString().split('T')[0]);
     link.click();
     window.URL.revokeObjectURL(url);

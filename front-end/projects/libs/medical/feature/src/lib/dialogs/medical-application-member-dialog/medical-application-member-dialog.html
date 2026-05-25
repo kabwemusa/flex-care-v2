@@ -1,9 +1,9 @@
-<div class="flex flex-col max-h-[90vh] w-[70vw] rounded-lg">
+﻿<div class="flex flex-col max-h-[90vh] w-[70vw] rounded-lg">
   <!-- Header -->
   <div class="flex items-center justify-between px-6 py-4 border-b border-slate-200">
     <div class="flex items-center gap-3">
       <div class="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
-        <mat-icon fontSet="material-symbols-rounded" class="!text-primary">
+        <mat-icon fontSet="material-symbols-rounded" class="text-primary!">
           {{ isEditMode() ? 'edit' : 'person_add' }}
         </mat-icon>
       </div>
@@ -14,7 +14,7 @@
         <p class="text-sm text-slate-500">Enter member details</p>
       </div>
     </div>
-    <button mat-icon-button (click)="cancel()" class="!text-slate-400">
+    <button mat-icon-button (click)="cancel()" class="text-slate-400!">
       <mat-icon fontSet="material-symbols-rounded">close</mat-icon>
     </button>
   </div>
@@ -70,15 +70,15 @@
         </mat-form-field>
 
         <mat-form-field appearance="fill" class="w-full minimal-input">
-          <input matInput placeholder="First Name" formControlName="first_name" />
+          <input matInput formControlName="first_name" />
         </mat-form-field>
 
         <mat-form-field appearance="fill" class="w-full minimal-input">
-          <input matInput placeholder="Middle Name" formControlName="middle_name" />
+          <input matInput formControlName="middle_name" />
         </mat-form-field>
 
         <mat-form-field appearance="fill" class="w-full minimal-input">
-          <input matInput placeholder="Last Name" formControlName="last_name" />
+          <input matInput formControlName="last_name" />
         </mat-form-field>
       </div>
 
@@ -87,7 +87,7 @@
           <input
             matInput
             [matDatepicker]="dobPicker"
-            placeholder="Date of Birth"
+           
             formControlName="date_of_birth"
           />
           <mat-datepicker-toggle matIconSuffix [for]="dobPicker"></mat-datepicker-toggle>
@@ -115,29 +115,29 @@
       <!-- Identification -->
       <div class="grid grid-cols-2 gap-4">
         <mat-form-field appearance="fill" class="w-full minimal-input">
-          <input matInput placeholder="National ID" formControlName="national_id" />
+          <input matInput formControlName="national_id" />
         </mat-form-field>
 
         <mat-form-field appearance="fill" class="w-full minimal-input">
-          <input matInput placeholder="Passport Number" formControlName="passport_number" />
+          <input matInput formControlName="passport_number" />
         </mat-form-field>
       </div>
 
       <!-- Contact Info -->
       <div class="grid grid-cols-2 gap-4">
         <mat-form-field appearance="fill" class="w-full minimal-input">
-          <input matInput type="email" placeholder="Email" formControlName="email" />
+          <input matInput type="email" formControlName="email" />
         </mat-form-field>
 
         <mat-form-field appearance="fill" class="w-full minimal-input">
-          <input matInput placeholder="Phone" formControlName="phone" />
+          <input matInput formControlName="phone" />
         </mat-form-field>
       </div>
 
       <!-- Medical Declaration -->
-      <mat-expansion-panel class="!rounded-lg !shadow-none border border-slate-200">
+      <mat-expansion-panel class="rounded-lg! shadow-none! border border-slate-200">
         <mat-expansion-panel-header>
-          <mat-panel-title class="!text-sm !font-medium"> Medical Declaration </mat-panel-title>
+          <mat-panel-title class="text-sm! font-medium!"> Medical Declaration </mat-panel-title>
         </mat-expansion-panel-header>
 
         <div class="space-y-4 py-2">

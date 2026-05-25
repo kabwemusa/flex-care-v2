@@ -5,14 +5,12 @@
 $app-font: 'Inter', sans-serif;
 
 html {
-  // Pass the font family to the typography config
   @include mat.theme(
     (
       color: (
         primary: mat.$cyan-palette,
         tertiary: mat.$violet-palette,
       ),
-      // 2. CHANGE THIS: Replaces Roboto with Inter globally for Material components
       typography: $app-font,
       density: 0,
     )
@@ -23,113 +21,424 @@ body {
   color-scheme: light;
   background-color: var(--mat-sys-surface);
   color: var(--mat-sys-on-surface);
-
-  // 3. CHANGE THIS: Ensure the browser defaults to Inter
   font: var(--mat-sys-body-medium);
   font-family: $app-font;
-
   margin: 0;
 }
 
-html,
-body {
-  height: 100%;
-}
+html, body { height: 100%; }
 
-// --------------------------------------------------------
-// ICON UTILITIES
-// --------------------------------------------------------
 
+// ─────────────────────────────────────────────────────────────────────────────
+// MAT-ICON / MATERIAL SYMBOLS ROUNDED
+//
+// IMPORTANT: Only font-rendering properties live here.
+// - NO display / font-size / align — Material's mat-icon host already provides
+//   `display: inline-flex; align-items: center; justify-content: center;
+//    font-size/width/height: var(--mat-icon-size, 24px)`.
+// - Adding display:flex here overrides inline-flex and breaks inline contexts
+//   (buttons, flex rows, absolutely-positioned icons).
+// - Adding font-size here conflicts with Tailwind size overrides and
+//   --mat-icon-size, causing the glyph to sit in an oversized host box.
+// ─────────────────────────────────────────────────────────────────────────────
 .material-symbols-rounded {
   font-family: 'Material Symbols Rounded';
   font-weight: normal;
   font-style: normal;
-  font-size: 24px;
-  line-height: 1;
   letter-spacing: normal;
   text-transform: none;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  justify-items: center;
   white-space: nowrap;
   word-wrap: normal;
   direction: ltr;
-  /* Thin weight (300) for the modern look */
-  font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24;
+  line-height: 1;
+  font-variation-settings: 'FILL' 0, 'wght' 250, 'GRAD' 0, 'opsz' 24;
   -webkit-font-smoothing: antialiased;
 }
 
+// Active-link icons get filled + slightly bolder weight
 .active-link .material-symbols-rounded {
-  /* Slightly bolder (400) and filled when active */
   font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
 }
 
-/* Modern Matrix Dialog - Full Screen feel */
-.matrix-dialog-panel .mat-mdc-dialog-container .mat-mdc-dialog-surface {
-  border-radius: 12px !important;
-  background-color: #f8fafc; /* slate-50 background for the huge table */
+// ─── Icon size utilities ──────────────────────────────────────────────────────
+// Use these instead of text-[Npx]! when you want the host container to resize
+// along with the glyph. --mat-icon-size controls width, height AND font-size
+// on the mat-icon host, giving pixel-perfect alignment without displacement.
+//
+// Usage:  <mat-icon fontSet="material-symbols-rounded" class="icon-sm">tune</mat-icon>
+//
+// text-[Npx]! still works for colour/size tweaks but only changes font-size,
+// leaving the 24px host box unchanged — fine for subtle changes, but prefer
+// these utilities for icons that need exact sizing.
+// ─────────────────────────────────────────────────────────────────────────────
+.icon-2xs { --mat-icon-size: 10px; }   // micro inline icons
+.icon-xs  { --mat-icon-size: 12px; }   // tiny badge icons
+.icon-sm  { --mat-icon-size: 16px; }   // inline / dense lists
+.icon-md  { --mat-icon-size: 20px; }   // table / form rows
+.icon-lg  { --mat-icon-size: 24px; }   // default — buttons, headers
+.icon-xl  { --mat-icon-size: 32px; }   // section headers
+.icon-2xl { --mat-icon-size: 40px; }   // empty-state illustrations
+.icon-3xl { --mat-icon-size: 56px; }   // hero illustrations
+.icon-4xl { --mat-icon-size: 64px; }   // full-page illustration icons
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// GLOBAL UX INTERACTIONS
+//
+// Goals:
+//  1. Correct cursor on every interactive element
+//  2. Smooth transitions on colour/shadow changes
+//  3. Clear disabled / loading visual feedback
+//  4. Consistent focus ring for keyboard navigation
+//  5. Reusable utility classes so templates stay lean
+//
+// We deliberately do NOT add transitions to mat-button / mat-icon-button —
+// Angular Material's MDC layer already manages ripples and state-layer
+// transitions internally. Adding extra transitions would double-fire and
+// create jank.
+// ─────────────────────────────────────────────────────────────────────────────
+
+// 1. Cursor ───────────────────────────────────────────────────────────────────
+// Material handles cursor on mat-button. Cover everything else:
+a[href],
+label[for],
+select,
+mat-slide-toggle,
+mat-checkbox,
+mat-radio-button,
+mat-select,
+[role="button"]:not([aria-disabled="true"]),
+[role="tab"],
+[role="option"],
+[role="menuitem"] {
+  cursor: pointer;
 }
 
-/* Responsive Dialog - rounded corners */
+// Disabled state — always not-allowed, regardless of element type
+button:disabled,
+input:disabled,
+select:disabled,
+textarea:disabled,
+[aria-disabled="true"],
+.fc-disabled {
+  cursor: not-allowed !important;
+  opacity: 0.55;
+  pointer-events: none;
+}
+
+// 2. Native input transitions ─────────────────────────────────────────────────
+// Material form fields have their own transitions. These apply to hand-crafted
+// native inputs used across the app (search boxes, filter inputs, etc.).
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="search"],
+input[type="number"],
+textarea,
+select:not(.mat-mdc-select) {
+  transition: border-color 150ms ease, box-shadow 150ms ease, background-color 150ms ease;
+}
+
+// 3. Links ────────────────────────────────────────────────────────────────────
+a {
+  transition: color 150ms ease, opacity 150ms ease;
+  &:hover { opacity: 0.85; }
+}
+
+// 4. Focus ring (keyboard navigation) ─────────────────────────────────────────
+// Scoped to :focus-visible so mouse clicks don't show the ring.
+// Material handles focus on its own components; this covers custom elements.
+:focus-visible {
+  outline: 2px solid var(--mat-sys-primary, #06b6d4);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+// Suppress on Material components that manage focus themselves
+.mat-mdc-button:focus-visible,
+.mat-mdc-icon-button:focus-visible,
+.mat-mdc-fab:focus-visible,
+.mat-mdc-slide-toggle:focus-visible,
+.mat-mdc-checkbox:focus-visible,
+.mat-mdc-radio-button:focus-visible {
+  outline: none;
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// REUSABLE UX UTILITY CLASSES
+// ─────────────────────────────────────────────────────────────────────────────
+
+// ── fc-interactive ───────────────────────────────────────────────────────────
+// Apply to clickable rows, list items, cards with (click) bindings.
+// Provides cursor + hover background + active press feedback.
+// Example: <tr class="fc-interactive" (click)="select(row)">
+.fc-interactive {
+  cursor: pointer;
+  transition: background-color 150ms ease;
+
+  &:hover  { background-color: rgb(248 250 252); }  // slate-50
+  &:active { background-color: rgb(241 245 249); }  // slate-100
+}
+
+// ── fc-card-hover ────────────────────────────────────────────────────────────
+// Apply to cards / panels that should lift gently on hover.
+// Example: <div class="fc-card-hover rounded-xl border border-slate-200">
+.fc-card-hover {
+  transition: box-shadow 200ms ease, border-color 200ms ease, transform 200ms ease;
+
+  &:hover {
+    box-shadow: 0 4px 12px -2px rgb(0 0 0 / 0.08), 0 2px 4px -2px rgb(0 0 0 / 0.04);
+    border-color: rgb(203 213 225) !important;  // slate-300
+    transform: translateY(-1px);
+  }
+}
+
+// ── fc-skeleton ──────────────────────────────────────────────────────────────
+// Shimmer placeholder for loading states.
+// Example: <div class="fc-skeleton h-4 w-32 rounded"></div>
+.fc-skeleton {
+  background: linear-gradient(
+    90deg,
+    rgb(241 245 249) 25%,
+    rgb(248 250 252) 50%,
+    rgb(241 245 249) 75%
+  );
+  background-size: 200% 100%;
+  animation: fcShimmer 1.4s ease-in-out infinite;
+  border-radius: 4px;
+}
+
+@keyframes fcShimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+// ── fc-pulse ─────────────────────────────────────────────────────────────────
+// Subtle opacity pulse — for counters / badges awaiting data.
+// Example: <span class="fc-pulse">...</span>
+.fc-pulse {
+  animation: fcPulse 1.5s ease-in-out infinite;
+}
+
+@keyframes fcPulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.45; }
+}
+
+// ── fc-page-enter ────────────────────────────────────────────────────────────
+// Page / panel entrance animation. Apply to the root element of each route view.
+// Example: <div class="fc-page-enter">...page content...</div>
+.fc-page-enter {
+  animation: fcPageEnter 220ms ease-out both;
+}
+
+@keyframes fcPageEnter {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+// ── fc-fade-in ───────────────────────────────────────────────────────────────
+.fc-fade-in {
+  animation: fcFadeIn 200ms ease-out both;
+}
+
+@keyframes fcFadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+// ── fc-loading-section ───────────────────────────────────────────────────────
+// Dim + blur a section while data is loading (without a full-page spinner).
+// Example: <div [class.fc-loading-section]="isLoading">
+.fc-loading-section {
+  position: relative;
+  pointer-events: none;
+
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: rgb(255 255 255 / 0.65);
+    backdrop-filter: blur(1px);
+    border-radius: inherit;
+    z-index: 10;
+    animation: fcFadeIn 150ms ease-out both;
+  }
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// TABLE ROWS — global pointer + hover
+// ─────────────────────────────────────────────────────────────────────────────
+tr.mat-mdc-row {
+  transition: background-color 120ms ease;
+
+  &.clickable-row,
+  &[style*="cursor"] {
+    cursor: pointer;
+  }
+
+  &:hover {
+    background-color: rgb(248 250 252) !important; // slate-50
+  }
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// BUTTON LOADING STATE
+// Show spinner centered; text/icon hidden while loading.
+// Usage in template:
+//   <button mat-flat-button [class.btn-loading]="saving">
+//     <mat-spinner diameter="18" *ngIf="saving"></mat-spinner>
+//     <ng-container *ngIf="!saving"><mat-icon>save</mat-icon> Save</ng-container>
+//   </button>
+// ─────────────────────────────────────────────────────────────────────────────
+.mat-mdc-button,
+.mat-mdc-unelevated-button,
+.mat-mdc-outlined-button,
+.mat-mdc-raised-button {
+  .mat-mdc-button-touch-target { cursor: inherit; }
+
+  // When a spinner is the only child (loading state) ensure it's centered
+  mat-spinner,
+  .mat-mdc-progress-spinner {
+    display: inline-flex !important;
+    vertical-align: middle;
+  }
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SCROLLBAR — thin, unobtrusive
+// ─────────────────────────────────────────────────────────────────────────────
+.scrollbar-hide {
+  scrollbar-width: none;
+  &::-webkit-scrollbar { display: none; }
+}
+
+.scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: rgb(203 213 225) transparent; // slate-300 on transparent
+
+  &::-webkit-scrollbar         { width: 4px; height: 4px; }
+  &::-webkit-scrollbar-track   { background: transparent; }
+  &::-webkit-scrollbar-thumb   { background: rgb(203 213 225); border-radius: 999px; }
+  &::-webkit-scrollbar-thumb:hover { background: rgb(148 163 184); } // slate-400
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// NAVIGATION ACTIVE STATE — sidebar child links
+// Applied via routerLinkActive="fc-nav-active"
+// ─────────────────────────────────────────────────────────────────────────────
+.fc-nav-active {
+  color: var(--mat-sys-primary) !important;
+  font-weight: 600 !important;
+  background-color: color-mix(in srgb, var(--mat-sys-primary) 10%, transparent) !important;
+
+  // Fill the icon glyph when active
+  .material-symbols-rounded {
+    font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 20 !important;
+    color: var(--mat-sys-primary) !important;
+  }
+}
+
+// Parent group button when it has an active child
+.fc-nav-parent-active {
+  background: linear-gradient(to right,
+    color-mix(in srgb, var(--mat-sys-primary) 12%, transparent),
+    color-mix(in srgb, var(--mat-sys-primary) 5%, transparent)) !important;
+  color: var(--mat-sys-primary) !important;
+  font-weight: 600 !important;
+  border-left-color: var(--mat-sys-primary) !important;
+
+  .material-symbols-rounded {
+    font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 20 !important;
+  }
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// MAT-DRAWER — consistent side panel pattern
+// The mat-drawer-container wrapping element should have h-full on the page root.
+// Drawer content area: flex-col h-full → header fixed, body scrolls, footer fixed.
+// ─────────────────────────────────────────────────────────────────────────────
+mat-drawer-container.h-full {
+  flex: 1;
+  min-height: 0;
+}
+
+// All end-position drawers get consistent shadow + border by default
+mat-drawer[position="end"] {
+  box-shadow: -6px 0 32px -4px rgb(0 0 0 / 0.10) !important;
+  border-left: 1px solid rgb(226 232 240) !important; // slate-200
+
+  // Inner layout: header (fixed) + body (scrolls) + footer (fixed)
+  // Apply flex-col on the inner container so children can use flex-1 + overflow-y-auto
+  .mat-drawer-inner-container {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
+  }
+}
+
+// fc-detail-drawer utility class — adds responsive width + white bg
+// Usage: <mat-drawer class="w-full! sm:w-[600px]! bg-white! fc-detail-drawer">
+mat-drawer.fc-detail-drawer {
+  background: white !important;
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ANGULAR MATERIAL — DIALOG OVERRIDES
+// ─────────────────────────────────────────────────────────────────────────────
+
+/* Matrix Dialog — full-screen feel */
+.matrix-dialog-panel .mat-mdc-dialog-container .mat-mdc-dialog-surface {
+  border-radius: 12px !important;
+  background-color: #f8fafc;
+}
+
+/* Responsive Dialog — standard rounded corners */
 .responsive-dialog .mat-mdc-dialog-container .mat-mdc-dialog-surface {
   border-radius: 8px !important;
   overflow: hidden;
 }
 
-/* Ensure skeleton loader matches rounded corners */
+/* Skeleton loader border-radius pass-through */
 lib-skeleton {
   display: block;
   border-radius: inherit;
 }
 
-// :root {
-//   @include mat.snack-bar-overrides(
-//     (
-//       button-color: orange,
-//       container-color: red,
-//     )
-//   );
-// }
 
-/* Minimal Input Style (Underline Only) */
+// ─────────────────────────────────────────────────────────────────────────────
+// ANGULAR MATERIAL — MINIMAL INPUT STYLE (underline only)
+// Decision: appearance="fill" + mat-label (floating) — NO placeholders, NO external labels
+// This is the standard pattern for all dialogs and forms across the system.
+// ─────────────────────────────────────────────────────────────────────────────
 .mat-mdc-form-field.minimal-input {
-  /* 1. Make the container background transparent */
-  .mat-mdc-text-field-wrapper {
-    background-color: transparent !important;
-  }
-
-  /* 2. Remove the grey overlay that appears on hover/focus */
-  .mat-mdc-form-field-focus-overlay {
-    opacity: 0 !important;
-  }
-
-  /* 3. Remove rounded top corners and adjust padding for a raw look */
+  .mat-mdc-text-field-wrapper     { background-color: transparent !important; }
+  .mat-mdc-form-field-focus-overlay { opacity: 0 !important; }
   .mdc-text-field {
     border-radius: 0 !important;
     padding-left: 0 !important;
     padding-right: 0 !important;
   }
-
-  /* 4. Ensure the bottom line (underline) remains visible and colored */
   .mdc-line-ripple {
-    &::before,
-    &::after {
-      border-bottom-width: 1px !important;
-    }
+    &::before, &::after { border-bottom-width: 1px !important; }
   }
+}
 
-  /* 5. Gray, lightweight placeholders */
-  input::placeholder,
-  textarea::placeholder {
-    color: #94a3b8 !important; /* slate-400 */
-    font-weight: 400 !important;
-    opacity: 1 !important;
+// Standard fill variant used in dialogs (not minimal-input)
+// Subtly rounded, light background, clear focus state
+.mat-mdc-form-field.mat-form-field-appearance-fill:not(.minimal-input) {
+  .mat-mdc-text-field-wrapper {
+    background-color: rgb(248 250 252) !important; // slate-50
+    border-radius: 8px !important;
   }
-
-  /* mat-select placeholder */
-  .mat-mdc-select-placeholder {
-    color: #94a3b8 !important; /* slate-400 */
-    font-weight: 400 !important;
+  &.mat-focused .mat-mdc-text-field-wrapper {
+    background-color: rgb(241 245 249) !important; // slate-100
   }
 }

@@ -394,6 +394,7 @@ class BillingController extends Controller
                 ->with([
                     'policy:id,policy_number,holder_name',
                     'group:id,code,name',
+                    'receivedByUser:id,username,email',
                 ]);
 
             // Search
@@ -451,6 +452,8 @@ class BillingController extends Controller
                 'policy:id,policy_number,holder_name,status',
                 'group:id,code,name',
                 'allocations.invoice:id,invoice_number,total_amount,balance,status',
+                'receivedByUser:id,username,email',
+                'reconciledByUser:id,username,email',
             ])->findOrFail($id);
 
             return $this->success(
@@ -474,7 +477,10 @@ class BillingController extends Controller
             $policy = Policy::findOrFail($policyId);
 
             $query = $this->paymentService->getPaymentsForPolicy($policy, request()->all())
-                ->with(['allocations.invoice:id,invoice_number,total_amount']);
+                ->with([
+                    'allocations.invoice:id,invoice_number,total_amount',
+                    'receivedByUser:id,username,email',
+                ]);
 
             $payments = $query->paginate(request('per_page', 20));
 
@@ -497,8 +503,8 @@ class BillingController extends Controller
     {
         try {
             request()->validate([
-                'policy_id' => 'nullable|uuid|exists:med_policies,id',
-                'group_id' => 'nullable|uuid|exists:med_corporate_groups,id',
+                'policy_id' => 'nullable|uuid|exists:med_policies,id|required_without:group_id',
+                'group_id' => 'nullable|uuid|exists:med_corporate_groups,id|required_without:policy_id',
                 'amount' => 'required|numeric|min:0.01',
                 'payment_method' => 'required|string',
                 'payment_date' => 'nullable|date',
@@ -697,6 +703,10 @@ class BillingController extends Controller
     public function bouncePayment(string $id): JsonResponse
     {
         try {
+            request()->validate([
+                'reason' => 'required|string|max:500',
+            ]);
+
             $payment = Payment::findOrFail($id);
 
             $success = DB::transaction(function () use ($payment) {
@@ -788,6 +798,52 @@ class BillingController extends Controller
         }
     }
 
+    /**
+     * Generate a credit note for a policy.
+     * POST /v1/medical/policies/{policyId}/credit-note
+     */
+    public function generateCreditNote(string $policyId): JsonResponse
+    {
+        try {
+            request()->validate([
+                'amount' => 'required|numeric|min:0.01',
+                'reason' => 'required|string|max:500',
+                'endorsement_id' => 'nullable|uuid|exists:med_endorsements,id',
+            ]);
+
+            $policy = Policy::findOrFail($policyId);
+            $endorsement = null;
+
+            if (request('endorsement_id')) {
+                $endorsement = Endorsement::findOrFail(request('endorsement_id'));
+            }
+
+            $createdBy = auth()->id() ?? request('created_by');
+
+            $invoice = DB::transaction(function () use ($policy, $endorsement, $createdBy) {
+                return $this->billingService->generateCreditNote(
+                    $policy,
+                    request('amount'),
+                    request('reason'),
+                    $endorsement,
+                    $createdBy
+                );
+            });
+
+            return $this->success(
+                new InvoiceResource($invoice),
+                'Credit note generated',
+                201
+            );
+        } catch (ModelNotFoundException $e) {
+            return $this->error('Policy not found', 404);
+        } catch (Exception $e) {
+            return $this->error($e->getMessage(), 422);
+        } catch (Throwable $e) {
+            return $this->error('Failed to generate credit note: ' . $e->getMessage(), 500);
+        }
+    }
+
     // =========================================================================
     // STATISTICS & REPORTS
     // =========================================================================
@@ -864,7 +920,11 @@ class BillingController extends Controller
     {
         try {
             $payments = $this->paymentService->getUnallocatedPayments(request()->all())
-                ->with(['policy:id,policy_number,holder_name', 'group:id,code,name'])
+                ->with([
+                    'policy:id,policy_number,holder_name',
+                    'group:id,code,name',
+                    'receivedByUser:id,username,email',
+                ])
                 ->paginate(request('per_page', 20));
 
             return $this->paginated(

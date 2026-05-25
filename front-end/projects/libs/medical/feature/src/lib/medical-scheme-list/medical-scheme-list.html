@@ -1,4 +1,4 @@
-<!-- libs/medical/ui/src/lib/schemes/medical-schemes.component.html -->
+﻿<!-- libs/medical/ui/src/lib/schemes/medical-schemes.component.html -->
 
 <mat-drawer-container class="h-full">
   <!-- Main Content -->
@@ -8,13 +8,17 @@
         title="Medical Schemes"
         subtitle="Manage umbrella products, organizational tiers, and scheme rules."
         [showBreadcrumb]="true"
-        [breadcrumbItems]="[{ label: 'Dashboard', link: '/' }, { label: 'Product Setup' }, { label: 'Schemes' }]"
+        [breadcrumbItems]="[
+          { label: 'Dashboard', link: '/' },
+          { label: 'Product Setup' },
+          { label: 'Schemes' }
+        ]"
       >
         <div actions class="flex gap-2">
           <button
             mat-button
             (click)="exportToCsv()"
-            class="!border-divider !text-foreground-600 hover:!bg-content2 hidden sm:flex"
+            class="border-divider! text-foreground-600! hover:bg-content2! hidden sm:flex"
           >
             <mat-icon fontSet="material-symbols-rounded">download</mat-icon>
             Export
@@ -24,7 +28,7 @@
             *libPermission="permissions.SCHEMES_CREATE"
             mat-flat-button
             color="primary"
-            class="!rounded-lg"
+            class="rounded-lg!"
             (click)="openCreateDialog()"
           >
             <mat-icon fontSet="material-symbols-rounded">add</mat-icon>
@@ -44,7 +48,7 @@
               </div>
             </div>
             <div class="flex h-10 w-10 items-center justify-center rounded-full bg-slate-100">
-              <mat-icon fontSet="material-symbols-rounded" class="!text-slate-500"
+              <mat-icon fontSet="material-symbols-rounded" class="text-slate-500!"
                 >category</mat-icon
               >
             </div>
@@ -60,7 +64,7 @@
               </div>
             </div>
             <div class="flex h-10 w-10 items-center justify-center rounded-full bg-green-100">
-              <mat-icon fontSet="material-symbols-rounded" class="!text-green-600"
+              <mat-icon fontSet="material-symbols-rounded" class="text-green-600!"
                 >check_circle</mat-icon
               >
             </div>
@@ -76,7 +80,7 @@
               </div>
             </div>
             <div class="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100">
-              <mat-icon fontSet="material-symbols-rounded" class="!text-blue-600"
+              <mat-icon fontSet="material-symbols-rounded" class="text-blue-600!"
                 >medical_services</mat-icon
               >
             </div>
@@ -96,7 +100,7 @@
           <div class="relative w-full sm:w-72 sm:mt-1">
             <mat-icon
               fontSet="material-symbols-rounded"
-              class="absolute left-3 top-1/2 -translate-y-1/2 !text-[20px] text-slate-400"
+              class="absolute left-3 top-1/2 -translate-y-1/2 icon-md text-slate-400"
               >search</mat-icon
             >
             <input
@@ -120,12 +124,12 @@
                 <mat-select-trigger>
                   <div class="flex items-center gap-2 text-gray-700">
                     @if (selectedSegment()) { @let current = getSegmentDetails(selectedSegment());
-                    <mat-icon fontSet="material-symbols-rounded" class="!text-[20px] text-gray-500">
+                    <mat-icon fontSet="material-symbols-rounded" class="icon-md text-gray-500">
                       {{ current?.icon }}
                     </mat-icon>
                     <span class="text-sm font-medium">{{ current?.label }}</span>
                     } @else {
-                    <mat-icon fontSet="material-symbols-rounded" class="!text-[20px] text-gray-400">
+                    <mat-icon fontSet="material-symbols-rounded" class="icon-md text-gray-400">
                       apps
                     </mat-icon>
                     <span class="text-sm font-medium text-gray-600">All Segments</span>
@@ -155,7 +159,7 @@
             @if (selectedSegment() || searchQuery()) {
             <button
               mat-stroked-button
-              class="!border-slate-200 !text-slate-600 !h-10 !mt-1"
+              class="border-slate-200! text-slate-600! h-10! mt-1!"
               (click)="clearFilters()"
             >
               <mat-icon fontSet="material-symbols-rounded">clear</mat-icon>
@@ -195,11 +199,11 @@
                 mat-header-cell
                 *matHeaderCellDef
                 mat-sort-header
-                class="!bg-slate-50 !px-6 !py-3 text-xs font-semibold uppercase tracking-wider text-slate-500 !w-28"
+                class="bg-slate-50! px-6! py-3! text-xs font-semibold uppercase tracking-wider text-slate-500 w-28!"
               >
                 Status
               </th>
-              <td mat-cell *matCellDef="let scheme" class="!px-6 !py-4">
+              <td mat-cell *matCellDef="let scheme" class="px-6! py-4!">
                 <span
                   [class]="
                     scheme.is_active
@@ -219,11 +223,11 @@
                 mat-header-cell
                 *matHeaderCellDef
                 mat-sort-header
-                class="!bg-slate-50 !px-6 !py-3 text-xs font-semibold uppercase tracking-wider text-slate-500"
+                class="bg-slate-50! px-6! py-3! text-xs font-semibold uppercase tracking-wider text-slate-500"
               >
                 Scheme Name
               </th>
-              <td mat-cell *matCellDef="let scheme" class="!px-6 !py-4">
+              <td mat-cell *matCellDef="let scheme" class="px-6! py-4!">
                 <div class="flex flex-col">
                   <button
                     (click)="viewDetails(scheme)"
@@ -242,11 +246,11 @@
                 mat-header-cell
                 *matHeaderCellDef
                 mat-sort-header
-                class="!bg-slate-50 !px-6 !py-3 text-xs font-semibold uppercase tracking-wider text-slate-500"
+                class="bg-slate-50! px-6! py-3! text-xs font-semibold uppercase tracking-wider text-slate-500"
               >
                 Segment
               </th>
-              <td mat-cell *matCellDef="let scheme" class="!px-6 !py-4">
+              <td mat-cell *matCellDef="let scheme" class="px-6! py-4!">
                 <span
                   [class]="getSegmentClass(scheme.market_segment)"
                   class="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium"
@@ -264,11 +268,11 @@
               <th
                 mat-header-cell
                 *matHeaderCellDef
-                class="!bg-slate-50 !px-6 !py-3 text-xs font-semibold uppercase tracking-wider text-slate-500 !w-32"
+                class="bg-slate-50! px-6! py-3! text-xs font-semibold uppercase tracking-wider text-slate-500 w-32!"
               >
                 Plans
               </th>
-              <td mat-cell *matCellDef="let scheme" class="!px-6 !py-4">
+              <td mat-cell *matCellDef="let scheme" class="px-6! py-4!">
                 <div class="flex items-center gap-2">
                   <span
                     class="flex h-6 w-6 items-center justify-center rounded-md bg-blue-50 text-xs font-medium text-blue-700"
@@ -286,11 +290,11 @@
                 mat-header-cell
                 *matHeaderCellDef
                 mat-sort-header
-                class="!bg-slate-50 !px-6 !py-3 text-xs font-semibold uppercase tracking-wider text-slate-500"
+                class="bg-slate-50! px-6! py-3! text-xs font-semibold uppercase tracking-wider text-slate-500"
               >
                 Effective
               </th>
-              <td mat-cell *matCellDef="let scheme" class="!px-6 !py-4">
+              <td mat-cell *matCellDef="let scheme" class="px-6! py-4!">
                 <div class="flex flex-col text-sm">
                   <span class="text-slate-700">{{
                     scheme.effective_from | date : 'mediumDate'
@@ -306,22 +310,22 @@
 
             <!-- Actions Column -->
             <ng-container matColumnDef="actions">
-              <th mat-header-cell *matHeaderCellDef class="!bg-slate-50 !w-16"></th>
-              <td mat-cell *matCellDef="let scheme" class="!px-4 !py-4 text-right">
+              <th mat-header-cell *matHeaderCellDef class="bg-slate-50! w-16!"></th>
+              <td mat-cell *matCellDef="let scheme" class="px-4! py-4! text-right">
                 <button
                   mat-icon-button
                   [matMenuTriggerFor]="menu"
-                  class="!text-slate-400 hover:!bg-slate-100 hover:!text-slate-900"
+                  class="text-slate-400! hover:bg-slate-100! hover:text-slate-900!"
                 >
                   <mat-icon fontSet="material-symbols-rounded">more_vert</mat-icon>
                 </button>
 
                 <mat-menu
                   #menu="matMenu"
-                  class="!rounded-xl !border !border-slate-200 !shadow-lg !bg-white"
+                  class="rounded-xl! border! border-slate-200! shadow-lg! bg-white!"
                 >
                   <button mat-menu-item (click)="viewDetails(scheme)">
-                    <mat-icon fontSet="material-symbols-rounded" class="!text-slate-500"
+                    <mat-icon fontSet="material-symbols-rounded" class="text-slate-500!"
                       >visibility</mat-icon
                     >
                     <span>View Details</span>
@@ -331,7 +335,7 @@
                     mat-menu-item
                     (click)="openCreateDialog(scheme)"
                   >
-                    <mat-icon fontSet="material-symbols-rounded" class="!text-slate-500"
+                    <mat-icon fontSet="material-symbols-rounded" class="text-slate-500!"
                       >edit</mat-icon
                     >
                     <span>Edit Scheme</span>
@@ -341,22 +345,22 @@
                     mat-menu-item
                     (click)="toggleStatus(scheme)"
                   >
-                    <mat-icon fontSet="material-symbols-rounded" class="!text-slate-500">
+                    <mat-icon fontSet="material-symbols-rounded" class="text-slate-500!">
                       {{ scheme.is_active ? 'block' : 'check_circle' }}
                     </mat-icon>
                     <span>{{ scheme.is_active ? 'Deactivate' : 'Activate' }}</span>
                   </button>
                   <mat-divider
                     *libPermission="permissions.SCHEMES_DELETE"
-                    class="!my-1 opacity-50"
+                    class="my-1! opacity-50"
                   ></mat-divider>
                   <button
                     *libPermission="permissions.SCHEMES_DELETE"
                     mat-menu-item
-                    class="!text-red-600 hover:!bg-red-50"
+                    class="text-red-600! hover:bg-red-50!"
                     (click)="deleteScheme(scheme)"
                   >
-                    <mat-icon fontSet="material-symbols-rounded" class="!text-red-500"
+                    <mat-icon fontSet="material-symbols-rounded" class="text-red-500!"
                       >delete</mat-icon
                     >
                     <span>Delete Scheme</span>
@@ -378,7 +382,7 @@
           @if (store.schemes().length === 0) {
           <div class="flex flex-col items-center justify-center py-16 text-center">
             <div class="flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 mb-4">
-              <mat-icon fontSet="material-symbols-rounded" class="!text-slate-400"
+              <mat-icon fontSet="material-symbols-rounded" class="text-slate-400!"
                 >inventory_2</mat-icon
               >
             </div>
@@ -405,14 +409,19 @@
         <mat-paginator
           [pageSizeOptions]="[10, 20, 50]"
           showFirstLastButtons
-          class="!border-t !border-slate-100 !bg-white"
+          class="border-t! border-slate-100! bg-white!"
         ></mat-paginator>
       </div>
     </div>
   </mat-drawer-content>
 
   <!-- Detail Drawer -->
-  <mat-drawer #detailDrawer mode="over" position="end" class="!w-full sm:!w-[600px] !bg-white">
+  <mat-drawer
+    #detailDrawer
+    mode="over"
+    position="end"
+    class="w-full! sm:w-[600px]! bg-white! fc-detail-drawer"
+  >
     @if (selectedScheme(); as scheme) {
     <div class="flex flex-col h-full">
       <!-- Drawer Header -->
@@ -435,14 +444,14 @@
         <button
           mat-icon-button
           (click)="closeDrawer()"
-          class="!text-slate-400 hover:!text-slate-700"
+          class="text-slate-400! hover:text-slate-700!"
         >
           <mat-icon fontSet="material-symbols-rounded">close</mat-icon>
         </button>
       </div>
 
       <!-- Drawer Content -->
-      <div class="flex-1 overflow-y-auto p-6 space-y-6">
+      <div class="flex-1 overflow-y-auto p-6 space-y-5">
         <!-- Status Badge -->
         <div class="flex items-center gap-2">
           <span
@@ -537,7 +546,8 @@
         <div class="rounded-lg border border-slate-200 p-4">
           <h3 class="text-sm font-medium text-slate-500 mb-3">Eligibility Rules</h3>
           <div class="divide-y divide-slate-100">
-            @if (scheme.eligibility_rules.min_age != null || scheme.eligibility_rules.max_age != null) {
+            @if (scheme.eligibility_rules.min_age != null || scheme.eligibility_rules.max_age !=
+            null) {
             <div class="flex items-center justify-between py-2 text-sm">
               <span class="text-slate-500">Age Range</span>
               <span class="font-medium text-slate-900">
@@ -545,20 +555,21 @@
                 {{ scheme.eligibility_rules.max_age ?? 99 }} years
               </span>
             </div>
-            }
-            @if (scheme.eligibility_rules.min_group_size) {
+            } @if (scheme.eligibility_rules.min_group_size) {
             <div class="flex items-center justify-between py-2 text-sm">
               <span class="text-slate-500">Min. Group Size</span>
-              <span class="font-medium text-slate-900">{{ scheme.eligibility_rules.min_group_size }} members</span>
+              <span class="font-medium text-slate-900"
+                >{{ scheme.eligibility_rules.min_group_size }} members</span
+              >
             </div>
-            }
-            @if (scheme.eligibility_rules.max_group_size) {
+            } @if (scheme.eligibility_rules.max_group_size) {
             <div class="flex items-center justify-between py-2 text-sm">
               <span class="text-slate-500">Max. Group Size</span>
-              <span class="font-medium text-slate-900">{{ scheme.eligibility_rules.max_group_size }} members</span>
+              <span class="font-medium text-slate-900"
+                >{{ scheme.eligibility_rules.max_group_size }} members</span
+              >
             </div>
-            }
-            @if (scheme.eligibility_rules.required_documents?.length) {
+            } @if (scheme.eligibility_rules.required_documents?.length) {
             <div class="flex items-start justify-between py-2 text-sm">
               <span class="text-slate-500">Required Documents</span>
               <div class="flex flex-wrap gap-1 justify-end max-w-[60%]">
@@ -591,16 +602,20 @@
                 {{ scheme.underwriting_rules.require_medical_exam ? 'Required' : 'Not required' }}
               </span>
             </div>
-            @if (scheme.underwriting_rules.require_medical_exam && scheme.underwriting_rules.medical_exam_age_threshold) {
+            @if (scheme.underwriting_rules.require_medical_exam &&
+            scheme.underwriting_rules.medical_exam_age_threshold) {
             <div class="flex items-center justify-between py-2 text-sm">
               <span class="text-slate-500">Exam Age Threshold</span>
-              <span class="font-medium text-slate-900">{{ scheme.underwriting_rules.medical_exam_age_threshold }}+ years</span>
+              <span class="font-medium text-slate-900"
+                >{{ scheme.underwriting_rules.medical_exam_age_threshold }}+ years</span
+              >
             </div>
-            }
-            @if (scheme.underwriting_rules.auto_accept_age_limit) {
+            } @if (scheme.underwriting_rules.auto_accept_age_limit) {
             <div class="flex items-center justify-between py-2 text-sm">
               <span class="text-slate-500">Auto-Accept Age Limit</span>
-              <span class="font-medium text-slate-900">Under {{ scheme.underwriting_rules.auto_accept_age_limit }} years</span>
+              <span class="font-medium text-slate-900"
+                >Under {{ scheme.underwriting_rules.auto_accept_age_limit }} years</span
+              >
             </div>
             }
           </div>
@@ -616,7 +631,7 @@
           *libPermission="permissions.SCHEMES_ACTIVATE"
           mat-stroked-button
           (click)="toggleStatus(scheme)"
-          class="!border-slate-200"
+          class="border-slate-200!"
         >
           <mat-icon fontSet="material-symbols-rounded">
             {{ scheme.is_active ? 'block' : 'check_circle' }}

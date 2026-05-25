@@ -1,4 +1,4 @@
-<mat-drawer-container class="h-full">
+﻿<mat-drawer-container class="h-full">
   <!-- Main Content -->
   <mat-drawer-content>
     <lib-page-header
@@ -11,7 +11,7 @@
         <button
           mat-stroked-button
           (click)="loadClaims()"
-          class="!border-slate-300"
+          class="border-slate-300!"
           matTooltip="Refresh"
         >
           <mat-icon fontSet="material-symbols-rounded">refresh</mat-icon>
@@ -93,7 +93,7 @@
               @for (type of CLAIM_TYPES; track type.value) {
               <mat-option [value]="type.value">
                 <div class="flex items-center gap-2">
-                  <mat-icon fontSet="material-symbols-rounded" class="!text-base">{{
+                  <mat-icon fontSet="material-symbols-rounded" class="text-base!">{{
                     type.icon
                   }}</mat-icon>
                   <span>{{ type.label }}</span>
@@ -105,7 +105,7 @@
 
           <!-- Clear Filters -->
           @if (hasActiveFilters()) {
-          <button mat-stroked-button (click)="clearFilters()" class="!text-slate-600">
+          <button mat-stroked-button (click)="clearFilters()" class="text-slate-600!">
             <mat-icon fontSet="material-symbols-rounded">filter_alt_off</mat-icon>
             Clear
           </button>
@@ -121,7 +121,7 @@
         </div>
         } @else if (store.claims().length === 0) {
         <div class="flex h-64 flex-col items-center justify-center text-slate-500">
-          <mat-icon fontSet="material-symbols-rounded" class="!text-5xl text-slate-300"
+          <mat-icon fontSet="material-symbols-rounded" class="text-5xl! text-slate-300"
             >receipt_long</mat-icon
           >
           <p class="mt-4 text-lg">No claims found</p>
@@ -137,8 +137,8 @@
         >
           <!-- Status Column -->
           <ng-container matColumnDef="status">
-            <th mat-header-cell *matHeaderCellDef class="!px-4 !py-3 !font-semibold">Status</th>
-            <td mat-cell *matCellDef="let claim" class="!px-4 !py-3">
+            <th mat-header-cell *matHeaderCellDef class="px-4! py-3! font-semibold!">Status</th>
+            <td mat-cell *matCellDef="let claim" class="px-4! py-3!">
               <span
                 class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium"
                 [class]="getStatusConfig(claim.status).color"
@@ -148,7 +148,7 @@
               @if (claim.is_flagged) {
               <mat-icon
                 fontSet="material-symbols-rounded"
-                class="ml-1 !text-base text-red-500"
+                class="ml-1 text-base! text-red-500"
                 matTooltip="Flagged"
               >
                 flag
@@ -163,11 +163,11 @@
               mat-header-cell
               *matHeaderCellDef
               mat-sort-header
-              class="!px-4 !py-3 !font-semibold"
+              class="px-4! py-3! font-semibold!"
             >
               Claim #
             </th>
-            <td mat-cell *matCellDef="let claim" class="!px-4 !py-3">
+            <td mat-cell *matCellDef="let claim" class="px-4! py-3!">
               <a
                 [routerLink]="['/medical/claims', claim.id]"
                 class="font-medium text-blue-600 hover:underline"
@@ -184,8 +184,8 @@
 
           <!-- Member Column -->
           <ng-container matColumnDef="member">
-            <th mat-header-cell *matHeaderCellDef class="!px-4 !py-3 !font-semibold">Member</th>
-            <td mat-cell *matCellDef="let claim" class="!px-4 !py-3">
+            <th mat-header-cell *matHeaderCellDef class="px-4! py-3! font-semibold!">Member</th>
+            <td mat-cell *matCellDef="let claim" class="px-4! py-3!">
               @if (claim.member) {
               <div class="flex items-center gap-2">
                 <div
@@ -206,10 +206,10 @@
 
           <!-- Claim Type Column -->
           <ng-container matColumnDef="claim_type">
-            <th mat-header-cell *matHeaderCellDef class="!px-4 !py-3 !font-semibold">Type</th>
-            <td mat-cell *matCellDef="let claim" class="!px-4 !py-3">
+            <th mat-header-cell *matHeaderCellDef class="px-4! py-3! font-semibold!">Type</th>
+            <td mat-cell *matCellDef="let claim" class="px-4! py-3!">
               <div class="flex items-center gap-2">
-                <mat-icon fontSet="material-symbols-rounded" class="!text-lg text-slate-400">
+                <mat-icon fontSet="material-symbols-rounded" class="text-lg! text-slate-400">
                   {{ getClaimTypeConfig(claim.claim_type).icon }}
                 </mat-icon>
                 <span>{{ getClaimTypeConfig(claim.claim_type).label }}</span>
@@ -223,11 +223,11 @@
               mat-header-cell
               *matHeaderCellDef
               mat-sort-header
-              class="!px-4 !py-3 !font-semibold"
+              class="px-4! py-3! font-semibold!"
             >
               Service Date
             </th>
-            <td mat-cell *matCellDef="let claim" class="!px-4 !py-3">
+            <td mat-cell *matCellDef="let claim" class="px-4! py-3!">
               <span class="text-slate-700">{{ claim.service_date | date : 'mediumDate' }}</span>
             </td>
           </ng-container>
@@ -238,11 +238,11 @@
               mat-header-cell
               *matHeaderCellDef
               mat-sort-header="claimed_amount"
-              class="!px-4 !py-3 !font-semibold"
+              class="px-4! py-3! font-semibold!"
             >
               Amount
             </th>
-            <td mat-cell *matCellDef="let claim" class="!px-4 !py-3">
+            <td mat-cell *matCellDef="let claim" class="px-4! py-3!">
               <div>
                 <p class="font-medium text-slate-900">
                   {{ formatCurrency(claim.claimed_amount, claim.currency) }}
@@ -258,8 +258,8 @@
 
           <!-- Provider Column -->
           <ng-container matColumnDef="provider">
-            <th mat-header-cell *matHeaderCellDef class="!px-4 !py-3 !font-semibold">Provider</th>
-            <td mat-cell *matCellDef="let claim" class="!px-4 !py-3">
+            <th mat-header-cell *matHeaderCellDef class="px-4! py-3! font-semibold!">Provider</th>
+            <td mat-cell *matCellDef="let claim" class="px-4! py-3!">
               @if (claim.provider_name) {
               <div>
                 <p class="text-slate-700">{{ claim.provider_name }}</p>
@@ -273,8 +273,8 @@
 
           <!-- Actions Column -->
           <ng-container matColumnDef="actions">
-            <th mat-header-cell *matHeaderCellDef class="!w-20 !px-4 !py-3"></th>
-            <td mat-cell *matCellDef="let claim" class="!px-4 !py-3">
+            <th mat-header-cell *matHeaderCellDef class="w-20! px-4! py-3!"></th>
+            <td mat-cell *matCellDef="let claim" class="px-4! py-3!">
               <button
                 mat-icon-button
                 [matMenuTriggerFor]="claimMenu"
@@ -294,7 +294,7 @@
                 </button>
                 } @if (claim.can_be_approved) {
                 <button mat-menu-item (click)="approveClaim(claim)">
-                  <mat-icon fontSet="material-symbols-rounded" class="!text-green-600"
+                  <mat-icon fontSet="material-symbols-rounded" class="text-green-600!"
                     >check_circle</mat-icon
                   >
                   <span>Quick Approve</span>
@@ -333,7 +333,7 @@
   </mat-drawer-content>
 
   <!-- Detail Drawer -->
-  <mat-drawer #detailDrawer mode="over" position="end" class="!w-[600px] !bg-white">
+  <mat-drawer #detailDrawer mode="over" position="end" class="w-full! sm:w-[600px]! bg-white! fc-detail-drawer">
     @if (selectedClaim(); as claim) {
     <div class="flex h-full flex-col">
       <!-- Header -->

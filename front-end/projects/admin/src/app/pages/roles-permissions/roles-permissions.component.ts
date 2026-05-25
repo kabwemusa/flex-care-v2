@@ -6,6 +6,7 @@ import { MatMenuModule } from '@angular/material/menu';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatDialog } from '@angular/material/dialog';
 
 // Core/Shared Imports
@@ -26,6 +27,7 @@ import { RoleDialogComponent } from '../../dialogs/role-dialog/role-dialog.compo
     MatDividerModule,
     MatProgressSpinnerModule,
     MatButtonToggleModule,
+    MatTooltipModule,
     PageHeaderComponent,
   ],
   templateUrl: './roles-permissions.component.html',

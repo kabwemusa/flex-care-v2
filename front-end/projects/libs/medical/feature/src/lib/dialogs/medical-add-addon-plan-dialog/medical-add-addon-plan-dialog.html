@@ -1,4 +1,4 @@
-<div class="flex max-h-[90vh] w-full flex-col overflow-hidden rounded-lg bg-white sm:w-[600px]">
+﻿<div class="flex max-h-[90vh] w-full flex-col overflow-hidden rounded-lg bg-white sm:w-[600px]">
   <!-- Header -->
   <div class="flex items-center justify-between border-b border-slate-100 px-6 py-4">
     <div class="flex items-center gap-3">
@@ -16,7 +16,7 @@
     <button
       mat-icon-button
       (click)="dialogRef.close()"
-      class="!text-slate-400 hover:!text-slate-700"
+      class="text-slate-400! hover:text-slate-700!"
     >
       <mat-icon fontSet="material-symbols-rounded">close</mat-icon>
     </button>
@@ -29,7 +29,7 @@
       <div class="relative flex-1">
         <mat-icon
           fontSet="material-symbols-rounded"
-          class="absolute left-3 top-1/2 -translate-y-1/2 !text-[20px] text-slate-400"
+          class="absolute left-3 top-1/2 -translate-y-1/2 icon-md text-slate-400"
         >
           search
         </mat-icon>
@@ -41,7 +41,7 @@
           (input)="onSearchInput($event)"
         />
       </div>
-      <mat-form-field appearance="outline" subscriptSizing="dynamic" class="!w-40">
+      <mat-form-field appearance="outline" subscriptSizing="dynamic" class="w-40!">
         <mat-select [value]="selectedType()" (selectionChange)="selectedType.set($event.value)">
           <mat-option value="">All Types</mat-option>
           @for (type of addonTypes; track type.value) {
@@ -82,7 +82,7 @@
             [class]="getAddonTypeClass(addon.addon_type)"
             class="flex h-9 w-9 items-center justify-center rounded-full"
           >
-            <mat-icon fontSet="material-symbols-rounded" class="!text-[18px]">
+            <mat-icon fontSet="material-symbols-rounded" class="icon-md">
               {{ getAddonTypeIcon(addon.addon_type) }}
             </mat-icon>
           </div>
@@ -102,7 +102,7 @@
     </div>
     } @else {
     <div class="text-center py-8">
-      <mat-icon fontSet="material-symbols-rounded" class="!text-slate-300 !text-[48px]"
+      <mat-icon fontSet="material-symbols-rounded" class="text-slate-300! icon-2xl"
         >search_off</mat-icon
       >
       <p class="text-sm text-slate-500 mt-2">No addons available to add</p>
@@ -115,7 +115,7 @@
     <span class="text-sm text-slate-500">{{ selectedCount() }} selected</span>
 
     <div class="flex items-center gap-3">
-      <button mat-button (click)="dialogRef.close()" class="!text-slate-600">Cancel</button>
+      <button mat-button (click)="dialogRef.close()" class="text-slate-600!">Cancel</button>
       <button
         mat-flat-button
         color="primary"
@@ -123,7 +123,7 @@
         (click)="addSelected()"
       >
         @if (isSaving()) {
-        <mat-spinner diameter="20" class="!mr-2"></mat-spinner>
+        <mat-spinner diameter="20" class="mr-2!"></mat-spinner>
         } Add {{ selectedCount() }} Addon{{ selectedCount() !== 1 ? 's' : '' }}
       </button>
     </div>

@@ -1,4 +1,4 @@
-<div class="space-y-5">
+﻿<div class="space-y-5">
 
   <!-- Header -->
   <div class="flex items-start justify-between gap-4">
@@ -36,7 +36,7 @@
     <div class="relative flex-1">
       <mat-icon
         fontSet="material-symbols-rounded"
-        class="absolute left-3 top-1/2 -translate-y-1/2 !text-slate-400 !text-[18px] pointer-events-none"
+        class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400! icon-md pointer-events-none"
       >search</mat-icon>
       <input
         type="text"
@@ -64,7 +64,7 @@
     <button
       mat-stroked-button
       (click)="clearFilters()"
-      class="!border-slate-200 !text-slate-600 shrink-0"
+      class="border-slate-200! text-slate-600! shrink-0"
     >
       <mat-icon fontSet="material-symbols-rounded">filter_alt_off</mat-icon>
       Clear
@@ -91,7 +91,7 @@
             class="flex h-6 w-6 items-center justify-center rounded-full"
             [class]="getCategoryClass(group.category)"
           >
-            <mat-icon fontSet="material-symbols-rounded" class="!text-[14px]">
+            <mat-icon fontSet="material-symbols-rounded" class="icon-xs">
               {{ group.icon }}
             </mat-icon>
           </span>
@@ -130,25 +130,25 @@
               <button
                 mat-icon-button
                 [matMenuTriggerFor]="loadingMenu"
-                class="!text-slate-300 group-hover:!text-slate-500 transition-colors shrink-0 -mt-1 -mr-2"
+                class="text-slate-300! group-hover:text-slate-500! transition-colors shrink-0 -mt-1 -mr-2"
               >
                 <mat-icon fontSet="material-symbols-rounded">more_vert</mat-icon>
               </button>
 
               <mat-menu #loadingMenu="matMenu">
                 <button mat-menu-item (click)="openDialog(rule)">
-                  <mat-icon fontSet="material-symbols-rounded" class="!text-slate-500">edit</mat-icon>
+                  <mat-icon fontSet="material-symbols-rounded" class="text-slate-500!">edit</mat-icon>
                   <span>Edit Rule</span>
                 </button>
                 <button mat-menu-item (click)="toggleStatus(rule)">
-                  <mat-icon fontSet="material-symbols-rounded" class="!text-slate-500">
+                  <mat-icon fontSet="material-symbols-rounded" class="text-slate-500!">
                     {{ rule.is_active ? 'block' : 'check_circle' }}
                   </mat-icon>
                   <span>{{ rule.is_active ? 'Deactivate' : 'Activate' }}</span>
                 </button>
                 <mat-divider></mat-divider>
-                <button mat-menu-item class="!text-red-600" (click)="deleteRule(rule)">
-                  <mat-icon fontSet="material-symbols-rounded" class="!text-red-500">delete</mat-icon>
+                <button mat-menu-item class="text-red-600!" (click)="deleteRule(rule)">
+                  <mat-icon fontSet="material-symbols-rounded" class="text-red-500!">delete</mat-icon>
                   <span>Delete</span>
                 </button>
               </mat-menu>
@@ -166,7 +166,7 @@
 
               <!-- Duration badge -->
               <span class="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600">
-                <mat-icon fontSet="material-symbols-rounded" class="!text-[11px] !align-text-bottom">
+                <mat-icon fontSet="material-symbols-rounded" class="icon-xs align-text-bottom!">
                   schedule
                 </mat-icon>
                 {{ getDurationLabel(rule) }}
@@ -203,12 +203,12 @@
 
       <!-- No Results -->
       <div class="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-8 text-center">
-        <mat-icon fontSet="material-symbols-rounded" class="!text-slate-400 !text-[40px] mb-3">
+        <mat-icon fontSet="material-symbols-rounded" class="text-slate-400! icon-2xl mb-3">
           search_off
         </mat-icon>
         <h4 class="text-sm font-medium text-slate-900">No rules match your filters</h4>
         <p class="text-sm text-slate-500 mt-1">Try adjusting your search or category filter.</p>
-        <button mat-stroked-button class="mt-4 !border-slate-200" (click)="clearFilters()">
+        <button mat-stroked-button class="mt-4 border-slate-200!" (click)="clearFilters()">
           Clear Filters
         </button>
       </div>
@@ -220,7 +220,7 @@
         <div
           class="flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 mx-auto mb-4"
         >
-          <mat-icon fontSet="material-symbols-rounded" class="!text-slate-400">
+          <mat-icon fontSet="material-symbols-rounded" class="text-slate-400!">
             policy
           </mat-icon>
         </div>

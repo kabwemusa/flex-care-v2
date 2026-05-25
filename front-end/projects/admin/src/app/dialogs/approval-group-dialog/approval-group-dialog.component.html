@@ -1,4 +1,4 @@
-<div class="flex flex-col max-h-[85vh]">
+﻿<div class="flex flex-col max-h-[85vh]">
   <!-- Header -->
   <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100">
     <div>
@@ -9,7 +9,7 @@
       <p class="text-sm text-slate-500">{{ data.group.name }}</p>
       }
     </div>
-    <button mat-icon-button (click)="dialogRef.close()" class="!-mr-2">
+    <button mat-icon-button (click)="dialogRef.close()" class="-mr-2!">
       <mat-icon fontSet="material-symbols-rounded">close</mat-icon>
     </button>
   </div>
@@ -21,7 +21,7 @@
     <form [formGroup]="form" class="space-y-5">
       <mat-form-field appearance="fill" class="w-full minimal-input">
         <mat-label>Group Name</mat-label>
-        <input matInput formControlName="name" placeholder="e.g., Underwriting Team" />
+        <input matInput formControlName="name" />
         @if (form.get('name')?.hasError('required')) {
         <mat-error>Name is required</mat-error>
         }
@@ -29,25 +29,14 @@
 
       <mat-form-field appearance="fill" class="w-full minimal-input">
         <mat-label>Code</mat-label>
-        <input
-          matInput
-          formControlName="code"
-          placeholder="e.g., underwriting_team"
-          [readonly]="isEdit"
-        />
+        <input matInput formControlName="code" [readonly]="isEdit" />
         <mat-hint>Unique identifier (lowercase, no spaces)</mat-hint>
         @if (form.get('code')?.hasError('required')) {
         <mat-error>Code is required</mat-error>
         } @if (form.get('code')?.hasError('pattern')) {
         <mat-error>Only lowercase letters, numbers, underscores and hyphens</mat-error>
         } @if (!isEdit) {
-        <button
-          matSuffix
-          mat-icon-button
-          type="button"
-          (click)="generateCode()"
-          matTooltip="Generate from name"
-        >
+        <button matSuffix mat-icon-button type="button" (click)="generateCode()" matTooltip="Generate from name">
           <mat-icon fontSet="material-symbols-rounded">auto_fix_high</mat-icon>
         </button>
         }
@@ -55,12 +44,7 @@
 
       <mat-form-field appearance="fill" class="w-full minimal-input">
         <mat-label>Description</mat-label>
-        <textarea
-          matInput
-          formControlName="description"
-          rows="3"
-          placeholder="Describe the purpose of this group..."
-        ></textarea>
+        <textarea matInput formControlName="description" rows="3" placeholder="Describe the purpose of this group..."></textarea>
       </mat-form-field>
 
       <div class="flex items-center justify-between p-4 bg-slate-50 rounded-lg">
@@ -71,6 +55,7 @@
         <mat-slide-toggle formControlName="is_active" color="primary"></mat-slide-toggle>
       </div>
     </form>
+
     } @else {
     <!-- Members Management -->
     <div class="space-y-5">
@@ -78,10 +63,7 @@
       <div>
         <p class="text-sm font-medium text-slate-700 mb-2">Add Members</p>
         <div class="relative">
-          <mat-icon
-            fontSet="material-symbols-rounded"
-            class="absolute left-3 top-1/2 -translate-y-1/2 !text-slate-400"
-          >
+          <mat-icon fontSet="material-symbols-rounded" class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400!">
             search
           </mat-icon>
           <input
@@ -89,23 +71,16 @@
             [(ngModel)]="userSearchQuery"
             (input)="onUserSearch($event)"
             placeholder="Search users by name or email..."
-            class="w-full h-10 pl-10 pr-4 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+            class="w-full h-10 pl-10 pr-4 rounded-lg border border-slate-200 text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all"
           />
         </div>
 
         @if (store.availableUsers().length > 0) {
-        <div
-          class="mt-3 border border-slate-200 rounded-lg divide-y divide-slate-100 max-h-48 overflow-y-auto"
-        >
+        <div class="mt-3 border border-slate-200 rounded-lg divide-y divide-slate-100 max-h-48 overflow-y-auto">
           @for (user of store.availableUsers(); track user.id) {
-          <div
-            class="flex items-center justify-between px-4 py-3 hover:bg-slate-50 cursor-pointer"
-            (click)="addMember(user)"
-          >
+          <div class="flex items-center justify-between px-4 py-3 fc-interactive" (click)="addMember(user)">
             <div class="flex items-center gap-3">
-              <div
-                class="h-8 w-8 rounded-full bg-slate-200 flex items-center justify-center text-sm font-medium text-slate-600"
-              >
+              <div class="h-8 w-8 rounded-full bg-slate-200 flex items-center justify-center text-sm font-medium text-slate-600">
                 {{ (user.username || user.email || '?')[0].toUpperCase() }}
               </div>
               <div>
@@ -115,7 +90,7 @@
                 }
               </div>
             </div>
-            <mat-icon fontSet="material-symbols-rounded" class="!text-slate-400">add</mat-icon>
+            <mat-icon fontSet="material-symbols-rounded" class="text-slate-400!">add</mat-icon>
           </div>
           }
         </div>
@@ -133,9 +108,7 @@
           @for (member of store.selectedGroup()!.members; track member.id) {
           <div class="flex items-center justify-between px-4 py-3">
             <div class="flex items-center gap-3">
-              <div
-                class="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center text-sm font-medium text-blue-600"
-              >
+              <div class="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center text-sm font-medium text-blue-600">
                 {{ (member.user?.username || member.user?.email || '?')[0].toUpperCase() }}
               </div>
               <div>
@@ -150,7 +123,7 @@
             <button
               mat-icon-button
               (click)="removeMember(member.user_id)"
-              class="!text-slate-400 hover:!text-red-500"
+              class="text-slate-400! hover:text-red-500!"
               matTooltip="Remove member"
             >
               <mat-icon fontSet="material-symbols-rounded">close</mat-icon>
@@ -160,9 +133,7 @@
         </div>
         } @else {
         <div class="text-center py-8 bg-slate-50 rounded-lg">
-          <mat-icon fontSet="material-symbols-rounded" class="!text-4xl !text-slate-300">
-            group_off
-          </mat-icon>
+          <mat-icon fontSet="material-symbols-rounded" class="icon-2xl text-slate-300!">group_off</mat-icon>
           <p class="text-sm text-slate-500 mt-2">No members in this group</p>
         </div>
         }
@@ -175,12 +146,7 @@
   <div class="flex items-center justify-end gap-3 px-6 py-4 border-t border-slate-100 bg-slate-50">
     <button mat-button (click)="dialogRef.close()">Cancel</button>
     @if (!manageMembersMode) {
-    <button
-      mat-flat-button
-      color="primary"
-      (click)="onSubmit()"
-      [disabled]="saving || form.invalid"
-    >
+    <button mat-flat-button color="primary" (click)="onSubmit()" [disabled]="saving || form.invalid">
       @if (saving) {
       <mat-spinner diameter="18" class="mr-2"></mat-spinner>
       }

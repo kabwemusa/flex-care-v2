@@ -351,7 +351,11 @@ class BillingService
     // =========================================================================
 
     /**
-     * Send an invoice via email.
+     * Send an invoice via the specified channel.
+     *
+     * Supported channels: email (fully implemented), portal (marks as sent on
+     * the portal feed), post / sms (marks as sent but delivery is external —
+     * log an advisory so operators know manual follow-up is needed).
      */
     public function sendInvoice(Invoice $invoice, string $via = 'email', ?string $sentBy = null): bool
     {
@@ -359,30 +363,43 @@ class BillingService
             throw new Exception('Invoice cannot be sent in current state');
         }
 
-        // Load relationships for email
+        $supportedChannels = ['email', 'portal', 'post', 'sms'];
+        if (!in_array($via, $supportedChannels)) {
+            throw new Exception("Unsupported send channel: {$via}");
+        }
+
+        // Load relationships needed by all channels
         $invoice->load(['policy.plan', 'items', 'group']);
 
-        // Get recipient email
-        $recipientEmail = $invoice->bill_to_email;
-
-        if (!$recipientEmail && $invoice->policy) {
-            $recipientEmail = $invoice->policy->holder_email;
-        }
-
-        if (!$recipientEmail && $invoice->group) {
-            $recipientEmail = $invoice->group->billing_email ?? $invoice->group->contact_email;
-        }
-
-        if (!$recipientEmail) {
-            throw new Exception('No recipient email address found for this invoice');
-        }
-
-        // Send email with PDF attachment
         if ($via === 'email') {
+            // Resolve recipient email
+            $recipientEmail = $invoice->bill_to_email
+                ?? $invoice->policy?->holder_email
+                ?? $invoice->group?->billing_email
+                ?? $invoice->group?->contact_email;
+
+            if (!$recipientEmail) {
+                throw new Exception('No recipient email address found for this invoice');
+            }
+
             Mail::to($recipientEmail)->send(new InvoiceEmail($invoice));
+
+        } elseif ($via === 'portal') {
+            // Portal notification — mark as sent; portal feed picks it up via the
+            // sent status flag. No additional action required here.
+
+        } else {
+            // post / sms — physical or SMS delivery is handled outside the system.
+            // Log an advisory so staff know manual follow-up is needed.
+            \Illuminate\Support\Facades\Log::info('Invoice queued for manual delivery', [
+                'invoice_id'     => $invoice->id,
+                'invoice_number' => $invoice->invoice_number,
+                'channel'        => $via,
+                'sent_by'        => $sentBy,
+            ]);
         }
 
-        // Update invoice status
+        // Update invoice status to 'sent'
         return $invoice->send($via, $sentBy);
     }
 
@@ -408,7 +425,7 @@ class BillingService
      */
     public function writeOffInvoice(Invoice $invoice, string $reason, ?string $approvedBy = null): bool
     {
-        return $invoice->writeOff($reason);
+        return $invoice->writeOff($reason, $approvedBy);
     }
 
     /**

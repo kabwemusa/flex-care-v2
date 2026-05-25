@@ -1,4 +1,4 @@
-<div class="space-y-5">
+﻿<div class="space-y-5">
 
   <!-- Header -->
   <div class="flex items-center justify-between">
@@ -28,7 +28,7 @@
       <div class="space-y-2">
         <h4 class="flex items-center gap-2 text-sm font-medium text-slate-700">
           <span class="flex h-6 w-6 items-center justify-center rounded-full bg-green-100">
-            <mat-icon fontSet="material-symbols-rounded" class="!text-green-600 !text-[14px]">
+            <mat-icon fontSet="material-symbols-rounded" class="text-green-600! icon-xs">
               percent
             </mat-icon>
           </span>
@@ -53,7 +53,7 @@
       <div class="space-y-2">
         <h4 class="flex items-center gap-2 text-sm font-medium text-slate-700">
           <span class="flex h-6 w-6 items-center justify-center rounded-full bg-orange-100">
-            <mat-icon fontSet="material-symbols-rounded" class="!text-orange-600 !text-[14px]">
+            <mat-icon fontSet="material-symbols-rounded" class="text-orange-600! icon-xs">
               trending_up
             </mat-icon>
           </span>
@@ -80,7 +80,7 @@
         <div
           class="flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 mx-auto mb-4"
         >
-          <mat-icon fontSet="material-symbols-rounded" class="!text-slate-400">
+          <mat-icon fontSet="material-symbols-rounded" class="text-slate-400!">
             local_offer
           </mat-icon>
         </div>
@@ -122,7 +122,7 @@
             class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full"
             [class]="type === 'discount' ? getDiscountIconClass() : getLoadingIconClass()"
           >
-            <mat-icon fontSet="material-symbols-rounded" class="!text-[18px]">
+            <mat-icon fontSet="material-symbols-rounded" class="icon-md">
               {{ type === 'discount' ? 'percent' : 'trending_up' }}
             </mat-icon>
           </div>
@@ -136,7 +136,7 @@
         <button
           mat-icon-button
           [matMenuTriggerFor]="ruleMenu"
-          class="!text-slate-300 group-hover:!text-slate-500 transition-colors shrink-0"
+          class="text-slate-300! group-hover:text-slate-500! transition-colors shrink-0"
           matTooltip="Actions"
         >
           <mat-icon fontSet="material-symbols-rounded">more_vert</mat-icon>
@@ -144,18 +144,18 @@
 
         <mat-menu #ruleMenu="matMenu">
           <button mat-menu-item (click)="openDialog(rule)">
-            <mat-icon fontSet="material-symbols-rounded" class="!text-slate-500">edit</mat-icon>
+            <mat-icon fontSet="material-symbols-rounded" class="text-slate-500!">edit</mat-icon>
             <span>Edit Rule</span>
           </button>
           <button mat-menu-item (click)="toggleStatus(rule)">
-            <mat-icon fontSet="material-symbols-rounded" class="!text-slate-500">
+            <mat-icon fontSet="material-symbols-rounded" class="text-slate-500!">
               {{ rule.is_active ? 'block' : 'check_circle' }}
             </mat-icon>
             <span>{{ rule.is_active ? 'Deactivate' : 'Activate' }}</span>
           </button>
           <mat-divider></mat-divider>
-          <button mat-menu-item class="!text-red-600" (click)="deleteRule(rule)">
-            <mat-icon fontSet="material-symbols-rounded" class="!text-red-500">delete</mat-icon>
+          <button mat-menu-item class="text-red-600!" (click)="deleteRule(rule)">
+            <mat-icon fontSet="material-symbols-rounded" class="text-red-500!">delete</mat-icon>
             <span>Delete</span>
           </button>
         </mat-menu>
@@ -195,7 +195,7 @@
       <div class="border-t border-slate-100 pt-3 pl-3 grid grid-cols-2 gap-x-4 gap-y-1">
         @if (rule.priority != null) {
         <div class="flex items-center gap-1.5">
-          <mat-icon fontSet="material-symbols-rounded" class="!text-slate-400 !text-[13px]">
+          <mat-icon fontSet="material-symbols-rounded" class="text-slate-400! icon-xs">
             low_priority
           </mat-icon>
           <span class="text-xs text-slate-500">Priority {{ rule.priority }}</span>
@@ -203,7 +203,7 @@
         }
         @if (rule.can_stack != null) {
         <div class="flex items-center gap-1.5">
-          <mat-icon fontSet="material-symbols-rounded" class="!text-slate-400 !text-[13px]">
+          <mat-icon fontSet="material-symbols-rounded" class="text-slate-400! icon-xs">
             {{ rule.can_stack ? 'layers' : 'layers_clear' }}
           </mat-icon>
           <span class="text-xs text-slate-500">{{ rule.can_stack ? 'Stackable' : 'Non-stackable' }}</span>
@@ -211,7 +211,7 @@
         }
         @if (rule.effective_from) {
         <div class="flex items-center gap-1.5 col-span-2">
-          <mat-icon fontSet="material-symbols-rounded" class="!text-slate-400 !text-[13px]">
+          <mat-icon fontSet="material-symbols-rounded" class="text-slate-400! icon-xs">
             calendar_today
           </mat-icon>
           <span class="text-xs text-slate-500">

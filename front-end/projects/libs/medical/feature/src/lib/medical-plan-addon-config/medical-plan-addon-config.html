@@ -1,4 +1,4 @@
-<div class="space-y-5">
+﻿<div class="space-y-5">
 
   <!-- Header -->
   <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
@@ -20,7 +20,7 @@
     <div class="relative flex-1">
       <mat-icon
         fontSet="material-symbols-rounded"
-        class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400! text-[18px]! pointer-events-none"
+        class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400! icon-md pointer-events-none"
       >search</mat-icon>
       <input
         type="text"
@@ -77,7 +77,7 @@
 
     <!-- No filter results -->
     <div class="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-8 text-center">
-      <mat-icon fontSet="material-symbols-rounded" class="text-slate-400! text-[36px]! mb-2">search_off</mat-icon>
+      <mat-icon fontSet="material-symbols-rounded" class="text-slate-400! icon-xl mb-2">search_off</mat-icon>
       <h4 class="text-sm font-medium text-slate-900">No add-ons match your filters</h4>
       <button mat-stroked-button class="mt-3 border-slate-200!" (click)="clearFilters()">Clear Filters</button>
     </div>
@@ -94,7 +94,7 @@
           class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full"
           [class]="item.isEnabled ? getTypeClass(item.addon.addon_type) : 'bg-slate-100 text-slate-400'"
         >
-          <mat-icon fontSet="material-symbols-rounded" class="text-[18px]!">
+          <mat-icon fontSet="material-symbols-rounded" class="icon-md">
             {{ getTypeIcon(item.addon.addon_type) }}
           </mat-icon>
         </div>

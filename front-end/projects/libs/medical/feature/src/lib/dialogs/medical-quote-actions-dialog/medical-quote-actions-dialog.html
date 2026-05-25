@@ -1,4 +1,4 @@
-<!-- libs/medical/feature/src/lib/dialogs/medical-quote-actions-dialog/medical-quote-actions-dialog.html -->
+﻿<!-- libs/medical/feature/src/lib/dialogs/medical-quote-actions-dialog/medical-quote-actions-dialog.html -->
 
 <div class="flex flex-col max-h-[90vh] rounded-lg">
   <!-- Header -->
@@ -12,7 +12,7 @@
         <p class="text-sm text-slate-500">{{ data.applicationNumber }}</p>
       </div>
     </div>
-    <button mat-icon-button (click)="cancel()" class="!text-slate-400">
+    <button mat-icon-button (click)="cancel()" class="text-slate-400!">
       <mat-icon fontSet="material-symbols-rounded">close</mat-icon>
     </button>
   </div>
@@ -117,7 +117,7 @@
               matInput
               type="email"
               formControlName="email"
-              placeholder="customer@example.com"
+             
             />
             <mat-icon matPrefix fontSet="material-symbols-rounded">email</mat-icon>
             @if (emailForm.get('email')?.hasError('required') && emailForm.get('email')?.touched) {

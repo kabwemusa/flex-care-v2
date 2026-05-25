@@ -1,4 +1,4 @@
-<!-- Group Detail Page -->
+﻿<!-- Group Detail Page -->
 <div class="bg-slate-50 min-h-screen">
   @if (loading()) {
   <!-- Loading State -->
@@ -22,7 +22,7 @@
           <button
             mat-icon-button
             (click)="backToGroups()"
-            class="!bg-slate-100 hover:!bg-slate-200"
+            class="bg-slate-100! hover:bg-slate-200!"
             matTooltip="Back to groups"
           >
             <mat-icon fontSet="material-symbols-rounded">arrow_back</mat-icon>
@@ -35,7 +35,7 @@
               >
                 <mat-icon
                   fontSet="material-symbols-rounded"
-                  class="!text-[14px] !h-[14px] !w-[14px] mr-0.5"
+                  class="icon-xs h-[14px]! w-[14px]! mr-0.5"
                 >
                   business
                 </mat-icon>
@@ -86,7 +86,7 @@
     <div class="mb-6">
       <div class="flex items-center justify-between mb-3">
         <h2 class="text-lg font-semibold text-slate-900">Plan Quotes</h2>
-        <button mat-stroked-button (click)="openCensusUploadDialog()" class="!text-sm">
+        <button mat-stroked-button (click)="openCensusUploadDialog()" class="text-sm!">
           <mat-icon fontSet="material-symbols-rounded">add</mat-icon>
           Add Plan
         </button>
@@ -138,15 +138,15 @@
           <div class="flex gap-2">
             <button
               mat-stroked-button
-              class="flex-1 !text-xs !py-1"
+              class="flex-1 text-xs! py-1!"
               (click)="calculateAppPremium(app)"
               [disabled]="calculatingPremium()"
             >
-              <mat-icon fontSet="material-symbols-rounded" class="!text-sm">calculate</mat-icon>
+              <mat-icon fontSet="material-symbols-rounded" class="text-sm!">calculate</mat-icon>
               Calculate
             </button>
-            <button mat-stroked-button class="flex-1 !text-xs !py-1" (click)="viewApplication(app)">
-              <mat-icon fontSet="material-symbols-rounded" class="!text-sm">open_in_new</mat-icon>
+            <button mat-stroked-button class="flex-1 text-xs! py-1!" (click)="viewApplication(app)">
+              <mat-icon fontSet="material-symbols-rounded" class="text-sm!">open_in_new</mat-icon>
               View
             </button>
           </div>
@@ -166,7 +166,7 @@
             subscriptSizing="dynamic"
             class="flex-1 min-w-[200px] minimal-input"
           >
-            <mat-icon fontSet="material-symbols-rounded" matPrefix class="!text-slate-400"
+            <mat-icon fontSet="material-symbols-rounded" matPrefix class="text-slate-400!"
               >search</mat-icon
             >
             <input
@@ -209,7 +209,7 @@
           </mat-form-field>
 
           @if (memberSearchTerm() || memberTypeFilter() || applicationFilter() !== 'all') {
-          <button mat-stroked-button (click)="clearFilters()" class="!border-slate-200">
+          <button mat-stroked-button (click)="clearFilters()" class="border-slate-200!">
             <mat-icon fontSet="material-symbols-rounded">filter_alt_off</mat-icon>
             Clear
           </button>
@@ -236,11 +236,11 @@
               <th
                 mat-header-cell
                 *matHeaderCellDef
-                class="!font-semibold !text-slate-700 !bg-slate-50 !pl-6"
+                class="font-semibold! text-slate-700! bg-slate-50! pl-6!"
               >
                 Name
               </th>
-              <td mat-cell *matCellDef="let member" class="!pl-6">
+              <td mat-cell *matCellDef="let member" class="pl-6!">
                 <div class="flex items-center gap-3">
                   <div
                     class="flex h-9 w-9 items-center justify-center rounded-full text-xs font-semibold"
@@ -267,7 +267,7 @@
               <th
                 mat-header-cell
                 *matHeaderCellDef
-                class="!font-semibold !text-slate-700 !bg-slate-50"
+                class="font-semibold! text-slate-700! bg-slate-50!"
               >
                 Type
               </th>
@@ -286,7 +286,7 @@
               <th
                 mat-header-cell
                 *matHeaderCellDef
-                class="!font-semibold !text-slate-700 !bg-slate-50"
+                class="font-semibold! text-slate-700! bg-slate-50!"
               >
                 Age / DOB
               </th>
@@ -301,7 +301,7 @@
               <th
                 mat-header-cell
                 *matHeaderCellDef
-                class="!font-semibold !text-slate-700 !bg-slate-50"
+                class="font-semibold! text-slate-700! bg-slate-50!"
               >
                 Gender
               </th>
@@ -315,7 +315,7 @@
               <th
                 mat-header-cell
                 *matHeaderCellDef
-                class="!font-semibold !text-slate-700 !bg-slate-50"
+                class="font-semibold! text-slate-700! bg-slate-50!"
               >
                 Contact
               </th>
@@ -335,7 +335,7 @@
               <th
                 mat-header-cell
                 *matHeaderCellDef
-                class="!font-semibold !text-slate-700 !bg-slate-50"
+                class="font-semibold! text-slate-700! bg-slate-50!"
               >
                 Status
               </th>
@@ -380,12 +380,12 @@
           [pageSizeOptions]="memberPageSizeOptions"
           (page)="onMemberPage($event)"
           showFirstLastButtons
-          class="!border-t !border-slate-100"
+          class="border-t! border-slate-100!"
         ></mat-paginator>
       </div>
       } @else {
       <div class="rounded-xl border-2 border-dashed border-slate-200 bg-slate-50 p-12 text-center">
-        <mat-icon fontSet="material-symbols-rounded" class="!text-[48px] text-slate-300 mb-2">
+        <mat-icon fontSet="material-symbols-rounded" class="icon-2xl text-slate-300 mb-2">
           group_off
         </mat-icon>
         <p class="text-slate-500 text-lg">No members found</p>
@@ -408,7 +408,7 @@
   </div>
   } @else {
   <div class="flex flex-col items-center justify-center h-96">
-    <mat-icon fontSet="material-symbols-rounded" class="!text-6xl !text-slate-300">error</mat-icon>
+    <mat-icon fontSet="material-symbols-rounded" class="text-6xl! text-slate-300!">error</mat-icon>
     <p class="text-slate-600 mt-4">Group not found</p>
     <button mat-stroked-button (click)="backToGroups()" class="mt-4">Back to Groups</button>
   </div>

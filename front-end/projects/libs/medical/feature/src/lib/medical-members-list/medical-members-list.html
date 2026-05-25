@@ -1,11 +1,15 @@
-<mat-drawer-container class="h-full">
+﻿<mat-drawer-container class="h-full">
   <mat-drawer-content>
     <div class="bg-white p-6 md:p-10 min-h-[80vh] shadow-sm">
       <lib-page-header
         title="Member Registry"
         subtitle="Manage insured members, cards and eligibility"
         [showBreadcrumb]="true"
-        [breadcrumbItems]="[{ label: 'Dashboard', link: '/' }, { label: 'Policy Management' }, { label: 'Members' }]"
+        [breadcrumbItems]="[
+          { label: 'Dashboard', link: '/' },
+          { label: 'Policy Management' },
+          { label: 'Members' }
+        ]"
       >
         <div actions class="flex gap-2">
           <button
@@ -40,7 +44,7 @@
               </div>
             </div>
             <div class="flex h-9 w-9 items-center justify-center rounded-full bg-slate-100">
-              <mat-icon fontSet="material-symbols-rounded" class="text-[18px]! text-slate-600"
+              <mat-icon fontSet="material-symbols-rounded" class="icon-md text-slate-600"
                 >groups</mat-icon
               >
             </div>
@@ -56,7 +60,7 @@
               </div>
             </div>
             <div class="flex h-9 w-9 items-center justify-center rounded-full bg-teal-100">
-              <mat-icon fontSet="material-symbols-rounded" class="text-[18px]! text-teal-600"
+              <mat-icon fontSet="material-symbols-rounded" class="icon-md text-teal-600"
                 >person</mat-icon
               >
             </div>
@@ -72,7 +76,7 @@
               </div>
             </div>
             <div class="flex h-9 w-9 items-center justify-center rounded-full bg-violet-100">
-              <mat-icon fontSet="material-symbols-rounded" class="text-[18px]! text-violet-600"
+              <mat-icon fontSet="material-symbols-rounded" class="icon-md text-violet-600"
                 >family_restroom</mat-icon
               >
             </div>
@@ -229,7 +233,7 @@
               </th>
               <td mat-cell *matCellDef="let row" class="px-4! py-3!">
                 <span class="flex items-center gap-1.5 text-sm text-slate-600">
-                  <mat-icon fontSet="material-symbols-rounded" class="text-slate-400! text-[16px]!">
+                  <mat-icon fontSet="material-symbols-rounded" class="text-slate-400! icon-sm">
                     {{ getMemberTypeIcon(row.member_type) }}
                   </mat-icon>
                   {{ getLabelByValue(MEMBER_TYPES, row.member_type) }}
@@ -411,7 +415,7 @@
             <tr class="mat-row" *matNoDataRow>
               <td class="mat-cell text-center py-12" [attr.colspan]="displayedColumns.length">
                 <div class="flex flex-col items-center gap-2">
-                  <mat-icon fontSet="material-symbols-rounded" class="text-[48px]! text-slate-300">
+                  <mat-icon fontSet="material-symbols-rounded" class="icon-2xl text-slate-300">
                     groups
                   </mat-icon>
                   @if (hasActiveFilters()) {
@@ -451,15 +455,18 @@
   </mat-drawer-content>
 
   <!-- Detail Drawer -->
-  <mat-drawer #detailDrawer mode="over" position="end" class="!w-full sm:!w-[600px] !bg-white">
+  <mat-drawer
+    #detailDrawer
+    mode="over"
+    position="end"
+    class="w-full! h-screen sm:w-[600px]! bg-white! fc-detail-drawer"
+  >
     @if (selectedMember(); as member) {
-    <div class="flex flex-col h-full">
+    <div class="flex flex-col h-screen">
       <!-- Drawer Header (sticky) -->
-      <div
-        class="px-6 py-4 border-b border-slate-100 bg-slate-50 flex items-center justify-between sticky top-0 z-10"
-      >
+      <div class="flex items-center justify-between border-b border-slate-100 px-6 py-4">
         <div class="flex items-center gap-3">
-          <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-100">
+          <div class="flex h-10 w-10 items-center justify-center rounded-full">
             <mat-icon fontSet="material-symbols-rounded" class="text-blue-600!">
               {{ getMemberTypeIcon(member.member_type) }}
             </mat-icon>
@@ -497,7 +504,7 @@
           <span
             class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 text-slate-700 rounded-full text-sm"
           >
-            <mat-icon fontSet="material-symbols-rounded" class="text-[16px]!">
+            <mat-icon fontSet="material-symbols-rounded" class="icon-sm">
               {{ getMemberTypeIcon(member.member_type) }}
             </mat-icon>
             {{ getLabelByValue(MEMBER_TYPES, member.member_type) }}
@@ -507,7 +514,7 @@
         <!-- Personal Info -->
         <div class="rounded-lg border border-slate-200 bg-slate-50 p-4 space-y-3">
           <h4 class="font-medium text-slate-900 flex items-center gap-2">
-            <mat-icon fontSet="material-symbols-rounded" class="text-slate-400! text-[20px]!"
+            <mat-icon fontSet="material-symbols-rounded" class="text-slate-400! icon-md"
               >person</mat-icon
             >
             Personal Information
@@ -538,7 +545,7 @@
         <!-- Contact Info -->
         <div class="rounded-lg border border-slate-200 bg-slate-50 p-4 space-y-3">
           <h4 class="font-medium text-slate-900 flex items-center gap-2">
-            <mat-icon fontSet="material-symbols-rounded" class="text-slate-400! text-[20px]!"
+            <mat-icon fontSet="material-symbols-rounded" class="text-slate-400! icon-md"
               >contact_phone</mat-icon
             >
             Contact Details
@@ -561,7 +568,7 @@
         <!-- Policy Info -->
         <div class="rounded-lg border border-blue-200 bg-blue-50 p-4 space-y-3">
           <h4 class="font-medium text-blue-900 flex items-center gap-2">
-            <mat-icon fontSet="material-symbols-rounded" class="text-blue-600! text-[20px]!"
+            <mat-icon fontSet="material-symbols-rounded" class="text-blue-600! icon-md"
               >description</mat-icon
             >
             Policy Information
@@ -597,7 +604,7 @@
         <!-- Card Info -->
         <div class="rounded-lg border border-green-200 bg-green-50 p-4 space-y-3">
           <h4 class="font-medium text-green-900 flex items-center gap-2">
-            <mat-icon fontSet="material-symbols-rounded" class="text-green-600! text-[20px]!"
+            <mat-icon fontSet="material-symbols-rounded" class="text-green-600! icon-md"
               >credit_card</mat-icon
             >
             Medical Card
@@ -642,7 +649,7 @@
         @if (member.premium) {
         <div class="rounded-lg border border-violet-200 bg-violet-50 p-4 space-y-3">
           <h4 class="font-medium text-violet-900 flex items-center gap-2">
-            <mat-icon fontSet="material-symbols-rounded" class="text-violet-600! text-[20px]!"
+            <mat-icon fontSet="material-symbols-rounded" class="text-violet-600! icon-md"
               >payments</mat-icon
             >
             Premium
@@ -686,11 +693,11 @@
 
       <!-- Drawer Footer -->
       <div
-        class="px-6 py-4 border-t border-slate-100 bg-slate-50 flex items-center justify-between"
+        class="flex items-center justify-end gap-3 border-t border-slate-100 px-6 py-4 bg-slate-50"
       >
         <a
           mat-stroked-button
-          [routerLink]="['/medical/members', member.id]"
+          [routerLink]="['/members', member.id]"
           (click)="closeDrawer()"
           class="border-slate-200!"
         >

@@ -1,4 +1,4 @@
-<!-- libs/medical/ui/src/lib/dialogs/plan-benefit-dialog/plan-benefit-dialog.component.html -->
+﻿<!-- libs/medical/ui/src/lib/dialogs/plan-benefit-dialog/plan-benefit-dialog.component.html -->
 
 <div class="flex max-h-[90vh] w-full flex-col overflow-hidden rounded-lg bg-white sm:w-[650px]">
   <!-- Header -->
@@ -18,7 +18,7 @@
     <button
       mat-icon-button
       (click)="dialogRef.close()"
-      class="!text-slate-400 hover:!text-slate-700"
+      class="text-slate-400! hover:text-slate-700!"
     >
       <mat-icon fontSet="material-symbols-rounded">close</mat-icon>
     </button>
@@ -31,7 +31,7 @@
       [linear]="false"
       [selectedIndex]="currentStep()"
       (selectionChange)="onStepChange($event.selectedIndex)"
-      class="!bg-transparent"
+      class="bg-transparent!"
     >
       <!-- Step 1: Limits -->
       <mat-step [stepControl]="limitsForm" label="Limits">
@@ -73,7 +73,7 @@
                 type="number"
                 formControlName="limit_amount"
                 min="0"
-                placeholder="e.g. 50000"
+               
               />
             </mat-form-field>
             <p class="text-xs text-slate-400">
@@ -90,7 +90,7 @@
                 type="number"
                 formControlName="limit_count"
                 min="0"
-                placeholder="e.g. 12"
+               
               />
               <span matTextSuffix class="text-slate-400">times</span>
             </mat-form-field>
@@ -105,7 +105,7 @@
                 type="number"
                 formControlName="limit_days"
                 min="0"
-                placeholder="e.g. 30"
+               
               />
               <span matTextSuffix class="text-slate-400">days</span>
             </mat-form-field>
@@ -160,7 +160,7 @@
                     type="number"
                     formControlName="per_claim_limit"
                     min="0"
-                    placeholder="0"
+                   
                   />
                 </mat-form-field>
               </div>
@@ -172,7 +172,7 @@
                     type="number"
                     formControlName="per_day_limit"
                     min="0"
-                    placeholder="0"
+                   
                   />
                 </mat-form-field>
               </div>
@@ -184,7 +184,7 @@
                     type="number"
                     formControlName="max_claims_per_year"
                     min="0"
-                    placeholder="0"
+                   
                   />
                 </mat-form-field>
               </div>
@@ -230,7 +230,7 @@
                   type="number"
                   formControlName="copay_amount"
                   min="0"
-                  placeholder="e.g. 100"
+                 
                 />
               </mat-form-field>
               <p class="text-xs text-slate-400">Fixed amount member pays per claim</p>
@@ -245,7 +245,7 @@
                   formControlName="copay_percentage"
                   min="0"
                   max="100"
-                  placeholder="e.g. 20"
+                 
                 />
                 <span matTextSuffix class="text-slate-400">%</span>
               </mat-form-field>
@@ -262,7 +262,7 @@
                   type="number"
                   formControlName="deductible"
                   min="0"
-                  placeholder="0"
+                 
                 />
               </mat-form-field>
               <p class="text-xs text-slate-400">Amount paid before coverage starts</p>
@@ -279,7 +279,7 @@
                 type="number"
                 formControlName="out_of_pocket_max"
                 min="0"
-                placeholder="0"
+               
               />
             </mat-form-field>
             <p class="text-xs text-slate-400">
@@ -289,7 +289,7 @@
 
           <div class="rounded-lg bg-blue-50 border border-blue-100 p-4">
             <div class="flex gap-3">
-              <mat-icon fontSet="material-symbols-rounded" class="!text-blue-500">info</mat-icon>
+              <mat-icon fontSet="material-symbols-rounded" class="text-blue-500!">info</mat-icon>
               <div>
                 <p class="text-sm font-medium text-blue-900">Benefit-Level Override</p>
                 <p class="text-xs text-blue-700 mt-1">
@@ -316,7 +316,7 @@
                 type="number"
                 formControlName="waiting_period_days"
                 min="0"
-                placeholder="0"
+               
               />
               <span matTextSuffix class="text-slate-400">days</span>
             </mat-form-field>
@@ -356,7 +356,7 @@
                 formControlName="notes"
                 rows="3"
                 placeholder="Any special conditions or notes..."
-                class="!resize-none"
+                class="resize-none!"
               ></textarea>
             </mat-form-field>
             <p class="text-xs text-slate-400">For internal reference only, not shown to members</p>
@@ -371,20 +371,20 @@
     <div class="text-xs text-slate-500">Step {{ currentStep() + 1 }} of 3</div>
 
     <div class="flex items-center gap-3">
-      <button mat-button (click)="dialogRef.close()" class="!text-slate-600 hover:!bg-slate-200">
+      <button mat-button (click)="dialogRef.close()" class="text-slate-600! hover:bg-slate-200!">
         Cancel
       </button>
 
       <!-- Back Button -->
       @if (!isFirstStep) {
-      <button mat-icon-button (click)="prevStep()" matTooltip="Previous step" class="!text-slate-600 hover:!bg-slate-200">
+      <button mat-icon-button (click)="prevStep()" matTooltip="Previous step" class="text-slate-600! hover:bg-slate-200!">
         <mat-icon fontSet="material-symbols-rounded">chevron_left</mat-icon>
       </button>
       }
 
       <!-- Next Button -->
       @if (!isLastStep) {
-      <button mat-icon-button [disabled]="!canGoNext" (click)="nextStep()" matTooltip="Next step" class="!text-primary">
+      <button mat-icon-button [disabled]="!canGoNext" (click)="nextStep()" matTooltip="Next step" class="text-primary!">
         <mat-icon fontSet="material-symbols-rounded">chevron_right</mat-icon>
       </button>
       } @else {
@@ -394,7 +394,7 @@
         color="primary"
         [disabled]="!isFormValid"
         (click)="save()"
-        class="!px-6 !rounded-lg"
+        class="px-6! rounded-lg!"
       >
         Save Configuration
       </button>

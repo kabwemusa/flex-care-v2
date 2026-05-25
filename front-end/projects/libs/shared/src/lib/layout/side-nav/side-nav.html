@@ -1,11 +1,12 @@
 <aside
   [class]="
-    'relative z-30 flex h-screen flex-col border border-divider/40 shadow-sm bg-white  transition-all duration-300 ease-in-out ' +
+    'relative z-30 flex h-screen flex-col border-r border-slate-200 bg-white transition-all duration-300 ease-in-out ' +
     (collapsed ? 'w-16' : 'w-64')
   "
 >
+  <!-- Logo / Brand -->
   <div
-    class="flex h-16 shrink-0 items-center justify-between border-b border-divider/60 px-3 bg-white"
+    class="flex h-16 shrink-0 items-center justify-between border-b border-slate-100 px-3 bg-white"
   >
     <div
       [class]="
@@ -13,17 +14,15 @@
       "
     >
       <div
-        class="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-white shadow-sm shadow-primary/30"
+        class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary text-white shadow-sm shadow-primary/30"
       >
-        <mat-icon fontSet="material-symbols-rounded" class="!text-[20px]"
-          >medical_services</mat-icon
-        >
+        <mat-icon fontSet="material-symbols-rounded" class="icon-md">medical_services</mat-icon>
       </div>
 
       @if (!collapsed) {
       <div class="flex flex-col overflow-hidden">
         <span class="truncate text-sm font-bold text-slate-800">FlexCare</span>
-        <span class="truncate text-[10px] font-medium uppercase tracking-wider text-slate-500"
+        <span class="truncate text-[10px] font-medium uppercase tracking-wider text-slate-400"
           >Admin Console</span
         >
       </div>
@@ -34,202 +33,180 @@
     <button
       mat-icon-button
       (click)="toggle.emit()"
-      class="!h-8 !w-8 !shrink-0 text-slate-400 hover:text-slate-700"
+      class="h-8! w-8! shrink-0! text-slate-400! hover:text-slate-600! hover:bg-slate-50!"
     >
-      <mat-icon fontSet="material-symbols-rounded" class="!text-[18px]">menu_open</mat-icon>
+      <mat-icon fontSet="material-symbols-rounded" class="icon-md">menu_open</mat-icon>
     </button>
     }
   </div>
 
-  <div class="flex-1 overflow-y-auto overflow-x-hidden p-3 scrollbar-hide">
-    <nav class="space-y-1">
-      @for (item of items(); track item.label) { @if (item.children && item.children.length > 0) {
+  <!-- Navigation -->
+  <div class="flex-1 overflow-y-auto overflow-x-hidden py-3 px-2 scrollbar-hide">
+    <nav class="space-y-0.5">
+      @for (item of items(); track item.label) {
 
-      <div [class.justify-center]="collapsed" class="flex flex-col">
-        <button
-          (click)="toggleExpand(item.label)"
-          [class]="
-            'group flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm font-medium transition-all duration-200 border-l-4 ' +
-            (hasActiveChild(item)
-              ? '!bg-gradient-to-r !from-primary/10 !to-primary/5 !text-primary !font-semibold !border-primary'
-              : isExpanded(item.label)
-              ? 'text-slate-900 bg-slate-100 border-transparent'
-              : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900 border-transparent') +
-            (collapsed ? ' justify-center' : '')
-          "
-          [matTooltip]="collapsed ? item.label : ''"
-          matTooltipPosition="right"
-        >
-          <mat-icon
-            fontSet="material-symbols-rounded"
-            class="!text-[20px] shrink-0 transition-colors"
-            [class.text-primary]="isExpanded(item.label) || hasActiveChild(item)"
+        @if (item.children && item.children.length > 0) {
+        <!-- ── Group item (has children) ── -->
+        <div class="flex flex-col">
+          <button
+            (click)="toggleExpand(item.label)"
+            [class]="
+              'group flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm font-medium transition-all duration-200 cursor-pointer ' +
+              (hasActiveChild(item)
+                ? 'fc-nav-parent-active border-l-2 border-primary'
+                : isExpanded(item.label)
+                ? 'text-slate-700 bg-slate-100 border-l-2 border-transparent'
+                : 'text-slate-600 hover:bg-slate-50 hover:text-slate-800 border-l-2 border-transparent pl-[10px]') +
+              (collapsed ? ' justify-center pl-3!' : '')
+            "
+            [matTooltip]="collapsed ? item.label : ''"
+            matTooltipPosition="right"
           >
-            {{ item.icon }}
-          </mat-icon>
-
-          @if (!collapsed) {
-          <span class="flex-1 truncate">{{ item.label }}</span>
-          <mat-icon
-            fontSet="material-symbols-rounded"
-            class="!text-[18px] text-slate-400 transition-transform duration-200"
-            [class.rotate-180]="isExpanded(item.label)"
-            [class.text-primary]="hasActiveChild(item)"
-          >
-            keyboard_arrow_down
-          </mat-icon>
-          }
-        </button>
-        <!-- <button
-          (click)="toggleExpand(item.label)"
-          [class]="
-            'group flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm font-medium transition-colors ' +
-            (isExpanded(item.label)
-              ? 'text-slate-900 bg-slate-100'
-              : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900') +
-            (collapsed ? ' justify-center' : '')
-          "
-          [matTooltip]="collapsed ? item.label : ''"
-          matTooltipPosition="right"
-        >
-          <mat-icon
-            fontSet="material-symbols-rounded"
-            class="!text-[20px] shrink-0 transition-colors"
-            [class.text-primary]="isExpanded(item.label)"
-          >
-            {{ item.icon }}
-          </mat-icon>
-
-          @if (!collapsed) {
-          <span class="flex-1 truncate">{{ item.label }}</span>
-          <mat-icon
-            fontSet="material-symbols-rounded"
-            class="!text-[18px] text-slate-400 transition-transform duration-200"
-            [class.rotate-180]="isExpanded(item.label)"
-          >
-            keyboard_arrow_down
-          </mat-icon>
-          }
-        </button> -->
-
-        @if (!collapsed && isExpanded(item.label)) {
-        <div
-          class="relative mt-1 ml-[22px] pl-5 border-l-2 border-slate-200 space-y-1 animate-in slide-in-from-top-2 duration-200"
-        >
-          @for (child of item.children; track child.label) {
-
-          <!-- Second level: Check if child has its own children (3rd level) -->
-          @if (child.children && child.children.length > 0) {
-          <div class="flex flex-col">
-            <button
-              (click)="toggleExpand(child.label)"
-              [class]="
-                'group flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-medium transition-all duration-200 ' +
-                (hasActiveChild(child)
-                  ? '!text-primary !font-semibold !bg-primary/10'
-                  : isExpanded(child.label)
-                  ? 'text-slate-900 bg-slate-100'
-                  : 'text-slate-600 hover:bg-primary-50 hover:text-slate-900')
-              "
+            <mat-icon
+              fontSet="material-symbols-rounded"
+              class="icon-md shrink-0 transition-colors"
+              [class.text-primary]="hasActiveChild(item)"
+              [class.text-slate-600]="!hasActiveChild(item) && !isExpanded(item.label)"
+              [class.text-slate-800]="!hasActiveChild(item) && isExpanded(item.label)"
             >
-              @if (child.icon) {
-              <mat-icon
-                fontSet="material-symbols-rounded"
-                class="!text-[18px] shrink-0 transition-colors"
-                [class.text-primary]="isExpanded(child.label) || hasActiveChild(child)"
-              >
-                {{ child.icon }}
-              </mat-icon>
-              }
-              <span class="flex-1 truncate">{{ child.label }}</span>
-              <mat-icon
-                fontSet="material-symbols-rounded"
-                class="!text-[16px] text-slate-400 transition-transform duration-200"
-                [class.rotate-180]="isExpanded(child.label)"
-                [class.text-primary]="hasActiveChild(child)"
-              >
-                keyboard_arrow_down
-              </mat-icon>
-            </button>
+              {{ item.icon }}
+            </mat-icon>
 
-            <!-- Third level: Grandchildren -->
-            @if (isExpanded(child.label)) {
-            <div
-              class="relative mt-1 ml-6 pl-3 border-l-2 border-slate-200 space-y-1 animate-in slide-in-from-top-2 duration-200"
+            @if (!collapsed) {
+            <span class="flex-1 truncate">{{ item.label }}</span>
+            <mat-icon
+              fontSet="material-symbols-rounded"
+              class="icon-md text-slate-400 transition-transform duration-200"
+              [class.rotate-180]="isExpanded(item.label)"
+              [class.text-primary]="hasActiveChild(item)"
             >
-              @for (grandchild of child.children; track grandchild.href) {
-              <a
-                [routerLink]="grandchild.href"
-                routerLinkActive="!text-primary !font-semibold !bg-primary/10 before:!opacity-100"
-                class="relative block rounded-lg px-3 py-2 text-sm text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-all before:absolute before:left-0 before:top-1/2 before:-translate-y-1/2 before:-translate-x-[13px] before:h-1.5 before:w-1.5 before:rounded-full before:bg-primary before:opacity-0 before:transition-opacity"
-              >
-                {{ grandchild.label }}
-              </a>
-              }
-            </div>
-            }
-          </div>
-          } @else if (child.href) {
-          <!-- Second level: Direct link (no children) -->
-          <a
-            [routerLink]="child.href"
-            routerLinkActive="!text-primary !font-semibold !bg-primary/10 before:!opacity-100"
-            class="relative flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-all before:absolute before:left-0 before:top-1/2 before:-translate-y-1/2 before:-translate-x-[21px] before:h-2 before:w-2 before:rounded-full before:bg-primary before:opacity-0 before:transition-opacity"
-          >
-            @if (child.icon) {
-            <mat-icon fontSet="material-symbols-rounded" class="!text-[18px] shrink-0">
-              {{ child.icon }}
+              keyboard_arrow_down
             </mat-icon>
             }
-            <span class="truncate">{{ child.label }}</span>
-          </a>
-          } }
+          </button>
+
+          <!-- Children -->
+          @if (!collapsed && isExpanded(item.label)) {
+          <div
+            class="mt-1 ml-[22px] pl-5 border-l-2 border-slate-100 space-y-0.5 py-1
+                   animate-in slide-in-from-top-2 duration-200"
+            [class.border-primary/30]="hasActiveChild(item)"
+          >
+            @for (child of item.children; track child.label) {
+
+              @if (child.children && child.children.length > 0) {
+              <!-- ── Level 2 group (has grandchildren) ── -->
+              <div class="flex flex-col">
+                <button
+                  (click)="toggleExpand(child.label)"
+                  [class]="
+                    'group flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-sm font-medium transition-all duration-200 cursor-pointer ' +
+                    (hasActiveChild(child)
+                      ? 'text-primary! bg-primary/8! font-semibold!'
+                      : isExpanded(child.label)
+                      ? 'text-slate-700 bg-slate-50'
+                      : 'text-slate-600 hover:bg-slate-50 hover:text-slate-800')
+                  "
+                >
+                  @if (child.icon) {
+                  <mat-icon
+                    fontSet="material-symbols-rounded"
+                    class="icon-md shrink-0 transition-colors"
+                    [class.text-primary]="hasActiveChild(child)"
+                    [class.text-slate-500]="!hasActiveChild(child)"
+                  >
+                    {{ child.icon }}
+                  </mat-icon>
+                  }
+                  <span class="flex-1 truncate text-sm">{{ child.label }}</span>
+                  <mat-icon
+                    fontSet="material-symbols-rounded"
+                    class="icon-sm text-slate-400 transition-transform duration-200"
+                    [class.rotate-180]="isExpanded(child.label)"
+                    [class.text-primary]="hasActiveChild(child)"
+                  >
+                    keyboard_arrow_down
+                  </mat-icon>
+                </button>
+
+                <!-- Grandchildren -->
+                @if (isExpanded(child.label)) {
+                <div
+                  class="mt-0.5 ml-3 pl-3 border-l-2 border-slate-100 space-y-0.5 py-1"
+                  [class.border-primary/30]="hasActiveChild(child)"
+                >
+                  @for (grandchild of child.children; track grandchild.href) {
+                  <a
+                    [routerLink]="grandchild.href"
+                    routerLinkActive="fc-nav-active"
+                    class="flex items-center gap-2 rounded-lg px-2.5 py-2 text-sm text-slate-600 hover:bg-slate-50 hover:text-slate-800 transition-all duration-150 cursor-pointer"
+                  >
+                    <span class="h-1 w-1 rounded-full bg-slate-300 shrink-0 transition-colors"></span>
+                    <span class="truncate">{{ grandchild.label }}</span>
+                  </a>
+                  }
+                </div>
+                }
+              </div>
+
+              } @else if (child.href) {
+              <!-- ── Level 2 direct link ── -->
+              <a
+                [routerLink]="child.href"
+                routerLinkActive="fc-nav-active"
+                class="flex items-center gap-2 rounded-lg px-2.5 py-2 text-sm text-slate-600 hover:bg-slate-50 hover:text-slate-800 transition-all duration-150 cursor-pointer"
+              >
+                @if (child.icon) {
+                <mat-icon fontSet="material-symbols-rounded" class="icon-md shrink-0 text-slate-500">
+                  {{ child.icon }}
+                </mat-icon>
+                }
+                <span class="truncate">{{ child.label }}</span>
+              </a>
+              }
+
+            }
+          </div>
+          }
         </div>
-        }
-      </div>
 
-      } @else {
-
-      <a
-        [routerLink]="item.href"
-        routerLinkActive="text-white shadow-md shadow-primary/20"
-        [routerLinkActiveOptions]="{ exact: item.href === '/' }"
-        [class]="
-          'group flex items-center gap-3 rounded-lg px-3 py-2 transition-all duration-200 ' +
-          (collapsed ? 'justify-center' : '')
-        "
-        [matTooltip]="collapsed ? item.label : ''"
-        matTooltipPosition="right"
-      >
-        <mat-icon
-          fontSet="material-symbols-rounded"
-          class="!text-[20px] shrink-0"
+        } @else {
+        <!-- ── Top-level direct link ── -->
+        <a
+          [routerLink]="item.href"
+          routerLinkActive="fc-nav-active"
+          [routerLinkActiveOptions]="{ exact: item.href === '/' }"
           [class]="
-            'text-slate-500 group-[.bg-primary]:text-white group-hover:text-slate-900 group-[.bg-primary]:group-hover:text-white'
+            'group flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-slate-600 transition-all duration-200 hover:bg-slate-50 hover:text-slate-800 cursor-pointer ' +
+            (collapsed ? 'justify-center' : '')
           "
+          [matTooltip]="collapsed ? item.label : ''"
+          matTooltipPosition="right"
         >
-          {{ item.icon }}
-        </mat-icon>
+          <mat-icon fontSet="material-symbols-rounded" class="icon-md shrink-0 text-slate-500 group-[.fc-nav-active]:text-primary">
+            {{ item.icon }}
+          </mat-icon>
 
-        @if (!collapsed) {
-        <span
-          class="truncate text-sm font-medium text-slate-600 group-[.bg-primary]:text-white group-hover:text-slate-900 group-[.bg-primary]:group-hover:text-white"
-        >
-          {{ item.label }}
-        </span>
+          @if (!collapsed) {
+          <span class="flex-1 truncate font-medium">{{ item.label }}</span>
+          }
+        </a>
         }
-      </a>
-      } }
+
+      }
     </nav>
   </div>
 
-  <div class="border-t border-divider/60 p-2 bg-slate-50/50">
+  <!-- Collapse toggle -->
+  <div class="border-t border-slate-100 p-2">
     <button
       mat-icon-button
       (click)="toggle.emit()"
-      class="!w-full !text-slate-400 hover:!text-slate-700 hover:!bg-white"
+      class="w-full! text-slate-400! hover:text-slate-600! hover:bg-slate-50!"
+      [matTooltip]="collapsed ? 'Expand sidebar' : 'Collapse sidebar'"
+      matTooltipPosition="right"
     >
-      <mat-icon fontSet="material-symbols-rounded" class="!text-[20px]">
+      <mat-icon fontSet="material-symbols-rounded" class="icon-md">
         {{ collapsed ? 'last_page' : 'first_page' }}
       </mat-icon>
     </button>

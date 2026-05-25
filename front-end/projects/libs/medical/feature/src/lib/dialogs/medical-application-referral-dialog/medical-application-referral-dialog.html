@@ -1,11 +1,11 @@
-<!-- libs/medical/feature/src/lib/dialogs/medical-application-referral-dialog/medical-application-referral-dialog.html -->
+﻿<!-- libs/medical/feature/src/lib/dialogs/medical-application-referral-dialog/medical-application-referral-dialog.html -->
 
 <div class="flex flex-col max-h-[90vh] rounded-lg">
   <!-- Header -->
   <div class="flex items-center justify-between border-b border-slate-200 px-6 py-4">
     <div class="flex items-center gap-3">
       <div class="flex h-10 w-10 items-center justify-center rounded-full bg-amber-100">
-        <mat-icon fontSet="material-symbols-rounded" class="!text-[24px] text-amber-600"
+        <mat-icon fontSet="material-symbols-rounded" class="icon-lg text-amber-600"
           >forward</mat-icon
         >
       </div>
@@ -16,7 +16,7 @@
         }
       </div>
     </div>
-    <button mat-icon-button (click)="cancel()" class="!text-slate-400">
+    <button mat-icon-button (click)="cancel()" class="text-slate-400!">
       <mat-icon fontSet="material-symbols-rounded">close</mat-icon>
     </button>
   </div>
@@ -27,7 +27,7 @@
       <!-- Info Alert -->
       <div class="rounded-lg border border-amber-200 bg-amber-50 p-4">
         <div class="flex gap-3">
-          <mat-icon fontSet="material-symbols-rounded" class="!text-[20px] text-amber-600"
+          <mat-icon fontSet="material-symbols-rounded" class="icon-md text-amber-600"
             >info</mat-icon
           >
           <div class="flex-1">
@@ -66,7 +66,7 @@
       <!-- Underwriter ID (Optional) -->
       <mat-form-field appearance="outline" class="w-full">
         <mat-label>Assign to Underwriter (Optional)</mat-label>
-        <input matInput formControlName="underwriter_id" placeholder="Enter underwriter ID" />
+        <input matInput formControlName="underwriter_id" />
         <mat-hint>Leave empty to assign to default underwriter</mat-hint>
       </mat-form-field>
     </div>

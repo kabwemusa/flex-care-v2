@@ -1,4 +1,4 @@
-<!-- libs/medical/feature/src/lib/dialogs/medical-record-payment-dialog/medical-record-payment-dialog.html -->
+﻿<!-- libs/medical/feature/src/lib/dialogs/medical-record-payment-dialog/medical-record-payment-dialog.html -->
 
 <div class="flex flex-col h-full max-h-[85vh] w-[70vw] rounded-lg">
   <!-- Header -->
@@ -41,7 +41,7 @@
           <input
             matInput
             formControlName="policy_search"
-            placeholder="Enter policy number or holder name..."
+           
             [matAutocomplete]="policyAuto"
           />
           <mat-icon fontSet="material-symbols-rounded" matPrefix class="text-slate-400"
@@ -80,7 +80,7 @@
             matInput
             type="number"
             formControlName="amount"
-            placeholder="0.00"
+           
             step="0.01"
             min="0"
           />
@@ -116,7 +116,7 @@
       <!-- Reference -->
       <mat-form-field appearance="fill" class="w-full minimal-input">
         <mat-label>Reference / Transaction ID</mat-label>
-        <input matInput formControlName="reference" placeholder="Bank reference, cheque #, etc." />
+        <input matInput formControlName="reference" />
         <mat-hint>Optional - helps track the payment source</mat-hint>
       </mat-form-field>
 

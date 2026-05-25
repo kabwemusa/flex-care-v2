@@ -422,7 +422,7 @@ class Invoice extends BaseModel
     /**
      * Write off the invoice.
      */
-    public function writeOff(?string $reason = null): bool
+    public function writeOff(?string $reason = null, ?string $approvedBy = null): bool
     {
         if ($this->is_paid || $this->is_cancelled || $this->is_written_off) {
             return false;
@@ -432,6 +432,12 @@ class Invoice extends BaseModel
         if ($reason) {
             $this->notes = ($this->notes ? $this->notes . "\n" : '') . "Written off: " . $reason;
         }
+
+        // Persist approver in metadata so it is auditable
+        $meta = $this->metadata ?? [];
+        $meta['written_off_by'] = $approvedBy;
+        $meta['written_off_at'] = now()->toIso8601String();
+        $this->metadata = $meta;
 
         return $this->save();
     }

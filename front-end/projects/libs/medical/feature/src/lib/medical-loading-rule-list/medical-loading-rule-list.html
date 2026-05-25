@@ -1,4 +1,4 @@
-<mat-drawer-container class="h-full">
+﻿<mat-drawer-container class="h-full">
   <mat-drawer-content>
     <div class="bg-white p-6 md:p-10 min-h-[80vh] shadow-sm">
       <lib-page-header
@@ -11,13 +11,13 @@
           <button
             mat-button
             (click)="exportToCsv()"
-            class="!border-divider !text-foreground-600 hover:!bg-content2 hidden sm:flex"
+            class="border-divider! text-foreground-600! hover:bg-content2! hidden sm:flex"
           >
             <mat-icon fontSet="material-symbols-rounded">download</mat-icon>
             Export
           </button>
 
-          <button mat-flat-button color="primary" class="!rounded-lg" (click)="openRuleDialog()">
+          <button mat-flat-button color="primary" class="rounded-lg!" (click)="openRuleDialog()">
             <mat-icon fontSet="material-symbols-rounded">add</mat-icon>
             New Rule
           </button>
@@ -34,7 +34,7 @@
               </div>
             </div>
             <div class="flex h-10 w-10 items-center justify-center rounded-full bg-slate-100">
-              <mat-icon fontSet="material-symbols-rounded" class="!text-slate-500"
+              <mat-icon fontSet="material-symbols-rounded" class="text-slate-500!"
                 >receipt_long</mat-icon
               >
             </div>
@@ -50,7 +50,7 @@
               </div>
             </div>
             <div class="flex h-10 w-10 items-center justify-center rounded-full bg-green-100">
-              <mat-icon fontSet="material-symbols-rounded" class="!text-green-600"
+              <mat-icon fontSet="material-symbols-rounded" class="text-green-600!"
                 >check_circle</mat-icon
               >
             </div>
@@ -66,7 +66,7 @@
               </div>
             </div>
             <div class="flex h-10 w-10 items-center justify-center rounded-full bg-red-100">
-              <mat-icon fontSet="material-symbols-rounded" class="!text-red-600">favorite</mat-icon>
+              <mat-icon fontSet="material-symbols-rounded" class="text-red-600!">favorite</mat-icon>
             </div>
           </div>
         </div>
@@ -81,7 +81,7 @@
           <div class="relative w-full sm:w-72 sm:mt-1">
             <mat-icon
               fontSet="material-symbols-rounded"
-              class="absolute left-3 top-1/2 -translate-y-1/2 !text-[20px] text-slate-400"
+              class="absolute left-3 top-1/2 -translate-y-1/2 icon-md text-slate-400"
               >search</mat-icon
             >
             <input
@@ -134,7 +134,7 @@
             @if (categoryFilter() || loadingTypeFilter() || searchQuery()) {
             <button
               mat-stroked-button
-              class="!border-slate-200 !text-slate-600 !h-10 !mt-1"
+              class="border-slate-200! text-slate-600! h-10! mt-1!"
               (click)="clearFilters()"
             >
               <mat-icon fontSet="material-symbols-rounded">clear</mat-icon>
@@ -166,11 +166,11 @@
                 mat-header-cell
                 *matHeaderCellDef
                 mat-sort-header
-                class="!bg-slate-50 !px-6 !py-3 text-xs font-semibold uppercase tracking-wider text-slate-500"
+                class="bg-slate-50! px-6! py-3! text-xs font-semibold uppercase tracking-wider text-slate-500"
               >
                 Condition
               </th>
-              <td mat-cell *matCellDef="let rule" class="!px-6 !py-4">
+              <td mat-cell *matCellDef="let rule" class="px-6! py-4!">
                 <div class="flex flex-col">
                   <button
                     (click)="viewDetails(rule)"
@@ -190,11 +190,11 @@
                 mat-header-cell
                 *matHeaderCellDef
                 mat-sort-header
-                class="!bg-slate-50 !px-6 !py-3 text-xs font-semibold uppercase tracking-wider text-slate-500"
+                class="bg-slate-50! px-6! py-3! text-xs font-semibold uppercase tracking-wider text-slate-500"
               >
                 Category
               </th>
-              <td mat-cell *matCellDef="let rule" class="!px-6 !py-4">
+              <td mat-cell *matCellDef="let rule" class="px-6! py-4!">
                 <span
                   [class]="getCategoryClass(rule.condition_category)"
                   class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium border"
@@ -208,11 +208,11 @@
               <th
                 mat-header-cell
                 *matHeaderCellDef
-                class="!bg-slate-50 !px-6 !py-3 text-xs font-semibold uppercase tracking-wider text-slate-500"
+                class="bg-slate-50! px-6! py-3! text-xs font-semibold uppercase tracking-wider text-slate-500"
               >
                 Loading
               </th>
-              <td mat-cell *matCellDef="let rule" class="!px-6 !py-4">
+              <td mat-cell *matCellDef="let rule" class="px-6! py-4!">
                 <div class="flex items-center gap-2">
                   <span class="font-medium text-orange-600">
                     {{
@@ -225,7 +225,7 @@
                   </span>
                   @if (rule.exclusion_available) {
                   <mat-icon
-                    class="!text-[16px] !w-4 !h-4 text-blue-500"
+                    class="icon-sm w-4! h-4! text-blue-500"
                     matTooltip="Exclusion option available"
                     >info</mat-icon
                   >
@@ -238,11 +238,11 @@
               <th
                 mat-header-cell
                 *matHeaderCellDef
-                class="!bg-slate-50 !px-6 !py-3 text-xs font-semibold uppercase tracking-wider text-slate-500"
+                class="bg-slate-50! px-6! py-3! text-xs font-semibold uppercase tracking-wider text-slate-500"
               >
                 Duration
               </th>
-              <td mat-cell *matCellDef="let rule" class="!px-6 !py-4">
+              <td mat-cell *matCellDef="let rule" class="px-6! py-4!">
                 <span class="text-sm text-slate-600">{{ getDurationLabel(rule) }}</span>
               </td>
             </ng-container>
@@ -252,11 +252,11 @@
                 mat-header-cell
                 *matHeaderCellDef
                 mat-sort-header
-                class="!bg-slate-50 !px-6 !py-3 text-xs font-semibold uppercase tracking-wider text-slate-500 !w-28"
+                class="bg-slate-50! px-6! py-3! text-xs font-semibold uppercase tracking-wider text-slate-500 w-28!"
               >
                 Status
               </th>
-              <td mat-cell *matCellDef="let rule" class="!px-6 !py-4">
+              <td mat-cell *matCellDef="let rule" class="px-6! py-4!">
                 <span
                   [class]="
                     rule.is_active
@@ -271,44 +271,44 @@
             </ng-container>
 
             <ng-container matColumnDef="actions">
-              <th mat-header-cell *matHeaderCellDef class="!bg-slate-50 !w-16"></th>
-              <td mat-cell *matCellDef="let rule" class="!px-4 !py-4 text-right">
+              <th mat-header-cell *matHeaderCellDef class="bg-slate-50! w-16!"></th>
+              <td mat-cell *matCellDef="let rule" class="px-4! py-4! text-right">
                 <button
                   mat-icon-button
                   [matMenuTriggerFor]="menu"
-                  class="!text-slate-400 hover:!bg-slate-100 hover:!text-slate-900"
+                  class="text-slate-400! hover:bg-slate-100! hover:text-slate-900!"
                 >
                   <mat-icon fontSet="material-symbols-rounded">more_vert</mat-icon>
                 </button>
                 <mat-menu
                   #menu="matMenu"
-                  class="!rounded-xl !border !border-slate-200 !shadow-lg !bg-white"
+                  class="rounded-xl! border! border-slate-200! shadow-lg! bg-white!"
                 >
                   <button mat-menu-item (click)="viewDetails(rule)">
-                    <mat-icon fontSet="material-symbols-rounded" class="!text-slate-500"
+                    <mat-icon fontSet="material-symbols-rounded" class="text-slate-500!"
                       >visibility</mat-icon
                     >
                     <span>View Details</span>
                   </button>
                   <button mat-menu-item (click)="openRuleDialog(rule)">
-                    <mat-icon fontSet="material-symbols-rounded" class="!text-slate-500"
+                    <mat-icon fontSet="material-symbols-rounded" class="text-slate-500!"
                       >edit</mat-icon
                     >
                     <span>Edit Rule</span>
                   </button>
                   <button mat-menu-item (click)="toggleStatus(rule)">
-                    <mat-icon fontSet="material-symbols-rounded" class="!text-slate-500">
+                    <mat-icon fontSet="material-symbols-rounded" class="text-slate-500!">
                       {{ rule.is_active ? 'block' : 'check_circle' }}
                     </mat-icon>
                     <span>{{ rule.is_active ? 'Deactivate' : 'Activate' }}</span>
                   </button>
-                  <mat-divider class="!my-1 opacity-50"></mat-divider>
+                  <mat-divider class="my-1! opacity-50"></mat-divider>
                   <button
                     mat-menu-item
-                    class="!text-red-600 hover:!bg-red-50"
+                    class="text-red-600! hover:bg-red-50!"
                     (click)="deleteRule(rule)"
                   >
-                    <mat-icon fontSet="material-symbols-rounded" class="!text-red-500"
+                    <mat-icon fontSet="material-symbols-rounded" class="text-red-500!"
                       >delete</mat-icon
                     >
                     <span>Delete Rule</span>
@@ -329,7 +329,7 @@
           @if (store.loadingRules().length === 0) {
           <div class="flex flex-col items-center justify-center py-16 text-center">
             <div class="flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 mb-4">
-              <mat-icon fontSet="material-symbols-rounded" class="!text-slate-400"
+              <mat-icon fontSet="material-symbols-rounded" class="text-slate-400!"
                 >health_and_safety</mat-icon
               >
             </div>
@@ -347,14 +347,14 @@
         <mat-paginator
           [pageSizeOptions]="[10, 20, 50]"
           showFirstLastButtons
-          class="!border-t !border-slate-100 !bg-white"
+          class="border-t! border-slate-100! bg-white!"
         ></mat-paginator>
         }
       </div>
     </div>
   </mat-drawer-content>
 
-  <mat-drawer #detailDrawer mode="over" position="end" class="!w-full sm:!w-[600px] !bg-white">
+  <mat-drawer #detailDrawer mode="over" position="end" class="w-full! sm:w-[600px]! bg-white! fc-detail-drawer">
     @if (selectedRule(); as rule) {
     <div class="flex flex-col h-full">
       <div class="flex items-center justify-between border-b border-slate-100 px-6 py-4">
@@ -372,7 +372,7 @@
         <button
           mat-icon-button
           (click)="closeDrawer()"
-          class="!text-slate-400 hover:!text-slate-700"
+          class="text-slate-400! hover:text-slate-700!"
         >
           <mat-icon fontSet="material-symbols-rounded">close</mat-icon>
         </button>
@@ -467,7 +467,7 @@
 
         @if (rule.exclusion_available) {
         <div class="rounded-lg bg-blue-50 border border-blue-100 p-4 flex gap-3">
-          <mat-icon fontSet="material-symbols-rounded" class="!text-blue-500 shrink-0"
+          <mat-icon fontSet="material-symbols-rounded" class="text-blue-500! shrink-0"
             >info</mat-icon
           >
           <div>
@@ -487,7 +487,7 @@
               <span
                 class="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-slate-100 text-xs font-medium text-slate-700"
               >
-                <mat-icon class="!text-[14px] !w-3.5 !h-3.5 text-slate-400">description</mat-icon>
+                <mat-icon class="icon-xs w-3!.5 h-3!.5 text-slate-400">description</mat-icon>
                 {{ doc }}
               </span>
               }
@@ -508,7 +508,7 @@
       <div
         class="flex items-center justify-end gap-3 border-t border-slate-100 px-6 py-4 bg-slate-50"
       >
-        <button mat-stroked-button (click)="toggleStatus(rule)" class="!border-slate-200">
+        <button mat-stroked-button (click)="toggleStatus(rule)" class="border-slate-200!">
           <mat-icon fontSet="material-symbols-rounded">
             {{ rule.is_active ? 'block' : 'check_circle' }}
           </mat-icon>

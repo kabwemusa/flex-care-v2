@@ -48,6 +48,12 @@ class PaymentListResource extends JsonResource
             // Payer
             'payer_name' => $this->payer_name,
 
+            // Staff
+            'received_by' => $this->whenLoaded('receivedByUser',
+                fn() => $this->receivedByUser?->username ?? $this->receivedByUser?->email ?? null,
+                $this->received_by
+            ),
+
             // State
             'is_valid' => $this->is_valid,
             'is_fully_allocated' => $this->is_fully_allocated,

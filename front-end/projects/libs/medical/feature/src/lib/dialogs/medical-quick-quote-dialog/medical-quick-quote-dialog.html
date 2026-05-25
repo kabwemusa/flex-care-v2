@@ -1,4 +1,4 @@
-<div class="flex flex-col h-[700px] w-[900px] max-w-[95vw] max-h-[90vh] rounded-lg bg-white overflow-hidden">
+﻿<div class="flex flex-col h-[700px] w-[900px] max-w-[95vw] max-h-[90vh] rounded-lg bg-white overflow-hidden">
   <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-white z-20">
     <div class="flex items-center gap-3">
       <div
@@ -14,7 +14,7 @@
     <button
       mat-icon-button
       (click)="cancel()"
-      class="!text-slate-400 hover:!text-slate-600 hover:!bg-slate-50 transition-colors"
+      class="text-slate-400! hover:text-slate-600! hover:bg-slate-50! transition-colors"
     >
       <mat-icon fontSet="material-symbols-rounded">close</mat-icon>
     </button>
@@ -30,7 +30,7 @@
             <span class="text-red-500">*</span>
           </label>
           <mat-form-field appearance="fill" class="minimal-input w-full" bscriptSizing="dynamic">
-            <mat-select formControlName="plan_id" placeholder="Select an insurance plan">
+            <mat-select formControlName="plan_id">
               <!-- <mat-option>
                 <ngx-mat-select-search placeholderLabel="Search plans..." noEntriesFoundLabel="No plans found"></ngx-mat-select-search>
               </mat-option> -->
@@ -234,13 +234,13 @@
     @if (!quote()) {
     <div class="text-sm text-slate-500 font-medium">Step 1 of 2</div>
     <div class="flex gap-3">
-      <button mat-button (click)="cancel()" class="!text-slate-600 !font-medium">Cancel</button>
+      <button mat-button (click)="cancel()" class="text-slate-600! font-medium!">Cancel</button>
       <button
         mat-flat-button
         color="primary"
         (click)="calculateQuote()"
         [disabled]="memberForm.invalid || isCalculating()"
-        class="!rounded-lg !px-6 !h-10"
+        class="rounded-lg! px-6! h-10!"
       >
         @if (isCalculating()) {
         <mat-spinner diameter="20" class="mr-2"></mat-spinner>
@@ -248,7 +248,7 @@
       </button>
     </div>
     } @else {
-    <button mat-icon-button (click)="quote.set(null)" matTooltip="Edit Details" class="!text-slate-600 hover:!bg-slate-200">
+    <button mat-icon-button (click)="quote.set(null)" matTooltip="Edit Details" class="text-slate-600! hover:bg-slate-200!">
       <mat-icon fontSet="material-symbols-rounded">chevron_left</mat-icon>
     </button>
     <div class="flex gap-3">
@@ -257,7 +257,7 @@
         color="primary"
         (click)="convertToApplication()"
         [disabled]="isConverting()"
-        class="!rounded-lg !px-6 !h-10 !bg-indigo-600 hover:!bg-indigo-700 shadow-lg shadow-indigo-200"
+        class="rounded-lg! px-6! h-10! bg-indigo-600! hover:bg-indigo-700! shadow-lg shadow-indigo-200"
       >
         @if (isConverting()) {
         <mat-spinner diameter="20" class="mr-2"></mat-spinner>

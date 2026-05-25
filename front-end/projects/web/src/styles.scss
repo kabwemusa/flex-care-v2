@@ -145,6 +145,18 @@ body {
   line-height: 1;
 }
 
+// ─── Icon size utilities ──────────────────────────────────────────────────────
+// --mat-icon-size controls width, height AND font-size on the mat-icon host.
+// Using these instead of text-[Npx]! keeps glyph and host in sync.
+// Usage: <mat-icon fontSet="material-symbols-rounded" class="icon-sm">
+.icon-xs  { --mat-icon-size: 12px; }
+.icon-sm  { --mat-icon-size: 16px; }
+.icon-md  { --mat-icon-size: 20px; }
+.icon-lg  { --mat-icon-size: 24px; }  // default
+.icon-xl  { --mat-icon-size: 32px; }
+.icon-2xl { --mat-icon-size: 40px; }
+.icon-3xl { --mat-icon-size: 56px; }
+
 // ─── Micro-Animation Utilities ───────────────────────────────────────────────
 .fc-fade-in {
   animation: fcFadeIn 0.5s ease-out both;

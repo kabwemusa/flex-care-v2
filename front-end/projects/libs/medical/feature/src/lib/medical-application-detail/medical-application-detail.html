@@ -1,4 +1,4 @@
-<!-- libs/medical/ui/src/lib/applications/application-detail.component.html -->
+﻿<!-- libs/medical/ui/src/lib/applications/application-detail.component.html -->
 
 <div class="bg-slate-50 min-h-screen">
   @if (isLoading() && !application()) {
@@ -23,7 +23,7 @@
           <button
             mat-icon-button
             (click)="goBack()"
-            class="!bg-slate-100 hover:!bg-slate-200"
+            class="bg-slate-100! hover:bg-slate-200!"
             matTooltip="Back to list"
           >
             <mat-icon fontSet="material-symbols-rounded">arrow_back</mat-icon>
@@ -53,7 +53,7 @@
             mat-icon-button
             (click)="editApplication()"
             matTooltip="Edit Application"
-            class="!text-slate-600 hover:!bg-slate-100"
+            class="text-slate-600! hover:bg-slate-100!"
           >
             <mat-icon fontSet="material-symbols-rounded">edit</mat-icon>
           </button>
@@ -64,7 +64,7 @@
             (click)="calculatePremium()"
             [disabled]="isSaving()"
             matTooltip="Calculate Premium"
-            class="!text-slate-600 hover:!bg-slate-100"
+            class="text-slate-600! hover:bg-slate-100!"
           >
             <mat-icon fontSet="material-symbols-rounded">calculate</mat-icon>
           </button>
@@ -111,7 +111,7 @@
                 (click)="approvalReturn()"
                 [disabled]="isSaving()"
                 matTooltip="Return for Amendment"
-                class="!text-amber-600 hover:!bg-amber-50"
+                class="text-amber-600! hover:bg-amber-50!"
               >
                 <mat-icon fontSet="material-symbols-rounded">undo</mat-icon>
               </button>
@@ -121,7 +121,7 @@
                 (click)="approvalReject()"
                 [disabled]="isSaving()"
                 matTooltip="Reject Application"
-                class="!text-red-600 hover:!bg-red-50"
+                class="text-red-600! hover:bg-red-50!"
               >
                 <mat-icon fontSet="material-symbols-rounded">cancel</mat-icon>
               </button>
@@ -131,7 +131,7 @@
                 (click)="approvalApprove()"
                 [disabled]="isSaving()"
                 matTooltip="Approve this Step"
-                class="!bg-emerald-600 hover:!bg-emerald-700"
+                class="bg-emerald-600! hover:bg-emerald-700!"
               >
                 <mat-icon fontSet="material-symbols-rounded">check_circle</mat-icon>
                 Approve Step
@@ -139,7 +139,7 @@
             } @else {
               <!-- User cannot approve - show pending status -->
               <span class="inline-flex items-center rounded-full bg-amber-100 text-amber-800 border border-amber-200 px-3 py-1 text-sm font-medium">
-                <mat-icon fontSet="material-symbols-rounded" class="!text-[16px] mr-1">hourglass_empty</mat-icon>
+                <mat-icon fontSet="material-symbols-rounded" class="icon-sm mr-1">hourglass_empty</mat-icon>
                 Pending Approval
               </span>
             }
@@ -164,7 +164,7 @@
             (click)="regenerateQuote()"
             [disabled]="isSaving()"
             matTooltip="Recalculate & Regenerate Quote"
-            class="!text-indigo-600 hover:!bg-indigo-50"
+            class="text-indigo-600! hover:bg-indigo-50!"
           >
             <mat-icon fontSet="material-symbols-rounded">refresh</mat-icon>
           </button>
@@ -172,7 +172,7 @@
             mat-icon-button
             (click)="openQuoteActions()"
             matTooltip="Download or Email Quote"
-            class="!text-slate-600 hover:!bg-slate-100"
+            class="text-slate-600! hover:bg-slate-100!"
           >
             <mat-icon fontSet="material-symbols-rounded">description</mat-icon>
           </button>
@@ -183,7 +183,7 @@
             (click)="referApplication()"
             [disabled]="isSaving()"
             matTooltip="Refer for Review"
-            class="!text-orange-600 hover:!bg-orange-50"
+            class="text-orange-600! hover:bg-orange-50!"
           >
             <mat-icon fontSet="material-symbols-rounded">forward</mat-icon>
           </button>
@@ -197,7 +197,7 @@
                 (click)="approvalReturn()"
                 [disabled]="isSaving()"
                 matTooltip="Return for Amendment"
-                class="!text-amber-600 hover:!bg-amber-50"
+                class="text-amber-600! hover:bg-amber-50!"
               >
                 <mat-icon fontSet="material-symbols-rounded">undo</mat-icon>
               </button>
@@ -207,7 +207,7 @@
                 (click)="approvalReject()"
                 [disabled]="isSaving()"
                 matTooltip="Reject Application"
-                class="!text-red-600 hover:!bg-red-50"
+                class="text-red-600! hover:bg-red-50!"
               >
                 <mat-icon fontSet="material-symbols-rounded">cancel</mat-icon>
               </button>
@@ -217,7 +217,7 @@
                 (click)="approvalApprove()"
                 [disabled]="isSaving()"
                 matTooltip="Approve this Step"
-                class="!bg-emerald-600 hover:!bg-emerald-700"
+                class="bg-emerald-600! hover:bg-emerald-700!"
               >
                 <mat-icon fontSet="material-symbols-rounded">check_circle</mat-icon>
                 Approve Step
@@ -225,7 +225,7 @@
             } @else {
               <!-- User cannot approve - show pending status -->
               <span class="inline-flex items-center rounded-full bg-amber-100 text-amber-800 border border-amber-200 px-3 py-1 text-sm font-medium">
-                <mat-icon fontSet="material-symbols-rounded" class="!text-[16px] mr-1">hourglass_empty</mat-icon>
+                <mat-icon fontSet="material-symbols-rounded" class="icon-sm mr-1">hourglass_empty</mat-icon>
                 Pending Approval
               </span>
             }
@@ -237,7 +237,7 @@
               (click)="declineApplication()"
               [disabled]="isSaving()"
               matTooltip="Decline Application"
-              class="!text-red-600 hover:!bg-red-50"
+              class="text-red-600! hover:bg-red-50!"
             >
               <mat-icon fontSet="material-symbols-rounded">cancel</mat-icon>
             </button>
@@ -258,7 +258,7 @@
             mat-icon-button
             (click)="openQuoteActions()"
             matTooltip="Download or Email Quote"
-            class="!text-slate-600 hover:!bg-slate-100"
+            class="text-slate-600! hover:bg-slate-100!"
           >
             <mat-icon fontSet="material-symbols-rounded">description</mat-icon>
           </button>
@@ -315,7 +315,7 @@
 
           @if (members().length === 0) {
           <div class="p-8 text-center">
-            <mat-icon fontSet="material-symbols-rounded" class="!text-[48px] text-slate-300 mb-2">
+            <mat-icon fontSet="material-symbols-rounded" class="icon-2xl text-slate-300 mb-2">
               group_off
             </mat-icon>
             <p class="text-slate-500 mb-4">No members added yet</p>
@@ -333,11 +333,11 @@
                 <th
                   mat-header-cell
                   *matHeaderCellDef
-                  class="!bg-slate-50 !px-4 !py-3 text-xs font-semibold uppercase text-slate-500"
+                  class="bg-slate-50! px-4! py-3! text-xs font-semibold uppercase text-slate-500"
                 >
                   Type
                 </th>
-                <td mat-cell *matCellDef="let member" class="!px-4 !py-3">
+                <td mat-cell *matCellDef="let member" class="px-4! py-3!">
                   <span
                     [class]="
                       member.is_principal
@@ -356,11 +356,11 @@
                 <th
                   mat-header-cell
                   *matHeaderCellDef
-                  class="!bg-slate-50 !px-4 !py-3 text-xs font-semibold uppercase text-slate-500"
+                  class="bg-slate-50! px-4! py-3! text-xs font-semibold uppercase text-slate-500"
                 >
                   Name
                 </th>
-                <td mat-cell *matCellDef="let member" class="!px-4 !py-3">
+                <td mat-cell *matCellDef="let member" class="px-4! py-3!">
                   <div class="font-medium text-slate-900">
                     {{ member.full_name || member.first_name + ' ' + member.last_name }}
                   </div>
@@ -377,11 +377,11 @@
                 <th
                   mat-header-cell
                   *matHeaderCellDef
-                  class="!bg-slate-50 !px-4 !py-3 text-xs font-semibold uppercase text-slate-500"
+                  class="bg-slate-50! px-4! py-3! text-xs font-semibold uppercase text-slate-500"
                 >
                   Age
                 </th>
-                <td mat-cell *matCellDef="let member" class="!px-4 !py-3">
+                <td mat-cell *matCellDef="let member" class="px-4! py-3!">
                   <div class="text-sm text-slate-900">
                     {{ member.age || calculateAge(member.date_of_birth) }} yrs
                   </div>
@@ -394,11 +394,11 @@
                 <th
                   mat-header-cell
                   *matHeaderCellDef
-                  class="!bg-slate-50 !px-4 !py-3 text-xs font-semibold uppercase text-slate-500"
+                  class="bg-slate-50! px-4! py-3! text-xs font-semibold uppercase text-slate-500"
                 >
                   Gender
                 </th>
-                <td mat-cell *matCellDef="let member" class="!px-4 !py-3">
+                <td mat-cell *matCellDef="let member" class="px-4! py-3!">
                   <span class="text-sm text-slate-700">{{
                     member.gender === 'M' ? 'Male' : member.gender === 'F' ? 'Female' : '-'
                   }}</span>
@@ -410,11 +410,11 @@
                 <th
                   mat-header-cell
                   *matHeaderCellDef
-                  class="!bg-slate-50 !px-4 !py-3 text-xs font-semibold uppercase text-slate-500 !text-right"
+                  class="bg-slate-50! px-4! py-3! text-xs font-semibold uppercase text-slate-500 text-right!"
                 >
                   Premium
                 </th>
-                <td mat-cell *matCellDef="let member" class="!px-4 !py-3 !text-right">
+                <td mat-cell *matCellDef="let member" class="px-4! py-3! text-right!">
                   <div class="font-medium text-slate-900">
                     {{ formatCurrency(member.total_premium, app.currency) }}
                   </div>
@@ -431,11 +431,11 @@
                 <th
                   mat-header-cell
                   *matHeaderCellDef
-                  class="!bg-slate-50 !px-4 !py-3 text-xs font-semibold uppercase text-slate-500"
+                  class="bg-slate-50! px-4! py-3! text-xs font-semibold uppercase text-slate-500"
                 >
                   UW Status
                 </th>
-                <td mat-cell *matCellDef="let member" class="!px-4 !py-3">
+                <td mat-cell *matCellDef="let member" class="px-4! py-3!">
                   <span
                     [class]="getUwStatusClass(member.underwriting_status)"
                     class="inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium"
@@ -446,13 +446,13 @@
                   <div class="flex gap-1 mt-1">
                     @if (member.has_loadings) {
                     <span class="text-xs text-amber-600" matTooltip="Has loadings">
-                      <mat-icon fontSet="material-symbols-rounded" class="!text-[14px]"
+                      <mat-icon fontSet="material-symbols-rounded" class="icon-xs"
                         >trending_up</mat-icon
                       >
                     </span>
                     } @if (member.has_exclusions) {
                     <span class="text-xs text-red-600" matTooltip="Has exclusions">
-                      <mat-icon fontSet="material-symbols-rounded" class="!text-[14px]"
+                      <mat-icon fontSet="material-symbols-rounded" class="icon-xs"
                         >block</mat-icon
                       >
                     </span>
@@ -464,9 +464,9 @@
 
               <!-- Actions -->
               <ng-container matColumnDef="actions">
-                <th mat-header-cell *matHeaderCellDef class="!bg-slate-50 !px-4 !py-3 !w-16"></th>
-                <td mat-cell *matCellDef="let member" class="!px-4 !py-3">
-                  <button mat-icon-button [matMenuTriggerFor]="memberMenu" class="!text-slate-400">
+                <th mat-header-cell *matHeaderCellDef class="bg-slate-50! px-4! py-3! w-16!"></th>
+                <td mat-cell *matCellDef="let member" class="px-4! py-3!">
+                  <button mat-icon-button [matMenuTriggerFor]="memberMenu" class="text-slate-400!">
                     <mat-icon fontSet="material-symbols-rounded">more_vert</mat-icon>
                   </button>
                   <mat-menu #memberMenu="matMenu">
@@ -482,8 +482,8 @@
                     </button>
                     } @if (canEdit()) {
                     <mat-divider></mat-divider>
-                    <button mat-menu-item (click)="removeMember(member)" class="!text-red-600">
-                      <mat-icon fontSet="material-symbols-rounded" class="!text-red-600"
+                    <button mat-menu-item (click)="removeMember(member)" class="text-red-600!">
+                      <mat-icon fontSet="material-symbols-rounded" class="text-red-600!"
                         >delete</mat-icon
                       >
                       <span>Remove</span>
@@ -660,7 +660,7 @@
           @if (status.has_request) {
             <div class="rounded-xl border border-primary/20 bg-primary/5 shadow-sm p-6">
               <div class="flex items-center gap-2 mb-4">
-                <mat-icon fontSet="material-symbols-rounded" class="!text-[24px] text-primary">fact_check</mat-icon>
+                <mat-icon fontSet="material-symbols-rounded" class="icon-lg text-primary">fact_check</mat-icon>
                 <h2 class="text-base font-semibold text-slate-900">Approval Status</h2>
               </div>
 
@@ -669,25 +669,25 @@
                 @switch (status.status) {
                   @case ('pending') {
                     <span class="inline-flex items-center rounded-full bg-amber-100 text-amber-800 border border-amber-200 px-3 py-1 text-sm font-medium">
-                      <mat-icon fontSet="material-symbols-rounded" class="!text-[16px] mr-1">pending</mat-icon>
+                      <mat-icon fontSet="material-symbols-rounded" class="icon-sm mr-1">pending</mat-icon>
                       Pending Approval
                     </span>
                   }
                   @case ('approved') {
                     <span class="inline-flex items-center rounded-full bg-green-100 text-green-800 border border-green-200 px-3 py-1 text-sm font-medium">
-                      <mat-icon fontSet="material-symbols-rounded" class="!text-[16px] mr-1">check_circle</mat-icon>
+                      <mat-icon fontSet="material-symbols-rounded" class="icon-sm mr-1">check_circle</mat-icon>
                       Fully Approved
                     </span>
                   }
                   @case ('rejected') {
                     <span class="inline-flex items-center rounded-full bg-red-100 text-red-800 border border-red-200 px-3 py-1 text-sm font-medium">
-                      <mat-icon fontSet="material-symbols-rounded" class="!text-[16px] mr-1">cancel</mat-icon>
+                      <mat-icon fontSet="material-symbols-rounded" class="icon-sm mr-1">cancel</mat-icon>
                       Rejected
                     </span>
                   }
                   @case ('returned') {
                     <span class="inline-flex items-center rounded-full bg-orange-100 text-orange-800 border border-orange-200 px-3 py-1 text-sm font-medium">
-                      <mat-icon fontSet="material-symbols-rounded" class="!text-[16px] mr-1">undo</mat-icon>
+                      <mat-icon fontSet="material-symbols-rounded" class="icon-sm mr-1">undo</mat-icon>
                       Returned for Amendment
                     </span>
                   }
@@ -741,7 +741,7 @@
               @if (canApproveApplication()) {
                 <div class="mt-4 p-3 rounded-lg bg-emerald-50 border border-emerald-200">
                   <div class="flex items-center gap-2 text-emerald-800">
-                    <mat-icon fontSet="material-symbols-rounded" class="!text-[18px]">info</mat-icon>
+                    <mat-icon fontSet="material-symbols-rounded" class="icon-md">info</mat-icon>
                     <span class="text-sm font-medium">Your approval is required</span>
                   </div>
                 </div>
@@ -862,7 +862,7 @@
             <div class="flex items-start gap-3">
               <mat-icon
                 fontSet="material-symbols-rounded"
-                class="!text-[20px] text-slate-400 mt-0.5"
+                class="icon-md text-slate-400 mt-0.5"
                 >person</mat-icon
               >
               <div>
@@ -873,7 +873,7 @@
             <div class="flex items-start gap-3">
               <mat-icon
                 fontSet="material-symbols-rounded"
-                class="!text-[20px] text-slate-400 mt-0.5"
+                class="icon-md text-slate-400 mt-0.5"
                 >email</mat-icon
               >
               <div>
@@ -884,7 +884,7 @@
             <div class="flex items-start gap-3">
               <mat-icon
                 fontSet="material-symbols-rounded"
-                class="!text-[20px] text-slate-400 mt-0.5"
+                class="icon-md text-slate-400 mt-0.5"
                 >phone</mat-icon
               >
               <div>
@@ -901,7 +901,7 @@
           <div class="space-y-4">
             <div class="flex items-start gap-3">
               <div class="flex h-6 w-6 items-center justify-center rounded-full bg-slate-100">
-                <mat-icon fontSet="material-symbols-rounded" class="!text-[14px] text-slate-500"
+                <mat-icon fontSet="material-symbols-rounded" class="icon-xs text-slate-500"
                   >add</mat-icon
                 >
               </div>
@@ -913,7 +913,7 @@
             @if (app.quoted_at) {
             <div class="flex items-start gap-3">
               <div class="flex h-6 w-6 items-center justify-center rounded-full bg-blue-100">
-                <mat-icon fontSet="material-symbols-rounded" class="!text-[14px] text-blue-600"
+                <mat-icon fontSet="material-symbols-rounded" class="icon-xs text-blue-600"
                   >request_quote</mat-icon
                 >
               </div>
@@ -925,7 +925,7 @@
             } @if (app.submitted_at) {
             <div class="flex items-start gap-3">
               <div class="flex h-6 w-6 items-center justify-center rounded-full bg-indigo-100">
-                <mat-icon fontSet="material-symbols-rounded" class="!text-[14px] text-indigo-600"
+                <mat-icon fontSet="material-symbols-rounded" class="icon-xs text-indigo-600"
                   >send</mat-icon
                 >
               </div>
@@ -937,7 +937,7 @@
             } @if (app.underwriting_started_at) {
             <div class="flex items-start gap-3">
               <div class="flex h-6 w-6 items-center justify-center rounded-full bg-amber-100">
-                <mat-icon fontSet="material-symbols-rounded" class="!text-[14px] text-amber-600"
+                <mat-icon fontSet="material-symbols-rounded" class="icon-xs text-amber-600"
                   >policy</mat-icon
                 >
               </div>
@@ -949,7 +949,7 @@
             } @if (app.underwriting_completed_at) {
             <div class="flex items-start gap-3">
               <div class="flex h-6 w-6 items-center justify-center rounded-full bg-green-100">
-                <mat-icon fontSet="material-symbols-rounded" class="!text-[14px] text-green-600"
+                <mat-icon fontSet="material-symbols-rounded" class="icon-xs text-green-600"
                   >check_circle</mat-icon
                 >
               </div>
@@ -965,7 +965,7 @@
             } @if (app.accepted_at) {
             <div class="flex items-start gap-3">
               <div class="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-100">
-                <mat-icon fontSet="material-symbols-rounded" class="!text-[14px] text-emerald-600"
+                <mat-icon fontSet="material-symbols-rounded" class="icon-xs text-emerald-600"
                   >thumb_up</mat-icon
                 >
               </div>
@@ -977,7 +977,7 @@
             } @if (app.converted_at) {
             <div class="flex items-start gap-3">
               <div class="flex h-6 w-6 items-center justify-center rounded-full bg-teal-100">
-                <mat-icon fontSet="material-symbols-rounded" class="!text-[14px] text-teal-600"
+                <mat-icon fontSet="material-symbols-rounded" class="icon-xs text-teal-600"
                   >task_alt</mat-icon
                 >
               </div>
@@ -1002,7 +1002,7 @@
         @if (app.is_renewal && app.renewal_of_policy) {
         <div class="rounded-xl border border-purple-200 bg-purple-50 p-6">
           <div class="flex items-center gap-2 mb-3">
-            <mat-icon fontSet="material-symbols-rounded" class="!text-[20px] text-purple-600"
+            <mat-icon fontSet="material-symbols-rounded" class="icon-md text-purple-600"
               >autorenew</mat-icon
             >
             <h2 class="text-base font-semibold text-purple-900">Renewal Application</h2>
@@ -1022,7 +1022,7 @@
   } @else {
   <!-- Not Found State -->
   <div class="flex flex-col items-center justify-center min-h-[60vh]">
-    <mat-icon fontSet="material-symbols-rounded" class="!text-[64px] text-slate-300 mb-4"
+    <mat-icon fontSet="material-symbols-rounded" class="icon-4xl text-slate-300 mb-4"
       >search_off</mat-icon
     >
     <h2 class="text-xl font-semibold text-slate-900 mb-2">Application Not Found</h2>

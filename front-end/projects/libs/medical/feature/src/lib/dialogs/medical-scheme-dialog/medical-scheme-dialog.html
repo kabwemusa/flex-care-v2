@@ -1,4 +1,4 @@
-<!-- libs/medical/ui/src/lib/dialogs/medical-scheme-dialog/medical-scheme-dialog.html -->
+﻿<!-- libs/medical/ui/src/lib/dialogs/medical-scheme-dialog/medical-scheme-dialog.html -->
 
 <div class="flex max-h-[90vh] w-[70vw] min-w-[70vw] flex-col overflow-hidden bg-white rounded-lg">
   <!-- Header -->
@@ -26,7 +26,7 @@
     <button
       mat-icon-button
       (click)="dialogRef.close()"
-      class="!text-slate-400 hover:!text-slate-700"
+      class="text-slate-400! hover:text-slate-700!"
     >
       <mat-icon fontSet="material-symbols-rounded">close</mat-icon>
     </button>
@@ -39,14 +39,14 @@
       [linear]="!isEditMode"
       [selectedIndex]="currentStep()"
       (selectionChange)="onStepChange($event.selectedIndex)"
-      class="!bg-transparent"
+      class="bg-transparent!"
     >
       <ng-template matStepperIcon="edit">
-        <mat-icon fontSet="material-symbols-rounded" class="!text-green-600">check</mat-icon>
+        <mat-icon fontSet="material-symbols-rounded" class="text-green-600!">check</mat-icon>
       </ng-template>
 
       <ng-template matStepperIcon="done">
-        <mat-icon fontSet="material-symbols-rounded" class="!text-green-600">check</mat-icon>
+        <mat-icon fontSet="material-symbols-rounded" class="text-green-600!">check</mat-icon>
       </ng-template>
       <!-- Step 1: Basic Information -->
       <mat-step [stepControl]="basicInfoForm" label="Basic Info">
@@ -68,8 +68,8 @@
               class="w-full minimal-input"
               subscriptSizing="dynamic"
             >
-              <input matInput formControlName="name" placeholder="e.g. Corporate Gold Plus" />
-              <mat-icon matSuffix fontSet="material-symbols-rounded" class="!text-slate-400"
+              <input matInput formControlName="name" />
+              <mat-icon matSuffix fontSet="material-symbols-rounded" class="text-slate-400!"
                 >badge</mat-icon
               >
               @if (basicInfoForm.get('name')?.hasError('required')) {
@@ -90,13 +90,13 @@
               class="w-full minimal-input"
               subscriptSizing="dynamic"
             >
-              <mat-select formControlName="market_segment" placeholder="Select target market">
+              <mat-select formControlName="market_segment">
                 <mat-select-trigger>
                   @if (getSelectedSegment(); as seg) {
                   <div class="flex items-center gap-2">
                     <mat-icon
                       fontSet="material-symbols-rounded"
-                      class="!text-[18px] !text-slate-500"
+                      class="icon-md text-slate-500!"
                     >
                       {{ seg.icon }}
                     </mat-icon>
@@ -109,7 +109,7 @@
                   <div class="flex items-center gap-2">
                     <mat-icon
                       fontSet="material-symbols-rounded"
-                      class="!text-[18px] !text-slate-500"
+                      class="icon-md text-slate-500!"
                     >
                       {{ segment.icon }}
                     </mat-icon>
@@ -137,7 +137,7 @@
                 formControlName="description"
                 rows="3"
                 placeholder="Brief description of the scheme coverage and target market..."
-                class="!resize-none"
+                class="resize-none!"
               ></textarea>
             </mat-form-field>
           </div>
@@ -157,7 +157,7 @@
                   matInput
                   [matDatepicker]="fromPicker"
                   formControlName="effective_from"
-                  placeholder="Select date"
+                 
                 />
                 <mat-datepicker-toggle matIconSuffix [for]="fromPicker"></mat-datepicker-toggle>
                 <mat-datepicker #fromPicker></mat-datepicker>
@@ -175,7 +175,7 @@
                   matInput
                   [matDatepicker]="toPicker"
                   formControlName="effective_to"
-                  placeholder="No end date"
+                 
                 />
                 <mat-datepicker-toggle matIconSuffix [for]="toPicker"></mat-datepicker-toggle>
                 <mat-datepicker #toPicker></mat-datepicker>
@@ -246,7 +246,7 @@
                     type="number"
                     formControlName="min_group_size"
                     min="1"
-                    placeholder="e.g. 5"
+                   
                   />
                 </mat-form-field>
               </div>
@@ -263,7 +263,7 @@
                     type="number"
                     formControlName="max_group_size"
                     min="1"
-                    placeholder="No limit"
+                   
                   />
                 </mat-form-field>
               </div>
@@ -282,7 +282,7 @@
               <mat-select
                 formControlName="required_documents"
                 multiple
-                placeholder="Select required documents"
+               
               >
                 @for (doc of requiredDocumentOptions; track doc.value) {
                 <mat-option [value]="doc.value">{{ doc.label }}</mat-option>
@@ -399,7 +399,7 @@
     </div>
 
     <div class="flex items-center gap-2">
-      <button mat-button (click)="dialogRef.close()" class="!text-slate-600 hover:!bg-slate-200">
+      <button mat-button (click)="dialogRef.close()" class="text-slate-600! hover:bg-slate-200!">
         Cancel
       </button>
 
@@ -408,7 +408,7 @@
         mat-icon-button
         (click)="previousStep()"
         matTooltip="Previous step"
-        class="!text-slate-600 hover:!bg-slate-200"
+        class="text-slate-600! hover:bg-slate-200!"
       >
         <mat-icon fontSet="material-symbols-rounded">chevron_left</mat-icon>
       </button>
@@ -418,7 +418,7 @@
         [disabled]="!canProceedToNextStep()"
         (click)="nextStep()"
         matTooltip="Next step"
-        class="!text-primary"
+        class="text-primary!"
       >
         <mat-icon fontSet="material-symbols-rounded">chevron_right</mat-icon>
       </button>
@@ -428,7 +428,7 @@
         color="primary"
         [disabled]="!isFormValid"
         (click)="save()"
-        class="!px-6 !rounded-lg"
+        class="px-6! rounded-lg!"
       >
         <mat-icon fontSet="material-symbols-rounded">check</mat-icon>
         {{ isEditMode ? 'Save Changes' : 'Create Scheme' }}

@@ -1,4 +1,4 @@
-<div class="space-y-4">
+﻿<div class="space-y-4">
   <!-- Header -->
   <div class="flex items-center justify-between">
     <div>
@@ -23,7 +23,7 @@
     @if (absoluteExclusions().length > 0) {
     <div class="space-y-2">
       <h4 class="text-sm font-medium text-slate-700 flex items-center gap-2">
-        <mat-icon fontSet="material-symbols-rounded" class="!text-red-500 !text-[18px]"
+        <mat-icon fontSet="material-symbols-rounded" class="text-red-500! icon-md"
           >cancel</mat-icon
         >
         Absolute Exclusions (Never Covered)
@@ -42,7 +42,7 @@
     @if (timeLimitedExclusions().length > 0) {
     <div class="space-y-2">
       <h4 class="text-sm font-medium text-slate-700 flex items-center gap-2">
-        <mat-icon fontSet="material-symbols-rounded" class="!text-blue-500 !text-[18px]"
+        <mat-icon fontSet="material-symbols-rounded" class="text-blue-500! icon-md"
           >schedule</mat-icon
         >
         Time-Limited Exclusions
@@ -61,7 +61,7 @@
     @if (conditionalExclusions().length > 0) {
     <div class="space-y-2">
       <h4 class="text-sm font-medium text-slate-700 flex items-center gap-2">
-        <mat-icon fontSet="material-symbols-rounded" class="!text-amber-500 !text-[18px]"
+        <mat-icon fontSet="material-symbols-rounded" class="text-amber-500! icon-md"
           >rule</mat-icon
         >
         Conditional Exclusions
@@ -80,7 +80,7 @@
     @if (preExistingExclusions().length > 0) {
     <div class="space-y-2">
       <h4 class="text-sm font-medium text-slate-700 flex items-center gap-2">
-        <mat-icon fontSet="material-symbols-rounded" class="!text-purple-500 !text-[18px]"
+        <mat-icon fontSet="material-symbols-rounded" class="text-purple-500! icon-md"
           >history</mat-icon
         >
         Pre-existing Related
@@ -99,7 +99,7 @@
   <!-- Empty State -->
   <div class="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-8 text-center">
     <div class="flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 mx-auto mb-4">
-      <mat-icon fontSet="material-symbols-rounded" class="!text-slate-400">block</mat-icon>
+      <mat-icon fontSet="material-symbols-rounded" class="text-slate-400!">block</mat-icon>
     </div>
     <h4 class="text-sm font-medium text-slate-900">No Exclusions Defined</h4>
     <p class="text-sm text-slate-500 mt-1 max-w-sm mx-auto">
@@ -126,7 +126,7 @@
             [class]="getExclusionTypeClass(exclusion.exclusion_type)"
             class="flex h-10 w-10 items-center justify-center rounded-full shrink-0"
           >
-            <mat-icon fontSet="material-symbols-rounded" class="!text-[20px]">
+            <mat-icon fontSet="material-symbols-rounded" class="icon-md">
               {{ getExclusionTypeIcon(exclusion.exclusion_type) }}
             </mat-icon>
           </div>
@@ -153,7 +153,7 @@
               @if (exclusion.is_benefit_specific && exclusion.benefit) {
               <span class="text-xs text-slate-300">•</span>
               <span class="text-xs text-slate-500 flex items-center gap-1">
-                <mat-icon fontSet="material-symbols-rounded" class="!text-[14px]"
+                <mat-icon fontSet="material-symbols-rounded" class="icon-xs"
                   >link</mat-icon
                 >
                 {{ exclusion.benefit.name }}
@@ -161,7 +161,7 @@
               } @else if (exclusion.is_general) {
               <span class="text-xs text-slate-300">•</span>
               <span class="text-xs text-slate-500 flex items-center gap-1">
-                <mat-icon fontSet="material-symbols-rounded" class="!text-[14px]"
+                <mat-icon fontSet="material-symbols-rounded" class="icon-xs"
                   >public</mat-icon
                 >
                 General (All Benefits)
@@ -184,24 +184,24 @@
           </div>
         </div>
 
-        <button mat-icon-button [matMenuTriggerFor]="excMenu" class="!text-slate-400 shrink-0">
+        <button mat-icon-button [matMenuTriggerFor]="excMenu" class="text-slate-400! shrink-0">
           <mat-icon fontSet="material-symbols-rounded">more_vert</mat-icon>
         </button>
 
         <mat-menu #excMenu="matMenu">
           <button mat-menu-item (click)="openEditDialog(exclusion)">
-            <mat-icon fontSet="material-symbols-rounded" class="!text-slate-500">edit</mat-icon>
+            <mat-icon fontSet="material-symbols-rounded" class="text-slate-500!">edit</mat-icon>
             <span>Edit</span>
           </button>
           <button mat-menu-item (click)="toggleStatus(exclusion)">
-            <mat-icon fontSet="material-symbols-rounded" class="!text-slate-500">
+            <mat-icon fontSet="material-symbols-rounded" class="text-slate-500!">
               {{ exclusion.is_active ? 'block' : 'check_circle' }}
             </mat-icon>
             <span>{{ exclusion.is_active ? 'Deactivate' : 'Activate' }}</span>
           </button>
           <mat-divider></mat-divider>
-          <button mat-menu-item class="!text-red-600" (click)="removeExclusion(exclusion)">
-            <mat-icon fontSet="material-symbols-rounded" class="!text-red-600">delete</mat-icon>
+          <button mat-menu-item class="text-red-600!" (click)="removeExclusion(exclusion)">
+            <mat-icon fontSet="material-symbols-rounded" class="text-red-600!">delete</mat-icon>
             <span>Delete</span>
           </button>
         </mat-menu>

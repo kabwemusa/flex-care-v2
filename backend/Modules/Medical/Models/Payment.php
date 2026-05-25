@@ -2,6 +2,7 @@
 
 namespace Modules\Medical\Models;
 
+use App\Models\User;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -91,7 +92,7 @@ class Payment extends BaseModel
         $year = date('Y');
 
         $lastNumber = static::where('payment_number', 'like', "{$prefix}{$year}-%")
-            ->orderByRaw('CAST(SUBSTRING(payment_number, -6) AS UNSIGNED) DESC')
+            ->orderByRaw('CAST(RIGHT(payment_number, 6) AS INTEGER) DESC')
             ->value('payment_number');
 
         if ($lastNumber) {
@@ -120,6 +121,16 @@ class Payment extends BaseModel
     public function allocations(): HasMany
     {
         return $this->hasMany(PaymentAllocation::class, 'payment_id');
+    }
+
+    public function receivedByUser(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'received_by');
+    }
+
+    public function reconciledByUser(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'reconciled_by');
     }
 
     // =========================================================================

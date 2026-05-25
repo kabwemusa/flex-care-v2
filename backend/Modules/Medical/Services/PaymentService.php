@@ -413,23 +413,24 @@ class PaymentService
         Carbon $endDate,
         string $groupBy = 'month'
     ): array {
+        // PostgreSQL TO_CHAR format equivalents
         $format = match ($groupBy) {
-            'day' => '%Y-%m-%d',
-            'week' => '%Y-%U',
-            'month' => '%Y-%m',
-            'year' => '%Y',
-            default => '%Y-%m',
+            'day'   => 'YYYY-MM-DD',
+            'week'  => 'IYYY-IW',
+            'month' => 'YYYY-MM',
+            'year'  => 'YYYY',
+            default => 'YYYY-MM',
         };
 
         return Payment::valid()
             ->dateRange($startDate, $endDate)
             ->selectRaw("
-                DATE_FORMAT(payment_date, '{$format}') as period,
+                TO_CHAR(payment_date, '{$format}') as period,
                 COUNT(*) as payment_count,
                 SUM(amount) as total_amount,
                 SUM(allocated_amount) as allocated_amount
             ")
-            ->groupByRaw("DATE_FORMAT(payment_date, '{$format}')")
+            ->groupByRaw("TO_CHAR(payment_date, '{$format}')")
             ->orderBy('period', 'asc')
             ->get()
             ->toArray();

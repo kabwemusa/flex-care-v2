@@ -1,4 +1,4 @@
-<!-- libs/medical/ui/src/lib/dialogs/rate-card-dialog/rate-card-dialog.html -->
+﻿<!-- libs/medical/ui/src/lib/dialogs/rate-card-dialog/rate-card-dialog.html -->
 
 <div class="flex max-h-[90vh] w-full flex-col overflow-hidden rounded-lg bg-white sm:w-[650px]">
   <!-- Header -->
@@ -20,7 +20,7 @@
     <button
       mat-icon-button
       (click)="dialogRef.close()"
-      class="!text-slate-400 hover:!text-slate-700"
+      class="text-slate-400! hover:text-slate-700!"
     >
       <mat-icon fontSet="material-symbols-rounded">close</mat-icon>
     </button>
@@ -33,7 +33,7 @@
       [linear]="false"
       [selectedIndex]="currentStep()"
       (selectionChange)="onStepChange($event.selectedIndex)"
-      class="!bg-transparent"
+      class="bg-transparent!"
     >
       <!-- Step 1: Basic Info -->
       <mat-step [stepControl]="basicForm" label="Basic Info">
@@ -73,7 +73,7 @@
               Name <span class="text-red-500">*</span>
             </label>
             <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
-              <input matInput formControlName="name" placeholder="e.g. Corporate Gold 2025 Rates" />
+              <input matInput formControlName="name" />
               @if (basicForm.get('name')?.hasError('required')) {
               <mat-error>Name is required</mat-error>
               }
@@ -85,7 +85,7 @@
             <div class="flex flex-col gap-1.5">
               <label class="text-sm font-medium text-slate-700">Code</label>
               <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
-                <input matInput formControlName="code" placeholder="Auto-generated if empty" />
+                <input matInput formControlName="code" />
               </mat-form-field>
               <p class="text-xs text-slate-400">Leave empty to auto-generate</p>
             </div>
@@ -95,7 +95,7 @@
                 Version <span class="text-red-500">*</span>
               </label>
               <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
-                <input matInput formControlName="version" placeholder="e.g. 1.0" />
+                <input matInput formControlName="version" />
               </mat-form-field>
             </div>
           </div>
@@ -210,7 +210,7 @@
                 formControlName="notes"
                 rows="3"
                 placeholder="Any notes about this rate card..."
-                class="!resize-none"
+                class="resize-none!"
               ></textarea>
             </mat-form-field>
           </div>
@@ -226,7 +226,7 @@
 
           <div class="rounded-lg bg-blue-50 border border-blue-100 p-4 mb-6">
             <div class="flex gap-3">
-              <mat-icon fontSet="material-symbols-rounded" class="!text-blue-500">info</mat-icon>
+              <mat-icon fontSet="material-symbols-rounded" class="text-blue-500!">info</mat-icon>
               <div>
                 <p class="text-sm font-medium text-blue-900">How Factors Work</p>
                 <p class="text-xs text-blue-700 mt-1">
@@ -243,7 +243,7 @@
             <div class="flex items-center justify-between rounded-xl border border-slate-200 p-4">
               <div class="flex items-center gap-3">
                 <div class="flex h-10 w-10 items-center justify-center rounded-full bg-slate-100">
-                  <mat-icon fontSet="material-symbols-rounded" class="!text-slate-600">
+                  <mat-icon fontSet="material-symbols-rounded" class="text-slate-600!">
                     @switch (type.value) { @case ('principal') { person } @case ('spouse') {
                     favorite } @case ('child') { child_care } @case ('parent') { elderly } }
                   </mat-icon>
@@ -253,7 +253,7 @@
                   <!-- <p class="text-xs text-slate-500">Default: × {{ type.factor }}</p> -->
                 </div>
               </div>
-              <mat-form-field appearance="outline" class="!w-32" subscriptSizing="dynamic">
+              <mat-form-field appearance="outline" class="w-32!" subscriptSizing="dynamic">
                 <span matTextPrefix class="text-slate-400 mr-1">×</span>
                 <input matInput type="number" [formControlName]="type.value" step="0.1" min="0" />
               </mat-form-field>
@@ -296,20 +296,20 @@
     <div class="text-xs text-slate-500">Step {{ currentStep() + 1 }} of 3</div>
 
     <div class="flex items-center gap-3">
-      <button mat-button (click)="dialogRef.close()" class="!text-slate-600 hover:!bg-slate-200">
+      <button mat-button (click)="dialogRef.close()" class="text-slate-600! hover:bg-slate-200!">
         Cancel
       </button>
 
       <!-- Back Button -->
       @if (!isFirstStep) {
-      <button mat-icon-button (click)="prevStep()" matTooltip="Previous step" class="!text-slate-600 hover:!bg-slate-200">
+      <button mat-icon-button (click)="prevStep()" matTooltip="Previous step" class="text-slate-600! hover:bg-slate-200!">
         <mat-icon fontSet="material-symbols-rounded">chevron_left</mat-icon>
       </button>
       }
 
       <!-- Next Button -->
       @if (!isLastStep) {
-      <button mat-icon-button [disabled]="!canGoNext" (click)="nextStep()" matTooltip="Next step" class="!text-primary">
+      <button mat-icon-button [disabled]="!canGoNext" (click)="nextStep()" matTooltip="Next step" class="text-primary!">
         <mat-icon fontSet="material-symbols-rounded">chevron_right</mat-icon>
       </button>
       } @else {
@@ -319,7 +319,7 @@
         color="primary"
         [disabled]="!isFormValid"
         (click)="save()"
-        class="!px-6 !rounded-lg"
+        class="px-6! rounded-lg!"
       >
         {{ isEditMode ? 'Update Rate Card' : 'Create Rate Card' }}
       </button>

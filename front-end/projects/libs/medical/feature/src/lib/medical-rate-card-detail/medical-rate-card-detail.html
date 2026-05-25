@@ -1,4 +1,4 @@
-<!-- libs/medical/ui/src/lib/rate-cards/medical-rate-card-detail.html -->
+﻿<!-- libs/medical/ui/src/lib/rate-cards/medical-rate-card-detail.html -->
 
 <div class="bg-white min-h-[80vh]">
   <!-- Loading State -->
@@ -39,7 +39,7 @@
             </span>
             @if (rc.is_approved) {
             <span class="inline-flex items-center gap-1 rounded-full border border-green-200 bg-green-50 px-2.5 py-0.5 text-xs font-medium text-green-700">
-              <mat-icon fontSet="material-symbols-rounded" class="text-[11px]!">verified</mat-icon>
+              <mat-icon fontSet="material-symbols-rounded" class="icon-xs">verified</mat-icon>
               Approved
             </span>
             }
@@ -113,7 +113,7 @@
 
       <div class="rounded-lg border border-slate-200 bg-slate-50 p-3">
         <div class="flex items-center gap-1.5 mb-1">
-          <mat-icon fontSet="material-symbols-rounded" class="text-[14px]! text-blue-500!">table_chart</mat-icon>
+          <mat-icon fontSet="material-symbols-rounded" class="icon-xs text-blue-500!">table_chart</mat-icon>
           <p class="text-xs text-slate-500">Age Bands</p>
         </div>
         <p class="text-sm font-medium text-blue-600">{{ rc.entries_count || 0 }} entries</p>
@@ -121,7 +121,7 @@
 
       <div class="rounded-lg border border-slate-200 bg-slate-50 p-3">
         <div class="flex items-center gap-1.5 mb-1">
-          <mat-icon fontSet="material-symbols-rounded" class="text-[14px]! text-purple-500!">groups</mat-icon>
+          <mat-icon fontSet="material-symbols-rounded" class="icon-xs text-purple-500!">groups</mat-icon>
           <p class="text-xs text-slate-500">Tiers</p>
         </div>
         <p class="text-sm font-medium text-purple-600">{{ rc.tiers_count || 0 }} tiers</p>
@@ -139,7 +139,7 @@
       <!-- Entries Tab (Age Bands) -->
       <mat-tab>
         <ng-template mat-tab-label>
-          <mat-icon fontSet="material-symbols-rounded" class="mr-2! text-[20px]!"
+          <mat-icon fontSet="material-symbols-rounded" class="mr-2! icon-md"
             >table_chart</mat-icon
           >
           Age Bands ({{ entriesDataSource.data.length }})
@@ -188,7 +188,7 @@
                     <div class="flex h-8 w-8 items-center justify-center rounded-full bg-blue-100">
                       <mat-icon
                         fontSet="material-symbols-rounded"
-                        class="text-blue-600! text-[16px]!"
+                        class="text-blue-600! icon-sm"
                         >person</mat-icon
                       >
                     </div>
@@ -317,7 +317,7 @@
       <!-- Tiers Tab (Family Sizes) -->
       <mat-tab>
         <ng-template mat-tab-label>
-          <mat-icon fontSet="material-symbols-rounded" class="mr-2! text-[20px]!">groups</mat-icon>
+          <mat-icon fontSet="material-symbols-rounded" class="mr-2! icon-md">groups</mat-icon>
           Tiers ({{ tiersDataSource.data.length }})
         </ng-template>
         <div class="py-6 space-y-4">
@@ -391,7 +391,7 @@
                   <div class="flex items-center gap-2">
                     <mat-icon
                       fontSet="material-symbols-rounded"
-                      class="text-slate-400! text-[18px]!"
+                      class="text-slate-400! icon-md"
                       >groups</mat-icon
                     >
                     <span class="text-sm text-slate-700">{{ getMemberRangeLabel(tier) }}</span>
@@ -504,7 +504,7 @@
   <!-- Not Found State -->
   <div class="flex flex-col items-center justify-center py-24 text-center">
     <div class="flex h-16 w-16 items-center justify-center rounded-full bg-slate-100 mb-4">
-      <mat-icon fontSet="material-symbols-rounded" class="text-slate-400! text-[32px]!"
+      <mat-icon fontSet="material-symbols-rounded" class="text-slate-400! icon-xl"
         >search_off</mat-icon
       >
     </div>

@@ -566,6 +566,7 @@ Route::prefix('v1/medical')
     Route::get('policies/{policyId}/billing-summary', [BillingController::class, 'policyBillingSummary'])->middleware('permission:medical.billing.view');
     Route::post('policies/{policyId}/generate-invoice', [BillingController::class, 'generateInvoice'])->middleware('permission:medical.billing.invoices.create');
     Route::post('policies/{policyId}/generate-recurring-invoice', [BillingController::class, 'generateRecurringInvoice'])->middleware('permission:medical.billing.invoices.create');
+    Route::post('policies/{policyId}/credit-note', [BillingController::class, 'generateCreditNote'])->middleware('permission:medical.billing.invoices.create');
 
     // Group Billing
     Route::get('groups/{groupId}/invoices', [BillingController::class, 'invoicesForGroup'])->middleware('permission:medical.billing.view');

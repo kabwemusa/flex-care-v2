@@ -58,7 +58,10 @@ class PaymentResource extends JsonResource
 
             // Reconciliation
             'is_reconciled' => $this->is_reconciled,
-            'reconciled_by' => $this->reconciled_by,
+            'reconciled_by' => $this->whenLoaded('reconciledByUser',
+                fn() => $this->reconciledByUser?->username ?? $this->reconciledByUser?->email ?? null,
+                $this->reconciled_by
+            ),
             'reconciled_at' => $this->reconciled_at?->toIso8601String(),
             'reconciliation_reference' => $this->reconciliation_reference,
 
@@ -95,7 +98,10 @@ class PaymentResource extends JsonResource
 
             // Metadata
             'notes' => $this->notes,
-            'received_by' => $this->received_by,
+            'received_by' => $this->whenLoaded('receivedByUser',
+                fn() => $this->receivedByUser?->username ?? $this->receivedByUser?->email ?? null,
+                $this->received_by
+            ),
             'created_by' => $this->created_by,
             'created_at' => $this->created_at?->toIso8601String(),
             'updated_at' => $this->updated_at?->toIso8601String(),

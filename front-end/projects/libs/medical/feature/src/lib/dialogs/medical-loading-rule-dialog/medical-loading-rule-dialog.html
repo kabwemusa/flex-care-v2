@@ -1,4 +1,4 @@
-<div class="flex max-h-[90vh] w-full flex-col rounded-lg overflow-hidden bg-white sm:w-[70vw]">
+﻿<div class="flex max-h-[90vh] w-full flex-col rounded-lg overflow-hidden bg-white sm:w-[70vw]">
   <div class="flex items-center justify-between border-b border-slate-100 px-6 py-4">
     <div class="flex items-center gap-3">
       <div
@@ -14,7 +14,7 @@
       </div>
     </div>
 
-    <button mat-icon-button (click)="dialogRef.close()" class="!text-slate-400">
+    <button mat-icon-button (click)="dialogRef.close()" class="text-slate-400!">
       <mat-icon fontSet="material-symbols-rounded">close</mat-icon>
     </button>
   </div>
@@ -34,7 +34,7 @@
               <input
                 matInput
                 formControlName="condition_name"
-                placeholder="e.g., Diabetes Mellitus Type 2"
+               
               />
               @if (conditionForm.get('condition_name')?.hasError('required')) {
               <mat-error>Name is required</mat-error>
@@ -71,8 +71,8 @@
                 <input
                   matInput
                   formControlName="icd10_code"
-                  placeholder="e.g., E11"
-                  class="!uppercase"
+                 
+                  class="uppercase!"
                 />
               </mat-form-field>
               <p class="text-xs text-slate-400">Primary diagnosis code</p>
@@ -88,7 +88,7 @@
                 <input
                   matInput
                   formControlName="related_icd_codes_text"
-                  placeholder="Comma separated"
+                 
                 />
               </mat-form-field>
               <p class="text-xs text-slate-400">e.g. E11.0, E11.1</p>
@@ -269,15 +269,15 @@
   </div>
 
   <div class="flex items-center justify-between border-t border-slate-100 bg-slate-50 px-6 py-4">
-    <button mat-button (click)="dialogRef.close()" class="!text-slate-600">Cancel</button>
+    <button mat-button (click)="dialogRef.close()" class="text-slate-600!">Cancel</button>
 
     <div class="flex items-center gap-2">
       @if (!isFirstStep()) {
-      <button mat-icon-button (click)="prevStep()" matTooltip="Previous step" class="!text-slate-600 hover:!bg-slate-200">
+      <button mat-icon-button (click)="prevStep()" matTooltip="Previous step" class="text-slate-600! hover:bg-slate-200!">
         <mat-icon fontSet="material-symbols-rounded">chevron_left</mat-icon>
       </button>
       } @if (!isLastStep()) {
-      <button mat-icon-button (click)="nextStep()" [disabled]="!canGoNext()" matTooltip="Next step" class="!text-primary">
+      <button mat-icon-button (click)="nextStep()" [disabled]="!canGoNext()" matTooltip="Next step" class="text-primary!">
         <mat-icon fontSet="material-symbols-rounded">chevron_right</mat-icon>
       </button>
       } @else {

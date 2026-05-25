@@ -1,4 +1,4 @@
-<!-- libs/medical/ui/src/lib/dialogs/medical-plan-dialog/medical-plan-dialog.html -->
+﻿<!-- libs/medical/ui/src/lib/dialogs/medical-plan-dialog/medical-plan-dialog.html -->
 
 <div class="flex max-h-[90vh] w-[70vw] min-w-[70vw] flex-col overflow-hidden rounded-lg bg-white">
   <!-- Header -->
@@ -28,7 +28,7 @@
     <button
       mat-icon-button
       (click)="dialogRef.close()"
-      class="!text-slate-400 hover:!text-slate-700"
+      class="text-slate-400! hover:text-slate-700!"
     >
       <mat-icon fontSet="material-symbols-rounded">close</mat-icon>
     </button>
@@ -41,14 +41,14 @@
       [linear]="!isEditMode"
       [selectedIndex]="currentStep()"
       (selectionChange)="onStepChange($event.selectedIndex)"
-      class="!bg-transparent"
+      class="bg-transparent!"
     >
       <ng-template matStepperIcon="edit">
-        <mat-icon fontSet="material-symbols-rounded" class="!text-green-600">check</mat-icon>
+        <mat-icon fontSet="material-symbols-rounded" class="text-green-600!">check</mat-icon>
       </ng-template>
 
       <ng-template matStepperIcon="done">
-        <mat-icon fontSet="material-symbols-rounded" class="!text-green-600">check</mat-icon>
+        <mat-icon fontSet="material-symbols-rounded" class="text-green-600!">check</mat-icon>
       </ng-template>
 
       <!-- Step 1: Basic Information -->
@@ -65,7 +65,7 @@
               Scheme <span class="text-red-500">*</span>
             </label>
             <mat-form-field appearance="fill" class="w-full minimal-input" subscriptSizing="dynamic">
-              <mat-select formControlName="scheme_id" placeholder="Select a scheme">
+              <mat-select formControlName="scheme_id">
                 <mat-select-trigger>
                   {{ getSelectedSchemeLabel() }}
                 </mat-select-trigger>
@@ -86,8 +86,8 @@
               Plan Name <span class="text-red-500">*</span>
             </label>
             <mat-form-field appearance="fill" class="w-full minimal-input" subscriptSizing="dynamic">
-              <input matInput formControlName="name" placeholder="e.g. Gold Plus Family" />
-              <mat-icon matSuffix fontSet="material-symbols-rounded" class="!text-slate-400"
+              <input matInput formControlName="name" />
+              <mat-icon matSuffix fontSet="material-symbols-rounded" class="text-slate-400!"
                 >badge</mat-icon
               >
               @if (basicInfoForm.get('name')?.hasError('required')) {
@@ -105,7 +105,7 @@
                 Plan Type <span class="text-red-500">*</span>
               </label>
               <mat-form-field appearance="fill" class="w-full minimal-input" subscriptSizing="dynamic">
-                <mat-select formControlName="plan_type" placeholder="Select type">
+                <mat-select formControlName="plan_type">
                   <mat-select-trigger>
                     {{ getSelectedPlanTypeLabel() }}
                   </mat-select-trigger>
@@ -124,7 +124,7 @@
             <div class="flex flex-col gap-1.5">
               <label class="text-sm font-medium text-slate-700">Network Type</label>
               <mat-form-field appearance="fill" class="w-full minimal-input" subscriptSizing="dynamic">
-                <mat-select formControlName="network_type" placeholder="Select network">
+                <mat-select formControlName="network_type">
                   <mat-select-trigger>
                     {{ getSelectedNetworkTypeLabel() }}
                   </mat-select-trigger>
@@ -145,7 +145,7 @@
           <div class="flex flex-col gap-1.5">
             <label class="text-sm font-medium text-slate-700">Tier Level</label>
             <mat-form-field appearance="fill" class="w-full minimal-input" subscriptSizing="dynamic">
-              <mat-select formControlName="tier_level" placeholder="Select tier">
+              <mat-select formControlName="tier_level">
                 <mat-select-trigger>
                   {{ getSelectedTierLabel() }}
                 </mat-select-trigger>
@@ -180,7 +180,7 @@
                 formControlName="description"
                 rows="3"
                 placeholder="Brief description of the plan coverage..."
-                class="!resize-none"
+                class="resize-none!"
               ></textarea>
             </mat-form-field>
           </div>
@@ -224,7 +224,7 @@
               <mat-select
                 formControlName="allowed_member_types"
                 multiple
-                placeholder="Select member types"
+               
               >
                 @for (type of memberTypes; track type.value) {
                 <mat-option [value]="type.value">{{ type.label }}</mat-option>
@@ -239,7 +239,7 @@
             <label class="text-sm font-medium text-slate-700">Maximum Dependents</label>
             <mat-form-field appearance="fill" class="w-full minimal-input" subscriptSizing="dynamic">
               <input matInput type="number" formControlName="max_dependents" min="0" max="20" />
-              <mat-icon matSuffix fontSet="material-symbols-rounded" class="!text-slate-400"
+              <mat-icon matSuffix fontSet="material-symbols-rounded" class="text-slate-400!"
                 >group</mat-icon
               >
             </mat-form-field>
@@ -309,7 +309,7 @@
 
           <div class="rounded-lg bg-blue-50 border border-blue-100 p-4">
             <div class="flex gap-3">
-              <mat-icon fontSet="material-symbols-rounded" class="!text-blue-500">info</mat-icon>
+              <mat-icon fontSet="material-symbols-rounded" class="text-blue-500!">info</mat-icon>
               <div>
                 <p class="text-sm font-medium text-blue-900">About Waiting Periods</p>
                 <p class="text-xs text-blue-700 mt-1">
@@ -411,7 +411,7 @@
     </div>
 
     <div class="flex items-center gap-2">
-      <button mat-button (click)="dialogRef.close()" class="!text-slate-600 hover:!bg-slate-200">
+      <button mat-button (click)="dialogRef.close()" class="text-slate-600! hover:bg-slate-200!">
         Cancel
       </button>
 
@@ -420,7 +420,7 @@
         mat-icon-button
         (click)="previousStep()"
         matTooltip="Previous step"
-        class="!text-slate-600 hover:!bg-slate-200"
+        class="text-slate-600! hover:bg-slate-200!"
       >
         <mat-icon fontSet="material-symbols-rounded">chevron_left</mat-icon>
       </button>
@@ -430,7 +430,7 @@
         [disabled]="!canProceedToNextStep()"
         (click)="nextStep()"
         matTooltip="Next step"
-        class="!text-primary"
+        class="text-primary!"
       >
         <mat-icon fontSet="material-symbols-rounded">chevron_right</mat-icon>
       </button>
@@ -440,7 +440,7 @@
         color="primary"
         [disabled]="!isFormValid"
         (click)="save()"
-        class="!px-6 !rounded-lg"
+        class="px-6! rounded-lg!"
       >
         <mat-icon fontSet="material-symbols-rounded">check</mat-icon>
         {{ isEditMode ? 'Save Changes' : 'Create Plan' }}
