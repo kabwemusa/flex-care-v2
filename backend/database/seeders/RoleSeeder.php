@@ -158,30 +158,42 @@ class RoleSeeder extends Seeder
         // CREATE DEFAULT SYSTEM ADMIN USER
         // =========================================================================
 
-        $adminUser = User::create([
-            'email' => 'admin@flexcare.zm',
-            'username' => 'admin',
-            'password' => bcrypt('Testing01!'), // Change in production!
-            'is_active' => true,
-            'is_system_admin' => true,
-        ]);
+        $adminUser = User::firstOrCreate(
+            ['email' => 'admin@flexcare.zm'],
+            [
+                'username' => 'admin',
+                'password' => bcrypt('Testing01!'), // Change in production!
+                'is_active' => true,
+                'is_system_admin' => true,
+            ]
+        );
 
-        $adminUser->assignRole($systemAdmin);
+        if (!$adminUser->hasRole($systemAdmin)) {
+            $adminUser->assignRole($systemAdmin);
+        }
 
         // Grant admin access to all modules
-        UserModuleAccess::create([
-            'user_id' => $adminUser->id,
-            'module_code' => 'admin',
-            'is_active' => true,
-            'granted_by' => $adminUser->id,
-        ]);
+        UserModuleAccess::firstOrCreate(
+            [
+                'user_id' => $adminUser->id,
+                'module_code' => 'admin',
+            ],
+            [
+                'is_active' => true,
+                'granted_by' => $adminUser->id,
+            ]
+        );
 
-        UserModuleAccess::create([
-            'user_id' => $adminUser->id,
-            'module_code' => 'medical',
-            'is_active' => true,
-            'granted_by' => $adminUser->id,
-        ]);
+        UserModuleAccess::firstOrCreate(
+            [
+                'user_id' => $adminUser->id,
+                'module_code' => 'medical',
+            ],
+            [
+                'is_active' => true,
+                'granted_by' => $adminUser->id,
+            ]
+        );
 
         $this->command->info('Roles created successfully!');
         $this->command->info('Default admin user created: admin@flexcare.zm / password');
